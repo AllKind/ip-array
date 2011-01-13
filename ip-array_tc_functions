@@ -1,0 +1,468 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2011  AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                   IP-ARRAY TRAFFIC CONTROL FUNCTIONS
+#
+# ------------------------------------------------------------------------- #
+
+show_remove_qdisc_pub_save() { # public script to remove qdiscs
+"${CAT}" <<END_OF_FUNC
+
+remove_tc_qdiscs() {
+local iface
+for iface in \$NET_IFLIST; do
+	"\$TC" qdisc show dev "\$iface" | "\$GREP" -v pfifo_fast &>/dev/null && {
+		"\$TC" qdisc del dev "\$iface" root
+	}
+done
+}
+
+END_OF_FUNC
+} # -------------------------------------------------------------------------
+
+val_tc_unit() { # validate tc units
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "$(string_tolower "${1}")" in
+	(kbps|mbps|kbit|mbit|bps)
+		return 0
+	;;
+	(*) log -E "Illegal tc unit specification \`${1}'."
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+val_tc_bw_val() { # validate tc bandwith values
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local digitval=${1//[[:alpha:]]/} alphaval=${1//[[:digit:]]/}
+if [[ ${digitval} ]]; then
+	val_numeric ${digitval} || return 1
+else
+	log -E "Missing numeric value in \`${1}'."
+	return 1
+fi
+if [[ ${alphaval} ]]; then
+	val_tc_unit ${alphaval} || return 1
+fi
+} # -------------------------------------------------------------------------
+
+add_tc_cmd() { # add tc commands to the tc-command array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="${@}"
+} # -------------------------------------------------------------------------
+
+tc_add_htbqd() { # add htb qdiscs
+[[ ${5} ]] || { reqparm ${FUNCNAME} 5; return 1; }
+OPTIND=1 # reset options index variable
+while getopts :d:u:h:f:r: option; do # enumerate options
+	case "${option}" in
+		d) 	check_iface "${OPTARG}" || return 1
+			local qdev="dev ${OPTARG}"
+		;;
+		u) local quser="${OPTARG}" ;;
+		h) 	val_numeric "${OPTARG/:/}" || return 1
+			local qhandle="handle ${OPTARG}"
+		;;
+		f) 	val_numeric "${OPTARG}" || return 1
+			local qdef="default ${OPTARG}"
+		;;
+		r) 	val_numeric "${OPTARG}" || return 1
+			local qr2q="r2q ${OPTARG}"
+		;;
+		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+	esac
+done
+OPTIND=1 # reset options index variable
+add_tc_cmd "qdisc add ${qdev} ${quser} ${qhandle} htb ${qdef} ${qr2q}"
+} # -------------------------------------------------------------------------
+
+tc_add_sfqd() { # add sfq qdiscs
+[[ ${4} ]] || { reqparm ${FUNCNAME} 4; return 1; }
+OPTIND=1 # reset options index variable
+while getopts :d:p:h:t: option; do # enumerate options
+	case "${option}" in
+		d) 	check_iface "${OPTARG}" || return 1
+			local qdev="dev ${OPTARG}"
+		;;
+		p) 	val_numeric "${OPTARG/:/}" || return 1
+			local qparent="parent ${OPTARG}"
+		;;
+		h) 	val_numeric "${OPTARG/:/}" || return 1
+			local qhandle="handle ${OPTARG}"
+		;;
+		t) 	val_numeric "${OPTARG}" || return 1
+			local qperturb="perturb ${OPTARG}"
+		;;
+		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+	esac
+done
+OPTIND=1 # reset options index variable
+add_tc_cmd "qdisc add ${qdev} ${qparent} ${qhandle} sfq ${qperturb}"
+} # -------------------------------------------------------------------------
+
+tc_add_class() { # add tc classes
+[[ ${5} ]] || { reqparm ${FUNCNAME} 5; return 1; }
+OPTIND=1 # reset options index variable
+while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
+	case "${option}" in
+		d)	# device
+			check_iface "${OPTARG}" || return 1
+			local qdev="dev ${OPTARG}" m_dev="dev=${OPTARG} "
+		;;
+		p) 	# parent
+			val_numeric "${OPTARG/:/}" || return 1
+			local qparent="parent ${OPTARG}" m_parent="parent=${OPTARG} "
+		;;
+		i) 	# classid
+			val_numeric "${OPTARG/:/}" || return 1
+			local qclassid="classid ${OPTARG}" m_classid="classid=${OPTARG} "
+		;;
+		r) 	# rate
+			val_tc_bw_val ${OPTARG} || return 1
+			local qrate="rate ${OPTARG}" m_rate="rate=${OPTARG} "
+		;;
+		c) 	# ceil
+			val_tc_bw_val ${OPTARG} || return 1
+			local qceil="ceil ${OPTARG}" m_ceil="ceil=${OPTARG} "
+		;;
+		b)	# burst
+			if [[ ${OPTARG} ]]; then
+				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
+					val_tc_bw_val ${OPTARG} || return 1
+					local qburst="burst ${OPTARG}" m_burst="burst=${OPTARG} "
+				fi
+			fi
+		;;
+		u)	# cburst
+			if [[ ${OPTARG} ]]; then
+				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
+					val_tc_bw_val ${OPTARG} || return 1
+					local qcburst="cburst ${OPTARG}" m_cburst="cburst=${OPTARG} "
+				fi
+			fi
+		;;
+		q) 	# quantum
+			if [[ ${OPTARG} ]]; then
+				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
+					val_numeric "${OPTARG}" || return 1
+					local qquantum="quantum ${OPTARG}" m_quantum="quantum=${OPTARG} "
+				fi
+			fi
+		;;
+		m) 	# mtu
+			if [[ ${OPTARG} ]]; then
+				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
+					val_numeric "${OPTARG}" || return 1
+					local qmtu="mtu ${OPTARG}" m_mtu="mtu=${OPTARG} "
+				fi
+			fi
+		;;
+		o) 	# priority
+			if [[ ${OPTARG} ]]; then
+				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
+					val_numeric "${OPTARG}" || return 1
+					local qprio="prio ${OPTARG}" m_prio="prio=${OPTARG}"
+				fi
+			fi
+		;;
+		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+	esac
+done
+OPTIND=1 # reset options index variable
+log -e "${PF}creating CLASS: ${m_dev}${m_parent}${m_classid}${m_rate}${m_ceil}${m_burst}${m_cburst}${m_quantum}${m_mtu}${m_prio}"
+add_tc_cmd "class add ${qdev} ${qparent} ${qclassid} htb ${qrate} ${qceil} ${qburst} ${qcburst} ${qquantum} ${qmtu} ${qprio}"
+} # -------------------------------------------------------------------------
+
+tc_add_filter() { # add tc filters
+[[ ${7} ]] || { reqparm ${FUNCNAME} 7; return 1; }
+OPTIND=1 # reset options index variable
+while getopts :d:p:o:r:h:m:i: option; do # enumerate options
+	case "${option}" in
+		d)	check_iface "${OPTARG}" || return 1
+			local qdev="dev ${OPTARG}"
+		;;
+		p) 	val_numeric "${OPTARG/:/}" || return 1
+			local qparent="parent ${OPTARG}"
+		;;
+		o) local qproto="protocol ${OPTARG}" ;;
+		r) 	val_numeric "${OPTARG}" || return 1
+			local qprio="prio ${OPTARG}"
+		;;
+		h) 	val_numeric "${OPTARG}" || return 1
+			local qhandle="handle ${OPTARG}"
+		;;
+		m) local qdomain="${OPTARG}" ;;
+		i) 	val_numeric "${OPTARG/:/}" || return 1
+			local qclassid="classid ${OPTARG}"
+		;;
+		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+	esac
+done
+OPTIND=1 # reset options index variable
+add_tc_cmd "filter add ${qdev} ${qparent} ${qproto} ${qprio} ${qhandle} ${qdomain} ${qclassid}"
+} # -------------------------------------------------------------------------
+
+tc_create_htb_qdisc() { # create htb qdiscs
+local -i htb_idx
+if ((${#HTB_QDISC[@]} > 0)); then
+	log -I "Creating HTB QDISCs"
+	for htb_idx in ${!HTB_QDISC[@]}; do
+		set -- ${HTB_QDISC[htb_idx]}
+		local strERR="HTB_QDISC ${htb_idx} ${HTB_QDISC[htb_idx]}"
+		local dev=${1} user=${2} handle=${3} defclass=${4} r2q=${5}
+		check_vars_no_sep dev user handle defclass r2q || { cfg_err ${strERR}; continue; }
+		log -e "${PF}creating QDISC: dev=${dev} user=${user} handle=${handle} defclass=${defclass} r2q=${r2q}"
+		tc_add_htbqd -d ${dev} -u ${user} -h ${handle} -f ${defclass} -r ${r2q} || cfg_err ${strERR}
+	done
+else
+	log -v 'HTB_QDISC'
+fi
+} # -------------------------------------------------------------------------
+
+tc_create_class() { # create TC classes
+local -i tcc_idx
+if ((${#TC_CLASS[@]} > 0)); then
+	log -I "Creating TC CLASSES"
+	for tcc_idx in ${!TC_CLASS[@]}; do
+		set -- ${TC_CLASS[tcc_idx]}
+		local strERR="TC_CLASS ${tcc_idx} ${TC_CLASS[tcc_idx]}"
+		local dev=${1} parent=${2} classid=${3} rate=${4} ceil=${5} burst=${6} \
+			cburst=${7} quantum=${8} mtu=${9} prio=${10}
+		check_vars_no_sep dev parent classid rate ceil || { cfg_err ${strERR}; continue; }
+		tc_add_class -d ${dev} -p ${parent} -i ${classid} -r ${rate} -c ${ceil} \
+			-b "${burst}" -u "${cburst}" -q "${quantum}" -m "${mtu}" -o "${prio}" || cfg_err ${strERR}
+	done
+else
+	log -v 'TC_CLASS'
+fi
+} # -------------------------------------------------------------------------
+
+tc_create_sfq_qdisc() { # create sfq qdiscs
+local -i sfq_idx
+if ((${#SFQ_QDISC[@]} > 0)); then
+	log -I "Creating SFQ QDISCs"
+	for sfq_idx in ${!SFQ_QDISC[@]}; do
+		set -- ${SFQ_QDISC[sfq_idx]}
+		local strERR="SFQ_QDISC ${sfq_idx} ${SFQ_QDISC[sfq_idx]}"
+		local dev=${1} parent=${2} handle=${3} perturb=${4}
+		check_vars_no_sep dev parent handle perturb || { cfg_err ${strERR}; continue; }
+		log -e "${PF}creating QDISC: dev=${dev} parent=${parent} handle=${handle} perturb=${perturb}"
+		tc_add_sfqd -d ${dev} -p ${parent} -h ${handle} -t ${perturb} || cfg_err ${strERR}
+	done
+else
+	log -v 'SFQ_QDISC'
+fi
+} # -------------------------------------------------------------------------
+
+tc_create_filter() { # create TC filters
+local -i f_idx
+if ((${#TC_FILTER[@]} > 0)); then
+	log -I "Creating TC FILTERS"
+	for f_idx in ${!TC_FILTER[@]}; do
+		set -- ${TC_FILTER[f_idx]}
+		local strERR="TC_FILTER ${f_idx} ${TC_FILTER[f_idx]}"
+		local dev=${1} parent=${2} proto=${3} prio=${4} handle=${5} dom=${6} classid=${7}
+		check_vars_no_sep dev parent proto prio handle dom classid || { cfg_err ${strERR}; continue; }
+		log -e "${PF}creating Filter: dev=${dev} parent=${parent} proto=${proto} prio=${prio} handle=${handle} dom=${dom} classid=${classid}"
+		tc_add_filter -d ${dev} -p ${parent} -o ${proto} -r ${prio} -h ${handle} -m ${dom} -i ${classid} || cfg_err ${strERR}
+	done
+else
+	log -v 'TC_FILTER' 
+fi
+} # -------------------------------------------------------------------------
+
+enable_traffic_shaping() { # TRAFFIC SHAPING (qdiscs, classes, filters)
+if ((ENABLE_TC_SHAPING == 1)); then
+	log -T "Enabling traffic shaping"
+	tc_create_htb_qdisc
+	tc_create_class
+	tc_create_sfq_qdisc
+	tc_create_filter
+fi
+} # -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# IPTABLES MARKS
+# -------------------------------------------------------------------------
+mark_prio_syn() { # priorize SYN packets
+[[ ${PRIORITIZE_SYN} ]] || {
+	log -v 'PRIORITIZE_SYN'
+	return 0
+}
+local syn_val
+local TEMPLATE_BUILTIN_MARK_PRIO_SYN=(
+"table=mangle"
+"target[0]=MARK"
+"target[1]=RETURN"
+"chain[0]=${BIC_TC_POSTROUTING_EGRESS}"
+"option_list_0[0]=odev"
+"option_list_0[1]=t_mark"
+"always_use_0[0]=proto=tcp"
+"always_use_0[1]=tcp_syn=syn"
+"template_msg='Prioritizing TCP SYN packets'"
+)
+local -a RULEBLOCK_BUILTIN_MARK_PRIO_SYN
+if ((ALL_MANGLE_CHAINS_PRESENT == 0)); then
+	log -W "Kernel version is below 2.4.18, marks will be set in OUTPUT chain"
+	TEMPLATE_BUILTIN_MARK_PRIO_SYN[3]="chain[0]=OUTPUT"
+fi
+for syn_val in ${PRIORITIZE_SYN}; do
+	case "${syn_val}" in
+		+([[:graph:]]):+([[:digit:]]))
+			set -- ${syn_val//:/ }
+			RULEBLOCK_BUILTIN_MARK_PRIO_SYN[${#RULEBLOCK_BUILTIN_MARK_PRIO_SYN[@]}]="${1} ${2}"
+		;;
+		(*) log -i "${syn_val}" 'PRIORITIZE_SYN'
+			raise_cfg_err_count
+	esac
+done
+process_ipt_ruleblock TEMPLATE_BUILTIN_MARK_PRIO_SYN RULEBLOCK_BUILTIN_MARK_PRIO_SYN
+} # -------------------------------------------------------------------------
+
+mark_out_bulk() { # put rest of OUTPUT traffic into bulk qdisc
+[[ ${OUTPUT_BULK} ]] || {
+	log -u 'OUTPUT_BULK'
+	return 0
+}
+local opb
+local TEMPLATE_BUILTIN_MARK_OUT_BULK=(
+"table=mangle"
+"target[0]=MARK"
+"target[1]=RETURN"
+"chain[0]=${BIC_TC_OUTPUT}"
+"option_list_0[0]=odev"
+"option_list_0[1]=t_mark"
+"template_msg='Marking rest of OUTPUT traffic for bulk qdisc'"
+"mandatory_vars[0]=odev,t_mark"
+)
+local -a RULEBLOCK_BUILTIN_MARK_OUT_BULK
+for opb in ${OUTPUT_BULK}; do
+	set -- ${opb//:/ }
+	RULEBLOCK_BUILTIN_MARK_OUT_BULK[${#RULEBLOCK_BUILTIN_MARK_OUT_BULK[@]}]="${1} ${2}"
+done
+process_ipt_ruleblock TEMPLATE_BUILTIN_MARK_OUT_BULK RULEBLOCK_BUILTIN_MARK_OUT_BULK
+} # -------------------------------------------------------------------------
+
+mark_fwd_bulk() { # put rest of forward traffic into bulk qdisc
+[[ ${FORWARD_BULK} ]] || {
+	log -v 'FORWARD_BULK'
+	return 0
+}
+local fwb bifaces fbulk lanif extif
+local TEMPLATE_BUILTIN_MARK_FWD_BULK=(
+"table=mangle"
+"target[0]=MARK"
+"target[1]=RETURN"
+"chain[0]=${BIC_TC_FORWARD_EGRESS}"
+"option_list_0[0]=idev"
+"option_list_0[1]=odev"
+"option_list_0[2]=t_mark"
+"template_msg='Marking remaining FORWARD traffic for BULK qdisc'"
+"mandatory_vars[0]=idev,odev,t_mark"
+)
+local -a RULEBLOCK_BUILTIN_MARK_FWD_BULK
+for fwb in ${FORWARD_BULK}; do
+	set -- ${fwb//:/ }
+#	bifaces=$(IFS=, split_val ${1}) fbulk=${2}
+	bifaces=${1//,/ } fbulk=${2}
+	set -- ${bifaces}
+	lanif=${1} extif=${2}
+	RULEBLOCK_BUILTIN_MARK_FWD_BULK[${#RULEBLOCK_BUILTIN_MARK_FWD_BULK[@]}]="${lanif} ${extif} ${fbulk}"
+done
+process_ipt_ruleblock TEMPLATE_BUILTIN_MARK_FWD_BULK RULEBLOCK_BUILTIN_MARK_FWD_BULK
+} # -------------------------------------------------------------------------
+
+traffic_shaping_marks() { # TRAFFIC SHAPING MARKS
+if [[ ${ENABLE_TC_SHAPING} ]]; then
+	case "${ENABLE_TC_SHAPING}" in
+		0) log -w "Not enabling traffic shaping" ;;
+		1)
+			log -S "Setting Traffic Shaping packet marks"
+			check_prog "${TC}" || {
+				log -E "Traffic shaping marks will not be applied"
+				return 0
+			}
+			[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || create_chain mangle ${BIC_TC_OUTPUT}
+			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || create_chain mangle ${BIC_TC_FORWARD_EGRESS}
+			[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || create_chain mangle ${BIC_TC_POSTROUTING_EGRESS}
+			for rvar in ${TC_MARK_RULES}; do
+				load_rule_file "${rvar}" || return ${?}
+			done
+			[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || add_rule mangle OUTPUT -j ${BIC_TC_OUTPUT}
+			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || add_rule mangle FORWARD -j ${BIC_TC_FORWARD_EGRESS}
+			[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || add_rule mangle POSTROUTING -j ${BIC_TC_POSTROUTING_EGRESS}
+		;;
+		*) log -i "${ENABLE_TC_SHAPING}" 'ENABLE_TC_SHAPING'
+			raise_cfg_err_count
+	esac
+else
+	log -u 'ENABLE_TC_SHAPING'
+	ENABLE_TC_SHAPING=0
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+rm_qdisc() { # remove existing qdiscs
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+for rvar in ${1}; do
+	if [[ $("${TC}" qdisc show dev ${rvar} | lsearch_echo_reverse "pfifo_fast") ]]; then
+		log -e "${PF}removing qdisc for interface: ${rvar}"
+		# add to tc command array
+		TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="qdisc del dev ${rvar} root"
+	else
+		log -N "No qdisc found for interface: \`${rvar}'"
+	fi
+done
+} # -------------------------------------------------------------------------
+
+remove_qdiscs() { # Remove existing QDISCs
+((ENABLE_TC_SHAPING == 1)) || return 0
+log -S "Removing qdiscs"
+case "${MODE}" in 
+	(SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-COMMANDS) : ;;
+	(*) rm_qdisc "${NET_IFLIST}"
+esac
+} # -------------------------------------------------------------------------
+
+load_tc_ruleblocks() {
+((ENABLE_TC_SHAPING == 1)) || return 0
+for rvar in ${TC_RULEBLOCKS}; do
+	load_ruleblock_conf "${rvar}" || return ${?}
+done
+} # -------------------------------------------------------------------------
+
+load_tc_mangle_ruleblocks() {
+((ENABLE_TC_SHAPING == 1)) || return 0
+for rvar in ${TC_MANGLE_RULEBLOCKS}; do
+	load_ruleblock_conf "${rvar}" || return ${?}
+done
+} # -------------------------------------------------------------------------
+

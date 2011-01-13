@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+
+<!-- TRAFFIC CONTROL - MANGLE TABLE RULEBLOCKS -->
+
+<!-- SKELETON
+
+<ip_array_ruleblocks name="ruleblocks" syntax_version="0.1">
+	<ruleblock name="RB_">
+	</ruleblock>
+</ip_array_ruleblocks>
+
+-->
+
+<ruleblock name="RB_TOS_OUT_MAP">
+	<!-- 
+	Purpose: Mark OUTPUT packets based on Type of Service
+	Template options:
+	+ mangle table
+	+ MARK and RETURN target
+	+ OUTPUT chain
+	Resulting ruleblock structure:
+	1: mark value
+	2: type of service
+	3: output device
+	4: source address
+	5: destination address
+	Mandatory options: mark, type of service
+	-->
+</ruleblock>
+
+<ruleblock name="RB_MARK_OUT_IP">
+	<!-- 
+	Purpose: Stateless MARK OUTPUT IP packets
+	Template options:
+	+ mangle table
+	+ MARK and RETURN target
+	+ OUTPUT chain
+	Resulting ruleblock structure:
+	1: mark value
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	Mandatory options: mark
+	-->
+</ruleblock>
+
+<ruleblock name="RB_TOS_FWD_MAP">
+	<!-- 
+	Purpose: Mark FORWARD packets based on Type of Service
+	Template options:
+	+ mangle table
+	+ MARK and RETURN target
+	+ FORWARD chain
+	Resulting ruleblock structure:
+	1: mark value
+	2: type of service
+	3: input device
+	4: output device
+	5: source address
+	6: destination address
+	Mandatory options: mark, type of service
+	-->
+</ruleblock>
+
+<ruleblock name="RB_MARK_FWD_IP">
+	<!-- 
+	Purpose: Stateless FORWARD IP packet marking
+	Template options:
+	+ mangle table
+	+ MARK and RETURN target
+	+ FORWARD chain
+	Resulting ruleblock structure:
+	1: mark value
+	2: input device
+	3: output device
+	4: source address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	Mandatory options: mark
+	-->
+</ruleblock>
+
+<ruleblock name="RB_CLASSIFY_OUT_IP">
+	<!-- 
+	Purpose: Stateless CLASSIFY OUTPUT IP packets
+	Template options:
+	+ mangle table
+	+ CLASSIFY and RETURN target
+	+ OUTPUT chain
+	Resulting ruleblock structure:
+	1: class value = major:minor
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	Mandatory options: class value 
+	-->
+</ruleblock>
+
+</ip_array_root>
+
+

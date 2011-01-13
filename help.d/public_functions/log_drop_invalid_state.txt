@@ -1,0 +1,13 @@
+
+Name:
+	log_drop_invalid_state
+
+Description:
+	Globally log and/or drop packets in invalid state.
+	Configuration variables `LOG_INVALID' and/or `BLOCK_INVALID' must be configured.
+	
+Usage:
+	log_drop_invalid_state
+	
+Example:
+	log_drop_invalid_state

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<!-- RAW TABLE RULEBLOCKS -->
+
+<!-- SKELETON
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+	<ruleblock name="RB_">
+	</ruleblock>
+</ip_array_root>
+
+-->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="RB_DUMMY">
+	<!-- 
+	Purpose: Example ruleblock tag
+	Template options:
+	+ none
+	Resulting ruleblock structure:
+	1: xxx
+	2: yyy
+	3: zzz
+	-->
+</ruleblock>
+
+</ip_array_root>

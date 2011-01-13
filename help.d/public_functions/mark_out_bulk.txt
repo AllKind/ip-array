@@ -1,0 +1,13 @@
+
+Name:
+	mark_out_bulk
+
+Description:
+	Mark (set iptables marks) OUTPUT traffic to be pushed into the bulk qdisc.
+	Requires the `ENABLE_TC_SHAPING', `TC_MARK_RULES' and `OUTPUT_BULK' variables to be configured.
+
+Usage:
+	mark_out_bulk
+	
+Example:
+	mark_out_bulk

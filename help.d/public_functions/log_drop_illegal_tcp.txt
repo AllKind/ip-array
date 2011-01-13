@@ -1,0 +1,13 @@
+
+Name:
+	log_drop_illegal_tcp
+
+Description:
+	Globally LOG and/or DROP illegal TCP packets.
+	Requires the config variables `LOG_ILLEGAL' and/or `BLOCK_ILLEGAL' to be configured
+
+Usage:
+	log_drop_illegal_tcp
+	
+Example:
+	log_drop_illegal_tcp

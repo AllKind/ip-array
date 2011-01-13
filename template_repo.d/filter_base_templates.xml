@@ -1,0 +1,296 @@
+<?xml version="1.0"?>
+
+<!-- BASE FILTER TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="0.1">
+
+	<!-- filter table with different targets - and combinations of them -->
+
+	<template name="BT_FILTER_ACCEPT">
+		<table> filter </table>
+		<target> ACCEPT </target>
+	</template>
+
+	<template name="BT_FILTER_DROP">
+		<table> filter </table>
+		<target> DROP </target>
+	</template>
+
+	<template name="BT_FILTER_REJECT">
+		<table> filter </table>
+		<target> REJECT </target>
+	</template>
+
+	<template name="BT_FILTER_LOG">
+		<table> filter </table>
+		<target> LOG </target>
+	</template>
+
+	<template name="BT_FILTER_TARPIT">
+		<table> filter </table>
+		<target> TARPIT </target>
+	</template>
+
+	<template name="BT_FILTER_NFQUEUE">
+		<table> filter </table>
+		<target> NFQUEUE </target>
+	</template>
+
+	<template name="BT_FILTER_LOG_ACCEPT">
+		<table> filter </table>
+		<target> LOG ACCEPT </target>
+	</template>
+
+	<template name="BT_FILTER_LOG_DROP">
+		<table> filter </table>
+		<target> LOG DROP </target>
+	</template>
+
+	<template name="BT_FILTER_LOG_REJECT">
+		<table> filter </table>
+		<target> LOG REJECT </target>
+	</template>
+
+	<template name="BT_FILTER_LOG_TARPIT">
+		<table> filter </table>
+		<target> LOG TARPIT </target>
+	</template>
+
+	<!-- accept for INPUT, OUTPUT and FORWARD chain -->
+
+	<template name="BT_ACCEPT_INPUT">
+		<load_template> BT_FILTER_ACCEPT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_ACCEPT_OUTPUT">
+		<load_template> BT_FILTER_ACCEPT </load_template>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_ACCEPT_FORWARD">
+		<load_template> BT_FILTER_ACCEPT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<template name="BT_FILTER_ACCEPT_FORWARD_REVERSE">
+		<load_template> BT_ACCEPT_FORWARD </load_template>
+		<reverse_mode> reverse </reverse_mode>
+	</template>
+
+	<!-- drop for INPUT, OUTPUT and FORWARD chain -->
+
+	<template name="BT_DROP_INPUT">
+		<load_template> BT_FILTER_DROP </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_DROP_OUTPUT">
+		<load_template> BT_FILTER_DROP </load_template>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_DROP_FORWARD">
+		<load_template> BT_FILTER_DROP </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- log for INPUT, OUTPUT and FORWARD chain -->
+
+	<template name="BT_LOG_INPUT">
+		<load_template> BT_FILTER_LOG </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_LOG_OUTPUT">
+		<load_template> BT_FILTER_LOG </load_template>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_LOG_FORWARD">
+		<load_template> BT_FILTER_LOG </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- reject for INPUT and FORWARD chain -->
+
+	<template name="BT_REJECT_INPUT">
+		<load_template> BT_FILTER_REJECT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_REJECT_FORWARD">
+		<load_template> BT_FILTER_REJECT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- tarpit for INPUT and FORWARD chain -->
+
+	<template name="BT_TARPIT_INPUT">
+		<load_template> BT_FILTER_TARPIT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_TARPIT_FORWARD">
+		<load_template> BT_FILTER_TARPIT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- log and accept for INPUT, OUTPUT and FORWARD chain -->
+
+	<template name="BT_LOG_ACCEPT_INPUT">
+		<load_template> BT_FILTER_LOG_ACCEPT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_LOG_ACCEPT_OUTPUT">
+		<load_template> BT_FILTER_LOG_ACCEPT </load_template>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_LOG_ACCEPT_FORWARD">
+		<load_template> BT_FILTER_LOG_ACCEPT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- log and drop for INPUT, OUTPUT and FORWARD chain -->
+
+	<template name="BT_LOG_DROP_INPUT">
+		<load_template> BT_FILTER_LOG_DROP </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_LOG_DROP_OUTPUT">
+		<load_template> BT_FILTER_LOG_DROP </load_template>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_LOG_DROP_FORWARD">
+		<load_template> BT_FILTER_LOG_DROP </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- log and reject for INPUT and FORWARD chain -->
+
+	<template name="BT_LOG_REJECT_INPUT">
+		<load_template> BT_FILTER_LOG_REJECT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_LOG_REJECT_FORWARD">
+		<load_template> BT_FILTER_LOG_REJECT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- log and tarpit for INPUT and FORWARD chain -->
+
+	<template name="BT_LOG_TARPIT_INPUT">
+		<load_template> BT_FILTER_LOG_TARPIT </load_template>
+		<chain> INPUT </chain>
+	</template>
+
+	<template name="BT_LOG_TARPIT_FORWARD">
+		<load_template> BT_FILTER_LOG_TARPIT </load_template>
+		<chain> FORWARD </chain>
+	</template>
+
+	<!-- generic option sets for ingress rules -->
+
+	<template name="BT_FILTER_BASE_OPTION_SET_INGRESS">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_INGRESS </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_INGRESS_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_INGRESS_STATE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_INGRESS_WITH_MAC">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_INGRESS_WITH_MAC </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_INGRESS_WITH_MAC_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_WITH_MAC_STATE_INGRESS </load_template>
+	</template>
+
+	<!-- generic option sets for egress rules -->
+
+	<template name="BT_FILTER_BASE_OPTION_SET_EGRESS">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_EGRESS </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_EGRESS_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_EGRESS_STATE </load_template>
+	</template>
+
+	<!-- generic option sets for forwarding rules -->
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD_STATE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_WITH_MAC">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_WITH_MAC_FORWARD </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_WITH_MAC_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_WITH_MAC_STATE_FORWARD </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD_REVERSE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD_REVERSE_STATE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC_STATE </load_template>
+	</template>
+
+	<!-- generic option sets for local reversed rules -->
+
+	<template name="BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_LOCAL_REVERSE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_LOCAL_REVERSE_STATE </load_template>
+	</template>
+
+	<template name="BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC_STATE">
+		<table> filter </table>
+		<load_template> GT_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC_STATE </load_template>
+	</template>
+
+</ip_array_root>
+

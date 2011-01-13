@@ -1,0 +1,214 @@
+# -------------------------------------------------------------------------
+			README for IP-ARRAY
+# -------------------------------------------------------------------------
+
+1: What is IP-Array?
+	IP-Array is an iptables firewall script written in bash.
+
+2: Where to get it?
+	IP-Array is currently hosted at sf.net.
+	The project page is at: http://sourceforge.net/projects/ip-array/.
+	It's homepage is (once built) at: http://ip-array.sourceforge.net/.
+
+3: Why the name 'IP-Array'?
+	IP-Array functionality is built around utilizing 'arrays', hence the name.
+
+4: Why a bash script?
+	- I wanted to learn bash. Usually I choose myself a project and then learn
+		while developing - same here.
+	- Bash should be installed on every common linux distribution, hence no need
+		for any additional packages.
+	- You could say 'there are already a lot of iptables frontends available':
+		Well, actually there are a couple of public bash firewall scripts
+		available. Lots of them are quite unmaintained, or did not quite do
+		what i wanted. Of course there are also accurate and good scripts
+		around, so it's up to the user to decide.
+		Also if you don't want to use any external program for whatever reason,
+		IP-Array might become useful.
+
+5: Goals
+	An easy to configure firewall
+	- still leaving the user the possiblillity to configure detailed rules
+	- which creates a thight ruleset
+	- which is easy to customize, extendable, scriptable
+	- with senseful 'presets' for common situations
+	
+6: Script Features
+	IP-Array is meant for small to mid sized networks.
+	It does not support all features of iptables and patches.
+
+	- Multiple LANs.
+	- VPN (ipsec).
+	- Multiple external interfaces.
+	- Multiple DMZs.
+	- Traffic shaping.
+	- Logging functionality.
+	- MAC address matching.
+	- Easy and fast to configure through one main config and one rule file.
+	- Muliple verbose modi with(out) logging to syslog.
+	- Coloured output (can be disabled).
+	- User definable message colours.
+	- Different startup logic according to command line parameter(s).
+	- Test mode to test new configurations.
+	- Creates tight stateful rules, always using both interfaces, when forwarding.
+	- Various SysCtl settings.
+	- Various autoconfig presets for DNS, FTP, SMTP, NTP, ...
+	- The ability to save the generated iptabes and/or tc rules to a file.
+	- and more ...
+	
+7: Installation
+	Please read the 'INSTALL' document.
+
+8: Configuration
+	All configuration files are in the 'config' folder.
+	'global':
+		holds global variables (i.e. priviledged ports definition).
+	'local':
+		holds local variables (i.e. local network configuration).
+	'aliases':
+		holds variables defined by the user (useful for adding
+		entries to the rules.cfg).
+	'fw.cfg':
+		main configuration file.
+	'rules.cfg':
+		rules configuration file.
+	'vpn':
+		holds the vpn data.
+	
+	For details please stick to the comments in the example config files.
+
+9: Startup Logic (Init script startup parameters)
+	start:
+	If the init script is started with the parameter 'start', all iptables rules
+	get applied immediately after their creation. This makes all rules available
+	as soon as possible, which should be the goal, if the firewall gets activated
+	for the first time after system start.
+	Be aware, that using this parameter in a remote session could interrupt your
+	connection!
+	This behaviour does not apply if you set IP-Array (in the 'parameters' config
+	file) to use iptables-restore to apply the previously saved ruleset (which is
+	the fastest possible way to load the firewall).
+	In case the saved ruleset does not exist, IP-Array will load itself normally.
+
+	restart:
+	All iptables rules get cached into an array and are applied after all rules
+	have been created (read from the config file and processed), immediately after
+	the the old tables are flushed. This minimizes the time period, where the
+	firewall is not configured properly, because it's still busy reading the rules.
+
+	test:
+	All config settings are taken from the config files inside the 'test' folder.
+	All other behaviour is the same as using the 'restart' parameter.  
+	
+	stop:
+	All tables and chains get flushed, no firewalling is active any more.
+
+	open:
+	All tables and chains except the NAT rules get flushed,
+	no firewalling is active any more.
+
+	lockdown:
+	All rules get deleted and all policies are set to DROP. Only loopback
+	communictation will be allowed, if 'ALLOW_LOOPBACK' is 1.
+
+	dry-run:
+	All rules get processed and validated, but no commands will be applied.
+
+	tc-start:
+	Traffic shaping (iptables mangle table marks and tc qdiscs, classes, filters)
+	swill be enabled.
+
+	tc-stop:
+	Traffic shaping will be disabled.
+
+	save:
+	The currently applied ruleset will be saved using 'iptables-save'.
+
+	restore:
+	The previously saved ruleset will be restored using 'iptables-restore'.
+
+	save-commands:
+	If the init script is started using the 'save-commands' parameter, the ruleset
+	containing the iptables, tc and sysctl commands will be saved to a file.
+
+	save-iptables-commands:
+	The ruleset containing the iptables commands will be saved to a file.
+
+	save-tc-commands:
+	The ruleset containing the tc commands will be saved to a file.
+
+10: Program logic
+	Cross interface chains:
+	   IP-Array creates chains between every network interface configured in
+	   'NET_INTERFACES'. Means if you define two interfaces i.e: eth0 and eth1,
+	   IP-Array will create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'.
+	   And so on for every additional interface. This is done for the filter
+	   and for the mangle table.
+	   The FORWARD chain then is filled with jump entries, seeding out the
+	   cross-interface traffic to the appropriate chain. Means every packet
+	   entering the FORWARD chain will end up in one of those chains created by
+	   IP-Array. This should minimize the amount of rules to pass before
+	   reaching the matching rule.
+	   IP-Array always uses those cross-interface chains when it applies rules
+	   in the FORWARD chain. In case an interface alias i.e: 'eth+', or an inverted
+	   interface value i.e: '!eth0' is used, the target chain will be FORWARD,
+	   instead of the cross-interface chains.
+	INPUT / OUTPUT interface chains:
+	   Just like with the cross-interface chains, INPUT and OUTPUT packets are
+	   also classified by interface. For each network interface configured,
+	   INPUT and OUTPUT chains will be created. For example if one interface
+	   named 'eth0' is present, the chains 'INPUT_eth0', 'OUTPUT_eth0' and 
+	   the according jump entries will be created and automatically.
+
+	Rules validation:
+	   Every rule set by the user in the rules config file, will be validated for
+	   sane entries. For example IP addresses, interface names, port and protocol
+	   specifications are checked for valid values.
+	   If a bad value is detected, according messages will be displayed and the
+	   rule entry will be ignored.
+	
+	Rule files:
+	   IP-Array comes with some predefined rule files inside the 'rule' folder.
+	   Although they mostly don't contain lots of code, they are kept in order
+	   to provide the user an easy way to place his own scripts. Either by
+	   sourcing them from one of the predifined ones, or writing the code directly
+	   into them, or by adding their own files to the rules folder and
+	   load them by configuring the 'RULELIST' variable.
+
+11: Extend
+	If you add your own code to IP-Array, it's recommended to use the
+	'add_rule()' function to add rules to your firewall. This is due to
+	IP-Arrays startup logic (start differs from restart).
+	The syntax is the same as you would normaly use iptables, just replace
+	'iptables' with 'add_rule', instead of '-t <table>' you should use
+	'filter' for filter, 'mangle' for mangle, 'nat' for nat table and 'raw'
+	for raw table (these are the table supported by IP-Array).
+	In short: remove the '-t' parameter.
+	Also omit the '-A' parameter infront of the chain name.
+	Example:
+	'iptables -t filter -A INPUT -p icmp -j DROP' would become
+	'add_rule filter "INPUT -p icmp -j DROP"'.
+	Quotation is not necessary, though recommended.
+
+12: System Requirements
+	Linux with kernel 2.4+
+	I'm not sure which would be the lowest usable version of iptables.
+	I currently use iptables v.1.3.1 for developing.
+	Bash version 3.0 or higher.
+	GNU utils gawk, grep, sed and the other binaries listed in fw.cfg.
+
+13: Help
+	The preferred way to get support on IP-Array, is to open a forum post
+	on the project page.
+	Alternatively you could send a mail at your own risk to AllKind@BonBon.net.
+
+14: Bugs
+	Please report bugs either via a forum post on the project homepage,
+	or send email to AllKind@BonBon.net.
+
+15: Feature requests
+	In case you wish to have a feature incorporated into IP-Array, see section 'Help'.
+
+16: Co-Development
+	If you like IP-Array and want to help developing, see 'Help' section
+	for ways to get in contact.

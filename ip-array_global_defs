@@ -1,0 +1,610 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2011  AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                   IP-ARRAY GLOBAL DEFINITIONS
+#
+# ------------------------------------------------------------------------- #
+
+# Colour defines with ANSI codes
+declare -r COL_ESC='\033['	# Escape colored outupt
+declare -r COL_TERM="${COL_ESC}m"	# Terminate colored outupt
+declare -r FONT_BOLD=';1m'
+declare -r FONT_NORMAL='m'
+
+declare -r BLACK="${COL_ESC};30"
+declare -r BLUE="${COL_ESC};34"
+declare -r CYAN="${COL_ESC};36"
+declare -r GREEN="${COL_ESC};32"
+declare -r MAGENTA="${COL_ESC};35"
+declare -r RED="${COL_ESC};31"
+declare -r WHITE="${COL_ESC};37"
+declare -r YELLOW="${COL_ESC};33"
+
+# System
+declare -r IP_TABLES_NAMES="/proc/net/ip_tables_names"	# path to index of iptables table names
+declare -r PROC_SNET="/proc/sys/net"	# path to sys/net sysctl config
+declare -r PROC_IPV4="${PROC_SNET}/ipv4"	# path to ipv4 sysctl config
+declare -r PROC_NF="${PROC_SNET}/netfilter"
+declare -r PROC_NF_OLD="${PROC_IPV4}/netfilter"
+declare -r MODS_ALIAS_FILE="modules.alias"
+
+# Chains (BIC = built in chain)
+declare -r BIC_TEST_CHAIN="${ME}_TEST_CHAIN"   		# testing chain
+declare -r BIC_BAD_TCP_PACKETS="BAD_TCP_PACKETS"	# name of the bad tcp packets chain
+declare -r BIC_SCANS_CHAIN="TCP_SCANS"			# name of the scans handling chain
+declare -r BIC_NAMESERVER_CHAIN="NAMESERVERS"		# name of the isp/root nameserver handling chain
+declare -r BIC_LOCAL_NAMESERVERS="LOCAL_NAMESERVERS"	# name of the local isp nameserver handling chain
+declare -r BIC_SMTP_SRV_CHAIN="ISP_SMTP_SERVERS"	# name of the isp smtp server handling chain
+declare -r BIC_NTP_SVR_CHAIN="NTP_SERVERS"		# name of the ntp server handling chain
+declare -r BIC_GLOBAL_BROADCASTS_CHAIN="GLOBAL_BROADCASTS"	# name of the broadcasts handling chain
+declare -r BIC_GLOBAL_INVALID_STATE="GLOBAL_INVALID_STATE"	# name of the invalid state handling chain
+declare -r ipsec_chain="IPSEC"             	# name of the ipsec chain
+
+declare -r BIC_TC_OUTPUT="OUTPUT"		# tc output
+declare -r BIC_TC_FORWARD_EGRESS="FORWARD"		# tc forward
+declare -r BIC_TC_POSTROUTING_EGRESS="POSTROUTING"		# tc postrouting
+
+# Misc Variables
+declare -ir GLOBAL_READ_TIMEOUT=30		# number of seconds the read builtin waits for input
+declare -r IF_CON="_to_"
+declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
+declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
+declare -r DEFAULT_RULESETFILE="ip-array_commands.bash"	# default file to save iptables commands to
+
+# Various iptables aliases
+declare -r stE="ESTABLISHED"
+declare -r stER="ESTABLISHED,RELATED"
+declare -r stI="INVALID"
+declare -r stN="NEW"
+declare -r stNE="NEW,ESTABLISHED"
+declare -r stNER="NEW,ESTABLISHED,RELATED"
+declare -r stR="RELATED"
+declare -r stU="UNTRACKED"
+declare -r stateE="-m state --state ESTABLISHED"
+declare -r stateR="-m state --state RELATED"
+declare -r stateER="-m state --state ESTABLISHED,RELATED"
+declare -r stateNE="-m state --state NEW,ESTABLISHED"
+declare -r stateNER="-m state --state NEW,ESTABLISHED,RELATED"
+#declare -r stateN="-m state --state NEW"
+#declare -r stateI="-m state --state INVALID"
+#declare -r stateU="-m state --state UNTRACKED"
+
+# Messages
+declare -r PF=".. "				# prefix for stdout messages
+declare -r ADDMSG="Adding"		 # display message, when adding rules
+
+# Port definitions
+#declare -r PRIV_PORTS="0:1023"
+declare -r UNPRIV_PORTS="1024:65535"
+
+# Address definitions
+declare -r BCAST_DEST="255.255.255.255"
+
+# valid icmp type names from iptables -p icmp -h
+declare -r VALID_ICMP_TYPES="\
+any
+echo-reply pong
+destination-unreachable
+network-unreachable
+host-unreachable
+protocol-unreachable
+port-unreachable
+fragmentation-needed
+source-route-failed
+network-unknown
+host-unknown
+network-prohibited
+host-prohibited
+TOS-network-unreachable
+TOS-host-unreachable
+communication-prohibited
+host-precedence-violation
+precedence-cutoff
+source-quench redirect
+network-redirect
+host-redirect
+TOS-network-redirect
+TOS-host-redirect
+echo-request ping
+router-advertisement
+router-solicitation
+time-exceeded
+ttl-exceeded
+ttl-zero-during-transit
+ttl-zero-during-reassembly
+parameter-problem
+ip-header-bad
+required-option-missing
+timestamp-request
+timestamp-reply
+address-mask-request
+address-mask-reply"
+
+# Array to hold the iptables targets & their syntax
+# Syntax: mandatory 0/1 | target-name | table | chain | command
+IPARRAY_TARGETS=(
+"1 LOG filter -j LOG"
+"0 NFLOG filter -j NFLOG"
+"0 ULOG filter -j ULOG"
+"0 QUEUE filter -s 172.32.254.255 -j QUEUE"
+"0 NFQUEUE filter -s 172.32.254.255 -j NFQUEUE --queue-num 65535"
+"0 REJECT filter -j REJECT"
+"0 DNAT nat -s 172.32.254.254 -j DNAT --to-destination 172.31.254.254"
+"0 SNAT nat -d 172.32.254.254 -j SNAT --to-source 172.31.254.254"
+"0 RAWDNAT raw -s 172.32.254.254 -j RAWDNAT --to-destination 172.31.254.254"
+"0 RAWSNAT rawpost -d 172.32.254.254 -j RAWSNAT --to-source 172.31.254.254"
+"0 NETMAP nat -d 172.32.254.0/24 -j NETMAP --to 172.32.253.0/24"
+"0 REDIRECT nat -s 172.32.254.255 -j REDIRECT"
+"0 MASQUERADE nat -s 172.32.254.255 -j MASQUERADE"
+"0 MARK mangle -s 172.32.254.255 -j MARK --set-mark 1234"
+"0 SECMARK mangle -s 172.32.254.255 -j SECMARK --selctx system_r:unconfined_t:s0"
+"0 CONNMARK mangle -s 172.32.254.255 -j CONNMARK --set-mark 1234"
+"0 CONNSECMARK mangle -s 172.32.254.255 -j CONNSECMARK --save"
+"0 CLASSIFY mangle -s 172.32.254.255 -j CLASSIFY --set-class 123:123"
+"0 ECN mangle -s 172.32.254.255 -p tcp -j ECN --ecn-tcp-remove"
+"0 DSCP mangle -s 172.32.254.255 -j DSCP --set-dscp 0"
+"0 SET filter -j SET --add-set ${ME}_TEST_SET src"
+"0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
+"0 TTL mangle -j TTL --ttl-inc 1"
+"0 TCPMSS mangle -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+"0 TPROXY mangle -p tcp --dport 666 -j TPROXY --on-port 666"
+"0 TCPOPTSTRIP mangle -p tcp -j TCPOPTSTRIP --strip-options md5"
+)
+
+# Array to hold the iptables modules & their syntax
+# Syntax: mandatory 0/1 | module-name | var-name | table | chain | command
+IPARRAY_MODULES=(
+"1 state filter -m state --state ESTABLISHED -j ACCEPT"
+"0 conntrack filter -m conntrack --ctstate ESTABLISHED -j ACCEPT"
+"0 mac filter -m mac --mac-source AA:BB:CC:DD:EE:FF -j ACCEPT"
+"0 limit filter -f -m limit --limit 5/s -j LOG"
+"0 multiport filter -p tcp -m multiport --ports 65333,65335 -j ACCEPT"
+"0 iprange filter -m iprange --src-range 127.127.127.1-127.127.127.2 -j ACCEPT"
+"0 ah filter -p 51 -m ah --ahspi 1 -j ACCEPT"
+"0 esp filter -p 50 -m esp --espspi 1 -j ACCEPT"
+"0 helper filter -m helper --helper ftp -j ACCEPT"
+"0 length filter -m length --length 32 -j ACCEPT"
+"0 owner filter -m owner --uid-owner 666 -j ACCEPT"
+"0 addrtype filter -m addrtype --dst-type BROADCAST -j DROP"
+"0 pkttype filter -m pkttype --pkt-type broadcast -j DROP"
+"0 socket filter -m socket -j ACCEPT"
+"0 connbytes filter -p tcp -m connbytes --connbytes 1:10 --connbytes-dir both --connbytes-mode packets -j RETURN"
+"0 connlimit filter -m connlimit --connlimit-above 1 -j DROP"
+"0 dscp filter -m dscp --dscp 0 -j ACCEPT"
+"0 set filter -m set --match-set ${ME}_TEST_SET src -j ACCEPT"
+"0 tos filter -m tos --tos Minimize-Delay -j ACCEPT"
+"0 mark filter -m mark --mark 1234 -j ACCEPT"
+"0 connmark filter -m connmark --mark 1234 -j ACCEPT"
+"0 comment filter -m comment --comment foobar"
+"0 ttl filter -m ttl --ttl-eq 123 -j ACCEPT"
+)
+
+# Array with match extensions, which are available in all tables
+GLOBAL_MATCH_LIST=(
+FRAGMENT
+IDEV
+ODEV
+MAC
+SRC
+DST
+PROTO
+SPORT
+DPORT
+TCP_FLAGS
+TCP_SYN
+TCP_OPTION
+ICMP_TYPE
+M_DSCP
+TOS
+CONNBYTES
+AHSPI
+ESPSPI
+ADDRTYPE
+PKTTYPE
+OWNER
+LENGTH
+SOCKET
+M_MARK
+M_TTL
+M_SET
+LIMIT
+LIMIT_BURST
+COMMENT
+)
+
+# Array with targets valid in all tables
+# format: target-name target-option [...]
+GLOBAL_TARGET_LIST=(
+"LOG LOG_LEVEL LOG_PREFIX LOG_OPTIONS"
+"ULOG ULOG_GROUP ULOG_PREFIX ULOG_RANGE ULOG_THRESH"
+"NFLOG NFLOG_GROUP NFLOG_PREFIX NFLOG_RANGE NFLOG_THRESH"
+"MARK SET_MARK"
+"NFQUEUE NFQUEUE"
+"SET SET_SET"
+)
+
+# Array with match extensions, which are only valid in certain tables
+# format: table-name[,...] match-name[,...]
+TABLE_DEPEND_MATCH_LIST=(
+"filter,security CTSTATE,CTPROTO,CTORIGSRC,CTORIGDST,CTREPLSRC,CTREPLDST,CTORIGSRCPORT,CTORIGDSTPORT,CTREPLSRCPORT,CTREPLDSTPORT,CTSTATUS,CTEXPIRE,CTDIR,STATE,M_CONNMARK,CONNLIMIT,HELPER"
+"mangle CTSTATE,CTPROTO,CTORIGSRC,CTORIGDST,CTREPLSRC,CTREPLDST,CTORIGSRCPORT,CTORIGDSTPORT,CTREPLSRCPORT,CTREPLDSTPORT,CTSTATUS,CTEXPIRE,CTDIR,STATE,M_CONNMARK,HELPER"
+"nat M_CONNMARK"
+#"raw,rawpost M_MARK"
+)
+
+# Array with table dependant targets and their option(s)
+# format: table-name[,...] target-name:target-option[,...] [...]
+TABLE_DEPEND_TARGET_LIST=(
+"filter REJECT:REJECT_TYPE"
+"mangle CLASSIFY:SET_CLASS CONNMARK:SET_CONNMARK DSCP:SET_DSCP ECN:REM_ECN SECMARK:SET_SECMARK CONNSECMARK:SET_CONNSECMARK TCPOPTSTRIP:TCPOPTSTRIP \
+TCPMSS:SET_TCPMSS TOS:SET_TOS TPROXY:TPROXY_OPT TTL:SET_TTL"
+"nat DNAT:NAT_IP,NAT_PORT,NAT_OPTION SNAT:NAT_IP,NAT_PORT,NAT_OPTION NETMAP:NAT_IP MASQUERADE:NAT_PORT,NAT_OPTION REDIRECT:NAT_PORT,NAT_OPTION"
+"raw,rawpost RAWSNAT:NAT_IP RAWDNAT:NAT_IP"
+"security SECMARK:SET_SECMARK CONNSECMARK:SET_CONNSECMARK"
+)
+
+# Array to hold the portscan names and their tcp flags
+# Format: scan-name | tcp-flags
+PORTSCAN_ARRRAY=(
+"Stealth_XMAS ALL FIN,URG,PSH"
+"Stealth_XMAS_PSH ALL SYN,RST,ACK,FIN,URG"
+"Stealth_XMAS_ALL ALL ALL"
+"Stealth_FIN ALL FIN"
+"Stealth_SYN_RST SYN,RST SYN,RST"
+"Stealth_SYN_FIN SYN,FIN SYN,FIN"
+"Stealth_Null ALL NONE"
+)
+
+# Message colour array for title, subtitle, info, warn, error, notice, etc.
+# Format: msg-name | colour (uppercase)
+MSG_COLOR_ARRAY=(
+"COLOR_MSG_MAIN_TITLE MAGENTA"
+"COLOR_MSG_SUBTITLE BLUE"
+"COLOR_MSG_INFO_TITLE CYAN"
+"COLOR_MSG_ERROR RED"
+"COLOR_MSG_WARNING YELLOW"
+"COLOR_MSG_CONFIG_LOAD GREEN"
+"COLOR_MSG_RULE_LOAD YELLOW"
+"COLOR_MSG_NOTICE WHITE"
+)
+
+# Array to hold the global sysctl names and their values.
+# Format: var-name | var-type | path | msg
+SYSCTL_ARRAY=(
+# networking conf/
+"PROC_ARP_FILTER iface_bool ${PROC_IPV4}/conf arp_filter arp filter"
+"PROC_ICMP_REDIRECTS iface_bool ${PROC_IPV4}/conf accept_redirects icmp redirects"
+"PROC_LOG_MARTIANS iface_bool ${PROC_IPV4}/conf log_martians logging of martians"
+"PROC_MC_FORWARDING iface_bool ${PROC_IPV4}/conf mc_forwarding mc forwarding"
+"PROC_PROXY_ARP iface_bool ${PROC_IPV4}/conf proxy_arp proxy arp"
+"PROC_RP_FILTER iface_bool ${PROC_IPV4}/conf rp_filter spoof protection"
+"PROC_SECURE_REDIRECTS iface_bool ${PROC_IPV4}/conf secure_redirects secure redirects"
+"PROC_SEND_REDIRECTS iface_bool ${PROC_IPV4}/conf send_redirects send redirects"
+"PROC_SHARED_MEDIA iface_bool ${PROC_IPV4}/conf shared_media shared media"
+"PROC_SOURCE_ROUTE iface_bool ${PROC_IPV4}/conf accept_source_route source route"
+# ip
+"PROC_IPDYNADDR bool ${PROC_IPV4}/ip_dynaddr ip_dynaddr"
+"PROC_IP_DEFAULT_TTL int ${PROC_IPV4}/ip_default_ttl default TTL"
+"PROC_IP_FORWARD bool ${PROC_IPV4}/ip_forward ip forwarding"
+"PROC_IPFRAG_TIME int ${PROC_IPV4}/ipfrag_time fragments timeout"
+"PROC_IPFRAG_HIGH_THRESH int ${PROC_IPV4}/ipfrag_high_thresh fragments high thresh"
+"PROC_IPFRAG_LOW_THRESH int ${PROC_IPV4}/ipfrag_low_thresh fragments low thresh"
+"PROC_IP_NONLOCAL_BIND bool ${PROC_IPV4}/ip_nonlocal_bind binding non local ip addresses"
+"PROC_IP_NO_PMTO_DISC bool ${PROC_IPV4}/ip_no_pmtu_disc no PMTU discovery"
+# tcp
+"PROC_TCP_ABC range:0-2 ${PROC_IPV4}/tcp_abc tcp appropriate byte count"
+"PROC_TCP_ABORT_ON_OVERFLOW bool ${PROC_IPV4}/tcp_abort_on_overflow tcp overflow abortion"
+"PROC_TCP_ADV_WIN_SCALE int ${PROC_IPV4}/tcp_adv_win_scale tcp adv win scale"
+"PROC_TCP_APP_WIN int ${PROC_IPV4}/tcp_app_win tcp window application buffer"
+"PROC_TCP_BASE_MSS int ${PROC_IPV4}/tcp_base_mss tcp base mss"
+"PROC_TCP_CONGESTION_CONTROL words ${PROC_IPV4}/tcp_congestion_control tcp congestion control"
+"PROC_TCP_DSACK bool ${PROC_IPV4}/tcp_dsack tcp dsack"
+"PROC_TCP_ECN bool ${PROC_IPV4}/tcp_ecn ECN"
+"PROC_TCP_FACK bool ${PROC_IPV4}/tcp_fack tcp fack"
+"PROC_TCP_FIN_TIMEOUT int ${PROC_IPV4}/tcp_fin_timeout tcp fin timeout"
+"PROC_TCP_FRTO bool ${PROC_IPV4}/tcp_frto tcp F-RTO"
+"PROC_TCP_KEEPALIVE_INT int ${PROC_IPV4}/tcp_keepalive_intvl tcp keepalive interval"
+"PROC_TCP_KEEPALIVE_PROBES int ${PROC_IPV4}/tcp_keepalive_probes tcp keepalive probes"
+"PROC_TCP_KEEPALIVE_TIME int ${PROC_IPV4}/tcp_keepalive_time tcp keepalive time"
+"PROC_TCP_LOW_LATENCY bool ${PROC_IPV4}/tcp_low_latency tcp low latency"
+"PROC_TCP_MAX_ORPHANS int ${PROC_IPV4}/tcp_max_orphans tcp max orphans"
+"PROC_TCP_MAX_SYN_BACKLOG int ${PROC_IPV4}/tcp_max_syn_backlog tcp max syn backlog"
+"PROC_TCP_MAX_TW_BUCKETS int ${PROC_IPV4}/tcp_max_tw_buckets tcp max time wait sockets"
+"PROC_TCP_MEM multi_int ${PROC_IPV4}/tcp_mem tcp memory"
+"PROC_TCP_MODERATE_RCVBUF bool ${PROC_IPV4}/tcp_moderate_rcvbuf tcp moderate rcvbuf"
+"PROC_TCP_MTU_PROBING range:0-2 ${PROC_IPV4}/tcp_mtu_probing tcp mtu probing"
+"PROC_TCP_NO_METRICS_SAVE bool ${PROC_IPV4}/tcp_no_metrics_save saving of tcp metrics"
+"PROC_TCP_ORPHAN_RETRIES int ${PROC_IPV4}/tcp_orphan_retries tcp orphan retries"
+"PROC_TCP_REORDERING int ${PROC_IPV4}/tcp_reordering tcp reordering"
+"PROC_TCP_RETRANS_COLLAPSE bool ${PROC_IPV4}/tcp_retrans_collapse tcp retrans collapse"
+"PROC_TCP_RETRIES1 int ${PROC_IPV4}/tcp_retries1 tcp retries1" # (default: 3, should be 3-100)
+"PROC_TCP_RETRIES2 int ${PROC_IPV4}/tcp_retries2 tcp retries2" # (default: 15, should be 100 as per RFC 1122)
+"PROC_TCP_RFC1337 bool ${PROC_IPV4}/tcp_rfc1337 tcp rfc1337"
+"PROC_TCP_RMEM multi_int ${PROC_IPV4}/tcp_rmem tcp receive memory buffers"
+"PROC_TCP_SACK bool ${PROC_IPV4}/tcp_sack tcp sack"
+"PROC_TCP_SLOW_START_AFTER_IDLE bool ${PROC_IPV4}/tcp_slow_start_after_idle tcp slow start after idle"
+"PROC_TCP_STDURG bool ${PROC_IPV4}/tcp_stdurg tcp stdurg"
+"PROC_TCP_SYNACK_RETRIES int ${PROC_IPV4}/tcp_synack_retries tcp synack retries"
+"PROC_TCP_SYN_COOKIES bool ${PROC_IPV4}/tcp_syncookies syn-cookies"
+"PROC_TCP_SYN_RETRIES int ${PROC_IPV4}/tcp_syn_retries tcp syn retries"
+"PROC_TCP_TIMESTAMPS bool ${PROC_IPV4}/tcp_timestamps tcp timestamps"
+"PROC_TCP_TSO_WIN_DIVISOR int ${PROC_IPV4}/tcp_tso_win_divisor tcp tso win divisor"
+"PROC_TCP_TW_RECYCLE bool ${PROC_IPV4}/tcp_tw_recycle tcp time wait recycle"
+"PROC_TCP_TW_REUSE bool ${PROC_IPV4}/tcp_tw_reuse tcp time wait reuse"
+"PROC_TCP_WINDOW_SCALING bool ${PROC_IPV4}/tcp_window_scaling tcp window scaling"
+"PROC_TCP_WORKAROUND_SIGNED_WINDOWS bool ${PROC_IPV4}/tcp_workaround_signed_windows tcp workaround signed windows"
+"PROC_TCP_WMEM multi_int ${PROC_IPV4}/tcp_wmem tcp transmit memory buffers"
+# icmp
+"PROC_ICMP_BROADCASTS bool ${PROC_IPV4}/icmp_echo_ignore_broadcasts icmp broadcasts"
+"PROC_ICMP_ECHO_IGNORE_ALL bool ${PROC_IPV4}/icmp_echo_ignore_all ignore all icmp echo requests"
+"PROC_ICMP_RATELIMIT int ${PROC_IPV4}/icmp_ratelimit icmp rate limit"
+"PROC_ICMP_RATEMASK int ${PROC_IPV4}/icmp_ratemask icmp rate mask"
+"PROC_IGNORE_BOGUS_ICMP bool ${PROC_IPV4}/icmp_ignore_bogus_error_responses bogus icmp errors"
+# inet peer garbage collection
+"PROC_INET_PEER_GC_MAXTIME int ${PROC_IPV4}/inet_peer_gc_maxtime inet peer gc maxtime"
+"PROC_INET_PEER_GC_MINTIME int ${PROC_IPV4}/inet_peer_gc_mintime inet peer gc mintime"
+"PROC_INET_PEER_GC_MAXTTL int ${PROC_IPV4}/inet_peer_maxttl inet peer max ttl"
+"PROC_INET_PEER_GC_MINTTL int ${PROC_IPV4}/inet_peer_minttl inet peer min ttl"
+"PROC_INET_PEER_THRESHOLD int ${PROC_IPV4}/inet_peer_threshold inet peer threshold"
+# netfilter
+"PROC_QUEUELEN int ${PROC_NF_OLD}/ip_queue_maxlen default queuelenght"
+"PROC_CONNTRACK_MAX int ${PROC_IPV4}/ip_conntrack_max|${PROC_NF_OLD}/ip_conntrack_max|${PROC_SNET}/nf_conntrack_max|${PROC_NF}/nf_conntrack_max maximum conntrack entries"
+"PROC_CT_ACCT bool ${PROC_NF}/nf_conntrack_acct conntrack accounting"
+"PROC_CT_EVENTS bool ${PROC_NF}/nf_conntrack_events conntrack events"
+"PROC_CT_EVENTS_RETRY_TIMEOUT int ${PROC_NF}/nf_conntrack_events_retry_timeout conntrack events retry timeout"
+"PROC_CT_EXPECT_MAX int ${PROC_NF}/nf_conntrack_expect_max conntrack max expects"
+"PROC_CT_GENERIC_TIMEOUT int ${PROC_NF_OLD}/ip_conntrack_generic_timeout|${PROC_NF}/nf_conntrack_generic_timeout conntrack generic timeout"
+"PROC_CT_ICMP_TIMEOUT int ${PROC_NF_OLD}/ip_conntrack_icmp_timeout|${PROC_NF}/nf_conntrack_icmp_timeout conntrack icmp timeout"
+"PROC_CT_LOG_INVALID range:0-255 ${PROC_NF_OLD}/ip_conntrack_log_invalid|${PROC_NF}/nf_conntrack_log_invalid conntrack log invalid"
+"PROC_CT_TCP_BE_LIBERAL bool ${PROC_NF_OLD}/ip_conntrack_tcp_be_liberal|${PROC_NF}/nf_conntrack_tcp_be_liberal conntrack tcp be liberal"
+"PROC_CT_TCP_LOOSE bool ${PROC_NF_OLD}/ip_conntrack_tcp_loose|${PROC_NF}/nf_conntrack_tcp_loose conntrack tcp loose"
+"PROC_CT_TCP_MAX_RETRANS int ${PROC_NF_OLD}/ip_conntrack_tcp_max_retrans|${PROC_NF}/nf_conntrack_tcp_max_retrans conntrack tcp max retrans"
+"PROC_CT_TCP_TIMEOUT_CLOSE int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_close|${PROC_NF}/nf_conntrack_tcp_timeout_close conntrack tcp timeout close"
+"PROC_CT_TCP_TIMEOUT_CLOSE_WAIT int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_close_wait|${PROC_NF}/nf_conntrack_tcp_timeout_close_wait conntrack tcp timeout close wait"
+"PROC_CT_TCP_TIMEOUT_ESTABLISHED int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_established|${PROC_NF}/nf_conntrack_tcp_timeout_established conntrack tcp timeout established"
+"PROC_CT_TCP_TIMEOUT_UNACK int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_unacknowledged|${PROC_NF}/nf_conntrack_tcp_timeout_unacknowledged conntrack tcp timeout unacknowledged"
+"PROC_CT_TCP_TIMEOUT_FIN_WAIT int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_fin_wait|${PROC_NF}/nf_conntrack_tcp_timeout_fin_wait conntrack tcp timeout fin wait"
+"PROC_CT_TCP_TIMEOUT_LAST_ACK int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_last_ack|${PROC_NF}/nf_conntrack_tcp_timeout_last_ack conntrack tcp timeout last ack"
+"PROC_CT_TCP_TIMEOUT_MAX_RETRANS int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_max_retrans|${PROC_NF}/nf_conntrack_tcp_timeout_max_retrans conntrack tcp timeout max retrans"
+"PROC_CT_TCP_TIMEOUT_SYN_RECV int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_syn_recv|${PROC_NF}/nf_conntrack_tcp_timeout_syn_recv conntrack tcp timeout syn received"
+"PROC_CT_TCP_TIMEOUT_SYN_SENT int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_syn_sent|${PROC_NF}/nf_conntrack_tcp_timeout_syn_sent conntrack tcp timeout syn sent"
+"PROC_CT_TCP_TIMEOUT_TIME_WAIT int ${PROC_NF_OLD}/ip_conntrack_tcp_timeout_time_wait|${PROC_NF}/nf_conntrack_tcp_timeout_time_wait conntrack tcp timeout time wait"
+"PROC_CT_UDP_TIMEOUT int ${PROC_NF_OLD}/ip_conntrack_udp_timeout|${PROC_NF}/nf_conntrack_udp_timeout conntrack udp timeout"
+"PROC_CT_UDP_TIMEOUT_STREAM int ${PROC_NF_OLD}/ip_conntrack_udp_timeout_stream|${PROC_NF}/nf_conntrack_udp_timeout_stream conntrack udp timeout stream"
+)
+
+# Array of configuration entries, including their type and if they are mandatory or not
+# Format:
+# config-entry-name | type { alnum | alpha | bool | digit | graph | print } | mandatory 0/1 | command
+CONFIG_ENTRY_ARRAY=(
+"NET_INTERFACES print 1"
+# config files
+"CONFIG_FILES print 1 check_str_unique \${CONFIG_FILES}"
+"BASE_TEMPLATES print 0 check_str_unique \${BASE_TEMPLATES}"
+"IPT_FILTER_TEMPLATES print 0 check_str_unique \${IPT_FILTER_TEMPLATES}"
+"IPT_MANGLE_TEMPLATES print 0 check_str_unique \${IPT_MANGLE_TEMPLATES}"
+"IPT_NAT_TEMPLATES print 0 check_str_unique \${IPT_NAT_TEMPLATES}"
+"IPT_RAW_TEMPLATES print 0 check_str_unique \${IPT_RAW_TEMPLATES}"
+"IPT_RAWPOST_TEMPLATES print 0 check_str_unique \${IPT_RAWPOST_TEMPLATES}"
+"FILTER_RULEBLOCKS print 0 check_str_unique \${FILTER_RULEBLOCKS}"
+"MANGLE_RULEBLOCKS print 0 check_str_unique \${MANGLE_RULEBLOCKS}"
+"NAT_RULEBLOCKS print 0 check_str_unique \${NAT_RULEBLOCKS}"
+"RAW_RULEBLOCKS print 0 check_str_unique \${RAW_RULEBLOCKS}"
+"RAWPOST_RULEBLOCKS print 0 check_str_unique \${RAWPOST_RULEBLOCKS}"
+"TC_RULEBLOCKS print 0 check_str_unique \${TC_RULEBLOCKS}"
+"TC_MANGLE_RULEBLOCKS print 0 check_str_unique \${TC_MANGLE_RULEBLOCKS}"
+# modules
+"MODULE_DIR print 1"
+"MODULES_TO_LOAD print 0"
+"MODS_TO_RM print 0"
+# filter
+"ENABLE_FILTER bool 0"
+"FILTER_RULES print 0 check_str_unique \${FILTER_RULES}"
+# nat
+"ENABLE_NAT bool 0"
+"NAT_RULES print 0 check_str_unique \${NAT_RULES}"
+# mangle
+"ENABLE_MANGLE bool 0"
+"MANGLE_RULES print 0 check_str_unique \${MANGLE_RULES}"
+# raw
+"ENABLE_RAW bool 0"
+"ENABLE_RAWPOST bool 0"
+"RAW_RULES print 0 check_str_unique \${RAW_RULES}"
+"RAWPOST_RULES print 0 check_str_unique \${RAWPOST_RULES}"
+# vpn
+"ENABLE_IPSEC bool 0"
+"ALLOW_ALL_BRANCH bool 0"
+"LOCAL_BRANCH graph 0"
+"VPN_MAP print 0"
+"IPSEC_RULES print 0 check_str_unique \${IPSEC_RULES}"
+# traffic shaping
+"ENABLE_TC_SHAPING bool 0"
+"TC_MARK_RULES print 0 check_str_unique \${TC_MARK_RULES}"
+"OUTPUT_BULK print 0 check_str_unique \${OUTPUT_BULK}"
+"FORWARD_BULK print 0 check_str_unique \${FORWARD_BULK}"
+"PRIORITIZE_SYN print 0 check_str_unique \${PRIORITIZE_SYN}"
+# bad packets
+"LOG_INVALID bool 0"
+"BLOCK_INVALID bool 0"
+"LOG_ILLEGAL bool 0"
+"BLOCK_ILLEGAL bool 0"
+# applications
+"LAN_FTP print 0 check_str_unique \${LAN_FTP}"
+"AUTO_PROV_DNS bool 0"
+"AUTO_ISP_SMTP bool 0"
+"ISP_NS print 0"
+"ISP_SMTP print 0"
+"LAN_NS print 0"
+"LOCAL_NS print 0"
+"TIME_SERVERS print 0"
+# restrictions
+"RESTRICT_OUTPUT alnum 0"
+"REST_OUT_DNS_ALLOW bool 0"
+"REST_OUT_NTP_ALLOW bool 0"
+"REST_OUT_LAN_ALLOW print 0 check_str_unique \${REST_OUT_LAN_ALLOW}"
+"REST_ALLOW_RELATED bool 0"
+"REJECT_AUTH print 0 check_str_unique \${REJECT_AUTH}"
+"DROP_NETBIOS print 0 check_str_unique \${DROP_NETBIOS}"
+"DROP_DHCP print 0 check_str_unique \${DROP_DHCP}"
+"DROP_UPNP print 0 check_str_unique \${DROP_UPNP}"
+"DROP_Stealth_XMAS bool 0"
+"DROP_Stealth_XMAS_PSH bool 0"
+"DROP_Stealth_XMAS_ALL bool 0"
+"DROP_Stealth_FIN bool 0"
+"DROP_Stealth_SYN_RST bool 0"
+"DROP_Stealth_SYN_FIN bool 0"
+"DROP_Stealth_Null bool 0"
+# misc
+"EXIT_ON_ERROR bool 1"
+"RULE_PLACEHOLDER graph 0"
+"SCRIPT_MAP print 0"
+# rules
+"REVERSE_INPUT_RULES_REQUIRED bool 0"
+"REVERSE_FOWARD_RULES_REQUIRED bool 0"
+"ADMIN_CONNECTION print 0"
+"ALLOW_LOOPBACK bool 0"
+"KNOWN_TRAFFIC_MAP print 0"
+"POLICY_MAP print 1"
+"FINAL_RULE_MAP print 0"
+# chains
+"JUMP_TREE print 0"
+"JUMP_TREE_CHAINS_CREATE_ALL bool 0"
+"CHAIN_MAP print 0"
+"REMOVE_EMPTY_CHAINS bool 0"
+"REMOVE_UNREF_CHAINS bool 0"
+# logging
+"LOG_PREFIX print 0"
+"GLOBAL_LOGLIMIT graph 0"
+"GLOBAL_BURSTLIMIT digit 0"
+"GLOBAL_LOGLEVL graph 0"
+# sysctl
+# networking conf/
+"PROC_ARP_FILTER print 0 check_str_unique \${PROC_ARP_FILTER}"
+"PROC_ICMP_REDIRECTS print 0 check_str_unique \${PROC_ICMP_REDIRECTS}"
+"PROC_LOG_MARTIANS print 0 check_str_unique \${PROC_LOG_MARTIANS}"
+"PROC_MC_FORWARDING print 0 check_str_unique \${PROC_MC_FORWARDING}"
+"PROC_PROXY_ARP print 0 check_str_unique \${PROC_PROXY_ARP}"
+"PROC_RP_FILTER print 0 check_str_unique \${PROC_RP_FILTER}"
+"PROC_SEND_REDIRECTS print 0 check_str_unique \${PROC_SEND_REDIRECTS}"
+"PROC_SECURE_REDIRECTS print 0 check_str_unique \${PROC_SECURE_REDIRECTS}"
+"PROC_SHARED_MEDIA print 0 check_str_unique \${PROC_SHARED_MEDIA}"
+"PROC_SOURCE_ROUTE print 0 check_str_unique \${PROC_SOURCE_ROUTE}"
+# ip
+"PROC_IPDYNADDR bool 0"
+"PROC_IP_DEFAULT_TTL digit 0"
+"PROC_IP_FORWARD bool 1"
+"PROC_IPFRAG_TIME digit 0"
+"PROC_IPFRAG_HIGH_THRESH digit 0"
+"PROC_IPFRAG_LOW_THRESH digit 0"
+"PROC_IP_NONLOCAL_BIND bool 0"
+"PROC_IP_NO_PMTO_DISC bool 0"
+# tcp
+"PROC_TCP_ABC digit 0"
+"PROC_TCP_ABORT_ON_OVERFLOW bool 0"
+"PROC_TCP_ADV_WIN_SCALE digit 0"
+"PROC_TCP_APP_WIN digit 0"
+"PROC_TCP_BASE_MSS digit 0"
+"PROC_TCP_CONGESTION_CONTROL print 0"
+"PROC_TCP_DSACK bool 0"
+"PROC_TCP_ECN bool 0"
+"PROC_TCP_FACK bool 0"
+"PROC_TCP_FIN_TIMEOUT digit 0"
+"PROC_TCP_FRTO bool 0"
+"PROC_TCP_KEEPALIVE_INT digit 0"
+"PROC_TCP_KEEPALIVE_PROBES digit 0"
+"PROC_TCP_KEEPALIVE_TIME digit 0"
+"PROC_TCP_LOW_LATENCY bool 0"
+"PROC_TCP_MAX_ORPHANS digit 0"
+"PROC_TCP_MAX_SYN_BACKLOG digit 0"
+"PROC_TCP_MAX_TW_BUCKETS digit 0"
+"PROC_TCP_MEM print 0"
+"PROC_TCP_MODERATE_RCVBUF bool 0"
+"PROC_TCP_MTU_PROBING digit 0"
+"PROC_TCP_NO_METRICS_SAVE bool 0"
+"PROC_TCP_ORPHAN_RETRIES digit 0"
+"PROC_TCP_REORDERING digit 0"
+"PROC_TCP_RETRANS_COLLAPSE bool 0"
+"PROC_TCP_RETRIES1 digit 0"
+"PROC_TCP_RETRIES2 digit 0"
+"PROC_TCP_RFC1337 bool 0"
+"PROC_TCP_RMEM print 0"
+"PROC_TCP_SACK bool 0"
+"PROC_TCP_SLOW_START_AFTER_IDLE bool 0"
+"PROC_TCP_STDURG bool 0"
+"PROC_TCP_SYNACK_RETRIES digit 0"
+"PROC_TCP_SYN_COOKIES bool 0"
+"PROC_TCP_SYN_RETRIES digit 0"
+"PROC_TCP_TIMESTAMPS bool 0"
+"PROC_TCP_TSO_WIN_DIVISOR digit 0"
+"PROC_TCP_TW_RECYCLE bool 0"
+"PROC_TCP_TW_REUSE bool 0"
+"PROC_TCP_WINDOW_SCALING bool 0"
+"PROC_TCP_WORKAROUND_SIGNED_WINDOWS bool 0"
+"PROC_TCP_WMEM print 0"
+# inet peer
+"PROC_INET_PEER_GC_MAXTIME digit 0"
+"PROC_INET_PEER_GC_MINTIME digit 0"
+"PROC_INET_PEER_GC_MAXTTL digit 0"
+"PROC_INET_PEER_GC_MINTTL digit 0"
+"PROC_INET_PEER_THRESHOLD digit 0"
+# icmp
+"PROC_IGNORE_BOGUS_ICMP bool 0"
+"PROC_ICMP_BROADCASTS bool 0"
+"PROC_ICMP_RATELIMIT digit 0"
+"PROC_ICMP_RATEMASK digit 0"
+"PROC_ICMP_ECHO_IGNORE_ALL bool 0"
+# netfilter
+"PROC_QUEUELEN digit 0"
+"PROC_CONNTRACK_MAX digit 0"
+"PROC_CT_ACCT bool 0"
+"PROC_CT_EVENTS digit 0"
+"PROC_CT_EVENTS_RETRY_TIMEOUT digit 0"
+"PROC_CT_EXPECT_MAX digit 0"
+"PROC_CT_GENERIC_TIMEOUT digit 0"
+"PROC_CT_ICMP_TIMEOUT digit 0"
+"PROC_CT_LOG_INVALID digit 0"
+"PROC_CT_TCP_BE_LIBERAL bool 0"
+"PROC_CT_TCP_LOOSE bool 0"
+"PROC_CT_TCP_MAX_RETRANS digit 0"
+"PROC_CT_TCP_TIMEOUT_CLOSE digit 0"
+"PROC_CT_TCP_TIMEOUT_CLOSE_WAIT digit 0"
+"PROC_CT_TCP_TIMEOUT_ESTABLISHED digit 0"
+"PROC_CT_TCP_TIMEOUT_FIN_WAIT digit 0"
+"PROC_CT_TCP_TIMEOUT_LAST_ACK digit 0"
+"PROC_CT_TCP_TIMEOUT_MAX_RETRANS digit 0"
+"PROC_CT_TCP_TIMEOUT_SYN_RECV digit 0"
+"PROC_CT_TCP_TIMEOUT_SYN_SENT digit 0"
+"PROC_CT_TCP_TIMEOUT_TIME_WAIT digit 0"
+"PROC_CT_UDP_TIMEOUT digit 0"
+"PROC_CT_UDP_TIMEOUT_STREAM digit 0"
+)
+

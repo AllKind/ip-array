@@ -1,0 +1,13 @@
+
+Name:
+	drop_netbios
+
+Description:
+	Drop NetBios broadcast on certain interfaces.
+	Configuration variable `DROP_NETBIOS' must be configured.
+	
+Usage:
+	drop_netbios
+	
+Example:
+	drop_netbios

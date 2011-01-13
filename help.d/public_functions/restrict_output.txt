@@ -1,0 +1,19 @@
+
+Name:
+	restrict_output
+
+Description:
+	Handle restrictions of the OUTPUT chain (locally generated traffic).
+	Requires the `RESTRICT_OUTPUT' variable to be configured.
+	Other variables for creating additional OUTPUT allow rules are available
+	if `RESTRICT_OUTPUT' is enabled:
+		`REST_OUT_DNS_ALLOW'	- Allow local DNS queries.
+		`REST_OUT_NTP_ALLOW'	- Allow local NTP queries.
+		`REST_OUT_LAN_ALLOW'	- Allow traffic to these LAN(s).
+		`REST_ALLOW_RELATED'	- Use `ESTABLISHED' or `ESTABLISHED,RELATED' to allow back incoming traffic.
+
+Usage:
+	restrict_output
+	
+Example:
+	restrict_output

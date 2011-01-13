@@ -1,0 +1,189 @@
+<?xml version="1.0"?>
+
+<!-- RAW TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="0.1">
+
+	<!-- Ingress Templates -->
+
+	<template name="TEMPLATE_RAW_GENERIC_INGRESS">
+		<!-- 
+		Purpose: Generic raw table ingress (incoming) rules
+		Template options:
+		+ raw table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: target, chain, input device
+		-->
+		<table> raw </table>
+		<template_msg> ${ADDMSG} generic raw table ingress rules </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> GT_BASE_OPTION_SET_INGRESS </load_template>
+	</template>
+
+	<template name="TEMPLATE_RAW_GENERIC_INGRESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic raw table ingress (incoming) rules + mac address in match set
+		Template options:
+		+ raw table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain, input device
+		-->
+		<table> raw </table>
+		<template_msg>
+			${ADDMSG} generic raw table ingress rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> GT_BASE_OPTION_SET_INGRESS_WITH_MAC </load_template>
+	</template>
+
+	<template name="TEMPLATE_RAW_PREROUTING_NOTRACK">
+		<!-- 
+		Purpose: NOTRACK rules in PREROUTING chain
+		Template options:
+		+ raw table
+		+ NOTRACK target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} RAW table NOTRACK rules in PREROUTING chain
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_RAW_NOTRACK_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_RAW_PREROUTING_NOTRACK_WITH_MAC">
+		<!-- 
+		Purpose: NOTRACK rules in PREROUTING chain + mac address in match set
+		Template options:
+		+ raw table
+		+ NOTRACK target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} RAW table NOTRACK rules with source mac option in PREROUTING chain
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_RAW_NOTRACK_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_RAW_PREROUTING_DROP">
+		<!-- 
+		Purpose: DROP rules in PREROUTING chain
+		Template options:
+		+ raw table
+		+ DROP target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} RAW table drop rules in PREROUTING chain
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_RAW_DROP_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_RAW_PREROUTING_DROP_WITH_MAC">
+		<!-- 
+		Purpose: DROP rules in PREROUTING chain + mac address in match set
+		Template options:
+		+ raw table
+		+ DROP target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} RAW table drop rules with source mac option in PREROUTING chain
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_RAW_DROP_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_RAWDNAT_PREROUTING">
+		<!-- 
+		Purpose: RAWDNAT rules in PREROUTING chain
+		Template options:
+		+ raw table
+		+ RAWDNAT target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat ip address
+		Mandatory options: raw nat ip address
+		-->
+		<template_msg> ${ADDMSG} RAWDNAT rules in PREROUTING chain </template_msg>
+		<mandatory_vars> nat_ip </mandatory_vars>
+		<load_template>
+			BT_RAWDNAT_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+		<option_list_0> nat_ip </option_list_0>
+	</template>
+
+</ip_array_root>
+

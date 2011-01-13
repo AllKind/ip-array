@@ -1,0 +1,4344 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2011  AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                        IP-ARRAY MAIN FUNCTIONS
+#
+# ------------------------------------------------------------------------- #
+
+
+color_msg() { # print a couloured message
+[[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
+local msg_redir="${1}" msg_prefix="${2}" msg_col="${3}" msg_format="${4}"
+shift 4
+case "${msg_prefix}" in # set if this message needs a bold prefix
+	(NOTICE|WARNING|ERROR) # these are the known prefixes
+		local msg_prefix="${msg_col}${FONT_BOLD}${msg_prefix}: ${COL_TERM}"
+	;;
+	(NOPREFIX) unset msg_prefix ;;
+	*) err_msg "Illegal parameter \`${msg_prefix}' for function: ${FUNCNAME}()"; return 1 ;;
+esac
+case "${msg_format}" in # set formatting
+	bold) local font_format="${FONT_BOLD}" ;;
+	normal) local font_format="m" ;;
+	*) err_msg "Illegal parameter \`${msg_format}' for function: ${FUNCNAME}()"; return 1 ;;
+esac
+case "${msg_redir}" in # print the coloured message
+	stdout) printf "%b\n" "${msg_prefix}${msg_col}${font_format}${*}${COL_TERM}" ;;
+	stderr) printf "%b\n" "${msg_prefix}${msg_col}${font_format}${*}${COL_TERM}" >&2 ;;
+	*) err_msg "Illegal parameter \`${msg_redir}' for function: ${FUNCNAME}()"; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+no_color_msg() { # print a non couloured message
+[[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
+local msg_redir="${1}" msg_prefix="${2}"
+shift 4
+case "${msg_prefix}" in
+	(NOTICE|WARNING|ERROR) # these are the known prefixes
+		msg_prefix="${msg_prefix}: "
+	;;
+	(NOPREFIX) unset msg_prefix ;;
+	*) err_msg "Illegal parameter \`${msg_prefix}' for function: ${FUNCNAME}()"; return 1 ;;
+esac
+case "${msg_redir}" in # echo uncoloured message
+	stdout) printf "%s\n" "${msg_prefix}${*}" ;;
+#	stderr) printf "%s\n" "${msg_prefix}${*}" >&2 ;;
+	stderr) pr_err "${msg_prefix}${*}" ;;
+	*) err_msg "Illegal parameter \`${msg_redir}' for function: ${FUNCNAME}()"; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+log() { # Logging FUNCTION
+[[ ${2} ]] || { err_msg "2 parameters required for function: ${FUNCNAME}()"; return 1; }
+local log_param="${1}"
+shift
+local log_message="${@//[$'\t']/}"
+case "${log_param}" in
+	-d) log -E "Unable to retrieve interface for network: ${log_message}." ;;
+	-e)
+		((VERBOSE >= 6)) && printf "%s\n" "${log_message}"
+		((SYSLOG_VERBOSE >= 5)) && syslog ${LOG_FACILITY} info "${log_message}"
+	;;
+	-f) log -W "Failed ${log_message}" ;;
+	-i) log -E "Illegal value \`${1}' for \`${2}'." ;;
+	-l) syslog ${LOG_FACILITY} notice "${log_message}" ;;
+	-m) printf "%s\n" "${log_message}"; syslog ${LOG_FACILITY} notice "${log_message}" ;;
+	-o) log -E "Illegal parameter \`${1}' for function: ${2}()." ;;
+	-r) log -E "Array \`${log_message}' has no members." ;;
+	-s) log -E "System is missing the \`${log_message}' match extension." ;;
+	-t) log -E "System is missing the \`${log_message}' target." ;;
+	-u) log -W "\`${log_message}' is unset." ;;
+	-v) log -N "\`${log_message}' is unset." ;;
+	-w)
+		((VERBOSE >= 7)) && printf "%s\n" "${log_message}"
+		((SYSLOG_VERBOSE >= 6)) && syslog ${LOG_FACILITY} info "${log_message}"
+	;;
+	-x) log -E "\`${log_message}' does not exist." ;;
+	-C) # Config file loading
+		((VERBOSE >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_CONFIG_LOAD}" normal ${log_message}
+		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+	;;
+	-E) # Error message
+		((VERBOSE >= 1)) && ${log_msg} stderr ERROR "${COLOR_MSG_ERROR}" normal ${log_message}
+		syslog ${LOG_FACILITY} error "ERROR: ${log_message}"
+	;;
+	-F) log -E "Failed ${log_message}" ;;
+	-I) # Sub-Sub(title) message
+		((VERBOSE >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_INFO_TITLE}" normal ${log_message}
+		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+	;;
+	-N) # Notice
+		((VERBOSE >= 5)) && ${log_msg} stdout NOTICE "${COLOR_MSG_NOTICE}" normal ${log_message}
+		((SYSLOG_VERBOSE >= 4)) && syslog ${LOG_FACILITY} notice "NOTICE: ${log_message}"
+	;;
+	-R) # Rule file loading
+		((VERBOSE  >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_RULE_LOAD}" normal ${log_message}
+		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+	;;
+	-S) # Sub(title) message
+		((VERBOSE >= 3)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_SUBTITLE}" bold ${log_message}
+		((SYSLOG_VERBOSE >= 2)) && syslog ${LOG_FACILITY} notice "${log_message}"
+	;;
+	-T) # Main (header) message
+		((VERBOSE >= 2)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_MAIN_TITLE}" bold ${log_message}
+		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} notice "${log_message}"
+	;;
+	-U) # Unknown error
+		log -E "Unknown error in function \`${1}()'."
+	;;
+	-W) # Warning message
+		((VERBOSE >= 2)) && ${log_msg} stderr WARNING "${COLOR_MSG_WARNING}" normal ${*}
+		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} warning "WARNING: ${log_message}"
+	;;
+	*) err_msg "unknow option \`${log_param}' for function: ${FUNCNAME}()"
+		return 1
+	;;
+esac
+return 0
+} # -------------------------------------------------------------------------
+
+syslog() { # log to syslog using logger utility
+if ((ENABLE_SYSLOG == 1)); then # only log if logging to syslog is enabled
+	[[ ${3} ]] || { err_msg "3 parameters required for function: \`${FUNCNAME}()'"; return 1; }
+	local s_facility="${1}" s_level="${2}"
+	shift 2
+	"${LOGGER}" -p "${s_facility}.${s_level}" -t "${ME}[${PID}]" "${*}" || err_msg "failed logging to syslog: \`${*}'"
+fi
+} # -------------------------------------------------------------------------
+
+reqparm() { # announce parameters missing in functions
+[[ ${2} ]] || { err_msg "2 parameters required for function: \`${FUNCNAME}()'" ; return 1; }
+log -E "${2} parameter(s) required for function: \`${1}'"
+} # -------------------------------------------------------------------------
+
+file_readable() { # check if a file is really readable
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local file="${1}" pv
+read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}" || {
+	log -E "File \`${file}' is not readable."
+	return ${ER_FAIL}
+}
+} # -------------------------------------------------------------------------
+
+proc_file_writable() { # check if a /proc file is really writable
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local file="${1}" pv
+if read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}"; then
+	(printf "%s\n" "${pv}" > "${file}") &>/dev/null
+else
+	return ${ER_FAIL}
+fi
+} # -------------------------------------------------------------------------
+
+check_prog() { # check for mandatory programs
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ -e "${1}" ]] || { log -E "Binary ${1} does not exist"; return ${ER_NOEX}; }
+[[ -x "${1}" ]] || { log -E "Binary ${1} is not executable"; return ${ER_FAIL}; }
+} # -------------------------------------------------------------------------
+
+#set_var() { # set variables to a specific value
+#[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+#eval "${1}"='"${2}"'
+#} # -------------------------------------------------------------------------
+
+set_var() { # set variables to a specific value
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1} = +([[:word:]]) ]] || {
+#	err_msg "\`${1}' is not a valid variable name."
+	log -E "\`${1}' is not a valid variable name."
+	return 1
+}
+#eval "${1}"'="${2}"'
+printf -v "${1}" "${2}"
+} # -------------------------------------------------------------------------
+
+subst_var() { # substitute a variable name to its value
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+printf "%s\n" "${!1}"
+} # -------------------------------------------------------------------------
+
+string_negated() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1:0:1} = '!' ]]
+} # -------------------------------------------------------------------------
+
+remove_negation() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+printf "%s\n" "${1#\!}"
+} # -------------------------------------------------------------------------
+
+demask() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1} = */* ]] && printf "%s\n" "${1%/*}" || printf "%s\n" "${1}"
+} # -------------------------------------------------------------------------
+
+split_val() { # split separator separated values and echo the result
+#set -- ${@}
+local str
+for str in ${@}; do
+	printf "%s\n" "${str}"
+done
+} # -------------------------------------------------------------------------
+
+my_cut() {
+# show only specified columns of input, separated by an optionaly supplied IFS
+local OldIFS="${IFS}" NewIFS colums_to_show str_line str_output col_idx
+OPTIND=1
+while getopts :d:c: option; do
+	case "${option}" in
+		d) NewIFS="${OPTARG}" ;;
+		c) colums_to_show=${OPTARG} ;;
+		?) return 1 ;;
+	esac
+done
+OPTIND=1
+
+# set default value if not evaluated via 'getopts'
+colums_to_show="${colums_to_show:-"1"}"
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	[[ ${str_line} ]] || continue
+	local IFS="${NewIFS:-${OldIFS}}"
+	set -- ${str_line}
+	local IFS="${OldIFS}"
+	str_output=""
+	for col_idx in ${colums_to_show}; do
+		[[ ${!col_idx} ]] && str_output+="${!col_idx} "
+	done
+	printf "%s\n" "${str_output% }"
+done
+} # -------------------------------------------------------------------------
+
+string_tolower() { # convert upper case characters into lower case
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local to_low_string="${@}"
+if ((BASH_VERSINFO[0] == 3)); then
+	case "${to_low_string}" in
+		+(*[[:upper:]]*))
+			to_low_string="${to_low_string//A/a}"
+			to_low_string="${to_low_string//B/b}"
+			to_low_string="${to_low_string//C/c}"
+			to_low_string="${to_low_string//D/d}"
+			to_low_string="${to_low_string//E/e}"
+			to_low_string="${to_low_string//F/f}"
+			to_low_string="${to_low_string//G/g}"
+			to_low_string="${to_low_string//H/h}"
+			to_low_string="${to_low_string//I/i}"
+			to_low_string="${to_low_string//J/j}"
+			to_low_string="${to_low_string//K/k}"
+			to_low_string="${to_low_string//L/l}"
+			to_low_string="${to_low_string//M/m}"
+			to_low_string="${to_low_string//N/n}"
+			to_low_string="${to_low_string//O/o}"
+			to_low_string="${to_low_string//P/p}"
+			to_low_string="${to_low_string//Q/q}"
+			to_low_string="${to_low_string//R/r}"
+			to_low_string="${to_low_string//S/s}"
+			to_low_string="${to_low_string//T/t}"
+			to_low_string="${to_low_string//U/u}"
+			to_low_string="${to_low_string//V/v}"
+			to_low_string="${to_low_string//W/w}"
+			to_low_string="${to_low_string//X/x}"
+			to_low_string="${to_low_string//Y/y}"
+			to_low_string="${to_low_string//Z/z}"
+		;;
+	esac
+elif ((BASH_VERSINFO[0] >= 4)); then
+	to_low_string="${to_low_string,,}"
+fi
+printf "%s\n" "${to_low_string}"
+} # -------------------------------------------------------------------------
+
+string_toupper() { # convert lower case characters into upper case
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local to_up_string="${@}"
+if ((BASH_VERSINFO[0] == 3)); then
+	case "${to_up_string}" in
+		+(*[[:lower:]]*))
+			to_up_string="${to_up_string//a/A}"
+			to_up_string="${to_up_string//b/B}"
+			to_up_string="${to_up_string//c/C}"
+			to_up_string="${to_up_string//d/D}"
+			to_up_string="${to_up_string//e/E}"
+			to_up_string="${to_up_string//f/F}"
+			to_up_string="${to_up_string//g/G}"
+			to_up_string="${to_up_string//h/H}"
+			to_up_string="${to_up_string//i/I}"
+			to_up_string="${to_up_string//j/J}"
+			to_up_string="${to_up_string//k/K}"
+			to_up_string="${to_up_string//l/L}"
+			to_up_string="${to_up_string//m/M}"
+			to_up_string="${to_up_string//n/N}"
+			to_up_string="${to_up_string//o/O}"
+			to_up_string="${to_up_string//p/P}"
+			to_up_string="${to_up_string//q/Q}"
+			to_up_string="${to_up_string//r/R}"
+			to_up_string="${to_up_string//s/S}"
+			to_up_string="${to_up_string//t/T}"
+			to_up_string="${to_up_string//u/U}"
+			to_up_string="${to_up_string//v/V}"
+			to_up_string="${to_up_string//w/W}"
+			to_up_string="${to_up_string//x/X}"
+			to_up_string="${to_up_string//y/Y}"
+			to_up_string="${to_up_string//z/Z}"
+		;;
+	esac
+elif ((BASH_VERSINFO[0] >= 4)); then
+	to_up_string="${to_up_string^^}"
+fi
+printf "%s\n" "${to_up_string}"
+} # -------------------------------------------------------------------------
+
+strip_blanks() { # strip leading and trailing [:blank:] type chars
+[[ ${1} ]] || return 0
+local s_var="${1}"
+[[ ${s_var:0:1} = [[:blank:]] ]] && s_var="${s_var##+([[:blank:]])}"
+[[ ${s_var:$((${#s_var} - 1))} = [[:blank:]] ]] && s_var="${s_var%%+([[:blank:]])}"
+printf "%s\n" "${s_var}"
+} # -------------------------------------------------------------------------
+
+strip_blanks_var() { # strip leading and trailing [:blank:] type chars
+[[ ${1} ]] || return 0
+local s_var="${1}"
+[[ ${!s_var} ]] || return 0
+local tmp="${!s_var}"
+[[ ${tmp:0:1} = [[:blank:]] ]] && tmp="${tmp##+([[:blank:]])}"
+[[ ${tmp:$((${#tmp} - 1))} = [[:blank:]] ]] && tmp="${tmp%%+([[:blank:]])}"
+eval "${s_var}"='"${tmp}"'
+} # -------------------------------------------------------------------------
+
+escape_varname() {
+local s_var="${1}"
+[[ ${!s_var} ]] || return 0
+printf "%q\n" "${!s_var}"
+} # -------------------------------------------------------------------------
+
+re_normalize() {
+local s_var="${1}"
+[[ ${!s_var} ]] || return 0
+local tmp="${!s_var}"
+#set -x
+#tmp="${tmp//\'/}"
+tmp="${tmp//\`/}"
+tmp="${tmp//\\/\\\\}"
+#if [[ ${tmp} = *"'"* ]]; then
+#	 tmp="${tmp//\'/}"
+#fi
+#tmp="${tmp//\´/}"
+#tmp="${tmp//>/\\>}"
+#set +x
+printf "%s\n" "${tmp}"
+} # -------------------------------------------------------------------------
+
+re_normalize2() {
+local s_var="${1}"
+[[ ${!s_var} ]] || return 0
+local tmp="${!s_var}"
+##set -x
+##tmp="${tmp//\'/}"
+#tmp="${tmp//\`/}"
+#tmp="${tmp//\\/\\\\}"
+##tmp="${tmp//\´/}"
+##tmp="${tmp//\\/\\\\}"
+#tmp="${tmp//\"/\\\"}"
+##tmp="${tmp//>/\\>}"
+##set +x
+printf "%s\n" "${tmp}"
+#printf "%q\n" "${tmp}"
+} # -------------------------------------------------------------------------
+
+lsearch() { # search word in list
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}"
+shift
+while (($#)); do
+	[[ ${str_search} = ${1} ]] && return
+	shift
+done
+return 1
+} # -------------------------------------------------------------------------
+
+lsearch_lines() { # search for a given word in std input
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	while (($#)); do
+		[[ ${str_search} = ${1} ]] && return
+		shift
+	done
+done
+return 1
+} # -------------------------------------------------------------------------
+
+lsearch_echo() { # search for the first occurence of a given word in input and echo it back
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	str_input="${@}"
+	while (($#)); do
+		[[ ${str_search} = ${1} ]] && {
+			printf "%s\n" "${str_input}"
+			return 0
+		}
+		shift
+	done
+done
+return 1
+} # -------------------------------------------------------------------------
+
+lsearch_echo_multiline() { # search for a given word in input (multi line) and echo it back
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	str_input="${@}"
+	while (($#)); do
+		[[ ${str_search} = ${1} ]] && {
+			printf "%s\n" "${str_input}"
+			break
+		}
+		shift
+	done
+done
+#return 1
+} # -------------------------------------------------------------------------
+
+lsearch_echo_reverse() { # show only the part of the input, which does not contain 'word'
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line str_input
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	str_input="${@}"
+	while (($#)); do
+		[[ ${str_search} = ${1} ]] && continue 2
+		shift
+	done
+	printf "%s\n" "${str_input}"
+done
+} # -------------------------------------------------------------------------
+
+lsearch_echo_reverse_single() { # search for a given word, remove first occurence, print rest
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line str_input
+local -i found_str=0
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	while (($#)); do
+		[[ ${str_search} = ${1} ]] && ((found_str == 0)) && {
+			found_str=1
+			shift
+			continue
+		}
+		if [[ -z ${str_input} ]]; then
+			str_input="${1}"
+		else
+			str_input+=" ${1}"
+		fi
+		shift
+	done
+	printf "%s\n" "${str_input}"
+done
+} # -------------------------------------------------------------------------
+
+lsearch_regex() { # perform a regex search in input
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	[[ ${str_line} =~ ${str_search} ]] && {
+		printf "%s\n" "${str_line}"
+		return 0
+	}
+done
+return 1
+} # -------------------------------------------------------------------------
+
+lsearch_regex_echo_object() { # perform a regex search in input and print result
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_search="${1}" str_line
+while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+	set -- ${str_line}
+	while (($#)); do
+		[[ ${1} =~ ${str_search} ]] && {
+			printf "%s\n" "${1}"
+			return 0
+		}
+		shift
+	done
+done
+return 1
+} # -------------------------------------------------------------------------
+
+#lsearch_regex_echo_multiline() # perform a regex search in input
+#{
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#local str_search str_line
+#str_search="${1}"
+#while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+#	[[ "${str_line}" =~ "${str_search}" ]] && {
+#		echo "${str_line}"
+#	}
+#done
+#} # -------------------------------------------------------------------------
+
+check_var_overlap() { # check for overlapping variable names
+# $1 = name of variable (maybe user config var) to be checked,
+# $2 = local function variable name to be checked against
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ ${1} != ${2} ]] || {
+	log -E "Name \`${1}' is overlapping with the local variable name \`${2}'."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+check_unique() { # check for unique words in input
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+local str_s="${1}"
+shift
+if printf "%s\n" "${@}" | lsearch_echo_reverse_single "${str_s}" | lsearch_lines "${str_s}"
+then
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+check_str_unique() { # check for unique words in string
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_unique="${@}" str_search
+for str_search in ${str_unique}; do
+	check_unique "${str_search}" "${str_unique}" || {
+		log -E "Duplicate entry \`${str_search}'."
+		return 1
+	}
+	str_unique="${str_unique/${str_search}/}"
+done
+} # -------------------------------------------------------------------------
+
+val_numeric() { # check if a value is numeric
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1} = +([[:digit:]]) ]] || {
+	log -E "Value \`${1}' is not numeric."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+val_numeric_quiet() { # silenlty check if a value is numeric
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1} = +([[:digit:]]) ]]
+} # -------------------------------------------------------------------------
+
+val_range() {
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+((${1} < ${2})) || {
+	log -E "Starting value \`${1}' of range is not greater than end of range value \`${2}'."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+#val_xdigit() {
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#[[ ${1} = +([[:xdigit:]]) ]] || {
+#	log -E "Value \`${1}' is not hexadecimal."
+#	return 1
+#}
+#} # -------------------------------------------------------------------------
+
+members_in_string() { # retrieve the amount of words in a string
+set -- ${@}
+printf "%d\n" ${#}
+} # -------------------------------------------------------------------------
+
+show_last_char() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+printf "%s\n" "${1:$((${#1} - 1))}"
+} # -------------------------------------------------------------------------
+
+check_vars() { # check for undefined variables and report an error if mising
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+declare -i var_missing=0
+while (($#)); do
+	if ! [[ ${!1} ]]; then
+		log -E "Variable \`${1}' is undefined."
+		let var_missing+=1
+	fi
+	shift
+done
+((var_missing == 0)) || return 1
+} # -------------------------------------------------------------------------
+
+check_vars_no_sep() { # check for undefined variables, or options which must not be a placeholder.
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+declare -i var_missing=var_sep=0
+while (($#)); do
+	if ! [[ ${!1} ]]; then
+		log -E "\`${1}' is not set"
+		let var_missing+=1
+	else
+		if [[ ${!1} = ${RULE_SEP} ]]; then
+			let var_sep+=1
+			log -E "\`${1}' is mandatory. Placeholder not allowed."
+		fi
+	fi
+	shift
+done
+((var_missing == 0 && var_sep == 0))
+} # -------------------------------------------------------------------------
+
+check_var_no_sep_silent() { # check for undefined variable, or option which must not be a placeholder.
+[[ ${1} ]] || return 1
+[[ ${1} != ${RULE_SEP} ]]
+} # -------------------------------------------------------------------------
+
+var_defined_silent() { # silently check for an undefined variable
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${!1} ]]
+#eval '[[ ${'"${1}"'} ]]'
+} # -------------------------------------------------------------------------
+
+build_list() {
+local str_sep="${1}"
+shift
+local str_list="${*}"
+str_list="$(strip_blanks "${str_list}")"
+printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
+} # -------------------------------------------------------------------------
+
+#show_first_line()
+#{
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#local str_line
+#read -u 0 str_line
+#echo "${str_line}"
+#} # -------------------------------------------------------------------------
+
+#find_char_in_string()
+#{
+#[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+#char_search="${1}"
+#str_search="${2}"
+#for i in $(seq 0 $((${#str_search}-1))); do
+#	[ "${str_search:${i}:1}" = "${char_search}" ] && return 0
+#done
+#return 1
+#} # -------------------------------------------------------------------------
+
+arr_members_sum() { # echo the amount of members an array ($1) contains
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'echo "${#'"${1}"'[@]}"'
+} # -------------------------------------------------------------------------
+
+last_arr_member() { # retrieve the last member of an array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'set -- -1 ${!'"${1}"'[@]}'
+printf "%s\n" "${!#}"
+} # -------------------------------------------------------------------------
+
+arr_indicies() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${!'"${1}"'[*]}"'
+} # -------------------------------------------------------------------------
+
+arr_populated() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+(($(arr_members_sum "${1}") > 0))
+} # -------------------------------------------------------------------------
+
+show_arr_as_string() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${'"${1}"'[*]}"'
+} # -------------------------------------------------------------------------
+
+show_arr_members() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${'"${1}"'[@]}"'
+} # -------------------------------------------------------------------------
+
+#check_array_empty_indicies() { # check for empty indicies in an array
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#(($(($(last_arr_member "${1}") + 1)) == $(arr_members_sum "${1}")))
+#} # -------------------------------------------------------------------------
+
+cp_array() { # command builder function to copy the content from one array to another
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+check_var_overlap "${1}" 's_arr' || return 1
+check_var_overlap "${2}" 'd_arr' || return 1
+local -i arr_idx
+local s_arr="${1}" d_arr="${2}"
+eval "${d_arr}"'=()'
+printf "%s\n" 'eval for arr_idx in ${!'"${s_arr}"'[@]}; do '"${d_arr}"'[arr_idx]="${'"${s_arr}"'[arr_idx]}"; done'
+} # -------------------------------------------------------------------------
+
+append_array() { # append the content of an array to another array
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+check_var_overlap "${1}" 'first_arr' || return 1
+check_var_overlap "${2}" 'sec_arr' || return 1
+local -i arr_idx
+local first_arr="${1}" sec_arr="${2}"
+arr_populated "${sec_arr}" || return 0
+local -i arr_height=$(($(last_arr_member "${first_arr}") + 1))
+
+#for arr_idx in $(eval echo \${!"${sec_arr}"[@]}); do
+for arr_idx in $(arr_indicies "${sec_arr}"); do
+	eval "${first_arr}"'[arr_height++]="${'"${sec_arr}"'[arr_idx]}"'
+done
+} # -------------------------------------------------------------------------
+
+insert_array() {
+# insert the content of an array into another array,
+# starting before first index of target array.
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+check_var_overlap "${1}" 'insert_arr' || return 1
+check_var_overlap "${2}" 'append_arr' || return 1
+local insert_arr="${1}" append_arr="${2}"
+append_array "${insert_arr}" "${append_arr}"
+$(${copy_array} "${insert_arr}" "${append_arr}")
+} # -------------------------------------------------------------------------
+
+dbg_arr() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local -i dbg_idx
+for dbg_idx in $(arr_indicies ${1}); do
+	eval 'printf "%s[%s]: %s\n" "'${1}'" "'${dbg_idx}'" "${'${1}'['${dbg_idx}']}"'
+done
+} # -------------------------------------------------------------------------
+
+show_array_column() { # show only specified columns of an array content
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+check_var_overlap "${1}" 't_arr' || return 1
+local -a t_arr
+local -i arr_idx
+local str_output col
+$(${copy_array} "${1}" 't_arr')
+shift
+local columns_to_show="${@:-1}"
+for arr_idx in ${!t_arr[@]}; do
+	set -- ${t_arr[arr_idx]}
+	for col in ${columns_to_show}; do
+		str_output+="${!col} "
+	done
+	printf "%s\n" "${str_output}"
+	str_output=""
+done
+} # -------------------------------------------------------------------------
+
+check_array_unique() { # check for unique entries in an array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+check_var_overlap "${1}" 'uniq_arr' || return 1
+local uniq_arr="${1}"
+local -a tmp_arr
+local -i arr_idx arr_idx2 last_index
+if arr_populated "${uniq_arr}"; then
+	$(${copy_array} "${uniq_arr}" 'tmp_arr')
+	last_index=$(last_arr_member tmp_arr)
+else
+	return 0
+fi
+for ((arr_idx=0; arr_idx<last_index; ++arr_idx)); do
+	for ((arr_idx2=arr_idx+1; arr_idx2<=last_index; ++arr_idx2)); do
+		if [[ ${tmp_arr[arr_idx]} = ${tmp_arr[arr_idx2]} ]]; then
+			log -E "Duplicate value \`${tmp_arr[arr_idx]}' in \`${uniq_arr}'."
+			return 1
+		fi
+	done
+done
+} # -------------------------------------------------------------------------
+
+check_array_unique_assignement() { # check for unique assignments in a template
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+check_var_overlap "${1}" 'uniq_arr' || return 1
+local uniq_arr="${1}"
+local -a tmp_arr
+local -i arr_idx arr_idx2 last_index
+if arr_populated "${uniq_arr}"; then
+	$(${copy_array} "${uniq_arr}" 'tmp_arr')
+	last_index=$(last_arr_member tmp_arr)
+else
+	return 0
+fi
+for ((arr_idx=0; arr_idx<last_index; ++arr_idx)); do
+	for ((arr_idx2=arr_idx+1; arr_idx2<=last_index; ++arr_idx2)); do
+		if [[ ${tmp_arr[arr_idx]%%=*} = ${tmp_arr[arr_idx2]%%=*} ]]; then
+			log -E "Duplicate option \`${tmp_arr[arr_idx]%%=*}' in \`${uniq_arr}'."
+			return 1
+		fi
+	done
+done
+} # -------------------------------------------------------------------------
+
+fill_array() { # read content of a variable and fill it into an array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${!1} ]] || {
+	log -e "Variable \`${1}' is not set"
+	return 0
+}
+check_var_overlap "${1}" 'arr_var_content' || return 1
+local rline
+declare -i array_cnt=line_cnt=ignore_cnt=0
+local arr_var_content="${!1}" # eval variable name
+case "${arr_var_content}" in
+	(+([[:space:]])) # array variable contains only space class chars
+		log -N "\`${1}' is empty"
+		unset "${1}"
+		return 0
+	;;
+	*) while read -r -t ${GLOBAL_READ_TIMEOUT} rline; do
+			((line_cnt++)) # raise line counter
+			# maybe line contains a comment, remove everything after the '#'.
+			# if line becomes empty, whole line gets ignored,
+			# raise ignore counter and continue with next line.
+			# line contains only space class chars,
+			# raise ignore counter and continue with next line
+			rline="${rline%%#*}"
+			[[ -z ${rline} || ${rline} = +([[:space:]]) ]] && {
+				((ignore_cnt++))
+				continue
+			}
+			# if all test are passed, add line to array
+			eval "${1}"'[array_cnt++]="'"${rline}"'"'
+		done < <(printf "%s\n" "${arr_var_content}")
+	;;
+esac
+if ((line_cnt == ignore_cnt)); then # if line and ignore counters are equal, unset array variable
+	log -N "\`${1}' contains only empty or comment lines"
+	unset "${1}"
+fi
+} # -------------------------------------------------------------------------
+
+fill_array_from_file() {
+# fill the first column (except comments and empty lines) of a file into an array
+# dupe lines are removed
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+check_var_overlap "${1}" 'array_name' || return 1
+local array_name="${1}" file_name="${2}"
+local str_name rest last_entry
+local -i arr_idx=0
+while read -r -t ${GLOBAL_READ_TIMEOUT} str_name rest; do
+	str_name="${str_name###*}"
+	[[ ${str_name} && ${str_name} != +([[:space:]]) ]] && {
+		[[ ${str_name} = ${last_entry} ]] && continue
+		eval "${array_name}"'[arr_idx++]="'"${str_name}"'"'
+		last_entry="${str_name}"
+	}
+done < "${file_name}"
+return 0
+} # -------------------------------------------------------------------------
+
+# the following functions were taken from shorewall
+ip_netmask() {
+# Netmask from CIDR
+local vlsm=${1#*/}
+(($vlsm == 0)) && printf "%s\n" 0 || printf "%s\n" $(( -1 << $(( 32 - $vlsm )) ))
+} # -------------------------------------------------------------------------
+
+decodeaddr() {
+# Convert an IP address in dot quad format to an integer
+local x ifs=$IFS
+local -i temp=0
+IFS=.
+for x in $1; do
+	temp=$(( $(($temp << 8)) | $x ))
+done
+IFS=$ifs
+printf "%s\n" ${temp}
+} # -------------------------------------------------------------------------
+
+encodeaddr() { # convert an integer to dot quad format
+local addr=$1 
+local x y=$(($addr & 255))
+for x in 1 2 3 ; do
+	addr=$(($addr >> 8))
+	y=$(($addr & 255)).$y
+done
+printf "%s\n" ${y}
+}
+# -------------------------------------------------------------------------
+
+in_network() { # Test for network membership | $1 = IP address, $2 = CIDR network
+local netmask=$(ip_netmask $2)
+(( $(( $(decodeaddr $1) & $netmask)) == $(( $(decodeaddr ${2%/*}) & $netmask )) ))
+} # -------------------------------------------------------------------------
+
+ip_vlsm() { # Netmask to VLSM
+local -i mask=$(decodeaddr $1)
+local -i vlsm=0
+local -i x=$((128 << 24)) # 0x80000000
+
+while (( $(( $x & $mask )) != 0 )); do
+	(($mask == $x)) && mask=0 || mask=$(($mask << 1)) # Not all shells shift 0x80000000 left properly.
+	vlsm=$(($vlsm + 1))
+done
+
+if (( $(( $mask & 2147483647 )) != 0 )); then # 2147483647 = 0x7fffffff
+	log -E "Invalid net mask: ${1}"
+	return 1
+else
+	printf "%s\n" ${vlsm}
+fi
+} # -------------------------------------------------------------------------
+
+ip_network() { # Network address from CIDR
+local decodedaddr=$(decodeaddr ${1%/*}) netmask=$(ip_netmask $1)
+printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
+} # -------------------------------------------------------------------------
+# end of borrowed functions
+
+exit_on_err_act() {
+if ((ipt_err_count > 0)); then
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
+	fail_lockdown
+fi
+restore_proc_state
+restore_module_state
+calc_err
+display_errors
+if ((ipt_err_count > 0)); then
+	bail_out_restore ${1:-${ER_FAIL}}
+fi
+bail_out ${1:-${ER_FAIL}}
+} # -------------------------------------------------------------------------
+
+raise_gen_err_count() {
+let gen_err_count+=1
+if ((EXIT_ON_ERROR == 1)); then
+	exit_on_err_act ${ER_FAIL}
+fi
+} # -------------------------------------------------------------------------
+
+raise_cfg_err_count() { # raise config error count, exit program if EXIT_ON_ERROR is enabled
+let cfg_err_count+=1
+if ((EXIT_ON_ERROR == 1)); then
+	exit_on_err_act ${ER_CONF}
+fi
+} # -------------------------------------------------------------------------
+
+cfg_err() { # report and count ruleblock rules config errors
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+local barray="${1}" bindex="${2}"
+shift 2
+if [[ ${barray} = quick-rule ]]; then
+	log -E "Bad entry in rule: \`${*}'"
+else
+	log -E "Bad entry in ruleblock \`${barray}' at index \`${bindex}': \`${*}'"
+fi
+raise_cfg_err_count
+} # -------------------------------------------------------------------------
+
+cmd_err_count() {
+# raise command error counters according to error category and display message
+# exit program if EXIT_ON_ERROR is enabled
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+local prog_msg err_category="${1}"
+shift
+case "${err_category}" in
+	ipt) prog_msg="iptables" ;;
+	proc) prog_msg="sysctl" ;;
+	tc) prog_msg="tc" ;;
+	inline) prog_msg="inline" ;;
+	misc) prog_msg="this" ;;
+	*) log -o "${err_category}" ${FUNCNAME}
+		return 1
+esac
+eval let ${err_category}_err_count+=1
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="${log_msg} stderr NOPREFIX \"${COLOR_MSG_ERROR}\" normal \"Failed applying ${prog_msg} commmand: '${*}'\""
+if ((EXIT_ON_ERROR == 1)); then
+	exit_on_err_act ${ER_FAIL}
+fi
+} # -------------------------------------------------------------------------
+
+check_kern_ver() { # check for necessary kernel version
+log -w "Checking for proper kernel version"
+local Oifs="$IFS"
+local IFS='.'
+set -- $("${UNAME}" -r)
+local IFS="${Oifs}"
+
+((${#} < 2)) && {
+	log -E "Error while retrieving kernel version!"
+	return 1
+}
+local -i k_major=${1} k_minor=${2} p_level=${3:0:2}
+
+# Save kernel version, so we can check version depending matters (TO DO!)
+KERN_VER=("${k_major}" "${k_minor}" "${p_level:-0}")
+
+if ((k_major < 2)); then
+	log -E "Kernel version lower than 2."
+	return ${ER_FAIL}
+elif ((k_major == 2 && k_minor < 4)); then
+	ALL_MANGLE_CHAINS_PRESENT=0
+	log -W "Kernel version is below 2.4, it probably doesn't support iptables, unless a patch is compiled into it."
+elif ((k_major == 2 && k_minor == 4 && p_level < 18)); then
+	ALL_MANGLE_CHAINS_PRESENT=0
+elif ((k_major == 2 && k_minor > 6)); then
+	log -W "Kernel version greater than 2.6. UNTESTED!"
+elif ((k_major > 2)); then
+	log -W "Kernel version 3.0 or higher. UNTESTED!"
+fi
+
+readonly KERN_VER ALL_MANGLE_CHAINS_PRESENT
+log -N "Kernel version OK."
+return 0
+} # -------------------------------------------------------------------------
+
+load_file() { # source other files with custom message
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+local s_category=${1}
+shift
+local s_file=${*}
+local -i ret_code=0
+case "${s_category}" in
+	script)	log -e "${PF}loading script: ${s_file}" ;;
+	rule)	log -R "Loading rule file: ${s_file}" ;;
+	config)	log -C "Loading config file: ${s_file}" ;;
+	*)	log -o "${s_category}" ${FUNCNAME}; return 1 ;;
+esac
+[[ -r ${s_file} ]] || {
+	log -x "${s_file}"
+#	raise_gen_err_count
+	return ${ER_NOEX}
+}
+# disable builtins, which could mess up things
+enable -n exit
+enable -n logout
+enable -n kill
+enable -n umask
+
+if ((SYNTAX_CHECK == 1)); then
+	check_syntax "${s_file}" || return ${?}
+fi
+source "${s_file}" || ret_code=${?}
+
+# reset environment
+set_env
+
+((ret_code == 0)) || {
+	log -F "sourcing ${s_file}"
+	return ${ER_LOAD}
+}
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# MODULES
+# ------------------------------------------------------------------------- #
+
+check_mod_dir() {
+if ((${#MODS_TO_RM[@]} > 0 || ${#MODULES_TO_LOAD[@]} > 0)); then
+	[[ -d ${MODULE_DIR} ]] || {
+		log -E "\`${MODULE_DIR}' does not exist."
+		raise_cfg_err_count
+		return ${ER_NOEX}
+	}
+fi
+} # -------------------------------------------------------------------------
+
+rm_mod() { # remove a module
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local mod_to_rm="${1}"
+[[ -d ${MODULE_DIR} ]] || {
+	log -E "\`${MODULE_DIR}' does not exist."
+	return ${ER_NOEX}
+}
+# see if mod name exists in module path
+local str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${mod_to_rm}.*" 2>/dev/null)"
+# see if mod name is an alias
+if [[ -z ${str_psearch} ]]; then # was not found in module path
+	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
+		local foo str_alias str_realmod
+		while read -r foo str_alias str_realmod; do
+			[[ ${str_alias} = ${mod_to_rm} ]] && {
+				log -N "Module name \`${mod_to_rm}' is an alias for \`${str_realmod}'."
+				mod_to_rm="${str_realmod}"
+				str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${mod_to_rm}.*" 2>/dev/null)"
+				break
+			}
+		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
+	fi
+fi
+if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
+	while read -r ; do
+		REPLY=${REPLY##*/}
+		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
+			# in any mode that is not saving commands, check if module is loaded
+			if [[ ${MODE} != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
+			then
+				if ! "${LSMOD}" | my_cut | lsearch_lines "${mod_to_rm}"; then
+					log -W "Module ${mod_to_rm} is not loaded"
+					return 0
+				fi
+			fi
+			log -e "${PF}removing ${mod_to_rm}"
+			case "${MODE}" in
+			# in dry run and save commands modes, just probe with modprobe -n
+#				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
+				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
+					"${MODPROBE}" -nr "${mod_to_rm}" || {
+						log -f "removing ${mod_to_rm}"
+					}
+					# add commands to the command array, to be saved after collecting all commands
+					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="-r ${mod_to_rm}"
+					return 0
+				;;
+				*)  # not in dry run or commands saving mode, so perform the module probing
+					if ((EXEC_COMMANDS)); then
+						"${MODPROBE}" -r "${mod_to_rm}" || {
+							log -f "removing ${mod_to_rm}"
+							return ${ER_FAIL}
+						}
+						# remember the module sate, by writing it to an array
+						MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="load ${mod_to_rm}"
+						return 0
+					else
+						"${MODPROBE}" -nr "${mod_to_rm}" || {
+							log -f "removing ${mod_to_rm}"
+						}
+					fi
+				;;
+			esac
+		fi
+	done < <(printf "%s\n" "${str_psearch}")
+else
+	log -W "Module ${module_name} not found"
+fi
+} # -------------------------------------------------------------------------
+
+load_mod() { # load a module
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local module_name="${1}"
+shift
+local module_params="${@}"
+[[ -d ${MODULE_DIR} ]] || {
+	log -E "\`${MODULE_DIR}' does not exist."
+	return ${ER_NOEX}
+}
+# see if mod name exists in module path
+local str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${module_name}.*" 2>/dev/null)"
+# see if mod name is an alias
+if [[ -z ${str_psearch} ]]; then # was not found in module path
+	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
+		local foo str_alias str_realmod
+		while read -r foo str_alias str_realmod; do
+			[[ ${str_alias} = ${module_name} ]] && {
+				log -N "Module name \`${module_name}' is an alias for \`${str_realmod}'."
+				module_name="${str_realmod}"
+				str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${module_name}.*" 2>/dev/null)"
+				break
+			}
+		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
+	fi
+fi
+if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
+	while read -r ; do
+		REPLY="${REPLY##*/}"
+		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
+			if [[ ${MODE} != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
+			then
+			# in any mode that is not saving commands, check if module is already loaded
+				if "${LSMOD}" | my_cut | lsearch_lines "${module_name}"; then
+					log -N "Module ${module_name} is already loaded"
+					# remember the module sate, by writing it to an array
+#					[[ ${MODE} != DRY-RUN ]] && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
+					((EXEC_COMMANDS)) && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
+					return 0
+				fi
+			fi
+			log -e "${PF}probing module: ${module_name}"
+			case "${MODE}" in
+			# in dry run and save commands modes, just probe with modprobe -n
+#				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
+				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
+					"${MODPROBE}" -n "${module_name}" ${module_params} || {
+						log -f "probing module: ${module_name} ${module_params}"
+					}
+					# add commands to the command array, to be executed after collecting all commands
+					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="${module_name} ${module_params}"
+				;;
+				*)	# not in dry run or commands saving mode, so perform the module probing
+				if ((EXEC_COMMANDS)); then
+					"${MODPROBE}" "${module_name}" ${module_params} || {
+						log -f "probing module: ${module_name} ${module_params}"
+						return ${ER_FAIL}
+					}
+					# remember mod state, to be restored in case of error
+					MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="unload ${module_name} ${module_params}"
+				else
+					"${MODPROBE}" -n "${module_name}" ${module_params} || {
+						log -f "probing module: ${module_name} ${module_params}"
+					}
+				fi
+				;;
+			esac
+			return 0
+		fi
+	done < <(printf "%s\n" "${str_psearch}")
+else
+	log -W "Module ${module_name} not found"
+fi
+} # -------------------------------------------------------------------------
+
+remove_modules() { # Remove modules
+local -i idx
+((${#MODS_TO_RM[@]})) || return 0
+log -S "Removing modules"
+for idx in ${!MODS_TO_RM[@]}; do
+	rm_mod "${MODS_TO_RM[idx]}" || return ${?}
+done
+} # -------------------------------------------------------------------------
+
+load_modules() { # Load modules
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local -i idx
+(( ${#MODULES_TO_LOAD[@]} )) || {
+	log -v "MODULES_TO_LOAD"
+	return 0
+}
+case "${1}" in
+	load)
+		log -S "Loading modules"
+		for idx in ${!MODULES_TO_LOAD[@]}; do
+			load_mod ${MODULES_TO_LOAD[idx]} || return ${?}
+		done
+	;;
+	unload)
+		log -S "Unloading modules"
+		for ((idx=$(last_arr_member MODULES_TO_LOAD); idx>=0; --idx)); do
+			rm_mod "${MODULES_TO_LOAD[idx]%% *}" || continue
+		done
+	;;
+esac
+} # -------------------------------------------------------------------------
+
+restore_module_state() { # try to restore initial (remembered) module state
+[[ ${MODE} = @(OPEN|RESTART|TC-START) ]] || return 0
+((${#MOD_STATE_ARRAY[@]})) || {
+	log -v 'MOD_STATE_ARRAY'
+	return 0
+}
+local module_state module_name module_params
+local -a unload_arr
+local -i idx
+log -I "Trying to restore initial module state"
+for idx in ${!MOD_STATE_ARRAY[@]}; do
+	set -- ${MOD_STATE_ARRAY[idx]}
+	module_state="${1}" module_name="${2}"
+	shift 2
+	module_params="${@}"
+	case "${module_state}" in
+		load)
+			log -e "${PF}probing module: ${module_name}"
+			"${MODPROBE}" "${module_name}" ${module_params} || {
+				log -f "probing module: ${module_name} ${module_params}"
+			}
+		;;
+		loaded)
+			log -e "${module_name} was already loaded"
+		;;
+		unload)
+			unload_arr[${#unload_arr[@]}]="${module_name}"
+		;;
+		*) log -o "${module_state}" ${FUNCNAME}
+			return 1
+		;;
+	esac
+done
+if ((${#unload_arr[@]} > 0)); then
+	for ((idx=$(last_arr_member unload_arr); idx>=0; --idx)); do
+		log -e "${PF}removing ${unload_arr[idx]}"
+		"${MODPROBE}" -r "${unload_arr[idx]}" || log -f "removing ${unload_arr[idx]}"
+	done
+fi
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# PROC SETTINGS
+# ------------------------------------------------------------------------- #
+
+set_proc() { # set the proc values
+[[ ${3} ]] || { reqparm ${FUNCNAME} 3; return 1; }
+local proc_val="${1}" proc_path="${2}" proc_msg="${3}" proc_mode_msg
+[[ -f ${proc_path} ]] || {
+	log -x "${proc_path}"
+	raise_cfg_err_count
+	return 0
+}
+proc_file_writable "${proc_path}" ] || {
+	log -E "\`${proc_path}' is not writable."
+	raise_cfg_err_count
+	return 0
+}
+case "${proc_val}" in
+	(0) proc_mode_msg="disabling ${proc_msg}" ;;
+	(1) proc_mode_msg="enabling ${proc_msg}" ;;
+	(+([[:digit:]]) | \
+		+(*([[:space:]])+([[:word:]])*([[:space:]])) | \
+		@(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])))
+		proc_mode_msg="setting ${proc_msg} to: ${proc_val}"
+	;;
+	(*) log -i "${proc_val}" 'proc_val'
+		raise_cfg_err_count
+		return 0
+esac
+log -e "${PF}${proc_mode_msg}"
+PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="\"${proc_val}\" \"${proc_path}\""
+} # -------------------------------------------------------------------------
+
+proc_conf_global() { # set user defined /proc settings
+if ! ((${#SYSCTL_ARRAY[@]} > 0)); then
+	log -r "SYSCTL_ARRAY"
+	return 1
+fi
+local oIFS="${IFS}"
+local -i idx path_found
+local vsingle proc_dev proc_set vname vtype ppath epath procmsg vresult
+
+for idx in ${!SYSCTL_ARRAY[@]}; do
+	set -- ${SYSCTL_ARRAY[idx]}
+	vname="${1}" vtype="${2}" ppath="${3}"
+	shift 3
+	if [[ ${vtype} = iface_bool ]]; then
+		epath="${1}"
+		shift
+	fi
+	path_found=0
+	procmsg=${*} # message to display
+	vresult="${!vname}" # substitue sysctl variable names
+	[[ ${vresult} ]] || {
+		log -w "\`${vname}' is not defined."
+		continue
+	}
+	IFS="|"
+	for rvar in ${ppath}; do
+		if [[ -e ${rvar} ]]; then
+			ppath="${rvar}"
+			path_found=1
+			break
+		fi
+	done
+	IFS="${oIFS}"
+	((path_found)) || {
+		log -E "\`${vname}' could not be found in \`${ppath}'."
+		raise_cfg_err_count
+		continue
+	}
+	case "${vtype}" in
+		iface_bool) # interface depending
+			case "${vresult}" in
+				(0|1) # enable / disable for all interfaces
+					if ((PROC_COMPAT_CHECK == 0)); then
+						set_proc "${vresult}" "${ppath}/all/${epath}" "${procmsg} on all interfaces"
+					else
+						pr_str "'${vresult}' '${ppath}/all/${epath}' ${procmsg} on all interfaces"
+					fi
+				;;
+				(+(*([[:space:]])+([[:graph:]])[:][0-1]*([[:space:]]))) # valid config string
+					for vsingle in ${vresult}; do # for every interface entry
+						set -- ${vsingle//:/ }
+						proc_dev="${1}" proc_set="${2}"
+						check_iface "${proc_dev}" || {
+							log -i "${vresult}" "${vname}"
+							raise_cfg_err_count
+							continue
+						}
+						# set (queue) the proc command for the specific interface
+						if ((PROC_COMPAT_CHECK == 0)); then
+							set_proc "${proc_set}" "${ppath}/${proc_dev}/${epath}" "${procmsg} on ${proc_dev}"
+						else
+							pr_str "'${proc_set}' '${ppath}/${proc_dev}/${epath}' ${procmsg} on ${proc_dev}"
+						fi
+					done
+				;;
+				*) log -i "${vresult}" ${vname}
+					raise_cfg_err_count
+					continue
+			esac
+			continue
+		;;
+		# GLOBAL SETTINGS
+		bool)
+			val_bool_bin "${vresult}" || {
+				log -i "${vresult}" "${vname}"
+				raise_cfg_err_count
+				continue
+			}
+		;;
+		int)
+			val_numeric "${vresult}" || {
+				log -i "${vresult}" "${vname}"
+				raise_cfg_err_count
+				continue
+			}
+		;;
+		multi_int)
+			[[ ${vresult} = @(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])) ]] || {
+				log -i "${vresult}" "${vname}"
+				raise_cfg_err_count
+				continue
+			}
+		;;
+		(range:+([[:digit:]])-+([[:digit:]]))
+			[[ ${vresult} = [${vtype#range:}] ]] || {
+				log -E "${vname} is not in range of: \`${vtype#range:}'"
+				raise_cfg_err_count
+				continue
+			}
+		;;
+		words)
+			[[ ${vresult} = +(*([[:space:]])+([[:word:]])*([[:space:]])) ]] || {
+				log -i "${vresult}" "${vname}"
+				raise_cfg_err_count
+				continue
+			}
+		;;
+		*) log -o "${vtype}" ${FUNCNAME}
+			return 1
+	esac
+	# all checks are done, ready to set (queue) the proc command
+	if ((PROC_COMPAT_CHECK == 0)); then
+		set_proc "${vresult}" "${ppath}" "${procmsg}"
+	else
+		pr_str "'${vresult}' '${ppath}' ${procmsg}"
+	fi
+done
+} # -------------------------------------------------------------------------
+
+restore_proc_state() { # try to restore initial (remembered) /proc settings
+[[ ${MODE} = @(OPEN|RESTART|TC-START) ]] || return 0
+((${#PROC_STATE_ARRAY[@]} > 0)) || {
+	log -v 'PROC_STATE_ARRAY'
+	return 0
+}
+local proc_val
+local -i idx
+log -I "Trying to restore initial proc configuration"
+for idx in ${!PROC_STATE_ARRAY[@]}; do
+	eval 'set -- '"${PROC_STATE_ARRAY[idx]}"
+		proc_val="${1}"
+		shift
+	log -e "${PF}restoring: "${proc_val}" to \`${*}'"
+	printf "%s\n" "${proc_val}" >"${*}" || {
+		log -E "failed setting "${proc_val}" to \`${*}'"
+	}
+done
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# INTERFACES
+# ------------------------------------------------------------------------- #
+
+get_route_iface() { # retrieve and echo the interface an IP is routed over
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+"${IP}" -o route get ${1} | my_cut -c '5'
+} # -------------------------------------------------------------------------
+
+get_default_route_iface() { # get and echo the interface of the default route.
+"${IP}" route list | lsearch_regex '^default' | my_cut -c '5'
+} # -------------------------------------------------------------------------
+
+#get_default_table_route_iface() { # get and echo the interface of the default route, of a specified table
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#"${IP}" route list table "${1}" | lsearch_regex '^default' | my_cut -c '5'
+#} # -------------------------------------------------------------------------
+
+get_if_data() { # load interface data into an array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local iface="${1}" str_data
+[[ ${iface} = +([[:word:]]) ]] || {
+	log -E "Interface name \`${iface}' contains characters not of type [:word:]. Cannot work with that."
+	raise_gen_err_count
+	return ${ER_FAIL}
+}
+check_iface "${iface}" || return ${ER_FAIL} # validate interface
+while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
+	set -- ${REPLY} # array format: interface | alias | IP | netmask | broadcast
+	[[ $(eval 'echo "${'$((${#} - 1))'}"') = secondary ]] && continue
+	str_data="${!#} ${2%/*} ${2#*/}"
+	case "${3}" in
+		brd) # fill array: handle | ip-addr | netmask | broadcast-addr
+			str_data+=" ${4}"
+#			INTERFACE_ARRAY[${#INTERFACE_ARRAY[@]}]="${iface} ${str_data}"
+#			eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
+		;;
+#		*) # fill array: handle | ip-addr | netmask
+#			INTERFACE_ARRAY[${#INTERFACE_ARRAY[@]}]="${iface} ${str_data}"
+#			eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
+#		;;
+	esac
+	eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
+done < <("${IP}" -4 addr show "${iface}" 2>/dev/null | lsearch_echo_multiline inet) # show interface data
+[[ ${DEBUG_INFO} ]] && dbg_arr IFDATA_ARRAY_"${iface}"
+readonly IFDATA_ARRAY_"${iface}"
+} # -------------------------------------------------------------------------
+
+get_if_ipv4_data() { # query an interfaces IPv4 data and put that into an array
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_wanted_iface="${1}"
+if ! arr_populated "IFDATA_ARRAY_${str_wanted_iface}"; then
+	log -W "IFDATA_ARRAY_${str_wanted_iface} has no members. Unable to retrieve data for interface: ${str_wanted_iface}."
+	return 1
+fi
+shift
+local columns_to_show option
+OPTIND=1 # reset options index variable
+while getopts :himb option; do
+	case "${option}" in
+		h) columns_to_show+=" 1" ;; # iface handle
+		i) columns_to_show+=" 2" ;; # ip-addr
+		m) columns_to_show+=" 3" ;; # netmask
+		b) columns_to_show+=" 4" ;; # broadcast-addr
+		*) log -o "${option}" ${FUNCNAME}
+			return 1
+		;;
+	esac
+done
+OPTIND=1 # reset options index variable
+show_array_column "IFDATA_ARRAY_${str_wanted_iface}" ${columns_to_show:-1 2 3 4}
+} # -------------------------------------------------------------------------
+
+enumerate_if_data() { # Enumerate net interface (ipv4) data
+local -i net_idx if_idx if_regged if_is_ipsec
+local strERR nif nalias loc netname loc_options iface_option _nalias ipaddr netm brd
+log -I "Enumerating NET interface data"
+((${#NET_INTERFACES[@]} > 0)) || {
+	log -E "Configuration variable \`NET_INTERFACES' is not defined."
+	return ${ER_NODEF}
+}
+# get default route interface
+readonly DEF_ROUTE_IF="$(get_default_route_iface)"
+# cycle through networking interface array
+for net_idx in ${!NET_INTERFACES[@]}; do
+	if_regged=0 if_is_ipsec=0
+	set -- ${NET_INTERFACES[net_idx]}
+	strERR="NET_INTERFACES ${net_idx} ${NET_INTERFACES[net_idx]}"
+	nif="${1}" nalias="${2}" loc="${3}" netname="${4}"
+	[[ ${4} ]] || {
+		cfg_err ${strERR}
+		continue
+	}
+	if [[ ${netname} != +([[:word:]]) ]]; then
+		log -E "Invalid network name \`${netname}'. Network names must only contain characters of type [:word:]."
+		raise_cfg_err_count
+		return ${ER_CONF}
+	fi
+	if lsearch "${netname}" ${NET_NAME_LIST}; then
+		raise_cfg_err_count
+		log -E "Duplicate netname \`${netname}' in \`NET_INTERFACES'."
+		return ${ER_CONF}
+	fi
+	# classify by physical interfaces
+	if lsearch "${nif}" ${NET_IFLIST}; then # interface registered?
+		if_regged=1
+	else
+		get_if_data "${nif}" || continue # get interface data
+		arr_populated "IFDATA_ARRAY_${nif}" || {
+			log -W "Unable to retrieve data for interface: \`${nif}'."
+			continue
+		}
+		if (($(IFS=: members_in_string ${loc}) > 1)); then # retrieve additional interface options
+			loc_options="${loc#*:}"
+			for iface_option in ${loc_options//:/ }; do
+				case "${iface_option}" in
+					ipsec)
+						if_is_ipsec=1
+					;;
+					*) log -E "Unknown interface option \`${iface_option}'. Option will be ignored."
+						cfg_err ${strERR}
+						continue
+				esac
+			done
+		fi
+	fi
+	case "${loc%%:*}" in # classify by location descriptor
+		ext) # create external interface list
+			((if_regged)) || EXT_IFLIST+=" ${nif}"
+			EXT_NETNAME_LIST+=" ${netname}"
+		;;
+		local) # create local interface list
+			((if_regged)) || LOCAL_IFLIST+=" ${nif}"
+			LOC_NETNAME_LIST+=" ${netname}"
+		;;
+		ipsec) # create ipsec interface list
+			((ENABLE_IPSEC)) || continue
+			((if_regged)) || IPSEC_INTERFACES+=" ${nif}"
+			LOC_NETNAME_LIST+=" ${netname}"
+		;;
+		*) log -E "Unknown location descriptor \`${loc%%:*}'. Allowed values: ext/local/ipsec."
+			cfg_err ${strERR}
+			continue
+	esac
+	NET_NAME_LIST+=" ${netname}"
+	((if_regged)) || NET_IFLIST+=" ${nif}" # add to net interfaces
+	((if_is_ipsec)) && IPSEC_IFLIST+=" ${nif}"
+	while read -r _nalias ipaddr netm brd; do
+		# fill array if interface aliases match
+		[[ ${_nalias} = ${nalias} ]] && {
+			# format: netname | iface-name | iface-alias | ip-address | netmask | network-address | [broadcast-address]
+			eval 'NETDATA_ARRAY_'${netname}'=('${nif} ${_nalias} ${ipaddr} ${netm} $(ip_network "${ipaddr}/${netm}") ${brd}')'
+			readonly NETDATA_ARRAY_"${netname}"
+			[[ ${DEBUG_INFO} ]] && dbg_arr NETDATA_ARRAY_"${netname}"
+			break
+		}	
+	done < <(get_if_ipv4_data "${nif}")
+done
+# check if any interface data has been collected
+#((${#INTERFACE_ARRAY[@]} > 0)) || {
+#	log -E "No interface data found!"
+#	return ${ER_FAIL}
+#}
+for rvar in NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
+do
+	readonly ${rvar}
+	if [[ ${DEBUG_INFO} ]]; then declare -p ${rvar} 2>/dev/null; fi
+done
+#readonly NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
+} # -------------------------------------------------------------------------
+
+validate_net_config() { # check network config
+[[ ${NET_IFLIST} ]] || {
+	log -E "Cannot find any network interface. One interface is mandatory. \`NET_INTERFACES' variable needs to be configured."
+	return ${ER_FAIL}
+}
+readonly NET_IFLIST="$(strip_blanks "${NET_IFLIST}")"
+readonly NET_IFLIST_CHECK_STRING="$(build_list '|' "${NET_IFLIST}")"
+
+for rvar in ${NET_IFLIST}; do
+	lsearch "${rvar}" ${NET_NAME_LIST} && {
+		log -E "Network names must not be the same as interface names."
+		raise_cfg_err_count
+		return ${ER_CONF}
+	}
+done
+#[ "${EXT_IFLIST}" ] || {
+#	log -E "Cannot find any external interface. One external interface is mandatory"
+#	return ${ER_FAIL}
+#}
+[[ ${DEF_ROUTE_IF} ]] || {
+	log -W "No default route set, be sure to include external interface in other configuration options"
+}
+for rvar in NET_IFLIST DEF_ROUTE_IF
+do
+	if [[ ${DEBUG_INFO} ]]; then declare -p ${rvar}; fi
+done
+return 0
+} # -------------------------------------------------------------------------
+
+get_net_data() { # query and echo a networks data by its name
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+if arr_populated "NETDATA_ARRAY_${1}"; then
+	show_arr_as_string "NETDATA_ARRAY_${1}"
+else
+	log -E "Unable to retrieve data for network: \' ${1}'."
+	raise_gen_err_count
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+get_net_iface() { # query and echo the interface of a network
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${NETDATA_ARRAY_'${1}'[0]}"'
+} # -------------------------------------------------------------------------
+
+get_net_ipaddr() { # query and echo the ip address of a network
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${NETDATA_ARRAY_'${1}'[2]}"'
+} # -------------------------------------------------------------------------
+
+get_net_addr() { # query and echo the address/mask of a network
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+eval 'printf "%s\n" "${NETDATA_ARRAY_'${1}'[4]}/${NETDATA_ARRAY_'${1}'[3]}"'
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# VALIDATION functions
+# ------------------------------------------------------------------------- #
+
+val_ipv4_cidr_mask() { # validate an IPv4 cidr netmask
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#val_numeric_quiet ${1} || return 1
+((${1} >= 0 && ${1} <= 32))
+} # -------------------------------------------------------------------------
+
+#val_ipv4_netmask() { # validate an IPv4 IP netmask
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#local -i i x
+#set -- ${1//./ }
+#val_oct_range ${@} || return 1
+#for ((i=${#}; i>0; --i)); do
+#	for ((x=i-1; x>0; --x)); do
+#		((${!i} > ${!x})) && return 1
+#	done
+#done
+#return 0
+#} # -------------------------------------------------------------------------
+
+val_ipv4_netmask() { # validate an IPv4 IP netmask
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+ip_vlsm "$1" &>/dev/null
+} # -------------------------------------------------------------------------
+
+val_oct_range() { # check if an IP address octet is in the valid range
+[[ ${4} ]] || { reqparm ${FUNCNAME} 4; return 1; }
+local oct
+for oct in "${1}" "${2}" "${3}" "${4}"; do
+	val_8bit "${oct}" || return 1
+done
+} # -------------------------------------------------------------------------
+
+is_ifname_wcard() { # check if last letter of interface name is a '+'
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $(show_last_char "${1}") = '+' ]]
+} # -------------------------------------------------------------------------
+
+val_ifname() { # 'pre-validate' interface names
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((NO_IFACE_CHECK == 0)) || return 0
+local ifname="${1}"
+if ((${#ifname} < 2)); then
+	log -E "Interface name \`${ifname}' is too short."
+	return 1
+else
+	local -i lastl=$((${#ifname} - 1))
+fi
+#if [[ $(show_last_char "${ifname}") = '+' ]]; then # check if last letter of interface name is a '+'
+if is_ifname_wcard "${ifname}"; then
+	if "${IP}" link show | my_cut -d ':' -c '2' | lsearch_regex "${ifname:0:${lastl}}.*" &>/dev/null
+	then
+		log -N "${ifname} is not a known device, but it looks like a valid iptables interface wildcard."
+		return 0
+	else
+		log -W "${ifname} does not seem to be a valid device or iptables interface wildcard."
+		return 1
+	fi
+fi
+# now as validated, check for iface existence
+check_iface ${ifname} || return 1
+} # -------------------------------------------------------------------------
+
+val_ipv4_addr_no_range() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+val_ip4_addr "${1}" || return 1
+[[ ${IPSTRING} != IPRANGE ]] || {
+	log -E "IP-range address not valid in context."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+check_iface() { # validate interface existence
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((NO_IFACE_CHECK == 0)) || return 0
+"${IP}" link show ${1} &>/dev/null || {
+	log -E "Interface ${1} does not exist."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+val_multi_device() { # validate interfaces taken from a comma separated string
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#local m_dev str_m_devices="$(IFS=, split_val ${@})"
+local m_dev str_m_devices="${@//,/ }"
+check_multi_negation ${str_m_devices} || return 1
+for m_dev in ${str_m_devices}; do
+	val_ifname "${m_dev}" || return 1
+done
+} # -------------------------------------------------------------------------
+
+val_ip4_addr() { # validate IPv4 addresses
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local range_ip str_ip_addr="${1}"
+IPSTRING=""
+case "${str_ip_addr}" in
+	# IP string is global shortcut
+	(0/0 | 0.0.0.0/0)
+		IPSTRING="IPNET"
+		return 0
+	;;
+	# IP string is single IP
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		val_oct_range ${str_ip_addr//./ } || {
+			log -E "IP address \`${str_ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPADDR"
+	;;
+	# IP string is IP/CIDR Mask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
+		local ip_addr="${str_ip_addr%/*}"
+		local mask="${str_ip_addr#*/}"
+		val_oct_range ${ip_addr//./ } || {
+			log -E "IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		val_ipv4_cidr_mask "${mask}" || {
+			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPNET"
+	;;
+	# IP string is IP/Netmask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		local ip_addr="${str_ip_addr%/*}"
+		local mask="${str_ip_addr#*/}"
+		val_oct_range ${ip_addr//./ } || {
+			log -E "IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		val_ipv4_netmask "${mask}" || {
+			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPNETMASK"
+	;;
+	# IP string is IP-range
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		for range_ip in ${str_ip_addr/-/ }; do
+			val_oct_range ${range_ip//./ } || {
+				log -E "IP range \`${range_ip}' is not valid."
+				return 1
+			}
+		done
+	    if (($(decodeaddr ${str_ip_addr%-*}) > $(decodeaddr ${str_ip_addr#*-}))); then
+			log -E "IP range \`${range_ip}' is not valid."
+			return 1
+	    fi
+		IPSTRING="IPRANGE"
+	;;
+	(*) log -E "IPv4 address specification \`${str_ip_addr}' is not valid."
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+classify_ip4_addr() { # classify IPv4 addresses
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "${1}" in
+	# IP string is global shortcut
+	(0/0 | 0.0.0.0/0) echo "IPNET" ;;
+	# IP string is single IP
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) echo "IPADDR" ;;
+	# IP string is IP/Mask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]])) echo "IPNET" ;;
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) echo "IPNET" ;;
+	# IP string is IP-range
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		echo "IPRANGE"
+	;;
+	(*) log -E "Unknown error while processing \`${1}'."; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+#val_mac() { # validate MAC addresses
+#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#case "${1}" in
+#	(@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]])\
+#:@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]))
+#		return 0
+#	;;
+#	(*) log -E "Invalid MAC address \`${1}'."; return 1 ;;
+#esac
+#} # -------------------------------------------------------------------------
+
+val_mac() { # validate MAC addresses
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "${1}" in
+	[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]])
+		return 0
+	;;
+	(*) log -E "Invalid MAC address \`${1}'."; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+val_multi_proto() { # validate multiple protocol specifications separated by commas
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#local m_proto str_m_protos="$(IFS=, split_val ${@})"
+local m_proto str_m_protos="${@//,/ }"
+check_multi_negation ${str_m_protos} || return 1
+for m_proto in ${str_m_protos}; do
+	val_proto "${m_proto}" || return 1
+done
+} # -------------------------------------------------------------------------
+
+check_multi_negation_first_allowed() { # check for multiple negations, allow first occurance
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+string_negated "${1}" && shift
+check_multi_negation "${@}" || return 1
+} # -------------------------------------------------------------------------
+
+check_multi_negation() { # check for multiple negations
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+while (($#)); do
+	string_negated "${1}" && {
+		log -E "Negations in a multi match are logicaly incorrect, ignoring entry."
+		return 1
+	}
+	shift
+done
+} # -------------------------------------------------------------------------
+
+val_ttl() { # validate TTL manipulation values
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#if ((${1} < 0 || ${1} > 255)); then
+if ! val_8bit "${1}"; then
+	log -E "TTL value must be between 0 and 255."
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+val_tcp_flags() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+set -- ${1/:/ }
+#local str_mask="$(IFS=, split_val ${1})" str_comp="$(IFS=, split_val ${2})" str_flag
+local str_mask="${1//,/ }" str_comp="${2//,/ }" str_flag
+check_str_unique "${str_mask}" || return 1
+check_str_unique "${str_comp}" || return 1
+for str_flag in ${str_mask} ${str_comp}; do
+	[[ ${str_flag} = @(SYN|ACK|FIN|RST|URG|PSH|ALL|NONE) ]] || return 1
+done
+} # -------------------------------------------------------------------------
+
+val_dscp() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "${1}" in
+	+([[:digit:]])|0x+([[:xdigit:]]))
+		val_6bit "${1}" || {
+			log -E "DSCP value \`${1}' is out of bounds."
+			return 1
+		}
+	;;
+	BE|EF|AF[1-4][1-3]|CS[1-4]) : ;;
+	*) log -i "${1}" "DSCP descriptor"
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+val_6bit() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((${1} >= 0 && ${1} <= 0x3F))
+} # -------------------------------------------------------------------------
+
+val_8bit() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((${1} >= 0 && ${1} <= 0xFF))
+} # -------------------------------------------------------------------------
+
+val_16bit() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((${1} >= 0 && ${1} <= 0xFFFF))
+} # -------------------------------------------------------------------------
+
+val_32bit() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((${1} >= 0 && ${1} <= 0xFFFFFFFF))
+} # -------------------------------------------------------------------------
+
+val_32bit_off1() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+((${1} >= 1 && ${1} <= 0xFFFFFFFF))
+} # -------------------------------------------------------------------------
+
+val_nf_mark() { # validate netfilter mark and mark-mask values
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+val_32bit "${1}" || {
+	log -E "Mark value or mask \`${1}' is out of bounds. Should be 32bit: 0-0xFFFFFFFF (4294967295)."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+val_log_facility() { # validate logging facility values, to be valid for logger utility
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "$(string_tolower ${1})" in
+	(auth|authpriv|cron|daemon|ftp|kern|lpr|mail|news|security|syslog|user|uucp|local[0-7])
+		return 0
+	;;
+	(*) err_msg "Invalid log facility value \`${1}'."
+		return 1
+esac
+return 0
+} # -------------------------------------------------------------------------
+
+val_spi() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_spi
+set -- ${1/:/ }
+for str_spi in "${@}"; do
+	val_numeric "${str_spi}" || return 1
+	val_32bit "${str_spi}" || {
+		log -E "SPI value is out of range."
+		return 1
+	}
+done
+if [[ ${2} ]]; then
+	val_range "${1}" "${2}" || return 1
+fi
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# SUB MAIN FUNCTIONS
+# ------------------------------------------------------------------------- #
+
+precheck_config() { # (pre)validate configuration entries
+local -i cfg_idx
+log -w "Pre-validating configuration entries"
+((${#CONFIG_ENTRY_ARRAY[@]} > 0)) || {
+	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
+	return ${ER_NODEF}
+}
+for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
+	set -- ${CONFIG_ENTRY_ARRAY[cfg_idx]}
+	local conf_var=${1} var_type=${2} # declare name of config entry and its type
+	declare -i conf_mandatory=${3} # config entry is mandatory to be correctly set
+	shift 3
+	local check_cmd="${@}"
+	local var_content=${!conf_var} # substitute the content of the desired variable
+	if [[ -z ${var_content} ]]; then # if substitution returns a non empty variable
+		if ((conf_mandatory == 1)); then
+			log -E "Config entry \`${conf_var}' is mandatory, but not defined."
+			return ${ER_FAIL}
+		else
+			if [[ ${conf_var%%_*} != PROC ]]; then
+				case "${var_type}" in # react according to type of variable
+					bool) # config entry should be 0 or 1
+							set_var "${conf_var}" '0'
+							log -N "Config entry \`${conf_var}' is not defined, setting it to \`0'."
+					;;
+					*) log -N "Config entry \`${conf_var}' is not defined." ;;
+				esac
+			fi
+			continue
+		fi
+	fi
+	case "${var_type}" in # react according to type of variable
+		alnum) # config entry should be alphanumeric
+			if [[ ${var_content} != +([[:alnum:]]) ]]; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' contains non alphanumeric characters."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' contains non alphanumeric characters. Unsetting it."
+					unset ${conf_var}
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		alpha) # config entry should be alphabetic
+			if [[ ${var_content} != +([[:alpha:]]) ]]; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' contains non alphabetic characters."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' contains non alphabetic characters. Unsetting it."
+					unset ${conf_var}
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		bool) # config entry should be 0 or 1
+			if ! val_bool_bin "${var_content}"; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' is not \`0' or \`1'."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' is not \`0' or \`1'. Setting it to \`0'."
+					set_var "${conf_var}" '0'
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		digit) # config entry should only contain digits
+			if [[ ${var_content} != +([[:digit:]]) ]]; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' is not numeric."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' is not numeric. Unsetting it."
+					unset ${conf_var}
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		graph) # config entry should only contain:
+				# Graphical characters: `[:alnum:]' and `[:punct:]'.
+			if [[ ${var_content} != +([[:graph:]]) ]]; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' contains non graph class characters."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' contains non graph class characters. Unsetting it."
+					unset ${conf_var}
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		print) # config entry should only contain:
+				# Printable characters: `[:alnum:]', `[:punct:]', and space. 
+				# + newline and tab
+			if [[ ${var_content} != +([[:print:]$'\n'$'\t']) ]]; then
+				if ((conf_mandatory == 1)); then
+					log -E "Config entry \`${conf_var}' allows only print class characters, newline and tab."
+					return ${ER_FAIL}
+				else
+					log -W "Config entry \`${conf_var}' contains non print class characters. Unsetting it."
+					unset ${conf_var}
+					raise_cfg_err_count
+					continue
+				fi
+			fi
+		;;
+		*) log -E "Invalid option \`${var_type}'."
+			return 1
+	esac
+	# if a validation command is defined in the array, run it here
+	if [[ ${check_cmd} ]]; then
+		eval "${check_cmd}" || return ${?}
+	fi
+done
+} # -------------------------------------------------------------------------
+
+set_message_colors() { # set colours to be used for messages
+[[ ${ENABLE_COLORS} ]] || return 0
+((ENABLE_COLORS == 1)) || return 0
+[[ ${MSG_COLOR_ARRAY} ]] || { err_msg "\'MSG_COLOR_ARRAY\' is unset"; return 1; }
+local -i c_idx
+local col_cat_name msg_color user_col_cat_name
+log -w "Setting message colours"
+for c_idx in ${!MSG_COLOR_ARRAY[@]}; do
+	set -- ${MSG_COLOR_ARRAY[c_idx]}
+	col_cat_name="${1}" msg_color="${2}"
+	user_col_cat_name="${!col_cat_name}"
+	# see if variable is defined by user
+	if [[ ${user_col_cat_name} ]]; then
+		user_col_cat_name="$(string_toupper "${user_col_cat_name}")"
+		# check for known color values, and continue if matching ok
+		case "${user_col_cat_name}" in
+			(BLACK|BLUE|CYAN|GREEN|MAGENTA|RED|YELLOW|WHITE)
+				set_var "${col_cat_name}" "${!user_col_cat_name}"
+				log -w "${PF}${col_cat_name} is set to: \`${user_col_cat_name}'"
+				readonly "${col_cat_name}"
+				continue
+			;;
+			(*)	# user defined value is not OK, display message of setting default colour
+				warn_msg "${col_cat_name} is not valid, setting to default value: \`${msg_color}'"
+				raise_cfg_err_count
+		esac
+	else # message category colour is not defined, set default values
+		notice_msg "${col_cat_name} is not defined, setting to default value: \`${msg_color}'"
+	fi
+	# user did not define the colour setting default value
+	set_var "${col_cat_name}" "${!msg_color}"
+	readonly "${col_cat_name}"
+done
+} # -------------------------------------------------------------------------
+
+set_syslog_mode() { # enable / disable syslog logging
+case "${ENABLE_SYSLOG}" in
+	0) notice_msg "Syslog logging is disabled" ;;
+	1) # syslog logging is enabled
+		if [[ -z ${LOGGER} ]]; then
+			ENABLE_SYSLOG=0
+			warn_msg "Syslog logging is enabled, but \`LOGGER' is unset, disabling syslog logging"
+			return 0
+		fi
+		if [[ -x ${LOGGER} ]]; then # we can only log if we have logger program available
+			notice_msg "Syslog logging is enabled"
+			if [[ ${LOG_FACILITY} ]]; then # check for valid facility user config
+				if ! val_log_facility "${LOG_FACILITY}"; then
+					readonly LOG_FACILITY="${DEFAULT_LOG_FACILITY}"
+					raise_cfg_err_count
+					notice_msg "Setting logging facility to default value: \'${DEFAULT_LOG_FACILITY}'"
+				fi
+			else
+				LOG_FACILITY="${DEFAULT_LOG_FACILITY}"
+				notice_msg "\`LOG_FACILITY' is not defined, setting logging facility to default value: \`${DEFAULT_LOG_FACILITY}'"
+			fi
+		else
+			ENABLE_SYSLOG=0
+			err_msg "Syslog logging is enabled, but logger does not exist. Disabling syslog logging."
+		fi
+	;;
+	*) err_msg "Illegal value \`${ENABLE_SYSLOG}' for \`ENABLE_SYSLOG'. Disabling syslog logging."
+		ENABLE_SYSLOG=0
+		raise_cfg_err_count
+esac
+} # -------------------------------------------------------------------------
+
+set_placeholder() { # set placeholder character used to fill unused values in ruleblocks
+if [[ ${RULE_PLACEHOLDER} ]]; then
+	if [[ ${RULE_PLACEHOLDER} = @(_|-|.|;|,|\|) ]]; then
+		RULE_SEP="${RULE_PLACEHOLDER}"
+		log -N "Setting rule placeholder to: \`${RULE_PLACEHOLDER}'"
+	else
+		log -E "Invalid rule placeholder value. Valid characters are: \`_' \`-' \`.' \`;' \`,' \`|'"
+		raise_cfg_err_count
+		return ${ER_CONF}
+	fi
+else
+	RULE_SEP="${DEFAULT_RULE_SEP}"
+	log -W "No rule placeholder specified, setting it to the default value: \`${DEFAULT_RULE_SEP}'"
+fi
+readonly RULE_SEP
+}
+# -------------------------------------------------------------------------
+
+set_rulesetfile() { # set default ruleset file to save rules to
+if [[ -z ${RULESETFILE} ]]; then
+	RULESETFILE="${SAVE_DIR}"/"${DEFAULT_RULESETFILE}"
+	log -W "\`RULESETFILE' is unset, setting it to the default value: \`${SAVE_DIR}/${DEFAULT_RULESETFILE}'"
+else
+	RULESETFILE="${SAVE_DIR}/${RULESETFILE}"
+fi
+#readonly RULESETFILE
+} # -------------------------------------------------------------------------
+
+start_msg() { # Starting message
+((VERBOSE < 1 )) && return
+if ((ENABLE_COLORS == 1)) ; then
+	echo -e "${WHITE}${FONT_BOLD}Initializing${COL_TERM}\
+ ${RED}${FONT_BOLD}${ME}${COL_TERM}\
+ ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
+ ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
+ ${WHITE}${FONT_BOLD}- MODE:${COL_TERM}${GREEN}${FONT_BOLD} ${MODE}${COL_TERM}"
+else
+	echo "Initializing ${ME} Firewall ${STR_VERSION} - MODE: ${MODE}"
+fi
+((VERBOSE >= 7)) && {
+	printf "PID: %d\n" ${PID}
+	printf "Parameters: %s\n" "${PARAMS}"
+}
+syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: ${MODE} - Parameters: ${PARAMS}"
+if ((EXEC_COMMANDS == 0)); then
+	log -T "Dry-run! Not executing generated commands"
+fi
+} # -------------------------------------------------------------------------
+
+check_main_vars() { # CHECK MAIN VARIABLES
+log -w "Checking for mandatory variables"
+check_vars ${MANDATORY_VARIABLES} || return ${ER_NODEF}
+} # -------------------------------------------------------------------------
+
+check_sys_files() { # CHECK SYSTEM STANDARD FILES
+log -w "Checking for mandatory system files"
+for rvar in "${PROTOCOLS}" "${SERVICES}"; do
+	if [[ ! -f ${rvar} ]]; then
+		log -x "${rvar}"
+		return ${ER_NOEX}
+	fi
+done
+} # -------------------------------------------------------------------------
+
+fill_loadmod_list_array() {
+if [[ ${MODULES_TO_LOAD} ]]; then
+	log -w "Reading MODULES_TO_LOAD"
+	fill_array 'MODULES_TO_LOAD'
+	((${#MODULES_TO_LOAD[@]})) || return 0
+	check_array_unique 'MODULES_TO_LOAD' || {
+			raise_cfg_err_count
+	}
+	readonly MODULES_TO_LOAD
+fi
+} # -------------------------------------------------------------------------
+
+fill_rmmod_list_array() {
+if [[ ${MODS_TO_RM} ]]; then
+	log -w "Reading MODS_TO_RM"
+	fill_array 'MODS_TO_RM'
+	((${#MODS_TO_RM[@]})) || return 0
+	check_array_unique 'MODS_TO_RM' || {
+		raise_cfg_err_count
+	}
+	readonly MODS_TO_RM
+fi
+} # -------------------------------------------------------------------------
+
+fill_proto_svc_arrays() {
+# load protocols and services file (1st column, no comments) into an array
+fill_array_from_file 'PROTOCOLS_ARRAY' "${PROTOCOLS}"
+fill_array_from_file 'SERVICES_ARRAY' "${SERVICES}"
+readonly PROTOCOLS_ARRAY SERVICES_ARRAY
+} # -------------------------------------------------------------------------
+
+fill_netif_array() { # FILL NETWORK DATA ARRAY
+log -w "Filling net interface array"
+fill_array NET_INTERFACES || return 1
+readonly NET_INTERFACES
+if ! ((${#NET_INTERFACES[@]})); then
+	log -E "NET_INTERFACES array is empty."
+	return ${ER_NODEF}
+fi
+} # -------------------------------------------------------------------------
+
+fill_net_arrays() # FILL LOCAL NETWORK DATA ARRAYS
+{
+local -i net_idx
+log -w "Loading local network data arrays"
+for net_idx in ${!LOCAL_NET_ARRAY[@]}; do
+	log -w "${PF}loading: ${LOCAL_NET_ARRAY[net_idx]}"
+	fill_array ${LOCAL_NET_ARRAY[net_idx]} || {
+		log -E "Failed filling array ${LOCAL_NET_ARRAY[net_idx]}."
+		return ${ER_FAIL}
+	}
+	readonly ${LOCAL_NET_ARRAY[net_idx]}
+done
+} # -------------------------------------------------------------------------
+
+fill_script_map() { # fill SCRIPT_MAP array
+if [[ ${SCRIPT_MAP} ]]; then
+	log -w "Loading SCRIPT_MAP"
+	fill_array 'SCRIPT_MAP'
+	((${#SCRIPT_MAP[@]})) || return 0
+	check_array_unique 'SCRIPT_MAP' || {
+		raise_cfg_err_count
+		return 0
+	}
+	readonly SCRIPT_MAP
+fi
+} # -------------------------------------------------------------------------
+
+load_configs() { # LOAD CONFIG FILES
+log -S "Loading config files"
+for rvar in ${CONFIG_FILES}; do
+	load_file config "${CONFIG_DIR}"/"${rvar}" || {
+		log -E "Failed loading config file ${CONFIG_DIR}/${rvar}."
+		return ${ER_FAIL}
+	}
+done
+} # -------------------------------------------------------------------------
+
+load_pro_epilog_scripts() { # load pro and epilog scripts
+if [[ $cmdline_skip_scripts = all ]]; then
+	log -N "Not running scripts."
+	return 0
+fi
+[[ ${SCRIPT_MAP} ]] || {
+	log -v 'SCRIPT_MAP'
+	return 0
+}
+local scr_mode="${1}" r_modes scr_type scripts_to_run r_m scrpt
+[[ ${scr_mode} = @(prolog|epilog) ]] || {
+	log -o "${scr_mode}" ${FUNCNAME}
+	return 1
+}
+for scr_idx in ${!SCRIPT_MAP[@]}; do
+	set -- ${SCRIPT_MAP[scr_idx]}
+#	r_modes="$(IFS=, split_val ${1})" scr_type="${2}"
+	r_modes="${1//,/ }" scr_type="${2}"
+	shift 2
+	scripts_to_run="${@}"
+	[[ ${scr_type} = @(epilog|prolog) ]] || {
+		log -E "Invalid script mode descriptor \`${scr_type}' in \`SCRIPT_MAP' at index \`${scr_idx}'. \
+			Must be either epilog or prolog."
+		raise_cfg_err_count
+		continue
+	}
+	for r_m in ${r_modes}; do
+		if [[ ${r_m} = ${MAIN_ARG} || ${r_m} = all ]] && [[ ${scr_type} = ${scr_mode} ]]; then
+			[[ $scr_type = $cmdline_skip_scripts ]] && {
+				log -N "Not running $cmdline_skip_scripts scripts."
+				continue
+			}
+			for scrpt in ${scripts_to_run}; do
+				load_file script "${SCRIPT_DIR}/${scr_type}/${scrpt}" || {
+					log -F "loading script \`${SCRIPT_DIR}/${scr_type}/${scrpt}'."
+					cmd_err_count 'misc' "source ${SCRIPT_DIR}/${scr_type}/${scrpt}"
+				}
+			done
+		fi
+	done
+done
+} # -------------------------------------------------------------------------
+
+set_sysctl() { # Set proc stuff
+((NO_PROC == 1)) && return 0
+log -T "Setting sysctl configuration"
+proc_conf_global || return ${?}
+} # -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# XML PARSING
+# -------------------------------------------------------------------------
+_verify_attributes() {
+for i in ${attr_indicies}; do
+	eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+	str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+	for i in ${!ARR_TAG_REF[@]}; do
+		if [[ ${ARR_TAG_REF[i]%%[[:blank:]]*} = ${tag_name} ]]; then
+			lsearch "${str_attr_name}" ${ARR_TAG_REF[i]#*[[:blank:]]} || {
+				log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+				return 1
+			}
+			break
+		fi
+	done
+done
+} # -------------------------------------------------------------------------
+
+#xtract_assignment() {
+#local str_w str_v
+#IFS='=' read -r str_w str_v < <(printf "%s\n" "${@}")
+#printf "'%s' '%s'\n" "${str_w}" "${str_v}"
+#}
+
+_get_attribute_data() {
+for i in ${attr_indicies}; do
+#	eval 'set -- '$(xtract_assignment "$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")")
+#	printf "%s %s\n" "$1" "$2" # str_attr_name="${1}" str_attr_val="${2}"
+	str_attr="$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")"
+	printf "%s %s\n" "${str_attr%%=*}" "${str_attr#*=}"
+done
+} # -------------------------------------------------------------------------
+
+#_get_attribute_data() {
+#for i in ${attr_indicies}; do
+#	eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+#	printf "%s %s\n" "${str_attr%%=*}" "${str_attr#*=}"
+#done
+#}
+# -------------------------------------------------------------------------
+
+xml_interpreter_templates() {
+local -i syntax_version=0,1 tag_max_depth=3 tag_depth=0 root_found=0 template_open=0 IDX=0
+local -i i tag_idx opt_idx m_count attr_members cont_members
+local str_root_tag="ip_array_root" str_root_attr="iptables_templates"
+local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val template_name str_attributes attr_indicies str_cont tmp_content str_type
+local -a RESULT_ARR
+local -a ARR_TAG_REF=(
+"template name msg table chain target reverse_condition reverse_mode"
+"mandatory_vars"
+"table name"
+"target name"
+"chain name"
+"always_use_0 ${ARG_NAMES_LIST[@]}"
+"always_use_1 ${ARG_NAMES_LIST[@]}"
+"option_list_0 ${ARG_NAMES_LIST[@]}"
+"option_list_1 ${ARG_NAMES_LIST[@]}"
+"load_template name"
+"state_match_arg"
+"template_msg name"
+"reverse_mode name"
+"reverse_condition name"
+)
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="${1}" tag_name="${2}"
+	case "${str_act}" in
+		open)
+			[[ ${DEBUG_INFO} ]] && {
+				printf "%s\n" "opening tag: \`${tag_name}'"
+				for str_cont in ARR_COMMENT_NO ARR_ATTR_NO ARR_CONT_NO; do
+					dbg_arr ${str_cont}_${tag_idx}
+				done
+			}
+#			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+#				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+#			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				[[ ${tag_name} = ${str_root_tag} ]] || {
+					log -E "Root tag needed"
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							if ! lsearch "${str_syntax_version}" "${TEMPLATE_SYNTAX_VERSION_ARRAY[@]}"; then
+								log -E "Incompatible template syntax version \`${syntax_version}'."
+								return 1
+							fi
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1
+			else
+				((++tag_depth <= tag_max_depth)) || { log -E "Max depth is ${tag_max_depth}"; return 1; }
+				if [[ ${tag_name} != template ]] && ((template_open == 0)); then
+					log -E "\`${tag_name}' needs an open template."
+					return 1
+				fi
+				case "${tag_name}" in
+					template)
+						template_open=1 m_count=0 template_name=""
+						_verify_attributes || return 1
+						while read -r str_attr_name str_attr_val; do
+							if [[ ${str_attr_name} = name ]]; then
+								template_name="${str_attr_val}"
+								break
+							fi
+						done < <(_get_attribute_data)
+						[[ ${template_name} ]] || { log -E "No template name provided."; return 1; }
+						lsearch "${template_name}" "${TEMPLATE_NAMES_ARRAY[@]}" && {
+							log -E "Duplicate template name \`${template_name}'."
+							return 1
+						}
+						TEMPLATE_NAMES_ARRAY[${#TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
+						TEMP_TEMPLATE_NAMES_ARRAY[${#TEMP_TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
+						RESULT_ARR[IDX++]="${template_name}=("
+						_verify_attributes || return 1
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+							case "${str_attr_name}" in
+								target|chain)
+									opt_idx=0
+#									for tmp_content in $(IFS=, split_val ${str_attr_val}); do
+									for tmp_content in ${str_attr_val//,/ }; do
+										RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}[$((opt_idx++))]=\\\"${tmp_content}\\\"\""
+									done
+								;;
+								table|reverse_mode|reverse_condition|msg)
+									RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}=\\\"${str_attr_val}\\\"\""
+								;;
+							esac
+						done
+					;;
+					table|reverse_mode|reverse_condition|msg|template_msg)
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+#set -x
+						if ((attr_members > 0)); then
+							_verify_attributes || return 1
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+								RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}=\\\"${str_attr_val}\\\"\""
+							done
+						fi
+						if ((cont_members > 0)); then
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+							RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}=\\\"${str_cont}\\\"\""
+						fi
+#set +x
+					;;
+					target|chain|load_template|always_use_0|always_use_1|option_list_0|option_list_1|state_match_arg|mandatory_vars)
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						if ((attr_members > 0)); then
+							opt_idx=0
+							_verify_attributes || return 1
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+								case "${tag_name}" in
+									always_use_0|always_use_1|option_list_0|option_list_1)
+										if [[ ${str_attr_val} ]]; then
+											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=${str_attr_val}\""
+										else
+											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}\""
+										fi
+									;;
+									*) RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=\\\"${str_attr_val}\\\"\""
+								esac
+								let m_count++ opt_idx++
+							done
+						fi
+						if ((cont_members > 0)); then
+							opt_idx=0
+							for i in $(arr_indicies "ARR_CONT_NO_${tag_idx}"); do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								eval 'set -- '"${str_cont}"
+								for tmp_content in "${@}"; do
+									RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}[$((opt_idx++))]=${tmp_content}\""
+								done
+							done
+						fi
+					;;
+					*) log -E "Invalid tag name \`${tag_name}'."
+						return 1
+				esac
+			fi
+		;;
+		close)
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "closing tag: \`${tag_name}'"
+			if [[ ${tag_name} = template ]]; then
+				template_open=0
+				RESULT_ARR[IDX++]=")"
+			fi
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			fi
+#			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+#				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+#			done
+		;;
+	esac
+done
+# print collected array assignments
+if ((${#RESULT_ARR[@]} > 0)); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No templates found."
+	return 0
+fi
+}
+# -------------------------------------------------------------------------
+
+xml_interpreter_ruleblocks() {
+local -i syntax_version=0,1 tag_max_depth=2 tag_depth=0 root_found=0 IDX=0 tag_idx i rcount
+local str_root_tag="ip_array_root" str_root_attr="ruleblocks" str_valid_tags="ruleblock" str_valid_attr="name"
+local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val attr_indicies str_type
+local -a RESULT_ARR
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="${1}" tag_name="${2}"
+	case "${str_act}" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="# ${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				[[ ${tag_name} = ${str_root_tag} ]] || {
+					log -E "Root tag needed"
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							if ! lsearch "${str_syntax_version}" "${RULEBLOCK_SYNTAX_VERSION_ARRAY[@]}"; then
+								log -E "Incompatible ruleblock syntax version \`${syntax_version}'."
+								return 1
+							fi
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1
+			else
+				[[ ${tag_name} = ${str_valid_tags} ]] || {
+					log -E "Tag not valid for \`${str_root_tag}'."
+					return 1
+				}
+				((++tag_depth <= tag_max_depth)) || {
+					log -E "Max depth is ${tag_max_depth}."
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						"${str_valid_attr}")
+							ruleblock_name="${str_attr_val}"
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${ruleblock_name} ]] || { log -E "No ruleblock name provided."; return 1; }
+				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Ruleblock: '${ruleblock_name}' opened"
+				for i in ${!RULEBLOCK_NAMES_ARRAY[@]}; do # check for duplicate ruleblock names
+					if [[ ${RULEBLOCK_NAMES_ARRAY[i]} = ${ruleblock_name} ]]; then
+						log -E "Duplicate ruleblock name \`${ruleblock_name}'."
+						return 1
+					fi
+				done
+				RULEBLOCK_NAMES_ARRAY[${#RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
+				TEMP_RULEBLOCK_NAMES_ARRAY[${#TEMP_RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
+				RESULT_ARR[IDX++]="${ruleblock_name}=("
+				rcount=0
+				for i in $(arr_indicies "ARR_CONT_NO_${tag_idx}"); do
+					eval 'RESULT_ARR[IDX++]=['$((rcount++))']="\"${ARR_CONT_NO_'${tag_idx}'['${i}']}\""'
+					[[ ${DEBUG_INFO} ]] && eval 'printf "%s\n" "Adding rule: ${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+				done
+				RESULT_ARR[IDX++]=")"
+			fi
+		;;
+		close)
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			fi
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="# ${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			if [[ ${tag_name} == ruleblock ]]; then
+				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Ruleblock '${ruleblock_name}' closed"
+			fi
+		;;
+	esac
+done
+# print collected array assignments
+if ((${#RESULT_ARR[@]} > 0)); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No ruleblocks found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_interpreter_rules() {
+local -i syntax_version=0,1 root_found=0 tag_depth=0 IDX=0
+local str_root_tag="ip_array_root" str_root_attr="iptables_rules"
+local str_act tag_name str_attr str_attr_name str_attr_val attr_indicies str_cont tmp_content cont_indicies str_app_opts str_type
+local template_name ruleblock_name reverse_mode reverse_condition
+local -i tag_idx opt_idx attr_members cont_members opt_list_count opt_count global_opts crule_opts templ_idx rblock_idx c_rule q_rule t_rule pf_rule
+local -a RESULT_ARR ARR_GLOBAL_OPTS ARR_TMP_GLOB_TEMPLATE ARR_GLOB_TMP_RULEBLOCK ARR_CRULE_OPTS
+
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="${1}" tag_name="${2}"
+	case "${str_act}" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			cont_indicies=$(arr_indicies "ARR_CONT_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				[[ ${tag_name} = ${str_root_tag} ]] || {
+					log -E "Root tag \`${str_root_tag}' needed."
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							lsearch "${str_syntax_version}" "${RULEFILE_SYNTAX_VERSION_ARRAY[@]}" || {
+								log -E "Incompatible rule file syntax version \`${syntax_version}'."
+								return 1
+							}
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1 global_opts=0 opt_list_count=0
+			else
+				let ++tag_depth
+				case "${tag_name}" in
+					f|pub_func)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						pf_rule=1
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								lsearch "${str_cont%%+([[:blank:]])*}" $(show_array_column PUBLIC_FUNCTION_LIST) || {
+									log -E "Unkown public function name \`${str_cont%%+([[:blank:]])*}'."
+									return 1
+								}
+#							RESULT_ARR[IDX++]="${str_cont}"
+							RESULT_ARR[IDX++]="$(re_normalize str_cont)"
+						done
+						if ((attr_members > 0)); then
+							while read -r str_attr_name str_attr_val; do
+								case "${str_attr_name}" in
+									name)
+										lsearch "${str_attr_val}" $(show_array_column PUBLIC_FUNCTION_LIST) || {
+											log -E "Unkown public function name \`${str_attr_val}'."
+											return 1
+										}
+										 RESULT_ARR[IDX++]="${str_attr_val}"
+									;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+
+							done < <(_get_attribute_data)
+						fi
+					;;
+					r|rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						q_rule=1
+						local str_app_opts=""
+						for i in ${!ARR_GLOBAL_OPTS[@]}; do
+							str_attr_name="${ARR_GLOBAL_OPTS[i]%%=*}" str_attr_val="${ARR_GLOBAL_OPTS[i]#*=}"
+							str_app_opts+="${str_attr_name}=\"${str_attr_val}\" "
+						done
+						if ((cont_members > 0)); then
+							tmp_content=""
+#set -x
+							for i in ${cont_indicies}; do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+#								eval 'set -- '"${str_cont}"
+								eval 'set -- '"$(re_normalize str_cont)"
+								str_cont=""
+								for str_attr in "${@}"; do
+									str_cont+="${str_attr%%=*}=\"${str_attr#*=}\" "
+								done
+#								tmp_content+="${str_cont}"
+								tmp_content+="$(re_normalize str_cont)"
+							done
+#							str="${str%[[:blank:]]}"
+							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${tmp_content%[[:blank:]]}"
+#set +x
+						fi
+						if ((attr_members > 0)); then
+							str_cont=""
+#set -x
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+#								str_cont+="${str_attr_name}=\"${str_attr_val}\" "
+								str_cont+="${str_attr_name}=\"$(re_normalize str_attr_val)\" "
+							done
+							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${str_cont%[[:blank:]]}"
+#set +x
+						fi
+					;;
+					tr|template_rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						t_rule=1
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+							template_name="${str_cont%%[[:blank:]]*}"
+							((${#ARR_GLOBAL_OPTS[@]} == 0)) || {
+								log -W "Global options \`${ARR_GLOBAL_OPTS[@]}' will not be applied to the template \`${template_name}'."
+							}
+							RESULT_ARR[IDX++]="process_ipt_ruleblock ${str_cont}"
+						done
+						if ((attr_members > 0)); then
+							template_name="" ruleblock_name=""
+							while read -r str_attr_name str_attr_val; do
+								case "${str_attr_name}" in
+									template) template_name="${str_attr_val}" ;;
+									ruleblock) ruleblock_name="${str_attr_val}" ;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+							done < <(_get_attribute_data)
+							[[ ${template_name} || ${ruleblock_name} ]] || {
+								log -E "The \`${tag_name}' tag requires \`template_name' and \`ruleblock_name' attributes."
+								return 1
+							}
+							((${#ARR_GLOBAL_OPTS[@]} == 0)) || {
+								log -W "Global options \`${ARR_GLOBAL_OPTS[@]}' will not be applied to the template \`${template_name}'."
+							}
+							RESULT_ARR[IDX++]="process_ipt_ruleblock ${template_name} ${ruleblock_name}"
+						fi
+					;;
+					cr|combined_rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((cont_members > 0)) && { log -E "Only attributes are allowed in tag \'${tag_name}'."; return 1; }
+						templ_idx=0 rblock_idx=0 opt_idx=0 c_rule=1 opt_list_count=0 opt_count=0 crule_opts=0 max_optlist=""
+						reverse_mode="" reverse_condition=""
+						ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+							case "${str_attr_name}" in
+								msg) RESULT_ARR[IDX++]="log -I \"${str_attr_val}\"" ;;
+								reverse_mode) reverse_mode="${str_attr_val}" max_optlist=1 ;;
+								reverse_condition) reverse_condition="${str_attr_val}" ;;
+								*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+									return 1
+							esac
+						done
+					;;
+					opt|opts|option|options|optlist)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((c_rule == 1)) || { log -E "Tag \`${tag_name}' is only valid within a \`combined_rule'."; return 1; }
+						((opt_count == 0)) || { log -E "There is already an open option list."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						opt_idx=0
+						if [[ ${reverse_mode} ]]; then
+							((opt_list_count <= max_optlist)) || opt_list_count=0
+							if ((opt_list_count == 0)); then
+								templ_idx=0 rblock_idx=0
+								ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_mode=${reverse_mode}\""
+								[[ ${reverse_condition} ]] && ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_condition=\\\"${reverse_condition}\\\"\""
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
+							fi
+							for i in ${!ARR_GLOBAL_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
+							done
+							for i in ${!ARR_CRULE_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
+							done
+							for i in ${cont_indicies}; do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+#								eval 'set -- '"${str_cont}"
+								eval 'set -- '"$(re_normalize str_cont)"
+								for str_attr in "${@}"; do
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									_validate_ipt_option_name "${str_attr_name}" || return 1
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name+="=${str_attr_val}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
+									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+								done
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+							done
+							if ((attr_members > 0)); then
+								for i in ${attr_indicies}; do
+									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									_validate_ipt_option_name "${str_attr_name}" || return 1
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name+="=${str_attr_val}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
+									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+								done
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+							fi
+							if ((opt_list_count == max_optlist)); then
+								for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
+									RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
+								done
+								RESULT_ARR[IDX++]=")"
+								for i in ${!ARR_GLOB_TMP_RULEBLOCK[@]}; do
+									RESULT_ARR[IDX++]="${ARR_GLOB_TMP_RULEBLOCK[i]}"
+								done
+								RESULT_ARR[IDX++]=")"
+								RESULT_ARR[IDX++]="process_ipt_ruleblock 'TEMPLATE_TEMP_C_RULE' 'RULEBLOCK_TEMP_C_RULE'"
+							fi
+						else
+							templ_idx=0 rblock_idx=0 opt_list_count=0
+							ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+							ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
+							ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
+							for i in ${!ARR_GLOBAL_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
+								if [[ ${ARR_GLOBAL_OPTS[i]#*=} = *[[:blank:]]* ]]; then
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_GLOBAL_OPTS[i]#*=}' "
+								else
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
+								fi
+							done
+							for i in ${!ARR_CRULE_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
+								if [[ ${ARR_CRULE_OPTS[i]#*=} = *[[:blank:]]* ]]; then
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_CRULE_OPTS[i]#*=}' "
+								else
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
+								fi
+							done
+							for i in ${cont_indicies}; do
+#set -x
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+#								eval 'set -- '"${str_cont}"
+								eval 'set -- '"$(re_normalize str_cont)"
+								for str in "${@}"; do
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str%%=*}\""
+									if [[ ${str#*=} = *[[:blank:]]* ]]; then
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str#*=}' "
+									else
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str#*=} "
+									fi
+								done
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+#set +x
+							done
+							if ((attr_members > 0)); then
+								for i in ${attr_indicies}; do
+#set -x
+									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name%%=*}\""
+									if [[ ${str_attr_val} = *[[:blank:]]* ]]; then
+#										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str_attr_val}' "
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="\\\"${str_attr_val}\\\" "
+									else
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+									fi
+								done
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+	#							ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"$(re_normalize ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]])\""
+#set +x
+							fi
+							for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
+								RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
+							done
+							RESULT_ARR[IDX++]=")"
+#set -x
+							for i in ${!ARR_GLOB_TMP_RULEBLOCK[@]}; do
+								RESULT_ARR[IDX++]="${ARR_GLOB_TMP_RULEBLOCK[i]}"
+							done
+#set +x
+							RESULT_ARR[IDX++]=")"
+							RESULT_ARR[IDX++]="process_ipt_ruleblock 'TEMPLATE_TEMP_C_RULE' 'RULEBLOCK_TEMP_C_RULE'"
+						fi
+						let ++opt_count ++opt_list_count
+					;;
+					*)
+						((opt_count == 0)) || { log -E "There is already an open option list."; return 1; }
+						_validate_ipt_option_name "${tag_name}" || return 1
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+							if ((c_rule == 0)); then
+								ARR_GLOBAL_OPTS[global_opts]="${tag_name}=${str_cont}"
+							else
+								ARR_CRULE_OPTS[crule_opts]="${tag_name}=${str_cont}"
+							fi
+						done
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_val="${str_attr#*=}"
+							if ((c_rule == 0)); then
+								ARR_GLOBAL_OPTS[global_opts]="${tag_name}=${str_attr_val}"
+							else
+								ARR_CRULE_OPTS[crule_opts]="${tag_name}=${str_attr_val}"
+							fi
+						done
+						if ((c_rule == 0)); then
+							let ++global_opts
+						else
+							let ++crule_opts
+						fi
+					;;
+				esac
+			fi
+		;;
+		close)
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			else
+				case "${tag_name}" in
+					f|pub_func) pf_rule=0 ;;
+					r|rule) q_rule=0 ;;
+					tr|template_rule) t_rule=0 ;;
+					opt|opts|option|options|optlist) let --opt_count ;;
+					cr|combined_rule)
+						if [[ ${reverse_mode} ]]; then
+							(($(($((opt_list_count / 2)) * 2)) == opt_list_count)) || {
+								log -E "\`reverse_mode' requires 2 option lists."
+								return 1
+							}
+						fi
+						reverse_mode="" reverse_condition=""
+						c_rule=0
+					;;
+					*)
+						if ((c_rule == 0)); then
+							unset ARR_GLOBAL_OPTS[--global_opts]
+						else
+							unset ARR_CRULE_OPTS[--crule_opts]
+						fi
+				esac
+			fi
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]} > 0)); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No rules found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_parser() {
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local str_interpreter="${1}"
+local line tag_name attributes last_tag tmp_content str_attr str_attr_name str_attr_val
+local -i tag_idx=0 tmp_tag_idx=0 comment_mode=0 comment_idx=0 attr_idx=0 cont_idx=0 cont_expect=0 attr_expect=0 line_count=0 x
+local -a ARR_TAGS ARR_TMP_TAGS
+while read -r; do let line_count+=1
+	line="${REPLY}"
+	[[ ${DEBUG_INFO} ]] && printf "%s\n" "Reading new line #${line_count}: '${line}'"
+	# skip empty, xml version and comment lines
+	local -a "ARR_COMMENT_NO_${tag_idx}"
+	[[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]] && {
+		line="${line#*'<!--'}"; line="${line%'-->'*}"
+		[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+		}
+		continue
+	}
+	if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
+		[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment starts with: '${line}'"
+		line="${line#*'<!--'}"
+		[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+		}
+		let comment_mode+=1
+		continue
+	elif [[ ${line} = *'-->'* ]]; then # multiline comment ends
+		[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ends with: '${line}'"
+		tmp_content="${line%'-->'*}"
+		[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
+			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+		}
+		line="${line#*'-->'}"
+		if ((comment_mode > 0)); then
+			let comment_mode-=1
+		else
+			log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
+			return 1
+		fi
+		[[ ${DEBUG_INFO} ]] && ((comment_mode == 0)) && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
+	else
+		[[ ${DEBUG_INFO} ]] && ((comment_mode > 0)) && printf "%s\n" "Skipping comment line: '${line}' #${line_count}"
+		((comment_mode > 0)) && {
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			continue
+		}
+	fi
+	[[ ${line} = @(*([[:blank:]])<[?]xml+([[:blank:]])version=*[?]>*) ]] && line="${line#*'>'}"
+	while [[ ${line} && ${line} != +([[:blank:]]) ]]; do # re-iterate until line is blank
+		[[ ${DEBUG_INFO} ]] && printf "%s\n" "NEW LOOP RUN - line: '${line}'"
+		if [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
+		# NEW TAG IN LINE <tag>
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"; tag_name="${tag_name//[[:blank:]]/}"
+			last_tag="${tag_name}" line="${line#*<*>}"
+			cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
+			local -a "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx++]="open ${tag_name}" ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			[[ ${DEBUG_INFO} ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
+		# NEW TAG IN LINE <tag attrib=val >
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Tag with attributes found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%+([[:blank:]])*}"
+			attributes="${line#*'<'"${tag_name}"}"; attributes="${attributes%%'>'*}"
+			last_tag="${tag_name}" line="${line#*<*>}"
+			strip_blanks_var 'attributes'
+			attr_idx=0 cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
+			local -a "ARR_ATTR_NO_${tag_idx}" "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx]="open ${tag_name}"
+			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			if [[ ${attributes} && ${attributes} != +([[:blank:]]) ]]; then
+				eval 'set -- '"$(re_normalize attributes)"
+				for str_attr in "${@}"; do
+					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+#					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"${str_attr}"'"'
+				done
+			fi
+			[[ ${DEBUG_INFO} ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
+			let tag_idx+=1
+		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))* ]]; then
+		# NEW TAG IN LINE <tag attrib=val
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Tag with attributes found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"
+			attributes="${line##*'<'+([[:word:]])}"; attributes="${attributes%%?(/)'>'*}"
+			tag_name="${tag_name%"${attributes}"*}"
+			last_tag="${tag_name}" line="${line#*"${attributes}"}"
+			strip_blanks_var 'attributes'
+			attr_idx=0 cont_idx=0 cont_expect=1 attr_expect=1 comment_idx=0
+			local -a "ARR_ATTR_NO_${tag_idx}" "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx]="open ${tag_name}"
+			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			if [[ ${attributes} && ${attributes} != +([[:space:]]) ]]; then
+				eval 'set -- '"$(re_normalize attributes)"
+				for str_attr in "${@}"; do
+					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+				done
+			fi
+			[[ ${DEBUG_INFO} ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
+			let tag_idx+=1
+		elif [[ ${line} = *\</+([[:word:]])\>* ]]; then
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Closing tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'/}"; tag_name="${tag_name%%'>'*}"
+			((${#ARR_TMP_TAGS[@]} > 0)) || { log -E "Attempting to close tag \`${tag_name}', but there is no tag opened."; return 1; }
+			[[ ${tag_name} = ${ARR_TMP_TAGS[tmp_tag_idx-1]} ]] || {
+				log -E "Attempting to close tag \`${tag_name}', but tag \`${ARR_TMP_TAGS[tmp_tag_idx-1]}' needs to be closed first."
+				return 1
+			}
+			tmp_content="${line%%'<'/+([[:word:]])'>'*}"
+			strip_blanks_var 'tmp_content'
+			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+			unset ARR_TMP_TAGS[--tmp_tag_idx]
+			ARR_TAGS[tag_idx++]="close ${tag_name}"
+			cont_expect=0 attr_expect=0 comment_idx=0
+			line="${line#*'<'/*'>'}"
+			[[ ${DEBUG_INFO} ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = */\>* ]]; then
+			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Closing tag found on line #${line_count}: '${line}'"
+			((${#ARR_TMP_TAGS[@]} > 0)) || { log -E "Attempting to close a tag, but there is no tag opened."; return 1; }
+			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
+			strip_blanks_var 'tmp_content'
+			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+			unset ARR_TMP_TAGS[--tmp_tag_idx]
+			ARR_TAGS[tag_idx++]="close ${last_tag}"
+			cont_expect=0 attr_expect=0 comment_idx=0
+			[[ ${DEBUG_INFO} ]] && printf "%s\n%s\n" "Tag name: '${last_tag}'" "Remaining line: '${line}'"
+		else # either expected attributes, or expected content, or an unmatched line
+			if ((${#ARR_TAGS[@]} > 0)); then
+				if [[ ${line} && ${line} != +([[:space:]]) ]]; then
+					if ((attr_expect == 1)); then
+						if [[ ${line} = *([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
+							str_attr="${line%%[[:blank:]]*}"
+							eval 'ARR_ATTR_NO_'$((tag_idx-1))'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+							line="${line#"${str_attr}"}"
+							continue
+						elif [[ ${line} = *([[:blank:]])\>* ]]; then
+							line="${line#*'>'}"
+							attr_expect=0
+							continue
+						else
+							log -E "Unmatched line #${line_count} - expecting attribute, or closing \`>': '${line}'"
+							return 1
+						fi
+					fi
+					if [[ ${line} = *([[:blank:]])+(\<|\>)* ]]; then
+						log -E "Unexpected metachar <|> on line #${line_count}: '${line}'"
+						return 1
+					fi
+					if ((cont_expect == 1)); then
+						tmp_content="${line%%<+([[:word:]])*([[:blank:]])>*}"
+						line="${line#*"${tmp_content}"}"
+						strip_blanks_var 'tmp_content'
+						[[ ${DEBUG_INFO} ]] && printf "%s\n"  "Adding content for tag ${tag_name}: '${tmp_content}'"
+						eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+					else
+						log -E "Unmatched line #${line_count} - no content expected: '${line}'"
+						return 1
+#						echo "ADDING CONTENT: '${line}' TO CLOSE TAG"
+#						eval 'ARR_CONT_NO_'${tag_idx}'[cont_idx++]="'"${line}"'"'
+					fi
+				fi
+				if [[ -z ${line} || ${line} = +([[:blank:]]) ]]; then continue 2; fi
+			else
+				log -E "Unmatched line #${line_count}: '${line}'"
+				return 1
+			fi
+		fi
+	done
+done
+[[ ${DEBUG_INFO} ]] &&  {
+	for ((x=0; x<tag_idx; ++x)); do
+		printf "ARR_TAGS[$x]:\t '%s'\n" "${ARR_TAGS[x]}"
+		eval 'for i in ${!ARR_ATTR_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_ATTR_NO_'${x}'[$i]: '\\\"'${ARR_ATTR_NO_'${x}'[i]}'\\\"'"; done'
+		eval 'for i in ${!ARR_CONT_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_CONT_NO_'${x}'[$i]: '\\\"'${ARR_CONT_NO_'${x}'[i]}'\\\"'"; done'
+		eval 'for i in ${!ARR_COMMENT_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_COMMENT_NO_'${x}'[$i]: '\\\"'${ARR_COMMENT_NO_'${x}'[i]}'\\\"'"; done'
+	done
+}
+if ((${#ARR_TMP_TAGS[@]})); then
+	log -E "${#ARR_TMP_TAGS[@]} tags have been left open: ${ARR_TMP_TAGS[*]}"
+	return 1
+fi
+case "${str_interpreter}" in
+	rules) xml_interpreter_rules || return ${?} ;;
+	ruleblocks) xml_interpreter_ruleblocks || return ${?} ;;
+	templates) xml_interpreter_templates || return ${?} ;;
+esac
+} # -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+
+save_command_array() { # save a selected command array to a file
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local appl_msg proc_val
+local cmd_arr=${1} # name of the array
+local -i work_arr_sum idx
+if ! ((${#CMD_NAMES_ARRAY[@]})); then
+	log -u 'CMD_NAMES_ARRAY'
+	return 1
+fi
+for idx in ${!CMD_NAMES_ARRAY[@]}; do
+	set -- ${CMD_NAMES_ARRAY[idx]}
+	[[ ${1} != ${cmd_arr} ]] && continue # not the array we want
+	shift 2
+	appl_msg=${*}
+	work_arr_sum=$(arr_members_sum ${cmd_arr})
+	break
+done
+if ! ((work_arr_sum)); then # if it has members
+	log -W "${cmd_arr} is empty, no ${appl_msg} to save"
+	return 0
+fi
+log -S "Saving ${work_arr_sum} ${appl_msg}"
+printf "\n# %s\n" "${appl_msg}" >>"${RULESETFILE}"
+case "${cmd_arr}" in
+	(PROC_CMD_ARRAY)
+		for idx in ${!PROC_CMD_ARRAY[@]}; do
+			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
+				proc_val="${1}"
+				shift
+			printf "%s\n" "echo \""${proc_val}"\" >\"${*}\"" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_POL_ARRAY)
+		for idx in ${!IPT_POL_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_POL_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_FLUSH_ARRAY)
+		for idx in ${!IPT_FLUSH_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_FLUSH_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_CCHAIN_ARRAY)
+		for idx in ${!IPT_CCHAIN_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_CCHAIN_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_RAW_CMD_ARRAY)
+		for idx in ${!IPT_RAW_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_RAW_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_MANGLE_CMD_ARRAY)
+		for idx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_MANGLE_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_NAT_CMD_ARRAY)
+		for idx in ${!IPT_NAT_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_NAT_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_FILTER_CMD_ARRAY)
+		for idx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_FILTER_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_SECURITY_CMD_ARRAY)
+		for idx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_SECURITY_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_RAWPOST_CMD_ARRAY)
+		for idx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_RAWPOST_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(IPT_CMD_ARRAY)
+		for idx in ${!IPT_CMD_ARRAY[@]}; do
+			printf "\"\$IPT\" %s\n" "${IPT_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(TC_CMD_ARRAY)
+		for idx in ${!TC_CMD_ARRAY[@]}; do
+			printf "\"\$TC\" %s\n" "${TC_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+	(MODULE_CMD_ARRAY)
+		for idx in ${!MODULE_CMD_ARRAY[@]}; do
+			printf "\"\$MP\" %s\n" "${MODULE_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+		done
+	;;
+esac
+} # -------------------------------------------------------------------------
+
+iptsave_rulesets() { # save generated iptables commands in iptables-save format
+local -i tidx
+local str_tbl str_ton
+if [[ -f ${RULESETFILE} ]]; then
+	if [[ -w ${RULESETFILE} ]]; then
+		log -w "${RULESETFILE} already exists. Deleting it."
+		"${RM}" -f "${RULESETFILE}"
+	else
+		log -E "\`${RULESETFILE}' is not writable"
+		return ${ER_FAIL}
+	fi
+fi
+for str_tbl in rawpost security raw nat mangle filter; do
+	str_ton=$(subst_var "ENABLE_$(string_toupper "${str_tbl}")")
+	((${str_ton:-0} == 1)) || continue
+	printf "# Generated by %s %s at %s\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}" || {
+		log -F "creating \`${RULESETFILE}'"
+		return ${ER_FAIL}
+	}
+	printf "*%s\n" "${str_tbl}" >>"${RULESETFILE}"
+	for tidx in ${!IPT_POL_ARRAY[@]}; do
+		eval 'set -- '"${IPT_POL_ARRAY[tidx]}"
+		if [[ ${2} = ${str_tbl} ]]; then
+			printf ":%s %s %s\n" "${4}" "${5}" "[0:0]" >>"${RULESETFILE}"
+		fi
+	done
+	for tidx in ${!IPT_CCHAIN_ARRAY[@]}; do
+		eval 'set -- '"${IPT_CCHAIN_ARRAY[tidx]}"
+		if [[ ${2} = ${str_tbl} ]]; then
+			printf ":%s %s %s\n" "${4}" "-" "[0:0]" >>"${RULESETFILE}"
+		fi
+	done
+	case "${str_tbl}" in
+		rawpost)
+			for tidx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_RAWPOST_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+		security)
+			for tidx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_SECURITY_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+		raw)
+			for tidx in ${!IPT_RAW_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_RAW_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+		nat)
+			for tidx in ${!IPT_NAT_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_NAT_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+		mangle)
+			for tidx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_MANGLE_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+		filter)
+			for tidx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
+				printf "%s\n" "${IPT_FILTER_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+			done
+		;;
+	esac
+	printf "%s\n" "COMMIT" >>"${RULESETFILE}"
+	printf "# Completed on %s\n" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}"
+done
+} # -------------------------------------------------------------------------
+
+save_rulesets() { # save the rules from the command arrays into a file
+local cmd_array tmp_rfile="${RULESETFILE}"
+# create the file to save commands to
+if [[ -f ${RULESETFILE} ]]; then
+	if [[ -w ${RULESETFILE} ]]; then
+		log -w "${RULESETFILE} already exists. Deleting it."
+	else
+		log -E "\`${RULESETFILE}' is not writable"
+		return ${ER_FAIL}
+	fi
+fi
+#printf "#!/bin/bash\n\n# Script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >"${RULESETFILE}" || {
+printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$("$DATE" --rfc-2822)" >"$RULESETFILE" || {
+	log -F "creating \`${RULESETFILE}'"
+	return ${ER_FAIL}
+}
+# add vars
+arr_populated 'MODULE_CMD_ARRAY' && printf "MP=%s\n" "\"${MODPROBE}\"" >>"${RULESETFILE}"
+if [[ ${GEN_FORMAT} != ipt ]]; then
+	for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+	do
+		if arr_populated "${cmd_array}"; then
+			[[ ${MODE} = SAVE-SHAPING-COMMANDS ]] || printf "IP_TABLES_NAMES=%s\n" "\"${IP_TABLES_NAMES}\"" >>"${RULESETFILE}"
+			printf "IPT=%s\n" "\"${IPT}\"" >>"${RULESETFILE}"
+			break
+		fi
+	done
+else
+	if [[ ${MODE} = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+		printf "IPT_RESTORE=%s\n" "\"${IPT_RESTORE}\"" >>"${RULESETFILE}"
+	fi
+fi
+arr_populated 'TC_CMD_ARRAY' && {
+	printf "TC=%s\n" "\"${TC}\"" >>"${RULESETFILE}"
+	printf "GREP=%s\n" "\"${GREP}\"" >>"${RULESETFILE}"
+	printf "NET_IFLIST=%s\n" "\"${NET_IFLIST}\"" >>"${RULESETFILE}"
+}
+# act according to runtime mode
+case "${MODE}" in
+	(SAVE-COMMANDS) # save all commands
+		if [[ ${GEN_FORMAT} = ipt ]]; then
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY || return ${?}; }
+			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"${RULESETFILE}"
+			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
+				if arr_populated "${cmd_array}"; then
+					save_command_array ${cmd_array} || return ${?}
+				fi
+			done
+			RULESETFILE="${RULESETFILE%.bash}.iptsave"
+			log -I "Saving generated iptables-save formatted script to: ${RULESETFILE}"
+			iptsave_rulesets || return ${?}
+			RULESETFILE="${tmp_rfile}"
+		elif [[ ${GEN_FORMAT} = cmd ]]; then
+			show_flush_del_pub_save >>"${RULESETFILE}"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+			for cmd_array in MODULE_CMD_ARRAY IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+				IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
+			do
+				if arr_populated "${cmd_array}"; then
+					[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"${RULESETFILE}"
+					[[ ${cmd_array} = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+					save_command_array ${cmd_array} || return ${?}
+				fi
+			done
+		fi
+	;;
+	(SAVE-IPT-COMMANDS) # save iptables commands only
+		show_flush_del_pub_save >>"${RULESETFILE}"
+		for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
+			IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+		do
+			if arr_populated "${cmd_array}"; then
+				[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"${RULESETFILE}"
+				save_command_array ${cmd_array} || return ${?}
+			fi
+		done
+	;;
+	(SAVE-MODPROBE-COMMANDS) # save modprobe commands only
+		save_command_array MODULE_CMD_ARRAY || return ${?}
+	;;
+	(SAVE-PROC-COMMANDS) # save proc commands only
+		save_command_array PROC_CMD_ARRAY || return ${?}
+	;;
+	(SAVE-TC-COMMANDS) # save tc commands only
+		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+		save_command_array TC_CMD_ARRAY || return ${?}
+	;;
+	(SAVE-SHAPING-COMMANDS) # save tc and iptables mangle table commands
+		if [[ ${GEN_FORMAT} = ipt ]]; then
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"${RULESETFILE}"
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+			save_command_array TC_CMD_ARRAY || return ${?}
+			RULESETFILE="${RULESETFILE%.bash}.iptsave"
+			log -I "Saving generated iptables-save formatted script to: ${RULESETFILE}"
+			iptsave_rulesets || return ${?}
+			RULESETFILE="${tmp_rfile}"
+		elif [[ ${GEN_FORMAT} = cmd ]]; then
+			flush_table_pub_save >>"${RULESETFILE}"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_MANGLE_CMD_ARRAY; do
+				if arr_populated "${cmd_array}"; then
+					[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"${RULESETFILE}"
+					save_command_array ${cmd_array} || return ${?}
+				fi
+			done
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+			save_command_array TC_CMD_ARRAY || return ${?}
+		fi
+	;;
+esac
+# write a signature to the saved command file
+if [[ -w ${RULESETFILE} ]]; then
+	printf "\n# END of script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}"
+else
+	log -E "\`${RULESETFILE}' is not writable"
+	return ${ER_FAIL}
+fi
+if [[ -f ${RULESETFILE} ]]; then
+	log -e "Successfully saved script to: ${RULESETFILE}"
+else
+	log -x "${RULESETFILE}"
+	return ${ER_NOEX}
+fi
+} # -------------------------------------------------------------------------
+
+apply_rules() { # apply or save commands form the various command holding arrays
+local str_arr_name
+local -i work_arr_sum i
+((${#CMD_NAMES_ARRAY[@]})) || { # use array names from command names array
+	log -u 'CMD_NAMES_ARRAY'
+	return 1
+}
+for str_arr_name in $(show_array_column CMD_NAMES_ARRAY); do # check if there are any commands in 'queue' at all
+	work_arr_sum=$((work_arr_sum + $(arr_members_sum ${str_arr_name})))
+done
+if ! ((work_arr_sum)); then
+	log -W "Command arrays are empty. No rules to apply"
+	return 0
+fi
+case "${MODE}" in # act according to runtime mode
+	(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
+		log -T "Saving generated script to: ${RULESETFILE}"
+		if [[ ${MODE} = SAVE-IPT-COMMANDS && ${GEN_FORMAT} = ipt ]]; then
+			iptsave_rulesets || return ${?}
+		else
+			save_rulesets || return ${?}
+		fi
+	;;
+	(*)
+#		if [[ ${MODE} = DRY-RUN ]]; then
+		if ((EXEC_COMMANDS == 0)); then
+			log -T "Would apply generated commands"
+		else
+			log -T "Applying generated commands"
+		fi
+		# for every command array listed in CMD_NAMES_ARRAY show rule count
+		for i in ${!CMD_NAMES_ARRAY[@]}; do
+			set -- ${CMD_NAMES_ARRAY[i]}
+			str_arr_name=${1}
+			shift 2
+			work_arr_sum=$(arr_members_sum ${str_arr_name})
+			((work_arr_sum)) || continue
+#			if [[ ${MODE} = DRY-RUN ]]; then
+			if ((EXEC_COMMANDS == 0)); then
+				log -S "Would apply ${work_arr_sum} ${*}"
+			else
+				log -S "Applying ${work_arr_sum} ${*}"
+			fi
+		done
+#		if [[ ${MODE} = DRY-RUN ]]; then # do not apply rules in dry-run mode
+		((EXEC_COMMANDS)) || return 0 # do not apply rules in dry-run mode
+		# merge iptables command arrays
+		for str_arr_name in IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+		do
+			append_array IPT_CMD_ARRAY "${str_arr_name}"
+		done
+		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
+			[[ ${DEBUG_INFO} ]] && dbg_arr "IPT_CMD_ARRAY"
+			if [[ ${GEN_FORMAT} = ipt ]]; then
+				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$("${DATE}" +%F_%T)_rnd${RANDOM}"
+				iptsave_rulesets || {
+					[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
+					cmd_err_count misc 'saving ruleset in iptables-save format'
+					return ${ER_FAIL}
+				}
+#				SAVE_FILE="${RULESETFILE##*/}"
+				USE_COUNTERS=0 # no way worked out to add counters
+				ipt_restore "${RULESETFILE##*/}" || {
+					[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
+					cmd_err_count ipt 'restoring ruleset in iptables-save format'
+					return ${ER_FAIL}
+				}
+				[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
+			elif [[ ${GEN_FORMAT} = cmd ]]; then
+				for i in ${!IPT_CMD_ARRAY[@]}; do
+					eval 'set -- '"${IPT_CMD_ARRAY[i]}"
+					"${IPT}" "${@}" &>/dev/null || cmd_err_count ipt "${IPT}" "${*}"
+				done
+			else
+				log -U ${FUNCNAME}; return 1
+			fi
+			if ((REMOVE_EMPTY_CHAINS == 1)); then # delete empty chains
+				log -I "Removing empty chains"
+				if ((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)); then
+					delete_empty_chains 'raw'
+				fi
+				if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
+					delete_empty_chains 'rawpost'
+				fi
+				((ENABLE_MANGLE == 1)) && delete_empty_chains 'mangle'
+				((ENABLE_NAT == 1))&& delete_empty_chains 'nat'
+				if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
+					delete_empty_chains 'security'
+				fi
+				((ENABLE_FILTER == 1)) && delete_empty_chains
+			fi
+			if ((REMOVE_UNREF_CHAINS == 1)); then # delete unreferenced chains
+				log -I "Removing chains with 0 references"
+				if ((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)); then
+					delete_unreferenced_chains 'raw'
+				fi
+				if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
+					delete_unreferenced_chains 'rawpost'
+				fi
+				((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_unreferenced_chains 'mangle'
+				((ENABLE_NAT == 1)) && delete_unreferenced_chains 'nat'
+				if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
+					delete_unreferenced_chains 'security'
+				fi
+				((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
+			fi
+			if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
+#				if [[ ${MAIN_ARG} != @(stop|'test'|dry-run) ]] || ((TEST_MODE || EXEC_COMMANDS)); then
+				if [[ ${MAIN_ARG} != @(stop|'test') ]] || ((TEST_MODE == 0)); then
+					log -I "Saving rule listings for later difference checks"
+					if ((ENABLE_RAW == 1)); then
+						((RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
+					fi
+					if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
+						save_for_diff 'rawpost'
+					fi
+					((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
+					((ENABLE_NAT == 1)) && save_for_diff 'nat'
+					if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
+						save_for_diff 'security'
+					fi
+					((ENABLE_FILTER == 1)) && save_for_diff 
+				fi
+			fi
+		fi
+		if ((${#TC_CMD_ARRAY[@]})); then # traffic control commands
+			[[ ${DEBUG_INFO} ]] && dbg_arr "TC_CMD_ARRAY"
+			for i in ${!TC_CMD_ARRAY[@]}; do
+				eval 'set -- '"${TC_CMD_ARRAY[i]}"
+				"${TC}" "${@}" &>/dev/null || cmd_err_count tc "${*}"
+			done
+		fi
+		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
+			local proc_val
+			[[ ${DEBUG_INFO} ]] && dbg_arr "PROC_CMD_ARRAY"
+			for i in ${!PROC_CMD_ARRAY[@]}; do
+				eval 'set -- '"${PROC_CMD_ARRAY[i]}"
+				proc_val="${1}"
+				shift
+				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo "$(read p_val < "${1}"; echo "${p_val}")")' '${1}'"
+				printf "%s\n" "${proc_val}" >"${1}" 2>/dev/null || cmd_err_count proc "printf %s\n ${proc_val} >${1}"
+			done
+			[[ ${DEBUG_INFO} ]] && dbg_arr "PROC_STATE_ARRAY" || :
+		fi
+	;;
+esac
+} # -------------------------------------------------------------------------
+
+calc_err() { # calculate and display error summary
+ERRORS=$((gen_err_count + inline_err_count + misc_err_count + ipt_err_count + cfg_err_count + tc_err_count + proc_err_count))
+} # -------------------------------------------------------------------------
+
+display_errors() { # display error sum
+((VERBOSE == 0 || ERRORS == 0)) && return 0
+local vname
+local -i idx
+local -a arr_err_idx=(
+"$gen_err_count ${gen_err_count} unclassified errors occured"
+"$cfg_err_count Found ${cfg_err_count} bad config entries"
+"$proc_err_count Failed applying ${proc_err_count} proc commands"
+"$ipt_err_count Failed applying ${ipt_err_count} iptables commands"
+"$inline_err_count Failed applying ${inline_err_count} inline iptables commands"
+"$tc_err_count Failed applying ${tc_err_count} traffic shaping commands"
+"$misc_err_count Failed applying ${misc_err_count} miscellaneous commands"
+)
+if ((ENABLE_COLORS == 1)) ; then
+	echo -e "\n${RED}${FONT_BOLD}${ERRORS} errors${COL_TERM} occured while processing"
+	log -l "${ERRORS} errors occured while processing"
+else
+	log -m "${ERRORS} errors occured while processing"
+fi
+for idx in ${!arr_err_idx[@]}; do
+	set -- ${arr_err_idx[idx]}
+	local vname=$1
+	shift
+	(($vname > 0)) && ${log_msg} stderr NOPREFIX "${COLOR_MSG_WARNING}" normal "$*"
+done
+for idx in ${!ERRORS_MSG_ARRAY[@]}; do
+	eval "${ERRORS_MSG_ARRAY[idx]}"
+done
+return 0
+} # -------------------------------------------------------------------------
+
+end_msg() { # END MESSAGE
+case "${MAIN_ARG}" in
+	compat-check) mode_msg="completed compatibility check" ;;
+	dry-run) mode_msg="completed dry run" ;;
+	diff-last-activated) mode_msg="compared active iptables rulesets" ;;
+	lockdown) mode_msg="locked down" ;;
+	open) mode_msg="opened" ;;
+	parse-xml) mode_msg="parsed XML files" ;;
+	prepare-restore-on-start) mode_msg="prepared in ${MODE} mode" ;;
+	restart) mode_msg="reloaded" ;;
+	start) mode_msg="loaded" ;;
+	stop) mode_msg="stopped" ;;
+	save-commands) mode_msg="saved commands" ;;
+	save-iptables-commands) mode_msg="saved iptables commands" ;;
+	save-modprobe-commands) mode_msg="saved modprobe commands" ;;
+	save-proc-commands) mode_msg="saved proc commands" ;;
+	save-tc-commands) mode_msg="saved tc commands" ;;
+	save-shaping-commands) mode_msg="saved traffic shaping commands" ;;
+#	show) mode_msg="showed configuration" ;;
+	tc-start) mode_msg="traffic shaping loaded" ;;
+	tc-stop) mode_msg="traffic shaping stopped" ;;
+	test) mode_msg="tested" ;;
+	*)
+		log -i "${MAIN_ARG}" 'MAIN_ARG'
+		return 1
+esac
+
+[[ ${MAIN_ARG} = @(dry-run|open|restart|start|save-commands|save-iptables-commands|save-shaping-commands|tc-start|tc-stop|'test') ]] && {
+	log -w "${RULES_PROCESSED_COUNT} ruleblock rules have been processed, of which ${QUICK_RULES_COUNT} were quick-rules."
+	log -w "Resulting in ${RULES_GENERATED_COUNT} generated and ${INLINE_RULES_GENERATED_COUNT} inline rules"
+}
+
+if ((ERRORS)); then
+	if ((ENABLE_COLORS)); then
+		if ((VERBOSE)); then
+			echo -e "${RED}${FONT_BOLD}${ME}${COL_TERM}\
+ ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
+ ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
+ ${RED}${FONT_BOLD}${mode_msg} with errors${COL_TERM}"
+ 		fi
+	else
+		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
+	fi
+	syslog ${LOG_FACILITY} warning "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
+else
+	if ((ENABLE_COLORS)); then
+		if ((VERBOSE)); then
+			echo -e "${RED}${FONT_BOLD}${ME}${COL_TERM}\
+ ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
+ ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
+ ${WHITE}${FONT_BOLD}${mode_msg}${COL_TERM}\
+ ${GREEN}${FONT_BOLD}successfully${COL_TERM}"
+ 		fi
+	else
+		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
+	fi
+	log -l "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
+fi
+log -w "Exiting after $((SECONDS / 60)) minutes and $((SECONDS - $(($((SECONDS / 60)) * 60)))) seconds of execution time"
+} # -------------------------------------------------------------------------
+
+check_tc() {
+[[ ${TC} ]] || {
+	log -E "\`TC' variable is not defined."
+	return ${ER_NODEF}
+}
+check_prog "${TC}"
+} # -------------------------------------------------------------------------
+
+set_tc_mode() { # if requested by startup parameter, enable traffic shaping
+if ((ENABLE_TC_SHAPING == 0)); then
+	if [[ ${MODE} = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+		log -W "Traffic shaping is disabled in the configuration file."
+	fi
+fi
+if ((ENABLE_TC_SHAPING)); then
+	check_tc || {
+		log -E "Traffic Control commands will not be applied."
+		ENABLE_TC_SHAPING=0
+		raise_cfg_err_count
+	}
+fi
+} # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# MAIN PROCESSING FUNCTIONS
+# ------------------------------------------------------------------------- #
+
+set_runtime_vars() {
+# Set IP-Array runtime configuration variables, which are needed in all runtime modes
+set_syslog_mode
+set_message_colors || return ${ER_FAIL}
+precheck_config || return ${?}
+fill_script_map
+} # -------------------------------------------------------------------------
+
+handle_network_data() { # enumerate and validate local networking data
+fill_netif_array || return ${?}
+enumerate_if_data || return ${?}
+validate_net_config || return ${?}
+} # -------------------------------------------------------------------------
+
+compatibility_check() { # check for tables targets and extensions
+check_raw_table
+check_rawpost_table
+check_security_table
+test_chain create || return ${?}
+test_ipset create || return ${?}
+check_ipt_targets || return ${?}
+check_ipt_modules || return ${?}
+test_chain delete
+test_ipset delete
+} # -------------------------------------------------------------------------
+
+module_handling() { # removing and loading of modules
+((NO_MODPROBE == 1)) && return 0
+fill_loadmod_list_array
+fill_rmmod_list_array
+check_mod_dir || return ${?}
+((${#MODS_TO_RM[@]})) && remove_modules
+if ((${#MODULES_TO_LOAD[@]})); then
+	load_modules load || return ${?}
+fi
+} # -------------------------------------------------------------------------
+
+minimal_run() { # minimal prerun required
+handle_network_data || return ${?}
+module_handling || return ${?}
+compatibility_check || return ${?}
+} # -------------------------------------------------------------------------
+
+common_start() { # Common start procedure
+check_sys_files || return ${?}
+start_msg
+load_pro_epilog_scripts 'prolog'
+load_configs || return ${?}
+fill_proto_svc_arrays || return ${?}
+} # -------------------------------------------------------------------------
+
+tc_mode_run() { # tc Mode only actions
+minimal_run || return ${?}
+load_base_templates || return ${?}
+load_ipt_mangle_templates || return ${?}
+} # -------------------------------------------------------------------------
+
+common_stop() { # Common stop procedure
+start_msg
+load_pro_epilog_scripts 'prolog'
+load_configs || return ${?}
+handle_network_data || return ${?}
+} # -------------------------------------------------------------------------
+
+common_end() { # process the most common tasks at the end of runtime
+load_pro_epilog_scripts 'epilog'
+calc_err
+if ((VERBOSE > 0 || SYSLOG_VERBOSE >= 0)); then
+	display_errors
+	end_msg
+fi
+} # -------------------------------------------------------------------------
+
+run_main() {
+case "${1}" in
+#	DRY-RUN|RESTART|SAVE-COMMANDS|START)
+	RESTART|SAVE-COMMANDS|START)
+	# All of these modes use all IP-Array features
+	# DRY-RUN: no acting mode, commands are not applied
+	# RESTART: config is read and generated commands are applied at the end
+	# SAVE-COMMANDS: modprobe, proc, iptables and tc commands are saved to a file
+	# START: lockdown mode (except (if configured) admin connection + locahost traffic)
+	#  until all rules are generated and applied at the end
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		[[ ${MODE} = SAVE-COMMANDS ]] && set_rulesetfile
+		common_start || return ${?}
+		if [[ ${MODE} = START ]]; then
+			set_default_policies_immediate || return ${?}
+			flushdel_tables_immediate || return ${?}
+			allow_loopback_immediate
+			allow_admin_connection
+		fi
+		set_tc_mode
+		minimal_run || return ${?}
+		ipt_mode_run || return ${?}
+		set_sysctl || return ${?}
+		all_chains_creation || return ${?}
+		load_all_ipt_rulefiles || return ${?}
+		traffic_shaping_marks || return ${?}
+		create_jump_tree 'jumps' || return ${?}
+		state_allow_chains || return ${?}
+		apply_final_rule || return ${?}
+		remove_qdiscs
+		enable_traffic_shaping
+		apply_rules || return ${?}
+		common_end
+	;;
+	COMPAT_CHECK)
+	# just perform compatibility check
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		load_configs || return ${?}
+		module_handling || return ${?}
+		compatibility_check || return ${?}
+		for rvar in raw rawpost security; do
+			if (($(subst_var "$(string_toupper "${rvar}")_TABLE_PRESENT") == 0)); then
+				log -W "\`${rvar}' table is not present on the local system."
+			fi
+		done
+		if ((NO_PROC == 0)); then
+			PROC_COMPAT_CHECK=1
+			proc_conf_global || return ${?}
+		fi
+		common_end
+	;;
+	DIFF)
+	# run a diff on previously saved ruleset listings
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		check_raw_table
+		check_rawpost_table
+		check_security_table
+		((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && diff_ruleset 'raw'
+		((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && diff_ruleset 'rawpost'
+		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && diff_ruleset 'mangle'
+		((ENABLE_NAT == 1)) && diff_ruleset 'nat'
+		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && diff_ruleset 'security'
+		((ENABLE_FILTER == 1)) && diff_ruleset 
+		common_end
+	;;
+	LOCKDOWN)
+	# Lockdown mode.
+	# NO network connections are allowed except localhost (eventually)
+		common_start || return ${?}
+		minimal_run || return ${?}
+		set_tc_mode
+		remove_qdiscs
+		set_default_policies_immediate || return ${?}
+		flushdel_tables_immediate || return ${?}
+		allow_loopback || return ${?}
+		apply_rules || return ${?}
+		allow_admin_connection || return ${?}
+		common_end
+	;;
+	OPEN)
+	# Filter, raw and mangle table chains get flushed/deleted.
+	# Policy is set to accept.
+	# NAT is preserved.
+	# /proc configuration is not touched
+	# Traffic shaping is removed
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		common_start || return ${?}
+		minimal_run || return ${?}
+		set_tc_mode
+		load_base_templates || return ${?}
+		load_ipt_nat_templates || return ${?}
+		load_nat_ruleblocks || return ${?}
+		remove_qdiscs
+		flushdel_tables || return ${?}
+		policy_all_en_disable 'ACCEPT' || return ${?}
+		classification_chains 'chains' 'nat' || return ${?}
+		log -T "Loading nat rule files"
+		load_nat_rules || return ${?}
+		classification_chains 'jumps' 'nat' || return ${?}
+		apply_rules || return ${?}
+		common_end
+	;;
+	PARSE-XML)
+	# parse xml data files and compile to bash scripts
+		start_msg
+		load_configs || return ${?}
+		compatibility_check || return ${?}
+		if ((PARSE_TEMPLATES == 1)); then
+			load_all_templates || return ${?}
+		fi
+		if ((PARSE_RULEBLOCKS == 1)); then
+			load_all_ruleblocks || return ${?}
+		fi
+		if ((PARSE_RULEFILES == 1)); then
+			load_all_ipt_rulefiles || return ${?}
+			if ((ENABLE_IPSEC == 1)); then
+				for rvar in ${IPSEC_RULES}; do
+					load_rule_file "${rvar}" || return ${?}
+				done
+			fi
+		fi
+		common_end
+	;;
+	PREPARE_QUICKSTART)
+	# prepare quick-start scripts
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		common_start || return ${?}
+		handle_network_data || return ${?}
+		
+		log -T "Preparing known-good modprobe script"
+		MODE='SAVE-MODPROBE-COMMANDS'
+		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+		module_handling || return ${?}
+		apply_rules || return ${?}
+		MODULE_CMD_ARRAY=()
+
+		log -T "Preparing known-good /proc settings script"
+		MODE='SAVE-PROC-COMMANDS'
+		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+		set_sysctl || return ${?}
+		apply_rules || return ${?}
+		PROC_CMD_ARRAY=()
+
+		log -T "Preparing known-good traffic control script"
+		MODE='SAVE-TC-COMMANDS'
+		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+		set_tc_mode
+		load_tc_ruleblocks || return ${?}	
+		remove_qdiscs
+		enable_traffic_shaping
+		apply_rules || return ${?}
+		TC_CMD_ARRAY=()
+
+		log -T "Preparing known-good iptables ruleset"
+		if ((IPTSAVE_FAILS == 0)); then
+#			SAVE_FILE="${KNOWN_GOOD_RULES}"
+			ipt_save "${KNOWN_GOOD_RULES}" || bail_out ${?}
+		else
+			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
+			MODE='SAVE-IPT-COMMANDS'
+			compatibility_check || return ${?}
+			ipt_mode_run || return ${?}
+			all_chains_creation || return ${?}
+			load_all_ipt_rulefiles || return ${?}
+			traffic_shaping_marks || return ${?}
+			create_jump_tree 'jumps' || return ${?}
+			state_allow_chains || return ${?}
+			apply_final_rule || return ${?}
+			apply_rules || return ${?}
+		fi
+
+		MODE='PREPARE_QUICKSTART'
+		end_msg
+	;;
+	RESTORE_ON_START)
+	# quick-start - load previously saved known-good scripts
+		MODE='START'
+		# disable errreturn and err trap, as if a command fails in the
+		# known-good scripts, we already have a bad situation.
+		# as we cant tell how serious the error is, better try to
+		# continue and get a somehow working system state.
+		# if the error was minor, the chance of an accessable and quite
+		# configured system is better.
+		# if the error was major, we might still have a chance, as worst
+		# case may be a drop policy on all chains applied immediately before
+		# exiting on a simple command error.
+		set +e
+		trap - ERR
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES} ]]; then
+			log -N "Loading known good modprobe commands."
+			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+		else
+			log -N "No modprobe script found."
+		fi
+		if ((IPTSAVE_FAILS == 0)); then
+#			SAVE_FILE="${KNOWN_GOOD_RULES}"
+			ipt_restore "${KNOWN_GOOD_RULES}" || {
+				log -E "Failed restoring saved script. Starting regulary."
+				run_main "START" || bail_out ${?}
+				return 0
+			}
+		else
+			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_RULES} ]]; then
+				log -N "Loading known good iptables commands."
+				"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_RULES}" || {
+					log -E "Failed restoring saved script. Starting regulary."
+					run_main "START" || bail_out ${?}
+					return 0
+				}
+			else
+				log -N "No iptables script found."
+			fi
+		fi
+		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL} ]]; then
+			log -N "Loading known good traffic shaping commands."
+			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+		else
+			log -N "No traffic shaping script found."
+		fi
+		# /proc settings at last, as filesystem may not be fully populated before
+		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET} ]]; then
+			log -N "Loading known good /proc settings."
+			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+		else
+			log -N "No /proc settings script found."
+		fi
+		common_end
+	;;
+	SAVE-IPT-COMMANDS)
+	# iptables commands are saved to file.
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		set_rulesetfile || return ${?}
+		common_start || return ${?}
+		minimal_run || return ${?}
+		ipt_mode_run || return ${?}
+		all_chains_creation || return ${?}
+		load_all_ipt_rulefiles || return ${?}
+		create_jump_tree 'jumps' || return ${?}
+		state_allow_chains || return ${?}
+		apply_final_rule || return ${?}
+		apply_rules || return ${?}
+		common_end
+	;;
+	SAVE-MODPROBE-COMMANDS)
+	# modprobe commands are saved to file.
+		set_rulesetfile || return ${?}
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		module_handling || return ${?}
+		apply_rules || return ${?}
+		common_end
+	;;
+	SAVE-PROC-COMMANDS)
+	# /proc commands are saved to file.
+		set_rulesetfile || return ${?}
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		set_sysctl || return ${?}
+		apply_rules || return ${?}
+		common_end
+	;;
+	SAVE-TC-COMMANDS)
+	# tc commands are saved to file.
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		set_rulesetfile || return ${?}
+		set_tc_mode
+		common_start || return ${?}
+		handle_network_data || return ${?}
+		load_tc_ruleblocks || return ${?}	
+		remove_qdiscs
+		enable_traffic_shaping
+		apply_rules || return ${?}
+		common_end
+	;;
+	SAVE-SHAPING-COMMANDS)
+	# iptables mangle table and tc commands are saved to file.
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		set_rulesetfile || return ${?}
+		set_tc_mode
+		common_start || return ${?}
+		tc_mode_run || return ${?}
+		load_tc_ruleblocks || return ${?}
+		load_tc_mangle_ruleblocks || return ${?}
+		flush_table 'mangle'
+		remove_qdiscs
+		classification_chains 'chains' 'mangle' || return ${?}
+		traffic_shaping_marks || return ${?}
+		classification_chains 'jumps' 'mangle' || return ${?}
+		enable_traffic_shaping
+		apply_rules || return ${?}
+		common_end
+	;;
+	STOP)
+	# Tables are flushed/deleted.
+	# Policy is set to accept.
+	# /proc configuration is not touched
+		common_stop || return ${?}
+		((NO_MODPROBE == 0)) && fill_loadmod_list_array
+		check_mod_dir || return ${?}
+		set_tc_mode
+		remove_qdiscs
+		flushdel_tables || return ${?}
+		policy_all_en_disable 'ACCEPT' || return ${?}
+		apply_rules || return ${?}
+		((NO_MODPROBE == 0)) && ((${#MODULES_TO_LOAD[@]})) && load_modules 'unload'
+		common_end
+	;;
+	TC-START)
+	# Start traffic shaping only
+	# /proc configuration is not touched
+	# mangle table is reloaded
+		set_placeholder || return ${?}
+		set_global_log_params || return ${?}
+		set_tc_mode
+		common_start || return ${?}
+		tc_mode_run || return ${?}
+		load_mangle_ruleblocks || return ${?}
+		load_tc_mangle_ruleblocks || return ${?}
+		load_tc_ruleblocks || return ${?}
+		flush_table 'mangle'
+		remove_qdiscs
+		classification_chains 'chains' 'mangle' || return ${?}
+		log -T "Loading mangle rule files"
+		load_mangle_rules || return ${?}
+		traffic_shaping_marks || return ${?}
+		classification_chains 'jumps' 'mangle' || return ${?}
+		enable_traffic_shaping
+		apply_rules || return ${?}
+		common_end
+	;;
+	TC-STOP)
+	# Stop traffic shaping only
+	# mangle table is reloaded
+		common_stop || return ${?}
+		compatibility_check || return ${?}
+		set_tc_mode
+		load_base_templates || return ${?}
+		load_ipt_mangle_templates || return ${?}
+		load_mangle_ruleblocks || return ${?}
+		flush_table 'mangle' || return ${?}
+		remove_qdiscs
+		classification_chains 'chains' 'mangle' || return ${?}
+		log -T "Loading mangle rule files"
+		load_mangle_rules || return ${?}
+		classification_chains 'jumps' 'mangle' || return ${?}
+		apply_rules || return ${?}
+		common_end
+	;;
+	*) log -i "${MODE}" 'MODE'
+		return ${ER_FAIL}
+esac
+} # -------------------------------------------------------------------------
+

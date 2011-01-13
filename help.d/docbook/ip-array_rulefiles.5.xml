@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
+<refentry xmlns="http://docbook.org/ns/docbook">
+    <info>
+        <author>
+            <personname>AllKind</personname>
+            <email>AllKind@BonBon.net</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>0.80.00</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array_rulefiles</refentrytitle>
+        <manvolnum>5</manvolnum>
+        <refmiscinfo class="manual">ip-array 0.80.00</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array rulefiles</refdescriptor>
+        <refname>ip-array rulefiles</refname>
+        <refpurpose>Configure ip-array rule files</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/ruleblocks/<replaceable>file</replaceable></synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para>
+            
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_ruleblocks</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+            
+        </para>
+    </refsect1>
+</refentry>

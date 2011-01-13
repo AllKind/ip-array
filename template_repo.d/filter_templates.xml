@@ -1,0 +1,1909 @@
+<?xml version="1.0"?>
+
+<!-- FILTER TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="0.1">
+
+	<template name="TEMPLATE_GENERIC_FRAGMENTS">
+		<!-- 
+		Purpose: Generic fragments handling rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: fragment
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		Mandatory options: target, chain, fragment
+		-->
+		<template_msg> ${ADDMSG} generic fragments handling rules </template_msg>
+		<mandatory_vars> target,chain,fragment </mandatory_vars>
+		<table> filter </table>
+		<load_template> BT_TARGET_AND_CHAIN </load_template>
+		<option_list_0> fragment idev odev src dst </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_CT_HELPER">
+		<!-- 
+		Purpose: Generic conntrack helper handling rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: state
+		11: conntrack helper
+		Mandatory options: target, chain, helper
+		-->
+		<template_msg> ${ADDMSG} generic conntrack helper handling rules </template_msg>
+		<mandatory_vars> target,chain,helper </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_STATE </load_template>
+		<option_list_0> helper </option_list_0>
+	</template>
+
+	<!-- Ingress Templates -->
+
+	<template name="TEMPLATE_GENERIC_INGRESS_TCP_OPTIONS_ALL">
+		<!-- 
+		Purpose: Generic stateless ingress (incoming) - with all tcp options
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: tcp flags
+		10: tcp syn
+		11: tcp option
+		Mandatory options: target, chain 
+		-->
+		<table> filter </table>
+		<template_msg> ${ADDMSG} generic ingress with all tcp options rules </template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> GT_BASE_OPTION_SET_INGRESS_TCP_OPTIONS_ALL </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATELESS_MATCH_MARK">
+		<!-- 
+		Purpose: Generic stateless ingress (incoming) mark match rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: mark match
+		Mandatory options: target, chain
+		-->
+		<template_msg> ${ADDMSG} generic stateless ingress mark match rules </template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_INGRESS </load_template>
+		<option_list_0> m_mark </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATELESS">
+		<!-- 
+		Purpose: Generic stateless ingress (incoming) rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: target, chain, input device
+		-->
+		<template_msg> ${ADDMSG} generic stateless ingress rules </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_INGRESS </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATEFUL">
+		<!-- 
+		Purpose: Generic stateful ingress (incoming) rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		Mandatory options: target, chain, input device
+		-->
+		<template_msg> ${ADDMSG} generic stateful ingress rules </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_INGRESS_STATE </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATELESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateless ingress (incoming) rules + mac address in match set
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain, input device
+		-->
+		<template_msg> ${ADDMSG} generic stateless ingress rules with source mac option </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_INGRESS_WITH_MAC </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateful ingress (incoming) rules + mac address in match set
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: state
+		Mandatory options: target, chain, input device
+		-->
+		<template_msg> ${ADDMSG} generic stateful ingress rules with source mac option </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_INGRESS_WITH_MAC_STATE </load_template>
+	</template>
+
+	<!-- Ingress NFQUEUE templates -->
+
+	<template name="TEMPLATE_GENERIC_INGRESS_STATELESS_NFQUEUE">
+		<!-- 
+		Purpose: Stateless ingress (incoming) set NFQUEUE rules
+		Template options:
+		+ filter table
+		+ NFQUEUE target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		9: netfilter queue number
+		Mandatory options: netfilter queue number
+		-->
+		<template_msg> ${ADDMSG} stateless set INPUT NFQUEUE rules </template_msg>
+		<mandatory_vars> nfqueue </mandatory_vars>
+		<chain> INPUT </chain>
+		<load_template>
+			BT_FILTER_NFQUEUE
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+		<option_list_0> nfqueue </option_list_0>
+	</template>
+
+	<!-- Ingress ACCEPT templates -->
+
+	<template name="TEMPLATE_INPUT_ALLOW_STATEFUL">
+		<!-- 
+		Purpose: Stateful ACCEPT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT allow rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_ACCEPT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_ALLOW_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Stateful ACCEPT rules in INPUT chain + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT allow rules with source mac option </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_ACCEPT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_ALLOW_STATE_NEW">
+		<!-- 
+		Purpose: State NEW ACCEPT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to INPUT
+		+ state set to: NEW
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} state NEW INPUT allow rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<state_match_arg> NEW </state_match_arg>
+		<load_template>
+			BT_ACCEPT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_ALLOW_STATE_NEW_WITH_MAC">
+		<!-- 
+		Purpose: State NEW ACCEPT rules in INPUT chain + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to INPUT
+		+ state set to: NEW
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} state NEW INPUT allow rules with source mac option </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<state_match_arg> NEW </state_match_arg>
+		<load_template>
+			BT_ACCEPT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC
+		</load_template>
+	</template>
+
+	<!-- Ingress blocking templates -->
+
+	<template name="TEMPLATE_INPUT_DROP_STATEFUL">
+		<!-- 
+		Purpose: Stateful DROP rules in INPUT chain
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT DROP rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_DROP_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_DROP_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Stateful DROP rules in INPUT chain + mac address in match set
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT DROP rules with source mac option </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_DROP_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_REJECT_STATEFUL">
+		<!-- 
+		Purpose: Stateful REJECT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ REJECT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: reject type
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT REJECT rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_REJECT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+		</load_template>
+		<option_list_0> reject_type </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_INPUT_TARPIT_STATEFUL">
+		<!-- 
+		Purpose: Stateful TARPIT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ TARPIT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT TARPIT rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_TARPIT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+		</load_template>
+	</template>
+
+	<!-- Ingress logging templates -->
+
+	<template name="TEMPLATE_INPUT_MIN_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful minimal LOG rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT - minimal log options enabled - LOG rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_FULL_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful full LOG rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		12: log options
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} stateful INPUT - all log options enabled - LOG rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_FULL_LOG
+		</load_template>
+	</template>
+
+	<!-- Ingress combined targets templates -->
+
+	<template name="TEMPLATE_INPUT_MIN_LOG_ACCEPT_STATEFUL">
+		<!-- 
+		Purpose: Stateful minimal LOG and ACCEPT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG and ACCEPT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} stateful INPUT - minimal log options enabled - LOG and ACCEPT rules
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_ACCEPT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_MIN_LOG_DROP_STATEFUL">
+		<!-- 
+		Purpose: Stateful minimal LOG and DROP rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG and DROP target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} stateful INPUT - minimal log options enabled - LOG and DROP rules
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_DROP_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_INPUT_MIN_LOG_REJECT_STATEFUL">
+		<!-- 
+		Purpose: Stateful minimal LOG and REJECT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG and REJECT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		12: reject type
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} stateful INPUT - minimal log options enabled - LOG and REJECT rules
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_REJECT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+		<option_list_0> reject_type </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_INPUT_MIN_LOG_TARPIT_STATEFUL">
+		<!-- 
+		Purpose: Stateful minimal LOG and TARPIT rules in INPUT chain
+		Template options:
+		+ filter table
+		+ LOG and TARPIT target
+		+ chain set to INPUT
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		Mandatory options: input device
+		-->
+		<template_msg>
+			${ADDMSG} stateful INPUT - minimal log options enabled - LOG and TARPIT rules
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_LOG_TARPIT_INPUT
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<!-- Egress Templates -->
+
+	<template name="TEMPLATE_GENERIC_EGRESS_STATELESS">
+		<!-- 
+		Purpose: Generic stateless egress (outgoing) rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: target, chain, output device
+		-->
+		<template_msg> ${ADDMSG} generic stateless egress rules </template_msg>
+		<mandatory_vars> target,chain,odev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_EGRESS </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_EGRESS_STATEFUL">
+		<!-- 
+		Purpose: Generic stateful egress (outgoing) rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		Mandatory options: target, chain, output device
+		-->
+		<template_msg> ${ADDMSG} generic stateful egress rules </template_msg>
+		<mandatory_vars> target,chain,odev </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_EGRESS_STATE </load_template>
+	</template>
+
+	<!-- Egress ACCEPT templates -->
+
+	<template name="TEMPLATE_OUTPUT_ALLOW_STATEFUL">
+		<!-- 
+		Purpose: Stateful OUTPUT ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to OUTPUT
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		Mandatory options: output device
+		-->
+		<template_msg> ${ADDMSG} stateful egress ACCEPT rules </template_msg>
+		<mandatory_vars> odev </mandatory_vars>
+		<load_template>
+			BT_ACCEPT_OUTPUT
+			BT_BASIC_MATCH_SET_EGRESS_STATE
+		</load_template>
+	</template>
+
+	<!-- Egress LOG templates -->
+
+	<template name="TEMPLATE_OUTPUT_MIN_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful OUTPUT minimal LOG rules
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to OUTPUT
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		Mandatory options: output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful OUTPUT - minimal log options enabled - LOG rules
+		</template_msg>
+		<mandatory_vars> odev </mandatory_vars>
+		<load_template>
+			BT_LOG_OUTPUT
+			BT_BASIC_MATCH_SET_EGRESS_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_OUTPUT_FULL_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful OUTPUT full LOG rules
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to OUTPUT
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit
+		9: limit burst
+		10: log level
+		11: log prefix
+		12: log options
+		Mandatory options: output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful OUTPUT - all log options enabled - LOG rules
+		</template_msg>
+		<mandatory_vars> odev </mandatory_vars>
+		<load_template>
+			BT_LOG_OUTPUT
+			BT_BASIC_MATCH_SET_EGRESS_STATE
+			BT_LIMIT_BURST_FULL_LOG
+		</load_template>
+	</template>
+
+	<!-- Forwarding Templates -->
+
+	<template name="TEMPLATE_GENERIC_FORWARD_STATELESS">
+		<!-- 
+		Purpose: Generic stateless forwarding rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain
+		-->
+		<template_msg> ${ADDMSG} generic stateless forwarding rules </template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_STATEFUL">
+		<!-- 
+		Purpose: Generic stateful forwarding rules
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: state
+		Mandatory options: target, chain
+		-->
+		<template_msg> ${ADDMSG} generic stateful forwarding rules </template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_STATE </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_STATELESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateless forwarding rules + mac address in match set
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		Mandatory options: target, chain
+		-->
+		<template_msg>
+			${ADDMSG} generic stateless forwarding rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_WITH_MAC </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateful forwarding rules + mac address in match set
+		Template options:
+		+ filter table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: state
+		Mandatory options: target, chain
+		-->
+		<template_msg>
+			${ADDMSG} generic stateful forwarding rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_WITH_MAC_STATE </load_template>
+	</template>
+
+	<!-- FORWARD ACCEPT templates -->
+
+	<template name="TEMPLATE_FORWARD_ALLOW_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		Mandatory options: input device, output device
+		-->
+		<template_msg> ${ADDMSG} stateful forwarding ACCEPT rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_ACCEPT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_ALLOW_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Stateful forwarding ACCEPT rules + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding ACCEPT rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_ACCEPT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_ALLOW_STATE_NEW">
+		<!-- 
+		Purpose: State NEW forwarding ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ state set to: NEW
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device, output device
+		-->
+		<template_msg> ${ADDMSG} state NEW forwarding ACCEPT rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<state_match_arg> NEW </state_match_arg>
+		<load_template>
+			BT_ACCEPT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_ALLOW_STATE_NEW_WITH_MAC">
+		<!-- 
+		Purpose: State NEW forwarding ACCEPT rules + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ state set to: NEW
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} state NEW forwarding ACCEPT rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<state_match_arg> NEW </state_match_arg>
+		<load_template>
+			BT_ACCEPT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC
+		</load_template>
+	</template>
+
+	<!-- FORWARD blocking templates -->
+
+	<template name="TEMPLATE_FORWARD_DROP_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding DROP rules
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		Mandatory options: input device, output device
+		-->
+		<template_msg> ${ADDMSG} stateful forwarding DROP rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_DROP_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_DROP_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Stateful forwarding DROP rules + mac address in match set
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding DROP rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_DROP_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_REJECT_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding REJECT rules
+		Template options:
+		+ filter table
+		+ REJECT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: reject type
+		Mandatory options: input device, output device
+		-->
+		<template_msg> ${ADDMSG} stateful forwarding REJECT rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_REJECT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+		<option_list_0> reject_type </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_TARPIT_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding TARPIT rules
+		Template options:
+		+ filter table
+		+ TARPIT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		Mandatory options: input device, output device
+		-->
+		<template_msg> ${ADDMSG} stateful forwarding TARPIT rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_TARPIT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+	</template>
+
+	<!-- FORWARD logging templates -->
+
+	<template name="TEMPLATE_FORWARD_MIN_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding minimal LOG rules
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - minimal log options enabled - LOG rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_FULL_LOG_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding full LOG rules
+		Template options:
+		+ filter table
+		+ LOG target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		13: log options
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - all log options enabled - LOG rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_FULL_LOG
+		</load_template>
+	</template>
+
+	<!-- FORWARD combined targets templates -->
+
+	<template name="TEMPLATE_FORWARD_MIN_LOG_ACCEPT_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding minimal LOG and ACCEPT rules
+		Template options:
+		+ filter table
+		+ LOG and ACCEPT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - minimal log options enabled - LOG and ACCEPT rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_ACCEPT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_MIN_LOG_DROP_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding minimal LOG and DROP rules
+		Template options:
+		+ filter table
+		+ LOG and DROP target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - minimal log options enabled - LOG and DROP rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_DROP_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_MIN_LOG_REJECT_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding minimal LOG and REJECT rules
+		Template options:
+		+ filter table
+		+ LOG and REJECT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		13: reject type
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - minimal log options enabled - LOG and REJECT rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_REJECT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+		<option_list_0> reject_type </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_FORWARD_MIN_LOG_TARPIT_STATEFUL">
+		<!-- 
+		Purpose: Stateful forwarding minimal LOG and TARPIT rules
+		Template options:
+		+ filter table
+		+ LOG and TARPIT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit
+		10: limit burst
+		11: log level
+		12: log prefix
+		Mandatory options: input device, output device
+		-->
+		<template_msg>
+			${ADDMSG} stateful forwarding - minimal log options enabled - LOG and TARPIT rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<load_template>
+			BT_LOG_TARPIT_FORWARD
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<!-- Reversed FORWARD -->
+
+	<template name="TEMPLATE_GENERIC_FORWARD_REVERSE_STATELESS">
+		<!-- 
+		Purpose: Generic stateless reversed forwarding rules
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain
+		# Reverse option list:
+		# 1: target
+		# 2: chain
+		# 3: output device
+		# 4: input device
+		# 5: destination address
+		# 6: source address
+		# 7: protocol
+		# 8: destination port
+		# 9: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateless reversed forwarding rules
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_REVERSE_STATEFUL">
+		<!-- 
+		Purpose: Generic stateful reversed forwarding rules
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: input device
+		5: destination address
+		6: source address
+		7: protocol
+		8: destination port
+		9: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateful reversed forwarding rules
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_STATE </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_REVERSE_STATELESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateless reversed forwarding rules + mac address in match set
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		Mandatory options: target, chain
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: input device
+		5: destination address
+		6: empty
+		7: source address
+		8: protocol
+		9: destination port
+		10: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateless reversed forwarding rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC </load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_FORWARD_REVERSE_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateful reversed forwarding rules + mac address in match set
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		Mandatory options: target, chain
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: input device
+		5: destination address
+		6: empty
+		7: source address
+		8: protocol
+		9: destination port
+		10: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateful reversed forwarding rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template> BT_FILTER_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC_STATE </load_template>
+	</template>
+
+	<!-- Reversed FORWARD ACCEPT templates -->
+
+	<template name="TEMPLATE_REVERSE_FORWARD_ALLOW_STATEFUL">
+		<!-- 
+		Purpose: Stateful reversed forwarding ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device, output device
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<template_msg> ${ADDMSG} stateful reversed forwarding ACCEPT rules </template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_ACCEPT_FORWARD_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_REVERSE_FORWARD_ALLOW_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Stateful reversed forwarding ACCEPT rules + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: input device, output device
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: source address
+		5: empty
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<template_msg>
+			${ADDMSG} stateful reversed forwarding ACCEPT rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_ACCEPT_FORWARD_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_REVERSE_FORWARD_ALLOW_TO_ANY_STATEFUL">
+		<!-- 
+		Purpose: Stateful reversed forwarding - to ANY - ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device, output device
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: protocol
+		5: destination port
+		6: source port
+		-->
+		<template_msg>
+			${ADDMSG} stateful reversed forwarding - to ANY - ACCEPT rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_ACCEPT_FORWARD_REVERSE
+			BT_IDEV_ODEV_REVERSED
+			BT_SRC_ADDR_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_REVERSE_FORWARD_ALLOW_FROM_ANY_STATEFUL">
+		<!-- 
+		Purpose: Stateful reversed forwarding - from ANY - ACCEPT rules
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		+ reversed option list
+		+ reverse condition: REVERSE_FOWARD_RULES_REQUIRED=0
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device, output device
+		Reverse option list:
+		1: output device
+		2: input device
+		3: source address
+		4: protocol
+		5: destination port
+		6: source port
+		-->
+		<template_msg>
+			${ADDMSG} stateful reversed forwarding - from ANY - ACCEPT rules
+		</template_msg>
+		<mandatory_vars> idev,odev </mandatory_vars>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_ACCEPT_FORWARD_REVERSE
+			BT_IDEV_ODEV_REVERSED
+			BT_DST_ADDR_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<!-- Local Service Templates -->
+
+	<template name="TEMPLATE_GENERIC_LOCAL_SERVICE_STATELESS">
+		<!-- 
+		Purpose: Generic stateless local services (reversed option list)
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: target, chain, input device
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: source address
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<template_msg> ${ADDMSG} generic stateless local services rules </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_LOCAL_SERVICE_STATEFUL">
+		<!-- 
+		Purpose: Generic stateful local services (reversed option list)
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: target, chain, input device
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: source address
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<template_msg> ${ADDMSG} generic stateful local services rules </template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_LOCAL_SERVICE_STATELESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateless local services + mac address in match set
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain, input device
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: empty
+		6: source address
+		7: protocol
+		8: destination port
+		9: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateless local services rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_GENERIC_LOCAL_SERVICE_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Generic stateful local services + mac address in match set
+		Template options:
+		+ filter table
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Mandatory options: target, chain, input device
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: empty
+		6: source address
+		7: protocol
+		8: destination port
+		9: source port
+		-->
+		<template_msg>
+			${ADDMSG} generic stateful local services rules with source mac option
+		</template_msg>
+		<mandatory_vars> target,chain,idev </mandatory_vars>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+		<load_template>
+			BT_FILTER_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<!-- Local reversed ACCEPT templates -->
+
+	<template name="TEMPLATE_LOCAL_SERVICE">
+		<!-- 
+		Purpose: Allow local stateful services
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chains set to INPUT / OUTPUT
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Mandatory options: input device
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: source address
+		4: protocol
+		5: destination port
+		6: source port
+		-->
+		<template_msg> ${ADDMSG} allowed local services rules </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_REV_CONDITION_OUTPUT_RULES_REQUIRED
+			BT_FILTER_ACCEPT
+			BT_INPUT_OUTPUT_CHAINS
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_STATE
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_LOCAL_TCP_SERVICE_CONNLIMIT">
+		<!-- 
+		Purpose: Allow local stateful tcp services with connlimit match option
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to INPUT
+		+ state is set to NEW
+		+ protocol is set to tcp
+		+ tcp syn match
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: source port
+		5: destination port
+		6: connlimit
+		Mandatory options: input device
+		-->
+		<template_msg> ${ADDMSG} allowed local tcp services rules with connlimit option </template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<chain> INPUT </chain>
+		<load_template>
+			BT_FILTER_ACCEPT
+			BT_IDEV_SRC_DST_ADDR
+			BT_SRC_DST_PORT
+		</load_template>
+		<always_use_0>
+			proto=tcp
+			tcp_syn=syn
+			state=NEW
+		</always_use_0>
+		<option_list_0> connlimit </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_LOCAL_SERVICE_WITH_MAC">
+		<!-- 
+		Purpose: Allow local stateful services + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chains set to INPUT / OUTPUT
+		+ reversed option list
+		+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: input device
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: empty
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<template_msg>
+			${ADDMSG} allowed local services rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev </mandatory_vars>
+		<load_template>
+			BT_REV_CONDITION_OUTPUT_RULES_REQUIRED
+			BT_FILTER_ACCEPT
+			BT_INPUT_OUTPUT_CHAINS
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC_STATE
+		</load_template>
+	</template>
+</ip_array_root>
+
+<!-- 
+		<table> filter </table>
+		<reverse_mode> reverse </reverse_mode>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+		<template_msg>
+		</template_msg>
+		<mandatory_vars>
+		</mandatory_vars>
+		<target>
+		</target>
+		<chain>
+		</chain>
+		<load_template>
+		</load_template>
+		<option_list_0>
+		</option_list_0>
+		<option_list_1>
+		</option_list_1>
+		<state_match_arg>
+		</state_match_arg>
+		<always_use_0> </always_use_0>
+		<always_use_1> </always_use_1>
+
+	<template name="">
+		<template_msg>
+		</template_msg>
+		<mandatory_vars>
+		</mandatory_vars>
+		<load_template>
+		</load_template>
+	</template>
+-->
+

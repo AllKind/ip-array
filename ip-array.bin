@@ -1,0 +1,1603 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2011  AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                        IP-ARRAY MAIN SCRIPT
+#
+# ------------------------------------------------------------------------- #
+
+ME="IP-Array"	# NOMEN
+
+# -------------------------------------------------------------------------
+# bash version check
+# -------------------------------------------------------------------------
+if [ -z ${BASH_VERSINFO[0]} ]; then
+	echo "\`BASH_VERSINFO' variable is not available. Not running bash?"
+	exit 112
+fi
+if [ ${BASH_VERSINFO[0]} -lt 3 ]; then
+	echo "$ME requires bash version 3.1 or higher."
+	exit 113
+fi
+if ((BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] == 0)); then
+	echo "$ME requires bash version 3.1 or higher."
+	exit 113
+fi
+
+# -------------------------------------------------------------------------
+# Traps
+# -------------------------------------------------------------------------
+trap "echo ERROR trap activated - exiting; enable exit; exit 114" ERR
+trap "echo Received SIGHUP signal - exiting; enable exit; exit 0" HUP
+trap "echo Received SIGINT signal - exiting; enable exit; exit 0" INT
+trap "echo Received SIGQUIT signal - exiting; enable exit; exit 0" QUIT
+trap "echo Received SIGTERM signal - exiting; enable exit; exit 0" TERM
+
+# -------------------------------------------------------------------------
+# Variables
+# -------------------------------------------------------------------------
+shopt -s extglob
+LC_ALL='C'
+
+# about me
+readonly ME
+declare -r VERSION=([0]=0 [1]=05 [2]=75 [3]="")	# Version
+declare -r STR_VERSION="v.${VERSION[0]}.${VERSION[1]}.${VERSION[2]}${VERSION[3]}"
+
+declare -r MAIN_ARG="${1}"
+declare -r PARAMS="${@}"
+declare -ir PID=${$}
+
+declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+
+# mutual exclusions lock-file
+if [[ -e /var/run ]]; then
+	declare -r LOCKFILE=/var/run/ip-array.pid
+else
+	declare -r LOCKFILE=/tmp/ip-array.pid
+fi
+
+# error exit codes
+declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
+
+# IP-Array function and definition files
+declare -r GLOBAL_DEFS="ip-array_global_defs"
+declare -r IPARRAY_MAIN_FUNCTIONS="ip-array_main_functions"
+declare -r IPARRAY_IPT_FUNCTIONS="ip-array_ipt_functions"
+declare -r IPARRAY_TC_FUNCTIONS="ip-array_tc_functions"
+declare -r IPARRAY_FUNCTIONS="${IPARRAY_MAIN_FUNCTIONS} ${IPARRAY_IPT_FUNCTIONS} ${IPARRAY_TC_FUNCTIONS}"
+
+# mandatory defaults
+declare -r DEFAULTS="BASE_DIR CONFIG LIB_DIR RELOAD_TIME"
+
+# don't perform autosave, modprobe, proc, compatibility,... check - yes/no
+declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
+
+# (re)-parse xml configuration files
+declare -i PARSE_RULEBLOCKS=0 PARSE_RULEFILES=0 PARSE_TEMPLATES=0
+
+# test for availability of /proc settings
+declare -i PROC_COMPAT_CHECK=0
+
+# use iptables-save/restore counters
+declare -i USE_COUNTERS=0
+
+# test mode - reload active ruleset
+declare -i TEST_MODE=0
+
+# dry-run mode
+declare -i EXEC_COMMANDS=1
+
+# show help about public functions
+declare -i SHOW_PUBFUNC_LIST=0
+declare STR_PUBFUNC_NAME
+
+# skeleton variables
+declare MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
+
+# command line options
+declare cmdline_save_file cmdline_base_dir cmdline_bin_dir cmdline_lib_dir cmdline_syslog_verbosity cmdline_verbosity \
+	cmdline_show_conf cmdline_reload_time cmdline_skip_scripts
+declare -a ARR_RTIME_OPTS
+
+# list of all builtins
+declare -r BUILTIN_LIST=$(enable -p|while read rvar x;do printf "%s " "${x}";done;echo)
+
+declare -r SEPSTR="# -------------------------------------------------------------------------"
+
+# reusable vars
+declare option opt_arg rvar rest
+declare -i idx i
+
+# needed before we can read the config file
+: ${VERBOSE:=2}
+: ${SYNTAX_CHECK:=1}
+
+# Error count
+declare -i ERRORS=0		# We had errors?
+declare -i gen_err_count=0	# Count unclassiefied errors
+declare -i cfg_err_count=0	# Count config errors
+declare -i ipt_err_count=0	# Count iptables commands apply errors
+declare -i tc_err_count=0	# Count tc apply errors
+declare -i proc_err_count=0	# Count proc apply errors
+declare -i misc_err_count=0	# Count misc commands apply errors
+declare -i inline_err_count=0	# Count inline iptables commands apply errors
+
+# Rule count
+declare -i RULES_PROCESSED_COUNT=RULES_GENERATED_COUNT=INLINE_RULES_GENERATED_COUNT=QUICK_RULES_COUNT=0
+
+# Interfaces
+declare NET_IFLIST			# List of all physical interfaces used for networking
+declare EXT_IFLIST			# List of all external interfaces
+declare LOCAL_IFLIST		# List of all Local interfaces
+declare IPSEC_IFLIST		# List of all ipsec enabled interfaces
+declare NET_IFLIST_CHECK_STRING
+
+# Misc Variables
+declare NET_NAME_LIST		# List of all networks names
+declare NO_OUTPUT_MSG		# Stores the message to display, when no additional OUTPUT rules will be applied
+declare DEF_ROUTE_IF		# To hold the defaults route interface
+declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
+declare GEN_FORMAT		# Save generated iptables commands as command list, or in iptables-save format
+declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
+declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
+declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
+
+# Function used to copy an array
+declare copy_array					# Function "Pointer"
+declare -r copy_array=cp_array		# Statement Builder
+
+declare -r DEFAULTS_LIST=(
+COLOR_MSG_MAIN_TITLE
+COLOR_MSG_SUBTITLE
+COLOR_MSG_INFO_TITLE
+COLOR_MSG_ERROR
+COLOR_MSG_WARNING
+COLOR_MSG_NOTICE
+COLOR_MSG_CONFIG_LOAD
+COLOR_MSG_RULE_LOAD
+ENABLE_COLORS
+ENABLE_SYSLOG
+LOG_FACILITY
+VERBOSE
+SYSLOG_VERBOSE
+AUTO_GET_PROGS
+SERVICES
+PROTOCOLS
+BASE_DIR
+LIB_DIR
+CONFIG
+SAVE_FILE
+RULESETFILE
+DIFF_FILE
+RESTORE_ON_START
+KNOWN_GOOD_RULES
+KNOWN_GOOD_MODPROBES
+KNOWN_GOOD_PROC_SET
+KNOWN_GOOD_TRAFFIC_CONTROL
+IPTSAVE_FAILS
+SYNTAX_CHECK
+RELOAD_TIME
+)
+
+# Valid rule option names
+declare -r ARG_NAMES_LIST=(
+table
+target
+chain
+idev
+odev
+src
+dst
+mac
+fragment
+proto
+sport
+dport
+tcp_flags
+tcp_syn
+tcp_option
+icmp_type
+reject_type
+state
+limit
+limit_burst
+log_level
+log_prefix
+log_options
+nflog_group
+nflog_prefix
+nflog_range
+nflog_thresh
+ulog_group
+ulog_prefix
+ulog_range
+ulog_thresh
+connbytes
+connlimit
+ctstate
+ctproto
+ctorigsrc
+ctorigdst
+ctreplsrc
+ctrepldst
+ctorigsrcport
+ctorigdstport
+ctreplsrcport
+ctrepldstport
+ctstatus
+ctexpire
+ctdir
+ahspi
+espspi
+helper
+length
+owner
+addrtype
+pkttype
+socket
+nat_ip
+nat_port
+nat_option
+m_connmark
+m_dscp
+m_mark
+m_set
+m_tos
+m_ttl
+nfqueue
+t_mark
+t_connmark
+t_secmark
+t_connsecmark
+t_class
+t_set
+t_ttl
+t_dscp
+t_tos
+t_tcpmss
+tcpoptstrip
+tproxy_opt
+comment
+)
+
+# Names of arrays which store the rule parameters and log-messages
+declare -r RULELIST_ARRAYS="MSG_LIST_TABLE
+RULELIST_TARGET		MSG_LIST_TARGET
+RULELIST_CHAIN		MSG_LIST_CHAIN
+RULELIST_IDEV		MSG_LIST_IDEV
+RULELIST_ODEV		MSG_LIST_ODEV
+RULELIST_SRC		MSG_LIST_SRC
+RULELIST_DST		MSG_LIST_DST
+RULELIST_MAC		MSG_LIST_MAC
+RULELIST_FRAGMENT	MSG_LIST_FRAGMENT
+RULELIST_PROTO		MSG_LIST_PROTO
+RULELIST_SPORT		MSG_LIST_SPORT
+RULELIST_DPORT		MSG_LIST_DPORT
+RULELIST_TCP_FLAGS	MSG_LIST_TCP_FLAGS
+RULELIST_TCP_SYN	MSG_LIST_TCP_SYN
+RULELIST_TCP_OPTION	MSG_LIST_TCP_OPTION
+RULELIST_ICMP_TYPE	MSG_LIST_ICMP_TYPE
+RULELIST_STATE		MSG_LIST_STATE
+RULELIST_LIMIT		MSG_LIST_LIMIT
+RULELIST_LIMIT_BURST	MSG_LIST_LIMIT_BURST
+RULELIST_CONNBYTES	MSG_LIST_CONNBYTES
+RULELIST_CONNLIMIT	MSG_LIST_CONNLIMIT
+RULELIST_CTSTATE	MSG_LIST_CTSTATE
+RULELIST_CTPROTO	MSG_LIST_CTPROTO
+RULELIST_CTORIGSRC	MSG_LIST_CTORIGSRC
+RULELIST_CTORIGDST	MSG_LIST_CTORIGDST
+RULELIST_CTREPLSRC	MSG_LIST_CTREPLSRC
+RULELIST_CTREPLDST	MSG_LIST_CTREPLDST
+RULELIST_CTORIGSRCPORT	MSG_LIST_CTORIGSRCPORT
+RULELIST_CTORIGDSTPORT	MSG_LIST_CTORIGDSTPORT
+RULELIST_CTREPLSRCPORT	MSG_LIST_CTREPLSRCPORT
+RULELIST_CTREPLDSTPORT	MSG_LIST_CTREPLDSTPORT
+RULELIST_CTSTATUS	MSG_LIST_CTSTATUS
+RULELIST_CTEXPIRE	MSG_LIST_CTEXPIRE
+RULELIST_CTDIR	MSG_LIST_CTDIR
+RULELIST_TOS		MSG_LIST_TOS
+RULELIST_AHSPI		MSG_LIST_AHSPI
+RULELIST_ESPSPI		MSG_LIST_ESPSPI
+RULELIST_HELPER		MSG_LIST_HELPER
+RULELIST_LENGTH		MSG_LIST_LENGTH
+RULELIST_OWNER		MSG_LIST_OWNER
+RULELIST_ADDRTYPE	MSG_LIST_ADDRTYPE
+RULELIST_PKTTYPE	MSG_LIST_PKTTYPE
+RULELIST_SOCKET		MSG_LIST_SOCKET
+RULELIST_SET_MARK	MSG_LIST_SET_MARK
+RULELIST_SET_SECMARK	MSG_LIST_SET_SECMARK
+RULELIST_M_DSCP		MSG_LIST_M_DSCP
+RULELIST_M_MARK		MSG_LIST_M_MARK
+RULELIST_M_CONNMARK	MSG_LIST_M_CONNMARK
+RULELIST_M_SET		MSG_LIST_M_SET
+RULELIST_M_TTL		MSG_LIST_M_TTL
+RULELIST_NAT_IP		MSG_LIST_NAT_IP
+RULELIST_NAT_PORT	MSG_LIST_NAT_PORT
+RULELIST_NAT_OPTION	MSG_LIST_NAT_OPTION
+RULELIST_NFQUEUE	MSG_LIST_NFQUEUE
+RULELIST_REJECT_TYPE	MSG_LIST_REJECT_TYPE
+RULELIST_SET_CONNMARK	MSG_LIST_SET_CONNMARK
+RULELIST_SET_CONNSECMARK	MSG_LIST_SET_CONNSECMARK
+RULELIST_SET_CLASS	MSG_LIST_SET_CLASS
+RULELIST_SET_SET	MSG_LIST_SET_SET
+RULELIST_SET_TTL	MSG_LIST_SET_TTL
+RULELIST_SET_DSCP	MSG_LIST_SET_DSCP
+RULELIST_SET_TOS	MSG_LIST_SET_TOS
+RULELIST_SET_TCPMSS	MSG_LIST_SET_TCPMSS
+RULELIST_LOG_LEVEL	MSG_LIST_LOG_LEVEL
+RULELIST_LOG_PREFIX	MSG_LIST_LOG_PREFIX
+RULELIST_LOG_OPTIONS	MSG_LIST_LOG_OPTIONS
+RULELIST_NFLOG_GROUP	MSG_LIST_NFLOG_GROUP
+RULELIST_NFLOG_PREFIX	MSG_LIST_NFLOG_PREFIX
+RULELIST_NFLOG_RANGE	MSG_LIST_NFLOG_RANGE
+RULELIST_NFLOG_THRES	MSG_LIST_NFLOG_THRESH
+RULELIST_ULOG_GROUP		MSG_LIST_ULOG_GROUP
+RULELIST_ULOG_PREFIX	MSG_LIST_ULOG_PREFIX
+RULELIST_ULOG_RANGE		MSG_LIST_ULOG_RANGE
+RULELIST_ULOG_THRES		MSG_LIST_ULOG_THRESH
+RULELIST_TPROXY_OPT		MSG_LIST_TPROXY_OPT
+RULELIST_TCPOPTSTRIP	MSG_LIST_TCPOPTSTRIP
+RULELIST_COMMENT	MSG_LIST_COMMENT"
+
+#declare -r ARG_LIST_CHECKSTRING="${ARG_NAMES_LIST//[[:space:]]/|}"
+declare ARG_LIST_CHECKSTRING=$(printf '%s|' "${ARG_NAMES_LIST[@]}")
+declare -r ARG_LIST_CHECKSTRING=${ARG_LIST_CHECKSTRING%|}
+
+# Names of arrays which store user config data
+declare ARG_LIST_ARRAYS=$(printf "arg_list_%s\n" "${ARG_NAMES_LIST[@]}")
+declare -r ARG_LIST_ARRAYS=${ARG_LIST_ARRAYS/arg_list_table/}
+
+# Names of arrays which store user config data, and get multiplied
+declare ARG_LIST_ARRAYS_MULTIPLY=${ARG_LIST_ARRAYS/arg_list_target/}
+declare -r ARG_LIST_ARRAYS_MULTIPLY=${ARG_LIST_ARRAYS_MULTIPLY/arg_list_chain/}
+
+# ARRAY VARIABLES
+declare -a ERRORS_MSG_ARRAY		# buffer command apply error messages
+declare -a PROTOCOLS_ARRAY	# Array to hold the data enumerated from /etc/protocols
+declare -a SERVICES_ARRAY	# Array to hold the data enumerated from /etc/services
+declare -a KERN_VER			# Holds the kernel version data
+declare -a CREATED_CHAINS_ARRAY		# List of created chains
+
+declare -a MODULE_CMD_ARRAY	# Array to cache the modprobe commands
+declare -a IPT_CMD_ARRAY	# Array to cache the iptables commands
+# arrays for each iptables table
+declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+declare -a IPT_POL_ARRAY	# Array to cache the iptables policy commands
+declare -a IPT_FLUSH_ARRAY	# Array to cache the iptables chain flushing commands
+declare -a IPT_CCHAIN_ARRAY	# Array to cache the iptables chain creation commands
+declare -a TC_CMD_ARRAY		# Array to cache the tc commands
+declare -a PROC_CMD_ARRAY	# Array to cache the sysctl commands
+
+declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
+declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error
+
+# template, ruleblock names
+declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY
+
+# compatible IP-Array xml syntax versions
+declare -a TEMPLATE_SYNTAX_VERSION_ARRAY=( '0.1' )
+declare -a RULEBLOCK_SYNTAX_VERSION_ARRAY=( '0.1' )
+declare -a RULEFILE_SYNTAX_VERSION_ARRAY=( '0.1' )
+
+# Array to hold the names of the arrays, which get filled by the user.
+# Names are taken from the array and arrays get filled use fill_array()
+# Format: array-name [...]
+LOCAL_NET_ARRAY=( LAN_NS ISP_NS LOCAL_NS ISP_SMTP TIME_SERVERS VPN_MAP )
+
+# Names of the arrays holding the commands to apply
+# Format: array-name | category | message
+CMD_NAMES_ARRAY=(
+"MODULE_CMD_ARRAY mod modprobe commands"
+"IPT_POL_ARRAY ipt Iptables policy commands"
+"IPT_FLUSH_ARRAY ipt Iptables chain flushing/deletion commands"
+"IPT_CCHAIN_ARRAY ipt Iptables chain creation commands"
+"IPT_RAW_CMD_ARRAY ipt Iptables raw table commands"
+"IPT_MANGLE_CMD_ARRAY ipt Iptables mangle table commands"
+"IPT_NAT_CMD_ARRAY ipt Iptables nat table commands"
+"IPT_FILTER_CMD_ARRAY ipt Iptables filter table commands"
+"IPT_SECURITY_CMD_ARRAY ipt Iptables security table commands"
+"IPT_RAWPOST_CMD_ARRAY ipt Iptables rawpost table commands"
+"TC_CMD_ARRAY tc Traffic Control commands"
+"PROC_CMD_ARRAY proc /proc settings"
+)
+
+# Array to hold the program definitions that are mandatory for IP-Array
+# Format: variable-name | program-name | mandatory 0/1
+IPARRAY_PROGRAMS=(
+"AT at 1"
+"CAT cat 1"
+"DATE date 1"
+"DIFF diff 1"
+"FIND find 1"
+"GREP grep 1"
+"IP ip 1"
+"IPSET ipset 0"
+"IPT iptables 1"
+"IPT_SAVE iptables-save 1"
+"IPT_RESTORE iptables-restore 1"
+"LOGGER logger 0"
+"LSMOD lsmod 1"
+"MODPROBE modprobe 1"
+"RM rm 1"
+"TC tc 0"
+"UNAME uname 1"
+)
+
+PUBLIC_FUNCTION_LIST=(
+"log Log (coloured) messages to stdout, stderr and/or syslog"
+"add_rule Add an iptables rule"
+"create_chain Create an iptables chain"
+"delete_chain Delete an iptables chain"
+"jump_tree_on Enable classification into jump tree chains"
+"jump_tree_off Disable classification into jump tree chains"
+"set_var Set a variables value"
+"set_proc Set a /proc value"
+"log_drop_scans Log and/or drop scans"
+"log_drop_invalid_state Log and/or drop packets in invalid state"
+"log_drop_illegal_tcp Log and/or drop non legal tcp packets"
+"drop_dhcp Drop dhcp broadcasts on certain interfaces"
+"drop_netbios Drop netbios broadcasts on certain interfaces"
+"drop_upnp Drop UPNP broadcasts on certain interfaces"
+"reject_auth Reject auth (tcp port 113) traffic on certain interfaces"
+"intns_to_extns Allow internal DNS servers to communicate with ISP nameservers"
+"lan_isp_smtp Allow local networks to communicate with ISP SMTP servers"
+"lan_ftp Allow passive and/or active ftp forwarding traffic from certain LANs"
+"enable_ipsec Enable ipsec rules"
+"restrict_output Settings to restrict traffic in OUTPUT chain"
+"mark_prio_syn Priorize SYN packets"
+"mark_out_bulk Mark OUTPUT bulk traffic"
+"mark_fwd_bulk Mark FORWARD bulk traffic"
+)
+
+# -------------------------------------------------------------------------
+# turn on debugging
+# -------------------------------------------------------------------------
+[[ ${DEBUG_INFO} ]] && {
+	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
+'
+	set
+	shopt
+	trap -p
+}
+
+# -------------------------------------------------------------------------
+# STARTUP FUNCTIONS
+# -------------------------------------------------------------------------
+
+pr_str() { # print messages to stdout
+printf "%s\n" "$*"
+} # -------------------------------------------------------------------------
+
+pr_err() { # print messages to stderr
+printf "%s\n" "$*" >&2
+} # -------------------------------------------------------------------------
+
+quit_welldone() {
+exit 0
+} # -------------------------------------------------------------------------
+
+bad_use_quit() {
+exit ${ER_USE}
+} # -------------------------------------------------------------------------
+
+short_usage() { # help hint
+pr_str "Try \`${0##*/} -h' for usage instructions"
+bad_use_quit
+} # -------------------------------------------------------------------------
+
+usage() { # Help function
+#echo -e "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
+printf "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
+Parameters:
+start                      Start mode. Lockdown mode until all rules are collected.
+stop                       Stop mode. Delete all iptables rules and tc qdiscs.
+restart                    Restart mode. Reload config, and reapply.
+test                       Test mode. Like 'restart', but with test configuration.
+open                       Stop firewalling and traffic shaping, while preserving NAT.
+tc-start                   Start traffic shaping.
+tc-stop                    Stop traffic shaping.
+lockdown                   Forbid any network connection, except localhost and
+                           administrator connection (if configured).
+dry-run                    No acting mode. Commands are not applied.
+diff-last-activated        Compare active iptables ruleset with a saved rule listing.
+save                       Save active iptables rules to file using iptables-save.
+restore                    Restore a previously saved iptables rules using iptables-restore.
+save-known-good            Save active iptables rules to known-good file using iptables-save.
+                           It will be used, if \`RESTORE_ON_START' is enabled.
+prepare-restore-on-start   Prepare quick start scripts (modprobe, proc, tc, iptables).
+                           Those will be loaded, if \`RESTORE_ON_START' is enabled.
+save-commands              Save all commands (modprobe, proc, tc, iptables) to file.
+save-iptables-commands     Save iptables commands to file.
+save-modprobe-commands     Save modprobe commands to file.
+save-proc-commands         Save proc commands to file.
+save-tc-commands           Save tc commands to file.
+save-shaping-commands      Save tc and iptables mangle table (mark) commands to file.
+parse-xml                  Parse (by default all) XML files.
+                           Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
+compat-check               Check compatibility (kernel, supported targets, matches, tables).
+show                       Show configuration summary. Option \`-sc' selects type.
+version                    Show version information.
+help, -h, --help, -?       Show this usage instructions.\n
+Options:
+-ct, --ipt-counters        Save/restore counters, when using \`save', or \`restore'.
+-dr, --dry-run             Commands are not applied.
+-na, --no-autosave         Do not autosave and restore, using iptables-save/restore.
+-nc, --no-compat-check     Do not perform checks for iptables targets, extensions and tables.
+-nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
+-ni, --no-iface-check      Do not perform checks for existence of interfaces.
+-nm, --no-modprobe         Do not load/unload modules.
+-np, --no-proc             Do not set /proc configuration.
+-ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
+-p, --parse-xml            Re-parse all XML configuration files.
+-pb, --parse-ruleblocks    Re-parse XML ruleblock configuration files.
+-pr, --parse-rulefiles     Re-parse XML rule files.
+-pt, --parse-templates     Re-parse XML template configuration files.
+-t, --test                 Schedule restore of active ruleset.
+-b, --base-dir directory   Base directory to use.
+-c, --config-file file     Main configuration file to use.
+-d, --defaults-file file   Defaults configuration file to use (/PATH/filename).
+-e, --exe-dir directory    Executable directory to use.
+-l, --lib-dir directory    Library directory to use.
+-o, --set-option assignment [...]
+                           Override variables of the main config file (i.e. -o ENABLE_NAT=0).
+-gf, --gen-format type     Generate commands in iptables-save format, or as command list.
+                           Available types: \`cmd' (=default), \`ipt'.
+-rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
+                           This option is only valid with the \`test' parameter.
+-s, --save-file file       File to use, when saving or restoring a ruleset.
+-sc, --show-config [type]  Select type of information to show. Available types:
+                           \`all', \`main' (=default), \`defaults', \`targets', \`matches',
+                           \`ruleblocks', \`templates'.
+-sh, --shell /path/shell   Set the \`SHELL' variable.
+-sv, --syslog-verbose 0-6  Set syslog verbosity level.
+-v, --verbose 0-9          Set verbosity level.
+-PF, --public-functions [function name]
+                           Only available with the \`help' parameter.
+                           List public functions, or show help about one of them.
+--                         Stop further options processing.
+"
+quit_welldone
+} # -------------------------------------------------------------------------
+
+print_sepstr() {
+pr_str "${SEPSTR}"
+} # -------------------------------------------------------------------------
+
+check_syntax() { # check shell grammar of files to be sourced / executed
+local str_result
+str_result=$("${SHELL}" -n -O extglob -- "${1}" 2>&1) || {
+	printf "Syntax error in %s:\n\n%s\n" "\`${1}'" "${str_result}" >&2
+	return ${ER_LOAD}
+}
+} # -------------------------------------------------------------------------
+
+reset_ifs() { # reset a possibly messed up IFS
+[[ ${IFS} = $' \t\n' ]] || {
+	IFS=$' \t\n'
+	warn_msg "Invalid \`IFS' value found. Resetting it."
+}
+} # -------------------------------------------------------------------------
+
+enable_builtins() { # enable all available builtins
+builtin enable ${BUILTIN_LIST}
+} # -------------------------------------------------------------------------
+
+get_function_list() { # retrieve the list of registered functions
+declare -F | while read foo bar func_name; do
+	printf "%s " "${func_name}"
+done
+echo
+} # -------------------------------------------------------------------------
+
+set_env() { # ENVIRONMENT SETTINGS
+# (re-)enable builtins
+enable_builtins
+
+# Turn on extended pattern matching
+shopt -s extglob
+
+# default, but just to make sure
+set -o hashall
+shopt -s extquote
+
+# Unset options we don't want
+# available since bash v.3.1
+((${BASH_VERSINFO[0]}${BASH_VERSINFO[1]} >= 30)) && shopt -u nocasematch
+# NOT: If set, the shift builtin prints an error message
+# when the shift count exceeds the number of positional parameters.
+shopt -u shift_verbose
+# NOT: If set, the return value of a pipeline is the value of the last (rightmost) command
+# to exit with a non-zero status, or zero if  all commands in the pipeline exit successfully.
+set +o pipefail
+# -u - NOT: Treat unset variables as an error when substituting.
+# -C - NOT: disallow existing regular files to be overwritten by redirection of output.
+# -P - NOT: do not follow symbolic links when executing commands which change the current directory.
+set +uCP
+# Disable pathname expansion.
+set -f
+
+# set locale to C
+LC_ALL='C'
+
+reset_ifs
+
+# UMASK
+umask 077
+} # -------------------------------------------------------------------------
+
+verbose_msg() { # print high verbosity message to stdout
+if ((VERBOSE >= 7)); then pr_str "${*}"; fi
+} # -------------------------------------------------------------------------
+
+notice_msg() { # print notice prefixed message to stdout
+if ((VERBOSE >= 5)); then pr_str "NOTICE: ${*}"; fi
+} # -------------------------------------------------------------------------
+
+warn_msg() { # print warning prefixed message to stderr
+if ((VERBOSE >= 2)); then pr_err "WARNING: ${*}"; fi
+} # -------------------------------------------------------------------------
+
+err_msg() { # print error prefixed message to stderr
+if ((VERBOSE >= 1)); then pr_err "ERROR: ${*}"; fi
+} # -------------------------------------------------------------------------
+
+reqparm() { # announce parameters missing in functions
+[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+err_msg "${2} parameter(s) required for function: \`${1}()'."
+} # -------------------------------------------------------------------------
+
+val_bool_bin() { # check if a value is either '0' or '1'
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ ${1} = [0-1] ]]
+} # -------------------------------------------------------------------------
+
+prog_in_path() { # check wether a program exists in path
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+command -v "${1}" &>/dev/null
+} # -------------------------------------------------------------------------
+
+which_prog() { # find a program in $PATH
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local s_prog="${1}" oIFS="${IFS}"
+IFS=":"
+for rvar in ${PATH}; do
+	[[ -x ${rvar}/${s_prog} ]] && {
+		IFS="${oIFS}"
+		pr_str "${rvar}/${s_prog}"
+		return 0
+	}
+done
+IFS="${oIFS}"
+return 1
+} # -------------------------------------------------------------------------
+
+bin_ok() { # check for an executable file
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ -e ${1} ]] || { err_msg "File \`${1}' does not exist."; return ${ER_NOEX}; }
+[[ -x ${1} ]] || { err_msg "File \`${1}' is not executable."; return ${ER_FAIL}; }
+} # -------------------------------------------------------------------------
+
+get_prog_paths() { # check for programs used by ip-array
+local prog_auto prog_var prog_name prog_mandatory prog_path
+if [[ ${MAIN_ARG} != @('-?'|-h|help|--help|version) ]]; then
+	notice_msg "Checking for mandatory programs"
+fi
+val_bool_bin "${AUTO_GET_PROGS:=0}" || {
+	err_msg "Illegal value \`${AUTO_GET_PROGS}' for \`AUTO_GET_PROGS'"
+	return ${ER_CONF}
+}
+for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
+	set -- ${IPARRAY_PROGRAMS[idx]}
+	prog_var="${1}" prog_name="${2}" prog_mandatory="${3}"
+	case "${AUTO_GET_PROGS}" in
+		0) # no automatic detection
+			prog_path="${!prog_var}"
+			[[ ${prog_path} ]] && { # user has defined the according variable
+				bin_ok "${prog_path}" && {
+					[[ ${MAIN_ARG} != @('-?'|-h|help|--help|version) ]] && {
+						verbose_msg "found ${prog_name} at: ${prog_path}"
+					}
+					continue
+				}
+			}
+		;;
+		1) # automatic detection
+			prog_in_path "${prog_name}" && {
+				prog_path="$(which_prog "${prog_name}")" || {
+					err_msg "Failed locating the program \`${prog_name}' in \$PATH."
+					return ${ER_FAIL}
+				}
+#				set_var "${prog_var}" "${prog_path}" # set global program variable
+				printf -v "${prog_var}" "${prog_path}" # set global program variable
+				[[ ${MAIN_ARG} != @('-?'|-h|help|--help|version) ]] && {
+					verbose_msg "found ${prog_name} at: ${prog_path}"
+				}
+				continue
+			}
+		;;
+	esac
+	# positive cases are done, this is only run if program was not found
+	case "${prog_mandatory}" in
+		0) [[ ${MAIN_ARG} != @('-?'|-h|help|--help|version) ]] && {
+				warn_msg "Path for program \`${prog_name}' was not found."
+			}
+			continue
+		;;
+		1) err_msg "Path for program \`${prog_name}' was not found."
+			return ${ER_FAIL}
+		;;
+		*) err_msg "Configuration error in array: IPARRAY_PROGRAMS."
+			return 1
+	esac
+done
+} # -------------------------------------------------------------------------
+
+check_dirs() { # check for existence of directories declared by varname
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+while (($#)); do
+	[[ ${!1} ]] || {
+		err_msg "\`${1}' variable is not defined."
+		return ${ER_NODEF}
+	}
+	[[ -d ${!1} ]] || {
+		err_msg "Directory \`${!1}' specified with \`${1}' variable, does not exist."
+		return ${ER_NOEX}
+	}
+	shift
+done
+} # -------------------------------------------------------------------------
+
+set_skel() { # set skeleton variables
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+case "${1}" in
+	stable|test)
+		RUNMODE="${1}"
+		HELP_DIR="${BASE_DIR}/help.d"
+		CONFIG_DIR="${BASE_DIR}/${1}/conf.d"
+		SCRIPT_DIR="${BASE_DIR}/${1}/scripts.d"
+		RULE_DIR="${CONFIG_DIR}/rules.d"
+		RULEBLOCK_DIR="${CONFIG_DIR}/ruleblocks.d"
+		TEMPLATE_DIR="${CONFIG_DIR}/templates.d"
+		if [[ ${cmdline_conf_file} ]]; then
+			MAIN_CONFIG="${CONFIG_DIR}/${cmdline_conf_file}"
+		else
+			MAIN_CONFIG="${CONFIG_DIR}/${CONFIG}"
+		fi
+		# check if the dir structure exists
+		check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || return $?
+	;;
+	*) err_msg "Invalid option \`${rmode}' for function ${FUNCNAME}"
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+show_pubfunc_list() { # show list of public functions
+printf "\n%s\n\n" "PUBLIC FUNCTION LIST:"
+for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
+	set -- ${PUBLIC_FUNCTION_LIST[idx]}
+	rvar="${1}"
+	shift
+	printf "%s:\n\t%s" "${rvar}" "${*}"
+	echo
+done
+} # -------------------------------------------------------------------------
+
+show_pubfunc_help() { # show usage for a public function
+[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+local f_name="${1}"
+for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
+	set -- ${PUBLIC_FUNCTION_LIST[idx]}
+	if [[ ${1} = ${f_name} ]]; then
+		[[ -r ${HELP_DIR}/${f_name}.txt ]] || {
+			err_msg "\`${HELP_DIR}/${f_name}.txt' does not exist"
+			return ${ER_NOEX}
+		}
+		"${CAT}" "${HELP_DIR}/${f_name}.txt" || return 1
+		return 0
+	fi
+done
+err_msg "Unknown public function name \`${f_name}'."
+return ${ER_USE}
+} # -------------------------------------------------------------------------
+
+ipt_save() { # save the firewall with iptables-save
+if ((IPTSAVE_FAILS)); then
+	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
+	return ${ER_FAIL}
+fi
+local str_c="" str_file="${1:-${SAVE_FILE}}"
+if ((USE_COUNTERS)); then
+	str_c="--counters "
+fi
+verbose_msg "Saving iptables rules to \`${SAVE_DIR}/${str_file}'"
+if ! [[ -d ${SAVE_DIR} ]]; then
+	err_msg "\`${SAVE_DIR}' does not exit."
+	return ${ER_NOEX}
+fi
+if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
+	"${IPT}" -nL &>/dev/null
+fi
+if [[ -r ${IP_TABLES_NAMES} ]]; then
+	if "${IPT_SAVE}" ${str_c}>"${SAVE_DIR}/${str_file}"; then
+		notice_msg "Iptables rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
+	else
+		err_msg "Failed saving iptables rules."
+		return ${ER_FAIL}
+	fi
+else
+	err_msg "\`${IP_TABLES_NAMES}' does not exist!
+ Load at least the ip_tables module and one of the table\
+ (iptable_filter, iptable_nat, iptable_mangle or iptable_raw) modules."
+	return ${ER_NOEX}
+fi
+} # -------------------------------------------------------------------------
+
+ipt_restore() { # restore the firewall with iptables-restore
+if ((IPTSAVE_FAILS)); then
+	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
+	return ${ER_FAIL}
+fi
+local str_c="" str_file="${1:-${SAVE_FILE}}"
+if ((USE_COUNTERS)); then
+	str_c="--counters "
+fi
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
+		notice_msg "Iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+	else
+		err_msg "Failed restoring iptables rules."
+		return ${ER_FAIL}
+	fi
+else
+	err_msg "\`${SAVE_DIR}/${str_file}' does not exist."
+	return ${ER_NOEX}
+fi
+} # -------------------------------------------------------------------------
+
+sched_restore() { # schedule ruleset restore job
+local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}"
+check_dirs BIN_DIR || return $?
+if ! bin_ok "${BIN_DIR}/${0##*/}"; then # check if $0 is good
+	err_msg "Cannot work with \`\$0' variable."
+	return ${ER_FAIL}
+fi
+ipt_save "$str_file" || return $? # save currently active ruleset
+if rvar=$(\
+	printf "%s %s -e %s -d %s -s %s -v 2\n" "\"${BIN_DIR}/${0##*/}\"" "restore" "\"${BIN_DIR}\"" "\"${DEFAULTS_FILE}\"" "\"${str_file}\"" \
+	| "${AT}" now + ${RELOAD_TIME} minutes 2>&1)
+then
+	notice_msg "Restoring saved ruleset using ${AT} with: \`${rvar#*$'\n'}'."
+	return 0
+else
+	err_msg "Failed scheduling the restore job."
+	return ${ER_FAIL}
+fi
+} # -------------------------------------------------------------------------
+
+autosave() { # automatically save a temporary ruleset, which will be restored on error
+if ((NO_AUTOSAVE == 0 && IPTSAVE_FAILS == 0)); then
+	AUTOSAVE_FILE="_autosave-generated_iptables-save_$("${DATE}" +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
+	ipt_save "${AUTOSAVE_FILE}" || return $?
+	readonly AUTOSAVE_FILE
+fi
+} # -------------------------------------------------------------------------
+
+cleanup_autosave() { # remove automatically saved temporary ruleset
+if [[ ${AUTOSAVE_FILE} ]]; then
+	if [[ -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
+		"${RM}" -f "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
+			err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
+		}
+	fi
+fi
+} # -------------------------------------------------------------------------
+
+cleanup_lock() { # remove temp lockfile
+if [[ -e $LOCKFILE ]]; then
+	"$RM" -f "$LOCKFILE" || :
+fi
+} # -------------------------------------------------------------------------
+
+cleanup() { # final clearance
+cleanup_autosave
+cleanup_lock
+} # -------------------------------------------------------------------------
+
+bail_out() { # exit IP-Array on fatal error. $1 = exit code.
+pr_err "${ME} exiting on error! Exit code: ${1:-${ER_LOAD}}"
+cleanup
+builtin enable exit
+exit ${1:-${ER_LOAD}}
+} # -------------------------------------------------------------------------
+
+bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
+if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)) && [[ ${AUTOSAVE_FILE} ]]; then
+	pr_str "Restoring automatically saved iptables ruleset from: \`${AUTOSAVE_FILE}'"
+	ipt_restore "${AUTOSAVE_FILE}" || :
+fi
+bail_out ${1:-${ER_LOAD}}
+} # -------------------------------------------------------------------------
+
+trap_err() {
+pr_str "ERROR trap activated - exiting"
+bail_out_restore ${ER_FAIL}
+}
+
+trap_gen() {
+printf "\tReceived \`SIG%s' signal - exiting\n" "${1}"
+cleanup
+builtin enable exit
+exit 0
+}
+
+# -------------------------------------------------------------------------
+  #     #
+  ##   ##    ##       #    #    #
+  # # # #   #  #      #    ##   #
+  #  #  #  #    #     #    # #  #
+  #     #  ######     #    #  # #
+  #     #  #    #     #    #   ##
+  #     #  #    #     #    #    #
+# -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# Traps
+# -------------------------------------------------------------------------
+trap "trap_err" ERR
+trap "trap_gen HUP" HUP
+trap "trap_gen INT" INT
+trap "trap_gen QUIT" QUIT
+trap "trap_gen TERM" TERM
+
+# -------------------------------------------------------------------------
+# check for valid main arg
+# -------------------------------------------------------------------------
+case "${MAIN_ARG}" in
+	"") usage ;;
+	'-?'|-h|help|--help) shift ;;
+	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
+	restore|save|save-known-good|save-commands| save-modprobe-commands|save-proc-commands|\
+	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
+		shift
+		if ((UID > 0)); then
+			err_msg "Root check FAILED. You MUST be root (UID 0) to use ${ME}."
+			bail_out ${ER_FAIL}
+		fi
+	;;
+	version) printf "%s %s\n" "${ME}" "${STR_VERSION}"
+		quit_welldone
+	;;
+	*) pr_err "Unknown parameter: \`${MAIN_ARG}'"
+		short_usage
+esac
+
+# -------------------------------------------------------------------------
+# get additional options
+# -------------------------------------------------------------------------
+while (($#)); do
+	option="${1}" opt_arg="${2}"
+	shift
+	case "${option}" in
+		-ct|--ipt-counters) # use counters for iptables-save/restore
+			USE_COUNTERS=1
+			continue
+		;;
+		-dr|--dry-run) # use counters for iptables-save/restore
+			EXEC_COMMANDS=0
+			continue
+		;;
+		-na|--no-autosave) # do not auto-save
+			NO_AUTOSAVE=1
+			continue
+		;;
+		-nc|--no-compat-check) # do not perform compatibility checks
+			NO_IPT_COMPAT_CHECK=1
+			continue
+		;;
+		-nd|--no-diff) # do not save a diff file after applying iptables rules
+			NO_DIFF_SAVE=1
+			continue
+		;;
+		-ni|--no-iface-check) # do not perform compatibility checks
+			NO_IFACE_CHECK=1
+			continue
+		;;
+		-nm|--no-modprobe) # do not perform module probing
+			NO_MODPROBE=1
+			continue
+		;;
+		-np|--no-proc) # do not perform /proc configuration
+			NO_PROC=1
+			continue
+		;;
+		-ns|--no-scripts) # don't run pro/epilog scripts
+			case "${opt_arg}" in
+				all|epilog|prolog) cmdline_skip_scripts="$opt_arg" ;;
+				*) cmdline_skip_scripts="all"
+					 continue
+			esac
+		;;
+		-p|--parse-xml) # (re)-parse all XML config files
+			PARSE_RULEBLOCKS=1 PARSE_RULEFILES=1 PARSE_TEMPLATES=1
+			continue
+		;;
+		-pb|--parse-ruleblocks) # (re)-parse only XML ruleblocks
+			PARSE_RULEBLOCKS=1
+			continue
+		;;
+		-pr|--parse-rulefiles) # (re)-parse only XML rule files
+			PARSE_RULEFILES=1
+			continue
+		;;
+		-pt|--parse-templates) # (re)-parse only XML templates
+			PARSE_TEMPLATES=1
+			continue
+		;;
+		-PF|--public-functions) # help about public functions
+			SHOW_PUBFUNC_LIST=1
+			[[ ${opt_arg} = +([[:word:]]) ]] && STR_PUBFUNC_NAME="${opt_arg}" || continue
+		;;
+		-b|--base-dir) cmdline_base_dir="${opt_arg}" ;; # custom base directory
+		-c|--config-file) cmdline_conf_file="${opt_arg}" ;; # custom main config file
+		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;; # custom defaults config file
+		-e|--exe-dir) cmdline_bin_dir="${opt_arg}" ;; # custom executable directory
+		-l|--lib-dir) cmdline_lib_dir="${opt_arg}" ;; # custom library directory
+		-o|--set-option) # override main config vars
+			[[ ${opt_arg} = +([[:word:]])=* ]] || {
+				pr_err "Option \`${option}' requires a valid assignment as argument (i.e. foo=bar)."
+				short_usage
+			}
+			ARR_RTIME_OPTS[${#ARR_RTIME_OPTS[@]}]="${opt_arg}"
+		;;
+		-s|--save-file) cmdline_save_file="${opt_arg}" ;; # file to save/restore to/from
+		-sc|--show-config) # show config summary
+			case "${opt_arg}" in
+				all)
+					if [[ ${MAIN_ARG} = show ]]; then
+						cmdline_show_conf="defaults main targets matches"
+					else
+						cmdline_show_conf="defaults main targets matches ruleblocks templates"
+					fi
+				;;
+				main|defaults|targets|matches|ruleblocks|templates)
+					cmdline_show_conf="${cmdline_show_conf//${opt_arg}/}"
+					cmdline_show_conf+="${opt_arg} "
+				;;
+				*) cmdline_show_conf="main"
+					continue
+			esac
+		;;
+		-sh|--shell)
+			[[ -x ${opt_arg} ]] || {
+				pr_err "Shell binary \`${opt_arg}' does not exist, or is not executable."
+				bail_out ${ER_NOEX}
+			}
+			export SHELL="${opt_arg}"
+		;;
+		-t|--test)
+			case "$MAIN_ARG" in
+				start|stop|restart|tc-start|tc-stop|lockdown)
+					TEST_MODE=1
+					continue
+				;;
+				*) pr_err "Option \`${option}' is not valid with \`${MAIN_ARG}'."
+					bad_use_quit
+			esac
+		;;
+		-gf|--gen-format) # iptables command generation format
+			case "${opt_arg}" in
+				cmd|ipt) : ;;
+				*) pr_err "Format for saving iptables commands must be specified with \`cmd', or \`ipt'."
+					bad_use_quit
+			esac
+			GEN_FORMAT="${opt_arg}"
+		;;
+		-rt|--reload-time) cmdline_reload_time="${opt_arg}" ;; # time span in minutes until restoring ruleset (test parameter)
+		-sv|--syslog-verbose) cmdline_syslog_verbosity="${opt_arg}" ;; # syslog logging verbosity level
+		-v|--verbose) cmdline_verbosity="${opt_arg}" ;; # stdout/err verbosity level
+		--) break ;;
+		*)
+			pr_err "Unknown option: \`${option}'"
+			short_usage
+	esac
+	[[ ${opt_arg} ]] || {
+		pr_err "Option \`${option}' requires an argument."
+		short_usage
+	}
+	if (($#)); then shift; fi
+done
+
+# -------------------------------------------------------------------------
+# load default configuration parameters from file
+# -------------------------------------------------------------------------
+[[ ${DEFAULTS_FILE} ]] || { err_msg "DEFAULTS_FILE is unset."; bail_out ${ER_NODEF}; }
+if [[ -r ${DEFAULTS_FILE} ]]; then 
+	if ((SYNTAX_CHECK)); then
+		check_syntax "${DEFAULTS_FILE}" || bail_out ${ER_LOAD}
+	fi
+else
+	pr_err "Defaults file \`${DEFAULTS_FILE}' does not exist!"
+	bail_out ${ER_NOEX}
+fi
+source "${DEFAULTS_FILE}" || {
+	pr_err "Failed loading defaults. Ensure \`DEFAULTS_FILE' is correctly set."
+	bail_out ${ER_LOAD}
+}
+
+# -------------------------------------------------------------------------
+# environment settings and checks
+# -------------------------------------------------------------------------
+set_env
+
+# set the command line options
+[[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
+[[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"
+[[ ${cmdline_base_dir} ]] && BASE_DIR="${cmdline_base_dir}"
+[[ ${cmdline_bin_dir} ]] && BIN_DIR="${cmdline_bin_dir}"
+[[ ${cmdline_lib_dir} ]] && LIB_DIR="${cmdline_lib_dir}"
+[[ ${cmdline_reload_time} ]] && RELOAD_TIME="${cmdline_reload_time}"
+
+# if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
+# set the diff-file to the provided file name
+[[ ${MAIN_ARG} = diff-last-activated && ${cmdline_save_file} ]] && DIFF_FILE="${cmdline_save_file}"
+
+# set some default values, if variables are unset
+: ${CONFIG:=ip-array.conf}
+: ${DIFF_FILE:=iptables_ruleset_saved_for_diff}
+: ${KNOWN_GOOD_RULES:=KNOWN_GOOD_IPT_RULES.save}
+: ${KNOWN_GOOD_MODPROBES:=KNOWN_GOOD_MODPROBES.bash}
+: ${KNOWN_GOOD_PROC_SET:=KNOWN_GOOD_SYSCTL.bash}
+: ${KNOWN_GOOD_TRAFFIC_CONTROL:=KNOWN_GOOD_TC.bash}
+: ${PROTOCOLS:=/etc/protocols}
+: ${SERVICES:=/etc/services}
+: ${SAVE_FILE:=iptables_ruleset.save}
+: ${GEN_FORMAT:=cmd}
+: ${RULESETFILE:=ip-array_commands.bash}
+: ${IPTSAVE_FAILS:=0}
+: ${SYNTAX_CHECK:=1}
+: ${RELOAD_TIME:=7}
+: ${SYSLOG_VERBOSE:=1}
+: ${VERBOSE:=6}
+# directory to save rulesets and commands to
+: ${SAVE_DIR:="${BASE_DIR}/save.d"}
+
+# check for mandatory defaults
+for rvar in ${DEFAULTS}; do
+	[[ ${!rvar} ]] || {
+		err_msg "Defaults are not correctly set: \`${rvar}' is undefined."
+		bail_out ${ER_NODEF}
+	}
+done
+
+# check for numeric defaults
+[[ ${VERBOSE} = [0-9] ]] || {
+	err_msg "\`VERBOSE' is not in range of 0-9."
+	bail_out ${ER_CONF}
+}
+[[ ${SYSLOG_VERBOSE} = [0-6] ]] || {
+	err_msg "\`SYSLOG_VERBOSE' is not in range of 0-6."
+	bail_out ${ER_CONF}
+}
+# check for boolean defaults
+for rvar in IPTSAVE_FAILS; do
+	val_bool_bin ${!rvar} || {
+		err_msg "\`${rvar}' is not in range of 0-1."
+		bail_out ${ER_CONF}
+	}
+done
+
+# check for valid RELOAD_TIME specification
+#if [[ ${MAIN_ARG} = 'test' ]]; then
+if ((TEST_MODE)); then
+	[[ ${RELOAD_TIME} = +([[:digit:]]) ]] || {
+		err_msg "Invalid value \`${RELOAD_TIME}' for \`RELOAD_TIME'."
+		bail_out ${ER_CONF}
+	}
+	((RELOAD_TIME > 1)) || {
+		err_msg "\`RELOAD_TIME' is lower than 1 minutes."
+		bail_out ${ER_CONF}
+	}
+	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
+fi
+
+# if IPTSAVE_FAILS is enabled ...
+if ((IPTSAVE_FAILS)); then
+	NO_AUTOSAVE=1 # ... we can't do auto-saving
+	if [[ ${GEN_FORMAT} = ipt ]]; then # ... if we save in iptables-save format
+		case "${MAIN_ARG}" in
+			start|stop|open|restart|test|tc-start|tc-stop) # if we apply commands (in lockdown we hope it'll work, as just very basic rules)
+				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
+				bail_out ${ER_CONF}
+			;;
+			*) warn_msg "Saving is done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
+		esac
+	fi
+fi
+
+# check for mandatory directories
+#check_dirs SAVE_DIR || bail_out $?
+
+# -------------------------------------------------------------------------
+# turn on debugging (verbose level is known now)
+# -------------------------------------------------------------------------
+((VERBOSE == 8)) && set -x
+((VERBOSE == 9)) && set -vx
+
+# -------------------------------------------------------------------------
+# retrieve programs paths
+# -------------------------------------------------------------------------
+get_prog_paths || bail_out $?
+
+# make IP-Array programs variables readonly
+while read rvar rest; do
+	[[ ${!rvar} ]] && readonly "${rvar}"
+done < <(printf "%s\n" "${IPARRAY_PROGRAMS[@]}")
+
+# -------------------------------------------------------------------------
+# set skeleton variables
+# -------------------------------------------------------------------------
+if [[ ${MAIN_ARG} = 'test' ]]; then
+	set_skel 'test' || bail_out $?
+else
+	set_skel 'stable' || bail_out $?
+fi
+# make skeleton variables readonly
+readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
+	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR
+
+# -------------------------------------------------------------------------
+# global variables
+# -------------------------------------------------------------------------
+if ! [[ -f ${LIB_DIR}/${GLOBAL_DEFS} ]]; then
+	err_msg "Global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}' does not exist."
+	bail_out ${ER_NOEX}
+fi
+verbose_msg "Loading global definitions: ${LIB_DIR}/${GLOBAL_DEFS}"
+if ((SYNTAX_CHECK)); then
+	check_syntax "${LIB_DIR}/${GLOBAL_DEFS}" || bail_out ${ER_LOAD}
+fi
+source "${LIB_DIR}/${GLOBAL_DEFS}" || {
+	err_msg "Failed loading global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}'."
+	bail_out ${ER_LOAD}
+}
+set_env # reset possibly messed up env
+# set those arrays as read-only
+readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES PORTSCAN_ARRRAY\
+	LOCAL_NET_ARRAY CMD_NAMES_ARRAY MSG_COLOR_ARRAY CONFIG_ENTRY_ARRAY\
+	GLOBAL_MATCH_LIST GLOBAL_TARGET_LIST TABLE_DEPEND_MATCH_LIST TABLE_DEPEND_TARGET_LIST
+
+# -------------------------------------------------------------------------
+# react according to main argument
+# -------------------------------------------------------------------------
+case "${MAIN_ARG}" in
+	'-?'|-h|help|--help)
+		if ((SHOW_PUBFUNC_LIST)); then
+			if [[ ${STR_PUBFUNC_NAME} ]]; then
+				show_pubfunc_help "${STR_PUBFUNC_NAME}" || bail_out $?
+			else
+				show_pubfunc_list
+			fi
+		else
+			usage
+		fi
+		quit_welldone
+	;;
+	compat-check)
+		MODE='COMPAT_CHECK'
+	;;
+	diff-last-activated) # compare last activated ruleset with saved rule listing
+		MODE='DIFF'
+	;;
+	dry-run) # don't apply commands
+#		MODE='DRY-RUN'
+		MODE='RESTART'
+		EXEC_COMMANDS=0
+	;;
+	lockdown) # lockdown network connections
+		MODE='LOCKDOWN'
+	;;
+	open) # leave only nat rules active
+		MODE='OPEN'
+	;;
+	parse-xml) # only parse xml configuration files
+		if (($((PARSE_RULEBLOCKS + PARSE_RULEFILES + PARSE_TEMPLATES)) == 0)); then
+			PARSE_RULEBLOCKS=1 PARSE_RULEFILES=1 PARSE_TEMPLATES=1
+		fi
+		MODE='PARSE-XML'
+	;;
+	prepare-restore-on-start) # prepare quick-start. save iptables, modprobe, proc, tc commands
+		MODE='PREPARE_QUICKSTART'
+	;;
+	restart) # read config and reapply commands
+		MODE='RESTART'
+	;;
+	restore) # restore iptables-save saved ruleset
+		ipt_restore "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+		quit_welldone
+	;;
+	save) # save ruleset with iptables-save
+		ipt_save "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+		quit_welldone
+	;;
+	save-known-good) # save known good ruleset with iptables-save
+		ipt_save "${KNOWN_GOOD_RULES}" || bail_out $?
+		quit_welldone
+	;;
+	save-commands) # save all commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-COMMANDS'
+	;;
+	save-modprobe-commands) # save modprobe commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-MODPROBE-COMMANDS'
+	;;
+	save-proc-commands) # save proc commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-PROC-COMMANDS'
+	;;
+	save-iptables-commands) # save iptables commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-IPT-COMMANDS'
+	;;
+	save-tc-commands) # save tc commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-TC-COMMANDS'
+	;;
+	save-shaping-commands) # save tc and iptables mangle table (mark) commands to file
+		[[ ${cmdline_save_file} ]] && RULESETFILE="${cmdline_save_file}"
+		MODE='SAVE-SHAPING-COMMANDS'
+	;;
+	show)
+		[[ ${cmdline_show_conf} ]] || cmdline_show_conf='main'
+		MODE='SHOW'
+	;;
+	start) # start mode, enforce lockdown mode with admin allow,
+			# apply commands after reading all rules
+			# if RESTORE_ON_START is enabled, do iptables-restore,
+			# and load previously saved known good scripts
+		case "${RESTORE_ON_START}" in
+			0|"")
+				MODE='START'
+			;;
+			1) # RESTORE_ON_START is enabled - do quick-start
+				MODE='RESTORE_ON_START'
+			;;
+			*) err_msg "Invalid value for \`RESTORE_ON_START'. Starting regulary."
+				MODE='START'
+		esac
+	;;
+	stop) # stop firewalling/tc
+		MODE='STOP'
+	;;
+	test) # restart in test mode, with scheduled restore of stable ruleset
+		MODE='RESTART' TEST_MODE=1
+	;;
+	tc-start) # start traffic shaping
+		MODE='TC-START'
+	;;
+	tc-stop) # stop traffic shaping
+		MODE='TC-STOP'
+	;;
+esac
+
+# -------------------------------------------------------------------------
+# In any other mode then 'START' or 'STOP' set to:
+# Exit immediately if a simple command exits with a non-zero status
+# -------------------------------------------------------------------------
+case "${MODE}" in
+	(START|STOP)
+		set +o errexit
+		trap - ERR
+	;;
+	(*)
+		set -o errexit
+		set -E
+esac
+
+# -------------------------------------------------------------------------
+# load main config file
+# -------------------------------------------------------------------------
+if [[ ! -f ${MAIN_CONFIG} ]]; then
+	err_msg "Main configuration file \`${MAIN_CONFIG}' does not exist."
+	bail_out ${ER_NOEX}
+fi
+notice_msg "Loading ${RUNMODE} config: ${MAIN_CONFIG}"
+if ((SYNTAX_CHECK)); then
+	check_syntax "${MAIN_CONFIG}" || bail_out ${ER_LOAD}
+fi
+source "${MAIN_CONFIG}" || {
+	err_msg "Failed loading main configuration file \`${MAIN_CONFIG}'."
+	bail_out ${ER_LOAD}
+}
+set_env # reset possibly messed up env
+
+# -------------------------------------------------------------------------
+# command line options to override main config variables
+# -------------------------------------------------------------------------
+for idx in ${!ARR_RTIME_OPTS[@]}; do
+	for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
+		if [[ ${ARR_RTIME_OPTS[idx]%%=*} =	${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
+			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\"${ARR_RTIME_OPTS[idx]#*=}\" || {
+				err_msg "Failed overriding main configuration variable. Failed command: \`${ARR_RTIME_OPTS[idx]}'."
+				bail_out ${ER_FAIL}
+			}
+			continue 2
+		fi
+	done
+	err_msg "Unknown main configuration variable \`${ARR_RTIME_OPTS[idx]%%=*}'"
+	bail_out ${ER_CONF}
+done
+
+# -------------------------------------------------------------------------
+# show config summary
+# -------------------------------------------------------------------------
+for rvar in ${cmdline_show_conf}; do
+	case "${rvar}" in
+		defaults)
+			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of defaults configuration:" "${SEPSTR}"
+			for i in ${!IPARRAY_PROGRAMS[@]}; do
+				declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" 2>/dev/null || continue
+			done
+			for i in ${!DEFAULTS_LIST[@]}; do
+				declare -p "${DEFAULTS_LIST[i]}" 2>/dev/null || continue
+			done
+			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of defaults configuration summary." "${SEPSTR}"
+		;;
+		main)
+			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of main configuration:" "${SEPSTR}"
+			for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
+				declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" 2>/dev/null || continue
+			done
+			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of main configuration summary." "${SEPSTR}"
+		;;
+		targets)
+			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of supported targets:" "${SEPSTR}"
+			for idx in ${!IPARRAY_TARGETS[@]}; do
+				set -- ${IPARRAY_TARGETS[idx]}
+				pr_str "${2}"
+			done
+			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of supported targets summary." "${SEPSTR}"
+		;;
+		matches)
+			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of supported iptables matches:" "${SEPSTR}"
+			for idx in ${!IPARRAY_MODULES[@]}; do
+				set -- ${IPARRAY_MODULES[idx]}
+				pr_str "${2}"
+			done
+			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of supported iptables matches summary." "${SEPSTR}"
+		;;
+		ruleblocks)
+			if ((PARSE_RULEBLOCKS == 0)); then
+				err_msg "Option \`${rvar}' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
+				bad_use_quit
+			fi
+		;;
+		templates)
+			if ((PARSE_TEMPLATES == 0)); then
+				err_msg "Option \`${rvar}' is only available for parsing templates - i.e. with the \`parse-xml' argument."
+				bad_use_quit
+			fi
+		;;
+	esac
+done
+if [[ ${MODE} = SHOW ]]; then
+	quit_welldone
+fi
+
+# -------------------------------------------------------------------------
+# Set colour mode and log message alias
+# Set aliases according to user configuration of ENABLE_COLORS
+# if colours are enabled log_msg is color_msg, if not its no_color_msg
+# -------------------------------------------------------------------------
+if [[ ${ENABLE_COLORS} ]]; then
+	case "${ENABLE_COLORS}" in
+		0) # coloured output is disabled
+			declare -r log_msg='no_color_msg'
+		;;
+		1) # coloured output is enabled
+			if [[ -t 1 ]]; then # check if output is a terminal
+				declare -r log_msg='color_msg'
+				notice_msg "Enabling coloured output"
+			else
+				declare -r log_msg='no_color_msg'
+				ENABLE_COLORS=0
+				notice_msg "Output is not a terminal, disabling coloured output"
+			fi
+		;;
+		*) # invalid user entry, disabling coloured output
+			declare -r log_msg='no_color_msg'
+			let cfg_err_count+=1
+			declare -i ENABLE_COLORS=0
+			err_msg "Illegal value \`${ENABLE_COLORS}' for \`ENABLE_COLORS', disabling coloured output."
+	esac
+else # undefined, do not use colours
+	declare -r log_msg='no_color_msg'
+	declare -i ENABLE_COLORS=0
+	notice_msg "\`ENABLE_COLORS' is unset, disabling coloured output"
+fi
+
+# -------------------------------------------------------------------------
+# load IP-Array functions
+# -------------------------------------------------------------------------
+verbose_msg "Loading functions"
+for rvar in ${IPARRAY_FUNCTIONS}; do
+	source "${LIB_DIR}/${rvar}" || {
+		err_msg "loading functions file: \`${LIB_DIR}/${rvar}'."
+		exit ${ER_LOAD}
+	}
+done
+set_env # reset possibly messed up env
+# make functions read-only
+readonly -f $(get_function_list)
+
+# -------------------------------------------------------------------------
+# set runtime variables
+# check kernel version
+# -------------------------------------------------------------------------
+set_runtime_vars || bail_out $?
+check_kern_ver || bail_out $?
+
+# -------------------------------------------------------------------------
+# mutual exclusion - lock
+# -------------------------------------------------------------------------
+verbose_msg "Creating lockfile"
+if (set -C; >"${LOCKFILE}") &>/dev/null; then
+	pr_str "$PID" >"$LOCKFILE"
+else
+	pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("${CAT}" "$LOCKFILE")', is another instance of $ME running?"
+	bad_use_quit
+fi
+
+# -------------------------------------------------------------------------
+# if in a MODE that could make use of auto-backup, save ruleset
+# -------------------------------------------------------------------------
+case "${MAIN_ARG}" in
+	start|restart|open|tc-start) autosave || bail_out $? ;;
+esac
+
+# -------------------------------------------------------------------------
+# if in TEST_MODE, save ruleset & schedule restore
+# -------------------------------------------------------------------------
+if ((TEST_MODE)); then
+	sched_restore "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+fi
+
+# -------------------------------------------------------------------------
+# preparation done - run main function
+# -------------------------------------------------------------------------
+if run_main "${MODE}"; then
+	cleanup
+	quit_welldone
+else
+	bail_out_restore $?
+fi
+exit $?

@@ -1,0 +1,461 @@
+'\" t
+.\"     Title: ip-array
+.\"    Author: AllKind <AllKind@BonBon.net>
+.\" Generator: DocBook XSL-NS Stylesheets v1.74.3-pre <http://docbook.sf.net/>
+.\"      Date: 01/12/2011
+.\"    Manual: ip-array 0.80.00
+.\"    Source: ip-array 0.80.00
+.\"  Language: English
+.\"
+.TH "IP\-ARRAY" "8" "01/12/2011" "ip-array 0.80.00" "ip\-array 0\&.80\&.00"
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ip-array \- Firewall and Traffic control Configuration utility
+.SH "SYNOPSIS"
+.HP \w'\fBip\-array\fR\ 'u
+\fBip\-array\fR parameter [\fIoption\fR\ [\ \fIoption_argument\fR\ ]...]
+.SH "DESCRIPTION"
+.PP
+ip\-array is a command generator for netfilter (currently only iptables), tc and /proc configuration\&.
+.PP
+It is written in bash\&. Bash version 3\&.1 or higher is required\&.
+.PP
+Basic configuration is done via shell style configuration files\&. Rules are defined using a simple XML syntax\&. The XML configuration files get converted to bash scripts, which are read at runtime\&.
+.SH "PARAMETERS"
+.PP
+If the first parameter is omitted, usage instructions are printed\&. Only one parameter is allowed \- but required \- for ip\-array to take any action\&.
+.PP
+.PP
+\-?, \-h, \-\-help, help
+.RS 4
+Show usage instructions\&.
+.RE
+.PP
+show
+.RS 4
+Show configuration or feature summary\&. The
+\fB\-sc | \-\-show\-config\fR
+option can be used to select a specific type\&.
+.RE
+.PP
+compat\-check
+.RS 4
+Perform a compatibility check\&. ip\-array will look for supported kernel version, iptables targets, matches and tables\&.
+.RE
+.PP
+dry\-run
+.RS 4
+No acting mode\&. All configured components are called, but no commands are executed\&.
+.RE
+.PP
+start
+.RS 4
+Start ip\-array\&.
+.sp
+If quick\-start mode is enabled by the setting the
+\fIRESTORE_ON_START\fR
+variable of the defaults file to
+\fB1\fR, ip\-array will attempt to load the prepared scripts\&. In case of a failure it will start regulary\&. Regular start mode implies lockdown mode until commands are applied\&.
+.RE
+.PP
+stop
+.RS 4
+Stop ip\-array\&.
+.sp
+All iptables tables are flushed and all policies are set to ACCEPT\&.
+.sp
+tc qdiscs are removed\&.
+.sp
+All kernel modules configured to be loaded, are removed in reverse order\&.
+.RE
+.PP
+restart
+.RS 4
+Restart ip\-array\&.
+.sp
+The currently active iptables ruleset, tc and /proc configuration are not touched until all commands are generated\&.
+.RE
+.PP
+open
+.RS 4
+Remove all but the iptables NAT rules\&. Traffic shaping is also stopped\&.
+.RE
+.PP
+test
+.RS 4
+Apply testing configuration\&. Reload previously active iptables ruleset after the amount of minutes specified with
+\fIRELOAD_TIME\fR
+or the
+\fB\-rt | \-\-reload\-time\fR
+option\&.
+.RE
+.PP
+tc\-start
+.RS 4
+Start traffic shaping\&.
+.sp
+Besides the creation if qdisc, classes and filters, the iptables mangle table rules are re\-applied\&.
+.RE
+.PP
+tc\-stop
+.RS 4
+Stop traffic shaping\&.
+.sp
+Qdiscs and iptables mangle table traffic control rules (MARK, CLASSIFY) get removed\&.
+.RE
+.PP
+lockdown
+.RS 4
+Enforce lockdown mode\&. All iptables tables are flushed, a DROP policy is enforced in all builtin filter table chains\&. Only localhost and the administrators connection may still be permitted (depends on configuration)\&.
+.RE
+.PP
+parse\-xml
+.RS 4
+(Re\-)parse all XML configuration files\&.
+.RE
+.PP
+save
+.RS 4
+Save currently active iptables ruleset using
+\fBiptables\-save\fR\&.
+.RE
+.PP
+restore
+.RS 4
+Restore previously saved iptables ruleset using
+\fBiptables\-restore\fR\&.
+.RE
+.PP
+diff\-last\-activated
+.RS 4
+Run a
+\fBdiff\fR
+on the last applied rule listing\&.
+.RE
+.PP
+save\-known\-good
+.RS 4
+Save currently active iptables ruleset as `known\-good\'\&.
+.RE
+.PP
+prepare\-restore\-on\-start
+.RS 4
+Prepare quick\-start scripts\&.
+.sp
+ip\-array will generate `known\-good\' scripts, which will be loaded if the parameter
+\fIstart\fR
+is used and the variable
+\fIRESTORE_ON_START\fR
+is set to
+\fB1\fR\&. A separate script for iptables, modprobe, tc and /proc configuration is created (unless disabled by configuration)\&. Depending on the configuration either the currently active ruleset is saved in iptables\-save format, or configuration is read and a bash script is created, just as if one would use the
+\fIsave\-iptables\-commands\fR
+parameter\&.
+.RE
+.PP
+save\-commands
+.RS 4
+Save all generated commands to file\&.
+.RE
+.PP
+save\-iptables\-commands
+.RS 4
+Save generated iptables commands to file\&.
+.RE
+.PP
+save\-modprobe\-commands
+.RS 4
+Save generated modprobe commands to file\&.
+.RE
+.PP
+save\-proc\-commands
+.RS 4
+Save generated /proc configuration commands to file\&.
+.RE
+.PP
+save\-tc\-commands
+.RS 4
+Save generated tc commands to file\&.
+.RE
+.PP
+save\-shaping\-commands
+.RS 4
+Save generated traffic shaping commands to file\&. This includes tc and iptables mangle table traffic control (MARK, CLASSIFY) commands\&.
+.RE
+.PP
+version
+.RS 4
+Show version information\&.
+.RE
+.SH "OPTIONS"
+.PP
+All options are optional\&. Some require an argument, others do not\&. All options and their arguments must be separated by blank(s)\&. If an option can be used more than once, it is mentioned explicitly\&.
+.PP
+.PP
+\-PF, \-\-public\-functions \fB[\fR\fB\fIfunction_name\fR\fR\fB]\fR
+.RS 4
+Show list of public functions\&. Or show usage instructions if
+\fIfunction_name\fR
+is given as option argument\&. This option is only available with the
+\fB\-? | \-h | \-\-help | help\fR
+parameter\&.
+.RE
+.PP
+\-ct, \-\-ipt\-counters
+.RS 4
+Save/restore counters, when using the
+\fIsave\fR, or
+\fIrestore\fR
+parameter\&.
+.RE
+.PP
+\-na, \-\-no\-autosave
+.RS 4
+Do not automatically save/restore the iptables ruleset on error\&. This option is only available with the following parameters:
+\fBrestart | open | tc\-start\fR\&.
+.RE
+.PP
+\-nc, \-\-no\-compat\-check
+.RS 4
+Do not perform compatibility check\&. No checking for existence of netfilter extensions, targets, raw, rawpost and security table is done\&. Instead their presence is assumed\&.
+.RE
+.PP
+\-nd, \-\-no\-diff
+.RS 4
+Do not save an iptables rule listing for later difference checks with the
+\fIdiff\-last\-activated\fR
+parameter, when applying a new ruleset\&.
+.RE
+.PP
+\-ni, \-\-no\-iface\-check
+.RS 4
+Do not check for existence of interfaces\&.
+.RE
+.PP
+\-nm, \-\-no\-modprobe
+.RS 4
+Do not perform probing/removing of modules\&.
+.RE
+.PP
+\-np, \-\-no\-proc
+.RS 4
+Do not set /proc configuration\&.
+.RE
+.PP
+\-p, \-\-parse\-xml
+.RS 4
+Parse all XML configuration files and create the bash scripts, which will be executed at runtime\&.
+.RE
+.PP
+\-pb, \-\-parse\-ruleblocks
+.RS 4
+(Re\-)parse XML rule\-blocks\&.
+.RE
+.PP
+\-pr, \-\-parse\-rulefiles
+.RS 4
+(Re\-)parse XML rule files\&.
+.RE
+.PP
+\-pt, \-\-parse\-templates
+.RS 4
+(Re\-)parse XML templates\&.
+.RE
+.PP
+\-bd, \-\-base\-dir \fB \fR\fB\fIdirectory\fR\fR\fB \fR
+.RS 4
+Base directory to use\&. Overrides the configuration variable
+\fIBASE_DIR\fR
+from the defaults file\&.
+.RE
+.PP
+\-c, \-\-config\-file \fB \fR\fB\fIfile\fR\fR\fB \fR
+.RS 4
+Main configuration file to use\&. Overrides the configuration variable
+\fICONFIG\fR
+from the defaults file\&. Defaults to
+\fBip\-array\&.conf\fR
+if unset\&.
+.RE
+.PP
+\-d, \-\-defaults\-file \fB \fR\fB\fI/PATH/file\fR\fR\fB \fR
+.RS 4
+Defaults file to use\&. This option is mandatory if ip\-array is not launched from the init script\&. Overrides the configuration variable
+\fIDEFAULTS_FILE\fR
+from the init script\&.
+.RE
+.PP
+\-e, \-\-exe\-dir \fB \fR\fB\fIdirectory\fR\fR\fB \fR
+.RS 4
+Executable directory to use\&. This option is mandatory if ip\-array is not launched from the init script\&. Overrides the configuration variable
+\fIBIN_DIR\fR
+from the defaults file\&.
+.RE
+.PP
+\-l, \-\-lib\-dir \fB \fR\fB\fIdirectory\fR\fR\fB \fR
+.RS 4
+Library directory to use\&. Overrides the configuration variable
+\fILIB_DIR\fR
+from the defaults file\&.
+.RE
+.PP
+\-o, \-\-set\-option \fB \fR\fB\fIassignment\fR\fR\fB \fR
+.RS 4
+Set (override) a configuration option\&. The
+\fIassignment\fR
+has to be a valid bash assignment in the format:
+\fIword\fR=\fIvalue\fR\&. Multiple use of this option is supported\&. Only options of the main configuration file can be set\&. The
+\fIENABLE_COLORS\fR
+variable is an exception\&.
+.RE
+.PP
+\-gf, \-\-gen\-format \fB \fR\fB\fItype\fR\fR\fB \fR
+.RS 4
+Save iptables commands in the specified format\&. Avalailable formats are:
+\fBcmd\fR
+and
+\fBipt\fR\&.
+\fBcmd\fR
+saves the generated iptables commands as shell script\&.
+\fBipt\fR
+saves them in iptables\-save format\&. Defaults to
+\fBcmd\fR
+if unset\&.
+.RE
+.PP
+\-rt, \-\-reload\-time \fB \fR\fB\fI1\-n\fR\fR\fB \fR
+.RS 4
+Reload time in minutes\&. This option is only available with the
+\fItest\fR
+parameter\&. Overrides the configuration variable
+\fIRELOAD_TIME\fR
+from the defaults file\&.
+.RE
+.PP
+\-s, \-\-save\-file \fB \fR\fB\fIfile\fR\fR\fB \fR
+.RS 4
+Use this
+\fIfile\fR, when using one of these parameters:
+\fB save | restore | diff\-last\-activated | save\-commands | save\-iptables\-commands | save\-modprobe\-commands | save\-proc\-commands | save\-tc\-commands | save\-shaping\-commands\fR\&. Overrides the configuration variable
+\fISAVE_FILE\fR,
+\fIDIFF_FILE\fR, or
+\fIRULESETFILE\fR
+(depending on what parameter is used) from the defaults file\&.
+.RE
+.PP
+\-sc, \-\-show\-config [\fB \fR\fB\fItype\fR\fR\fB \fR]
+.RS 4
+Show configuration or feature summary of specified type\&. Avalailable types are: all, main (which is the default), defaults, targets, matches, ruleblocks, templates\&. Multiple use of this option is supported\&.
+.RE
+.PP
+\-sv, \-\-syslog\-verbose \fB \fR\fB\fI0\-6\fR\fR\fB \fR
+.RS 4
+Set syslog verbosity\&. Set to a value of
+\fB0\fR, only error messages are sent to syslog\&. Defaults to
+\fB1\fR
+if unset\&.
+.RE
+.PP
+\-v, \-\-verbose \fB \fR\fB\fI0\-9\fR\fR\fB \fR
+.RS 4
+Set output verbosity\&. A value of
+\fB0\fR
+disables output\&. The values
+\fB8\fR
+and
+\fB9\fR
+enable debugging output (using
+\fBset \-x\fR
+and
+\fBset \-vx\fR)\&. Defaults to
+\fB6\fR
+if unset\&.
+.RE
+.SH "ENVIRONMENT"
+.PP
+If the environment variable
+\fIDEBUG_INFO\fR
+is set, additional debugging information is displayed\&. If in addition the output verbosity is set to
+\fB8\fR
+or higher, a debugging
+\fIPS4\fR
+is set\&.
+.SH "EXIT STATUS"
+.PP
+.PP
+0
+.RS 4
+Success
+.RE
+.PP
+1
+.RS 4
+Undetermined error\&.
+.RE
+.PP
+3
+.RS 4
+Usage error\&.
+.RE
+.PP
+111
+.RS 4
+Requested item (file, folder) does not exist error\&.
+.RE
+.PP
+112
+.RS 4
+Item (configuration variable) not defined error\&.
+.RE
+.PP
+113
+.RS 4
+Failed loading item (script, program) error\&.
+.RE
+.PP
+114
+.RS 4
+General fail condition error\&.
+.RE
+.PP
+115
+.RS 4
+Configuration error\&.
+.RE
+.SH "FILES"
+.PP
+
+/usr/bin/ip\-array
+.SH "SEE ALSO"
+.PP
+
+\fBip-array_defaults.conf\fR(8),
+\fBip-array.conf\fR(8),
+\fBip-array_ruleblocks\fR(5),
+\fBip-array_rulefiles\fR(5),
+\fBip-array_templates\fR(5)
+.PP
+
+\fBiptables\fR(8),
+\fBiptables-save\fR(8),
+\fBiptables-restore\fR(8),
+\fBtc\fR(8),
+\fBtc-htb\fR(8),
+\fBtc-sfq\fR(8)
+.SH "AUTHOR"
+.PP
+\fBAllKind\fR <\&AllKind@BonBon\&.net\&>
+.RS 4
+Some guy infront of a screen\&.
+.RE
+.RS 4
+Thanks go to the open source community\&.
+.RE

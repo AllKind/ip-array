@@ -1,0 +1,3017 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbookxi.rng" type="xml"?>
+<book xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
+  xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  <info version="1.0"><title>IP-Array 0.80.00 Reference Manual</title><author>
+      <personname><firstname>AllKind</firstname><surname/></personname>
+      <affiliation>
+        <orgname>AllKind</orgname>
+      </affiliation></author>
+    <pubdate>2009</pubdate>
+    <legalnotice>
+      <para>GPL v.2+</para>
+    </legalnotice>
+    <copyright>
+      <year>2009 AllKind</year>
+    </copyright>
+  </info>
+  <chapter xml:id="intro">
+    <title>Introduction</title>
+    <section xml:id="about_doc">
+      <title>About this document</title>
+      <para>This document is the <emphasis role="bold">reference manual</emphasis> for <emphasis
+          role="bold">IP-Array version 0.80.00</emphasis>.</para>
+      <para>It should provide all the information necessary to configure and use IP-Array.</para>
+    </section>
+    <section xml:id="about_ip-array">
+      <title>About IP-Array</title>
+      <para>This section provides an overview about what IP-Array is, the requirements, features,
+        goals and online availability.</para>
+      <section xml:id="whatis_ip-array">
+        <title>What is IP-Array?</title>
+        <para>IP-Array is a command-line program (you may also say `script') written in <emphasis
+            role="bold">bash</emphasis>.</para>
+        <para>It's purpose is to configure <emphasis role="bold">IPv4</emphasis>
+          <emphasis role="bold">firewalling</emphasis> and <emphasis role="bold">traffic
+            shaping</emphasis> of a linux host.</para>
+        <para>To achieve this, IP-Array <emphasis role="bold">configures</emphasis> the kernels
+            <emphasis role="bold">netfilter / traffic control</emphasis> subsystems via the
+          userspace tools<emphasis role="bold"> iptables / tc</emphasis>.</para>
+        <para>It also allows to <emphasis role="bold">load and / or unload</emphasis> netfilter
+          related <emphasis role="bold">kernel</emphasis>
+          <emphasis role="bold">modules</emphasis> and <emphasis role="bold">configure</emphasis>
+          the kernel via the <emphasis role="bold">`/proc' filesystem</emphasis>.</para>
+        <para><emphasis role="bold">Intended Audience:</emphasis> Advanced End Users, System
+          Administrators.</para>
+        <para><emphasis role="bold">Field of application:</emphasis> From single host system to
+          multi-homed router / gateway.</para>
+      </section>
+      <section xml:id="requirements">
+        <title>Requirements</title>
+        <para>This list describes, what is necessary to use IP-Array:</para>
+        <para>
+          <itemizedlist>
+            <listitem>
+              <para>Bash version 3.0 or higher</para>
+            </listitem>
+            <listitem>
+              <para>Linux kernel 2.4 or higher</para>
+            </listitem>
+            <listitem>
+              <para>Netfilter support enabled in the kernel</para>
+            </listitem>
+            <listitem>
+              <para>Traffic control support enabled in the kernel (optional)</para>
+              <para>To enable traffic shaping.</para>
+            </listitem>
+            <listitem>
+              <para>Some coreutils:</para>
+              <itemizedlist>
+                <listitem>
+                  <para><command>cat</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>date</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>grep</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>mkdir</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>rm</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>seq</command></para>
+                </listitem>
+                <listitem>
+                  <para><command>uname</command></para>
+                </listitem>
+              </itemizedlist>
+            </listitem>
+            <listitem>
+              <para>The <command>iptables</command> program.</para>
+            </listitem>
+            <listitem>
+              <para>The <command>iproute2</command> program (ip)</para>
+            </listitem>
+            <listitem>
+              <para>The <command>lsmod</command> and <command>modprobe</command> programs</para>
+              <para>Required if IP-Array is configured to load and/or unload modules.</para>
+            </listitem>
+            <listitem>
+              <para>The <command>tc</command> program (optional)</para>
+              <para>To enable traffic shaping.</para>
+            </listitem>
+            <listitem>
+              <para>The <command>logger</command> utility (optional)</para>
+              <para>To write messages to syslog.</para>
+            </listitem>
+            <listitem>
+              <para><command>awk</command> (only used with the `ROOT_DNS' option)</para>
+              <para>Any awk version should work, as only very basic operations are performed.</para>
+            </listitem>
+            <listitem>
+              <para>The <command>at</command> utility.</para>
+            </listitem>
+            <listitem>
+              <para>Decent understanding of the netfilter concept</para>
+              <para>Tables, chains (and their order of traversal).</para>
+              <para>State match (conntrack) functionality.</para>
+            </listitem>
+            <listitem>
+              <para>Decent understanding of the traffic control concept (optional)</para>
+              <para>Qdiscs (htb, sfq), classes, filters and how they work together.</para>
+            </listitem>
+            <listitem>
+              <para>Decent understanding of the `/proc' filesystems networking (netfilter) options
+                (optional)</para>
+            </listitem>
+          </itemizedlist>
+        </para>
+      </section>
+      <section xml:id="goals">
+        <title>Goals</title>
+        <orderedlist>
+          <listitem>
+            <para>Provide a configuration interface to iptables and tc.</para>
+          </listitem>
+          <listitem>
+            <para>Allowing flexible configuration from simple to complex setups.</para>
+          </listitem>
+          <listitem>
+            <para>Keep effective rule writing effort low, by just entering the desired values.
+              Keeping the the user away from the programs (i.e. iptables. tc,..) syntax.</para>
+          </listitem>
+          <listitem>
+            <para>Stay as close as possible with the concept and naming of iptables / tc.</para>
+          </listitem>
+          <listitem>
+            <para>Although (by now) it's not the main goal of IP-Array, provide some preset options
+              for automatic configuration.</para>
+          </listitem>
+        </orderedlist>
+      </section>
+      <section xml:id="features">
+        <title>Features</title>
+        <orderedlist>
+          <listitem>
+            <para>Template based rule structure definition (quite a huge list of predifined
+              templates is provided out of the box).</para>
+          </listitem>
+          <listitem>
+            <para>Avaliable iptables targets:<itemizedlist>
+                <listitem>
+                  <para>ACCEPT</para>
+                </listitem>
+                <listitem>
+                  <para>DROP</para>
+                </listitem>
+                <listitem>
+                  <para>REJECT</para>
+                </listitem>
+                <listitem>
+                  <para>LOG</para>
+                </listitem>
+                <listitem>
+                  <para>DNAT</para>
+                </listitem>
+                <listitem>
+                  <para>SNAT</para>
+                </listitem>
+                <listitem>
+                  <para>MARK</para>
+                </listitem>
+                <listitem>
+                  <para>RETURN</para>
+                </listitem>
+                <listitem>
+                  <para>TTL (as public function)</para>
+                </listitem>
+                <listitem>
+                  <para>TCPMSS (as configuration option in the main configuration file)</para>
+                </listitem>
+                <listitem>
+                  <para>IP-Array supports <emphasis role="bold">any target</emphasis> that has
+                      <emphasis role="bold">no options</emphasis>.</para>
+                </listitem>
+                <listitem>
+                  <para><emphasis role="bold">No Target</emphasis>. It is possible to create rules
+                    without a target set, by specifying the target with the special string:
+                      `<emphasis role="bold">empty</emphasis>'.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Avaliable iptables match extensions:<itemizedlist>
+                <listitem>
+                  <para>state match</para>
+                </listitem>
+                <listitem>
+                  <para>mac address match</para>
+                </listitem>
+                <listitem>
+                  <para>limit match</para>
+                </listitem>
+                <listitem>
+                  <para>iprange match</para>
+                </listitem>
+                <listitem>
+                  <para>multiport match</para>
+                </listitem>
+                <listitem>
+                  <para>tos match</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Definition of templates, ruleblocks and rule files is done in a simple XML
+              dialect.</para>
+          </listitem>
+          <listitem>
+            <para>Traffic shaping capabilities:<itemizedlist>
+                <listitem>
+                  <para>Marking of packets in mangle table</para>
+                </listitem>
+                <listitem>
+                  <para>Creation of htb and sfq qdiscs</para>
+                </listitem>
+                <listitem>
+                  <para>Creation of tc classes and filters</para>
+                </listitem>
+                <listitem>
+                  <para>Bulk OUTPUT and FORWARD qdiscs</para>
+                </listitem>
+                <listitem>
+                  <para>Prioryzing of SYN packets</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Automatic configuration (rule generation) options for:<itemizedlist>
+                <listitem>
+                  <para>IPSEC (VPN)</para>
+                  <para>Put all ipsec related traffic into the ipsec chain. Allow only packets from
+                    / to the configured VPN branches.</para>
+                  <para>An option is available to allow all traffic between the VPN branches.</para>
+                </listitem>
+                <listitem>
+                  <para>DNS<orderedlist>
+                      <listitem>
+                        <para>Allow local host DNS lookups to specific name servers.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Allow forwarded DNS lookups from specific LAN name servers to ISP name
+                          servers.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Allow forwarded DNS lookups from specific LAN name servers to root
+                          name servers.</para>
+                      </listitem>
+                    </orderedlist></para>
+                </listitem>
+                <listitem>
+                  <para>SMTP</para>
+                  <para>Allow SMTP traffic from specific LAN(s) to ISP mail servers.</para>
+                </listitem>
+                <listitem>
+                  <para>NTP</para>
+                  <para>Allow time server queries from local host to specific NTP servers.</para>
+                </listitem>
+                <listitem>
+                  <para>FTP</para>
+                  <para>Allow forwarded (optional active/passive) FTP traffic from specific
+                    LAN(s).</para>
+                </listitem>
+                <listitem>
+                  <para>Windows and Real Media player</para>
+                  <para>Allow Windows and/or Real media player traffic from certain LAN(s).</para>
+                </listitem>
+                <listitem>
+                  <para>OUTPUT rule generation (bound to interfaces or primary IP addresses)</para>
+                </listitem>
+                <listitem>
+                  <para>Final rule</para>
+                  <para>A chain termination option for builtin and IP-Array created chains, which
+                    allows to choose between different 'final rule' modes.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Automated iptables logging options:<itemizedlist>
+                <listitem>
+                  <para>Globally log fragments</para>
+                </listitem>
+                <listitem>
+                  <para>Globally log invalid TCP packets</para>
+                </listitem>
+                <listitem>
+                  <para>Globally log packets in INVALID state</para>
+                </listitem>
+                <listitem>
+                  <para>Globally log port scans</para>
+                </listitem>
+                <listitem>
+                  <para>Log options (prefix, level, etc.) for the above listed.</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Automated iptables dropping options:<itemizedlist>
+                <listitem>
+                  <para>Globally drop fragments</para>
+                </listitem>
+                <listitem>
+                  <para>Globally drop invalid TCP packets</para>
+                </listitem>
+                <listitem>
+                  <para>Globally drop packets in INVALID state</para>
+                </listitem>
+                <listitem>
+                  <para>Globally drop port scans</para>
+                </listitem>
+                <listitem>
+                  <para>Reject AUTH (tcp port 113) on certain interfaces</para>
+                </listitem>
+                <listitem>
+                  <para>Drop NETBIOS broadcasts on certain interfaces</para>
+                </listitem>
+                <listitem>
+                  <para>Drop DHCP broadcasts on certain interfaces</para>
+                </listitem>
+                <listitem>
+                  <para>Drop UPNP broadcasts on certain interfaces</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+          <listitem>
+            <para>Prolog and Epilog scripts</para>
+            <para>Prolog and epilog scripts can be configured for any startup mode.</para>
+          </listitem>
+          <listitem>
+            <para>Loading and unloading of kernel modules (with optional parameters)</para>
+          </listitem>
+          <listitem>
+            <para>/proc filesystem configuration</para>
+            <para>There are many networking related options available in IP-Array, to configure the
+              system using the /proc filesystem.</para>
+          </listitem>
+          <listitem>
+            <para>Saving restore rulesets / commands / system state</para>
+            <para>There are various ways available to save the generated rulesets and or commands
+              selectivly (iptables, tc, modprobe, /proc) or all at once. The saved files may be used
+              to restore the configured system state.</para>
+          </listitem>
+          <listitem>
+            <para>Different levels of IP-Array's output verbosity to the screen and or syslog can be
+              set</para>
+          </listitem>
+          <listitem>
+            <para>Screen output can be colourized</para>
+            <para>Colours for different message categories can be defined by the user.</para>
+          </listitem>
+          <listitem>
+            <para>Public functions</para>
+            <para>IP-Array allows the usage of `public functions' in rule files. They may be used to
+              log messages (giving the opportunity to totally customize IP-Array's log output) or
+              call automatic rule creation functions.</para>
+          </listitem>
+          <listitem>
+            <para>Different startup behaviour according to command line parameter. Including
+              multiple options to save and / or restore generated rulesets or commands.</para>
+          </listitem>
+          <listitem>
+            <para>A `test' mode to test new configurations</para>
+          </listitem>
+          <listitem>
+            <para>Automatic `jump tree' creation in all tables</para>
+          </listitem>
+        </orderedlist>
+      </section>
+      <section xml:id="download_info">
+        <title>Where to find IP-Array?</title>
+        <subtitle>Home page and download information</subtitle>
+        <para>IP-Array is currently hosted at <link xlink:href="http://sf.net"
+          >sourceforge</link>.</para>
+        <para>The home page is reachable via: <link xlink:href="http://www.sf.net/projects/ip-array"
+            >http://www.sf.net/projects/ip-array</link> or <link
+            xlink:href="http://ip-array.sf.net/">http://ip-array.sf.net/</link>.</para>
+        <para>IP-Array files are available for download at: <link
+            xlink:href="http://sourceforge.net/project/showfiles.php?group_id=146101"
+          >sf.net</link>.</para>
+      </section>
+    </section>
+  </chapter>
+  <chapter xml:id="gen_info">
+    <title>General Information</title>
+    <para>This Chapter provides information about the structure, functionality and program logic of
+      IP-Array.</para>
+    <section xml:id="name_conv">
+      <title>Naming conventions</title>
+      <itemizedlist>
+        <listitem xml:id="name_def_rule">
+          <para>rule</para>
+          <para>A rule is either:</para>
+          <orderedlist>
+            <listitem>
+              <para>An entity in an iptables or tc <link linkend="name_def_ruleblock"
+                  >ruleblock</link>. Defined by the user or program logic. Which will be read by
+                IP-Array, in order to create one or more iptables or tc commands.</para>
+            </listitem>
+            <listitem>
+              <para>An entity added by the `add_rule' function. Where the `add_rule' function may be
+                used as `public function' or `inline function'. In order to create an iptables
+                command.</para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+        <listitem xml:id="name_def_ruleblock">
+          <para>ruleblock</para>
+          <para>A ruleblock is a group of <link linkend="name_def_rule">rules</link>, to be read in
+            order of occurence.</para>
+          <para>The structure of the ruleblock is defined in a <link linkend="name_def_template"
+              >template</link>.</para>
+        </listitem>
+        <listitem xml:id="name_def_template">
+          <para>template</para>
+          <para>A template describes the structure of a <link linkend="name_def_ruleblock"
+              >ruleblock</link>.</para>
+          <para>Each <link linkend="name_def_rule">rule</link> entry in a ruleblock is interpreted
+            column-wise. How the values in each column are interpreted, is defined in the template
+            called with the ruleblock.</para>
+          <para>The following example will show how a rule in a ruleblock , structured according to
+            the definitions in a template, may look:</para>
+          <table>
+            <title>Example of Template and Ruleblock relationship</title>
+            <tgroup cols="5" align="left">
+              <tbody>
+                <row>
+                  <entry><emphasis role="bold">Template definition:</emphasis></entry>
+                  <entry>jump_target</entry>
+                  <entry>ipt_chain</entry>
+                  <entry>input_device</entry>
+                  <entry>source_address</entry>
+                </row>
+                <row>
+                  <entry><emphasis role="bold">According ruleblock rule:</emphasis></entry>
+                  <entry>DROP</entry>
+                  <entry>INPUT</entry>
+                  <entry>eth0</entry>
+                  <entry>10.0.0.10</entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </table>
+        </listitem>
+      </itemizedlist>
+    </section>
+    <section xml:id="prog_logic">
+      <title>Program logic</title>
+      <para/>
+      <section xml:id="start_behav">
+        <title>Starting behaviour</title>
+        <para>If IP-Array is run with the `<emphasis role="bold">start</emphasis>' parameter, a
+          lockdown mode is enforced until configuration is read and all iptables rules have been
+          generated. During this lockdown mode only localhost and the administrator connection are
+          allowed. After all rules are collected, they are applied at once.</para>
+        <para>In any other mode, that actually runs commands to configure the system, IP-Array will
+          not touch the currently active iptables, tc rules or /proc configuration until all rules
+          and / or commands have been generated.</para>
+        <para>After all rules / commands are collected, they are applied at once. This should keep
+          the time, the system is in an unconfigured or partly configured state, to a minimum.
+          Allowing to catch configuration errors, before changing the systems state.</para>
+        <para>The behaviour for kernel modules is different. Module probing (if configured at all)
+          is done every time IP-Array loads. To avoid reloading modules on an already running
+          system, modules will only be loaded if they are not loaded already. If running in a mode
+          that does not apply commands like i.e. `dry-run', then module probing is not actually
+          perfomed, but done with `modprobe -n'.</para>
+      </section>
+      <section xml:id="error_handling">
+        <title>Error handling</title>
+        <para>In the main configuration file a variable named <varname>EXIT_ON_ERROR</varname>
+          exists to control IP-Arrays behaviour on errors. If it set to `1', the program will exit
+          on any configuration and command apply error it can detect. In case the system state has
+          already been changed by, either loading / unloading modules, or setting values in the
+          /proc filesystem, IP-Array will try to revert those changes. If iptables commands have
+          already been applied, a lockdown mode will be enforced. All policies will be set to DROP
+          and all chains get emptied. Depending on the configuration, only the current
+          administrative connection (if present taken from the bash environment variable
+            <varname>SSH_CONNECTION</varname>, or if not, if configured from the configuration
+          variable <varname>ADMIN_CONNECTION</varname>) and localhost traffic (configuration
+          variable <varname>ALLOW_LOOPBACK</varname>) may be allowed. If
+            <varname>EXIT_ON_ERROR</varname> is set to `0', IP-Array only sends error messages and
+          keeps on going.</para>
+        <section xml:id="autosave">
+          <title>Autosave / restore</title>
+          <para>If IP-Array is started with one of the following parameters: open, restart, or
+            tc-start it will automatically save the current iptables ruleset using iptables-save to
+            a temporary file. In case an error occurs while processing the configuration, this
+            ruleset will be restored. This behaviour can be turned off, by using the startup option
+              <emphasis role="bold">-n | --no-autosave</emphasis>. If the configuration variable
+              <varname>IPTSAVE_FAILS</varname> is set to `1' automatic saving / restoring will also
+            not take place.</para>
+          <para>
+            <important>
+              <para>The restore procedure may even occur after an error condition lockdown (as
+                described above) was inforced. This is done as something could go wrong with the
+                restore process. Better have a lockded down system than one with an unkown and most
+                likely messed up state.</para>
+            </important>
+          </para>
+        </section>
+        <section xml:id="exit_codes">
+          <title>Exit codes</title>
+          <para>
+            <itemizedlist>
+              <listitem>
+                <para>0 - Success.</para>
+              </listitem>
+              <listitem>
+                <para>1 - Unknown error.</para>
+              </listitem>
+              <listitem>
+                <para>2 - Usage information (help).</para>
+              </listitem>
+              <listitem>
+                <para>111 - Not exist error. Used if i.e. a file was not found.</para>
+              </listitem>
+              <listitem>
+                <para>112 - Not defined error. Used if i.e. a configuration variable is not
+                  set.</para>
+              </listitem>
+              <listitem>
+                <para>113 - Loading error. Used if i.e. sourcing a file failed.</para>
+              </listitem>
+              <listitem>
+                <para>114 - Failure error. General fail condition.</para>
+              </listitem>
+              <listitem>
+                <para>115 - Configuration error. Used if a configuration error was not found.</para>
+              </listitem>
+            </itemizedlist>
+          </para>
+        </section>
+      </section>
+      <section xml:id="config_validation">
+        <title>Configuration validation</title>
+        <para>Every rule set by the user, will be validated for sane entries. For example IP
+          addresses, port and protocol specifications, etc. are checked for valid values. If a bad
+          value is detected, according messages will be displayed and the rule entry will be
+          ignored. IP-Array may also quit further processing, if it is configured to exit on
+          errors.</para>
+      </section>
+      <section xml:id="configfile_parsing">
+        <title>XML configuration file parsing</title>
+        <para>As IP-Array starts, it looks if it can find previously already compiled bash scripts
+          for templates, rules and ruleblocks. If those are found, they will be read and no XML file
+          parsing will be done. Otherwise the XML configuration files will be interpreted and the
+          according bash scripts will be compiled. There are startup parameters available to force
+          XML parsing globally, or selectively for templates, rules and ruleblocks.</para>
+      </section>
+      <section xml:id="iface_chains">
+        <title>Per interface chain creation</title>
+        <para/>
+        <section>
+          <title>Forwarding interface classified chains</title>
+          <para>IP-Array creates chains between every network interface configured in
+            'NET_INTERFACES'. Means if you define two interfaces i.e: eth0 and eth1, IP-Array will
+            create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'. And so on for every
+            additional interface. This can done for the filter, mangle, nat and the raw table
+            according to the configuration. In example for the filter table the FORWARD chain then
+            is filled with jump entries, seeding out the cross-interface traffic to the appropriate
+            chain. Means every packet entering the FORWARD chain will end up in one of those chains
+            created by IP-Array. This should minimize the amount of rules to pass before reaching
+            the matching rule. IP-Array always uses those cross-interface chains when it applies
+            rules in the FORWARD chain. In case an interface alias i.e: 'eth+', or an inverted
+            interface value i.e: '!eth0' is used, the target chain will be FORWARD, instead of the
+            cross-interface chains.</para>
+        </section>
+        <section>
+          <title>Non-forwarding interface classified chains</title>
+          <para>Just like with the cross-interface chains, INPUT and OUTPUT packets are also
+            classified by interface. For each network interface configured, INPUT and OUTPUT chains
+            will be created. For example if one interface named 'eth0' is present, the chains
+            'INPUT_eth0', 'OUTPUT_eth0' and the according jump entries will be created and
+            automatically.</para>
+        </section>
+      </section>
+      <section xml:id="routing">
+        <title>Routing</title>
+        <para>IP-Array does not touch your routing tables at all!</para>
+      </section>
+    </section>
+    <section xml:id="dir_struct">
+      <title>Directory structure</title>
+      <para>This is the description of the dicretory structure IP-Array uses:</para>
+      <variablelist>
+        <varlistentry>
+          <term>BASE_DIR</term>
+          <listitem>
+            <para>Base directory for IP-Array.</para>
+            <para>Default location of defaults directory, saving directory, help directory.</para>
+            <para>`stable' and `test' (OP_DIR) directory (describing runmode).</para>
+            <para>i.e. <filename>`/usr/local/etc/ip-array/'</filename></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>BIN_DIR</term>
+          <listitem>
+            <para>Directory to put the main IP-Array executable into.</para>
+            <para>i.e. <filename>`/usr/local/bin/ip-array/'</filename></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>LIB_DIR</term>
+          <listitem>
+            <para>Directory to put the IP-Array function files into.</para>
+            <para>i.e. <filename>`/usr/local/lib/ip-array/'</filename></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>HELP_DIR</term>
+          <listitem>
+            <para>Directory containing help files.</para>
+            <para><code>HELP_DIR="${BASE_DIR}/help.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>OP_DIR</term>
+          <listitem>
+            <para>Operation directory according to runmode. Can be either `stable' or `test' (if
+              startup parameter `test' is used).</para>
+            <para><code>OP_DIR="${BASE_DIR}/${rmode}"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>CONFIG_DIR</term>
+          <listitem>
+            <para>Directory containing configuration files and sub-directories.</para>
+            <para><code>CONFIG_DIR="${OP_DIR}/conf.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>RULE_DIR</term>
+          <listitem>
+            <para>Directory to put the rule files into.</para>
+            <para><code>RULE_DIR="${OP_DIR}/rules.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SCRIPT_DIR</term>
+          <listitem>
+            <para>Directory for the prolog / epilog scripts.</para>
+            <para><code>SCRIPT_DIR="${OP_DIR}/scripts.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>RULEBLOCK_DIR</term>
+          <listitem>
+            <para>Directory to put the ruleblock configuration files into.</para>
+            <para><code>RULEBLOCK_DIR="${CONFIG_DIR}/ruleblocks.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>TEMPLATE_DIR</term>
+          <listitem>
+            <para>Directory to put the template configuration files into.</para>
+            <para><code>TEMPLATE_DIR="${CONFIG_DIR}/templates.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SAVE_DIR</term>
+          <listitem>
+            <para>Directory used to save commands, scripts or rulesets.</para>
+            <para><code>SAVE_DIR="${BASE_DIR}/save"</code></para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </section>
+  </chapter>
+  <chapter xml:id="install">
+    <title>Installation</title>
+    <section>
+      <title/>
+      <para/>
+    </section>
+    <section>
+      <title/>
+      <para/>
+    </section>
+  </chapter>
+  <chapter xml:id="configure">
+    <title>Configuration</title>
+    <para>This chapter provides information about how to configure IP-Array.</para>
+    <section xml:id="config_files">
+      <title>Configuration files</title>
+      <para>IP-Array comes with two different kinds of configuration files. Some are written in
+        shell, namely bash, syntax, while others are written in a simple XML dialect. The templates,
+        ruleblocks and rule files are in XML language. All others are written in bash.</para>
+      <para>In upcoming versions of IP-Array, all (or all but the defaults file) configuration files
+        will maybe converted to use XML. But this has not been worked out yet.</para>
+      <para>
+        <note>
+          <para>All the configuration files are expected to be in the <varname>CONFIG_DIR</varname>
+            directory, or one of it's sub directories, of the current runmode. If IP-Array is run
+            with the 'test' startup parameter the location will be:
+              <filename>$BASE_DIR/test/conf.d</filename>. In any other startup mode it will be:
+              <filename>$BASE_DIR/stable/conf.d</filename>.</para>
+        </note>
+      </para>
+      <section xml:id="config_files_bash">
+        <title>Bash</title>
+        <subtitle>Description of the bash (shell) configuration files</subtitle>
+        <para/>
+        <section xml:id="conf_init_script">
+          <title>init script</title>
+          <para>There is a <emphasis role="italic">configuration area</emphasis> in the IP-Array
+            init script. The following variables can be configured there:</para>
+          <para>
+            <variablelist>
+              <varlistentry>
+                <term><varname>DEFAULTS_FILE</varname></term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the defaults file (i.e:
+                      <filename>/etc/default/ip-array</filename>).</para>
+                  <para>Purpose: The defaults file holds startup and globally used variables.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>SYNTAX_CHECK</varname></term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Purpose: Perform a bash grammar check before sourcing or executing
+                    files.</para>
+                  <para>The bash grammar check is done using `<code>bash -n file</code>'. Thus the
+                    syntax check is very basic and may not catch all errors (as described in
+                      `<code>man bash</code>').</para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </para>
+        </section>
+        <section xml:id="conf_file_defaults">
+          <title>Defaults (defaults.conf)</title>
+          <para>The defaults file contains startup and globally used variables.</para>
+          <important>
+            <para>The location of the defaults file is specified in the IP-Array <link
+                linkend="conf_init_script">init script</link>.</para>
+            <para>The `<command>DEFAULTS_FILE</command>' variable must be set and correctly pointing
+              to the defaults file i.e.: <code>DEFAULTS_FILE=/etc/default/ip-array</code>.</para>
+          </important>
+          <section>
+            <title>IP-Array message (logging) output settings</title>
+            <variablelist>
+              <varlistentry>
+                <term>
+                  <varname>ENABLE_COLORS</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `0' if unset.</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Purpose: Enable or disable IP-Array coloured output.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>ENABLE_SYSLOG</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `0' if unset.</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Purpose: Enable or disable logging of IP-Array's output to syslog using the
+                      <command>logger</command> utility.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>LOG_FACILITY</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `local0' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>auth</member><member>authpriv (for security information of a
+                        sensitive
+                        nature)</member><member>cron</member><member>daemon</member><member>ftp</member><member>kern</member><member>lpr</member><member>mail</member><member>news</member><member>security
+                        (deprecated synonym for
+                        auth)</member><member>syslog</member><member>user</member><member>uucp</member><member>local0
+                        to local7 inclusive</member></simplelist>.</para>
+                  <para>Purpose: Configure IP-Array's syslog logging facility.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>VERBOSE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `6' if unset.</para>
+                  <para>Allowed values: `0' to `8'.</para>
+                  <para>Purpose: Control level of IP-Array's output verbosity.</para>
+                  <tip>
+                    <para>With a non zero environment variable `<varname>DEBUG_INFO</varname>',
+                      additional processing (debugging) information is printed.</para>
+                  </tip>
+                  <orderedlist startingnumber="0">
+                    <listitem>
+                      <para> No messages are shown. Exit status indicates success or failure.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Shows start and end message and errors.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Main title and warning messages are also shown.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Sub title messages are shown in addition.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Info title, config and rule file loading messages, are shown
+                        additionally.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Also show notice messages.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Verbose output.</para>
+                    </listitem>
+                    <listitem>
+                      <para>Debug mode (set -x).</para>
+                      <tip>
+                        <para>With a non zero environment variable `<varname>DEBUG_INFO</varname>',
+                          a debugging `<varname>PS4</varname>' is set.</para>
+                      </tip>
+                    </listitem>
+                    <listitem>
+                      <para>More verbose debug mode (set -vx).</para>
+                    </listitem>
+                  </orderedlist>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>SYSLOG_VERBOSE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `1' if unset.</para>
+                  <para>Allowed values: `0' to `5'.</para>
+                  <para>Purpose: Control verbosity level of IP-Array's syslog logging.<orderedlist
+                      startingnumber="0">
+                      <listitem>
+                        <para> Errror messages are shown.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Main title and warning messages are shown.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Subtitle messages are shown in addition.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Info title, config and rule file loading messages, are shown
+                          additionally.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Also show notice messages.</para>
+                      </listitem>
+                      <listitem>
+                        <para>Verbose output.</para>
+                      </listitem>
+                    </orderedlist></para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_MAIN_TITLE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `magenta' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for title messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_SUBTITLE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `blue' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for sub title messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_INFO_TITLE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `cyan' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for info title messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_ERROR</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `red' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for error messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_WARNING</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `yellow' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for warning messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_NOTICE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `white' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for notice messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_CONFIG_LOAD</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `green' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for configuration file loading messages.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>COLOR_MSG_RULE_LOAD</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no. Defaults to `yellow' if unset.</para>
+                  <para>Allowed values: <simplelist type="inline"
+                        ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                  <para>Purpose: Set color for rule file loading messages.</para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </section>
+          <section>
+            <title>Programs mandatory to run IP-Array</title>
+            <variablelist>
+              <varlistentry>
+                <term>
+                  <varname>AUTO_GET_PROGS</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Purpose: Configure if IP-Array should try to automatically find the
+                    mandatory programs. If disabled (set to `0'), the program names varaibles
+                    (below) <emphasis role="bold">must</emphasis> be configured manually.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>AWK</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>awk</command> executable file
+                    (i.e: <filename>/usr/bin/awk</filename>), or the just the name of the program
+                    (if it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>CAT</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>cat</command> executable file
+                    (i.e: <filename>/bin/cat</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>DATE</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>date</command> executable file
+                    (i.e: <filename>/bin/date</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>FIND</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>find</command> executable file
+                    (i.e: <filename>/usr/bin/find</filename>), or the just the name of the program
+                    (if it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>GREP</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>grep</command> executable file
+                    (i.e: <filename>/bin/grep</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>IP</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>ip</command> executable file
+                    (i.e: <filename>/sbin/ip</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>IPT</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>iptables</command> executable
+                    file (i.e: <filename>/sbin/iptables</filename>), or the just the name of the
+                    program (if it's found in <varname>PATH</varname>) and you do not want to use
+                    absolute paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>LOGGER</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>logger</command> executable
+                    file (i.e: <filename>/usr/bin/logger</filename>), or the just the name of the
+                    program (if it's found in <varname>PATH</varname>) and you do not want to use
+                    absolute paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>LSMOD</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>lsmod</command> executable file
+                    (i.e: <filename>/sbin/lsmod</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>MKDIR</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>mkdir</command> executable file
+                    (i.e: <filename>/bin/mkdir</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>MODPROBE</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>modprobe</command> executable
+                    file (i.e: <filename>/sbin/modprobe</filename>), or the just the name of the
+                    program (if it's found in <varname>PATH</varname>) and you do not want to use
+                    absolute paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>RM</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>rm</command> executable file
+                    (i.e: <filename>/bin/rm</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>SED</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>sed</command> executable file
+                    (i.e: <filename>/bin/sed</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>SEQ</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>seq</command> executable file
+                    (i.e: <filename>/usr/bin/seq</filename>), or the just the name of the program
+                    (if it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>TC</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>tc</command> executable file
+                    (i.e: <filename>/sbin/tc</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>UNAME</varname>
+                </term>
+                <listitem>
+                  <para>Allowed values: A valid path to the <command>uname</command> executable file
+                    (i.e: <filename>/bin/uname</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>IPT_SAVE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the <command>iptables-save</command>
+                    executable file (i.e: <filename>/sbin/iptables-save</filename>), or the just the
+                    name of the program (if it's found in <varname>PATH</varname>) and you do not
+                    want to use absolute paths.</para>
+                  <para>This variable is only used by the IP-Array init script. It is not globally
+                    available.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>IPT_RESTORE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the <command>iptables-restore</command>
+                    executable file (i.e: <filename>/sbin/iptables-restore</filename>), or the just
+                    the name of the program (if it's found in <varname>PATH</varname>) and you do
+                    not want to use absolute paths.</para>
+                  <para>This variable is only used by the IP-Array init script. It is not globally
+                    available.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>AT</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the <command>at</command> executable file
+                    (i.e: <filename>/usr/bin/at</filename>), or the just the name of the program (if
+                    it's found in <varname>PATH</varname>) and you do not want to use absolute
+                    paths.</para>
+                  <para>This variable is only used by the IP-Array init script. It is not globally
+                    available.</para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </section>
+          <section>
+            <title>Files and directories</title>
+            <variablelist>
+              <varlistentry>
+                <term>
+                  <varname>BASE_DIR</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path (i.e.:
+                    <filename>/etc/ip-array</filename>).</para>
+                  <para>IP-Array base directory.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>CONFIG</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                    <filename>ip-array.conf</filename>).</para>
+                  <para>Name of the main configuration file.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>BIN_DIR</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path (i.e.:
+                    <filename>/usr/bin/ip-array</filename>).</para>
+                  <para>Directory to put the IP-Array executable (main script) into.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>LIB_DIR</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path (i.e.:
+                    <filename>/usr/lib/ip-array</filename>).</para>
+                  <para>Library directory used for the IP-Array function files.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>SAVE_FILE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>iptables_ruleset.save</filename>).</para>
+                  <para>File to put the iptables-save output into, when executing IP-Array with the
+                    'save' startup parameter.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>RULESETFILE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>ip-array_commands.bash</filename>).</para>
+                  <para>File where the generated commands will be saved, if executing IP-Array with
+                    one of the 'save[ -iptables | -modprobe | -proc | -tc | -shaping ]-commands'
+                    parameters. The target directory will be <command>SAVE_DIR</command>.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>DIFF_FILE</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>iptables_ruleset_saved_for_diff</filename>).</para>
+                  <para>File to save the iptables rule listing (iptables -nL) into, after applying
+                    the rules. The target directory will be <command>SAVE_DIR</command>.</para>
+                  <para>This file will be used to check for a difference to the currently active
+                    ruleset, when using the 'diff-last-activated' startup parameter.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>SERVICES</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the services file (most likely:
+                      <filename>/etc/services</filename>).</para>
+                  <para>Purpose: Configure the location of the services file (containing service
+                    definitions).</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>PROTOCOLS</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the services file (most likely:
+                      <filename>/etc/protocols</filename>).</para>
+                  <para>Purpose: Configure the location of the protocols file (containing protocol
+                    definitions).</para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </section>
+          <section>
+            <title>Quick start settings</title>
+            <para>Files to load, if <varname>RESTORE_ON_START</varname> is `1'.</para>
+            <variablelist>
+              <varlistentry>
+                <term>
+                  <varname>KNOWN_GOOD_RULES</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>KNOWN_GOOD_IPT_RULES.save</filename>).</para>
+                  <para>File to save the currently active 'known good' ruleset with iptables-save.
+                    This file will be used to restore the iptables ruleset on 'start', if
+                      <varname>RESTORE_ON_START</varname> is enabled.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>KNOWN_GOOD_MODPROBES</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>KNOWN_GOOD_MODPROBES.bash</filename>).</para>
+                  <para>File to save the generated modprobe commands into. This file will be used to
+                    restore the kernel module state on 'start', if
+                      <varname>RESTORE_ON_START</varname> is enabled.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>KNOWN_GOOD_PROC_SET</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>KNOWN_GOOD_SYSCTL.bash</filename>).</para>
+                  <para>File to save the generated /proc commands into. This file will be used to
+                    restore the /proc configuration on 'start', if
+                      <varname>RESTORE_ON_START</varname> is enabled.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>KNOWN_GOOD_TRAFFIC_CONTROL</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid filename (i.e.:
+                      <filename>KNOWN_GOOD_TC.bash</filename>).</para>
+                  <para> File to save the generated tc commands into. This file will be used to
+                    restore the traffic control ruleset on 'start', if
+                      <varname>RESTORE_ON_START</varname> is enabled.</para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </section>
+          <section>
+            <title>Basic configuration variables</title>
+            <variablelist>
+              <varlistentry>
+                <term>
+                  <varname>RELOAD_TIME</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: Any value, that is valid as input to the
+                      <command>at</command> command. I.e.: <code>5 minutes</code>.</para>
+                  <para>Time period until the previously saved ruleset will be restored, when using
+                    the 'test' startup parameter.<warning>
+                      <para>If <command>iptables-save</command> or
+                          <command>iptables-restore</command> fails for some reason, the 'test'
+                        parameter will not work, thus this setting will not produce the desired
+                        effect.</para>
+                    </warning></para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>RESTORE_ON_START</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Restore saved ruleset(s) and or commands on start (quick start). If found,
+                    any of the 'known-good' scripts or rulesets, will be loaded.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
+                  <varname>IPTSAVE_FAILS</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: `0' or `1'.</para>
+                  <para>Enable this if saving or restoring with <command>iptables-save</command> or
+                      <command>iptables-restore</command> fails for some reason.</para>
+                  <para>If yes, and <varname>RESTORE_ON_START</varname> is enabled, the iptables
+                    ruleset will be saved like running IP-Array with the 'save-iptables-commands'
+                    parameter. The saved script will then be executed on 'start'.</para>
+                  <para>
+                    <important>
+                      <para>Any startup mode, that utilizes <command>iptables-save</command> or
+                          <command>iptables-restore</command> will not work in that case.</para>
+                    </important>
+                  </para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </section>
+        </section>
+        <section xml:id="conf_file_main_conf">
+          <title>Main configuration file (ip-array.conf)</title>
+          <para>This file is the main IP-Array configuration file.</para>
+          <para>
+            <variablelist>
+              <varlistentry>
+                <term>CONFIG_FILES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BASE_TEMPLATES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>IPT_FILTER_TEMPLATES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>IPT_MANGLE_TEMPLATES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>IPT_NAT_TEMPLATES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>IPT_RAW_TEMPLATES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>FILTER_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>MANGLE_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>NAT_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>RAW_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>TC_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>TC_MANGLE_RULEBLOCKS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>MODULE_DIR</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>MODULES_TO_LOAD</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>MODS_TO_RM</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_FILTER</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>FILTER_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_MANGLE</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>MANGLE_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_NAT</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>NAT_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_RAW</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>RAW_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_IPSEC</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ALLOW_ALL_BRANCH</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>IPSEC_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ENABLE_TC_SHAPING</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>TC_MARK_RULES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>OUTPUT_BULK</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>FORWARD_BULK</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>PRIORITIZE_SYN</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>POLICY_MAP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>CHAIN_MAP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_INVALID</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BLOCK_INVALID</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_ILLEGAL</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BLOCK_ILLEGAL</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BLOCK_FRAGMENTS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_FRAGMENTS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LAN_FTP_INTERFACES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ACTIVE_FTP_INTERFACES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>PASSIVE_FTP_INTERFACES</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ALLOW_WMP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ALLOW_RMP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>AUTO_PROV_DNS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>AUTO_ROOT_DNS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>AUTO_ISP_SMTP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>RESTRICT_OUTPUT</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_DNS_ALLOW</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_NTP_ALLOW</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_LAN_ALLOW</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_ALLOW_RELATED</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REJECT_AUTH</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_NETBIOS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_DHCP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_UPNP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_XMAS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_XMAS_PSH</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_XMAS_ALL</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_FIN</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_SYN_RST</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_SYN_FIN</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_Stealth_Null</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>EXIT_ON_ERROR</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ADMIN_CONNECTION</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>RULE_PLACEHOLDER</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>SCRIPT_MAP</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ALLOW_LOOPBACK</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>TCPMSS_TO_MTU</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>FINAL_RULE</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_PREFIX</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>GLOBAL_LOGLIMIT</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>GLOBAL_BURSTLIMIT</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>GLOBAL_LOGLEVL</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_XMAS</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_XMAS_PSH</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_XMAS_ALL</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_FIN</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_SYN_RST</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_SYN_FIN</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_Stealth_Null</term>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term/>
+                <listitem>
+                  <para/>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </para>
+        </section>
+        <section xml:id="conf_file_local_conf">
+          <title>Local settings - configuration file (local.conf)</title>
+          <para>This file is supposed to hold variable definitions, which only apply to the current
+            working system. They may not be used on any other host.</para>
+          <para>
+            <variablelist>
+              <varlistentry>
+                <term><varname>LOCAL_BRANCH</varname></term>
+                <listitem>
+                  <para>Allowed values: Characters of calss [:word:] (alphanumeric and the `_'
+                    (underline) character). </para>
+                  <para>Purpose: Set name of the local VPN branch.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LOOPBACK_IF</varname></term>
+                <listitem>
+                  <para>Allowed values: A valid interface name. </para>
+                  <para>Purpose: Name of the loopback interface.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>NET_INTERFACES</varname></term>
+                <listitem>
+                  <para>Types: ext | local | ipsec</para>
+                  <para>
+                    <table frame="all">
+                      <title>Configure networking interfaces</title>
+                      <tgroup cols="4" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <colspec colname="c4" colnum="4"/>
+                        <thead>
+                          <row>
+                            <entry>Inteface name</entry>
+                            <entry>Interface alias</entry>
+                            <entry>Type[:ipsec]</entry>
+                            <entry>Network name</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>eth0</entry>
+                            <entry>eth0</entry>
+                            <entry>ext:ipsec</entry>
+                            <entry>INET_CON_X</entry>
+                          </row>
+                          <row>
+                            <entry>eth1</entry>
+                            <entry>eth1</entry>
+                            <entry>ext</entry>
+                            <entry>INET_CON_Y</entry>
+                          </row>
+                          <row>
+                            <entry>eth2</entry>
+                            <entry>eth2</entry>
+                            <entry>local</entry>
+                            <entry>PRODUCTION</entry>
+                          </row>
+                          <row>
+                            <entry>eth2</entry>
+                            <entry>eth2:0</entry>
+                            <entry>local</entry>
+                            <entry>DEVELOPMENT</entry>
+                          </row>
+                          <row>
+                            <entry>eth3</entry>
+                            <entry>eth3</entry>
+                            <entry>local</entry>
+                            <entry>DMZ</entry>
+                          </row>
+                          <row>
+                            <entry>ipsec0</entry>
+                            <entry>ipsec0</entry>
+                            <entry>ipsec</entry>
+                            <entry>VPN_REMOTE_OFFICE</entry>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LAN_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define name servers (DNS) that are part of a local area
+                    network.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local (LAN) name servers</title>
+                      <tgroup cols="3" align="left" char="" conformance="">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>Name server IP address</entry>
+                            <entry>[Name server MAC address]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>10.11.11.11</entry>
+                            <entry>AA:BB:CC:DD:EE:FF</entry>
+                          </row>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>10.11.11.12</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>ISP_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define the Internet service provider name servers (DNS), for each
+                    local area network.</para>
+                  <para>
+                    <table frame="all">
+                      <title>ISP name servers</title>
+                      <tgroup cols="3" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="newCol3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>ISP name server IP address[,...]</entry>
+                            <entry>[External network interface]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>PRODUCTION</entry>
+                            <entry>123.12.12.22,123.12.12.23</entry>
+                            <entry>eth1</entry>
+                          </row>
+                          <row>
+                            <entry>DEVELOPMENT</entry>
+                            <entry>124.13.13.23,124.13.13.24</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LOCAL_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define name servers (DNS) of the local system (most likely those
+                    configured in <filename>/etc/resolv.conf</filename>.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local name servers (resolv.conf)</title>
+                      <tgroup cols="2" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <thead>
+                          <row>
+                            <entry>Name server IP address</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>123.12.12.22,123.12.12.23</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>124.13.13.23,124.13.13.24</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>ISP_SMTP</varname></term>
+                <listitem>
+                  <para>Purpose: Define the Internet service provider mail servers (SMTP), for each
+                    local area network.</para>
+                  <para>
+                    <table frame="all">
+                      <title>ISP SMTP servers</title>
+                      <tgroup cols="3" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>ISP mail server IP address[,...]</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>PRODUCTION</entry>
+                            <entry>123.12.12.90,123.12.12.91</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>DEVELOPMENT</entry>
+                            <entry>125.25.25.5,125.25.25.6</entry>
+                            <entry>INET_CON_ISP_Y</entry>
+                          </row>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>126.26.26.6,128.28.28.8</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>TIME_SERVERS</varname></term>
+                <listitem>
+                  <para>Purpose: Define time servers (NTP) of the local system.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local NTP servers</title>
+                      <tgroup cols="2" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <thead>
+                          <row>
+                            <entry>NTP server IP address[,...]</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>11.12.13.14,12.13.14.15</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>99.99.99.9,99.99.99.10</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+            </variablelist>
+          </para>
+        </section>
+        <section xml:id="conf_file_global_conf">
+          <title>Global settings - configuration file (global.conf)</title>
+          <para>This file is supposed to hold global variable definitions (i.e. ports, network
+            classes), which do not apply to the current working system only, but are of generic use,
+            to be utilized on any or more than one host.</para>
+        </section>
+        <section xml:id="conf_file_ipsec_conf">
+          <title>IPSEC configuration (vpn.conf)</title>
+          <para>In this file the IPSEC (VPN) configuration is defined by the
+              <varname>VPN_MAP</varname> variable, which holds the vpn branch data.</para>
+          <para>If <varname>ENABLE_IPSEC</varname> is disabled, loading this file becomes
+            obsolet.</para>
+          <para>The VPN_MAP variable is structured as follows (example data provided):</para>
+          <para>
+            <table frame="all">
+              <title>VPN_MAP structure</title>
+              <tgroup cols="4" align="left">
+                <colspec colname="c1" colnum="1"/>
+                <colspec colname="c2" colnum="2"/>
+                <colspec colname="c3" colnum="3"/>
+                <colspec colname="c4" colnum="4"/>
+                <thead>
+                  <row>
+                    <entry>Branch name</entry>
+                    <entry>External IP address</entry>
+                    <entry>LAN address/mask</entry>
+                    <entry>LAN interface IP address</entry>
+                  </row>
+                </thead>
+                <tbody>
+                  <row>
+                    <entry>local_branch</entry>
+                    <entry>188.88.88.8</entry>
+                    <entry>192.168.1.0/24</entry>
+                    <entry>192.168.1.1</entry>
+                  </row>
+                  <row>
+                    <entry>remote_branch_01</entry>
+                    <entry>177.77.77.7</entry>
+                    <entry>10.1.1.0/24</entry>
+                    <entry>10.1.1.1</entry>
+                  </row>
+                  <row>
+                    <entry>remote_branch_02</entry>
+                    <entry>166.66.66.6</entry>
+                    <entry>172.16.1.0/24</entry>
+                    <entry>172.16.1.1</entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table>
+          </para>
+        </section>
+        <section xml:id="conf_file_alias_conf">
+          <title>Custom variables/namings (alias.conf)</title>
+          <para>This file is supposed to hold custom (user defined) variables.</para>
+          <para>Most likely the user will put definitions for interface names, hosts, etc.</para>
+        </section>
+      </section>
+      <section xml:id="config_files_xml">
+        <title>XML</title>
+        <subtitle>Description of the XML configuration files</subtitle>
+        <para/>
+        <section xml:id="conf_file_xml_def">
+          <title>XML guidelines</title>
+          <para/>
+        </section>
+        <section xml:id="conf_file_xml_templates">
+          <title>XML templates</title>
+          <para/>
+        </section>
+        <section xml:id="conf_file_xml_ruleblocks">
+          <title>XML ruleblocks</title>
+          <para/>
+        </section>
+        <section xml:id="conf_file_xml_rule_files">
+          <title>XML rule files</title>
+          <para/>
+        </section>
+      </section>
+    </section>
+    <section xml:id="conf_xml_templates_howto">
+      <title>Templates</title>
+      <subtitle>How to configure XML templates</subtitle>
+      <para/>
+      <section>
+        <title>Syntax</title>
+        <para/>
+      </section>
+      <section>
+        <title>Template XML elements</title>
+        <para/>
+        <variablelist>
+          <varlistentry>
+            <term>ipt_table</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>ipt_targets</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>ipt_chains</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>reverse_mode</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>reverse_condition</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>ruleblock_msg</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>mandatory_vars</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>load_template</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>always_use_0</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>always_use_1</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>option_list_0</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>option_list_1</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>state_match_arg</term>
+            <listitem>
+              <para/>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <section xml:id="option_lists">
+          <title>Option lists</title>
+          <para/>
+        </section>
+      </section>
+      <section>
+        <title>Template usage guidelines</title>
+        <para/>
+      </section>
+    </section>
+    <section xml:id="conf_xml_ruleblocks_howto">
+      <title>Ruleblocks</title>
+      <subtitle>How to configure XML ruleblocks</subtitle>
+      <para/>
+      <section>
+        <title>Syntax</title>
+        <para/>
+      </section>
+      <section>
+        <title>Ruleblock XML elements</title>
+        <para/>
+      </section>
+      <section>
+        <title>Ruleblocks usage guidelines</title>
+        <para/>
+      </section>
+    </section>
+    <section xml:id="conf_xml_rule_files_howto">
+      <title>Rule files</title>
+      <subtitle>How to configure XML rule files</subtitle>
+      <para/>
+      <section>
+        <title>Syntax</title>
+        <para/>
+      </section>
+      <section>
+        <title>Rule file XML elements</title>
+        <para/>
+      </section>
+      <section xml:id="pub_funcs">
+        <title>Public functions</title>
+        <para/>
+        <variablelist>
+          <varlistentry>
+            <term>add_rule</term>
+            <listitem>
+              <para>Description: Add (append) an iptables rule to the command queue (array). Can
+                also be used as 'inline' command.</para>
+              <para>Usage:</para>
+              <cmdsynopsis>
+                <command>add_rule</command>
+                <arg choice="req"><replaceable>table</replaceable></arg>
+                <arg choice="req"><replaceable>chain</replaceable></arg>
+                <arg choice="req"><replaceable>rest-of-rule-string</replaceable></arg>
+              </cmdsynopsis>
+              <para>Example: <code>add_rule filter INPUT -s 10.0.0.1 -j DROP</code></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>log</term>
+            <listitem>
+              <para>Description: IP-Array messaging (logging) to stdout/stderr and/or syslog.</para>
+              <para>Usage:<cmdsynopsis>
+                  <command>log</command>
+                  <arg choice="req">option</arg>
+                  <arg choice="plain" rep="repeat"><replaceable>message</replaceable></arg>
+                </cmdsynopsis></para>
+              <para>available options:</para>
+              <simplelist>
+                <member>-e Unformatted message shown if <varname>VERBOSE</varname> is greater or
+                  equal `6'.</member>
+                <member>-l Log to syslog. Regardless of the <varname>SYSLOG_VERBOSE</varname>
+                  setting.</member>
+                <member>-m Log to stdout and syslog. Regardless of the <varname>VERBOSE</varname>
+                  and <varname>SYSLOG_VERBOSE</varname> setting.</member>
+                <member>-E ERROR message (sent to stderr).</member>
+                <member>-W WARNING message (sent to stderr).</member>
+                <member>-N NOTICE message.</member>
+                <member>-S Sub title message.</member>
+                <member>-I Info title message.</member>
+                <member>-C Configuration file loading message.</member>
+                <member>-R Rule file loading message.</member>
+              </simplelist>
+              <para>Example: <code>log -I "Info Title message"</code></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>create_chain</term>
+            <listitem>
+              <para>Description: Create an iptables chain (add command to the command queue).</para>
+              <para>Usage:</para>
+              <cmdsynopsis>
+                <command>create_chain</command>
+                <arg choice="req"><replaceable>table</replaceable></arg>
+                <arg choice="req"><replaceable>chain</replaceable></arg></cmdsynopsis>
+              <para>Example: <code>create_chain filter FOO</code></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>delete_chain</term>
+            <listitem>
+              <para>Description: Delete an iptables chain (add command to the command queue).</para>
+              <para>Usage:</para>
+              <cmdsynopsis>
+                <command>delete_chain</command>
+                <arg choice="req"><replaceable>table</replaceable></arg>
+                <arg choice="req"><replaceable>chain</replaceable></arg></cmdsynopsis>
+              <para>Example: <code>delete_chain filter FOO</code></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>set_proc</term>
+            <listitem>
+              <para>Description: Set a configuration value in the `/proc' filesystem (add command to
+                the command queue).</para>
+              <para>Usage:</para>
+              <cmdsynopsis>
+                <command>set_proc</command>
+                <arg choice="req"><replaceable>value</replaceable></arg>
+                <arg choice="req"><replaceable>path-to-file</replaceable></arg>
+                <arg choice="req"><replaceable>message-to-display</replaceable></arg></cmdsynopsis>
+              <para>Example: <code>set_proc 1 '/proc/sys/net/ipv4/conf/all/log_martians' 'Enabling
+                  logging of martians on all interfaces'</code></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>log_drop_scans</term>
+            <listitem>
+              <para>Description: Globally LOG and/or DROP (nmap) scans. The following according
+                configuration variables can be configured in the main configuration file:<simplelist>
+                  <member>DROP_Stealth_XMAS</member>
+                  <member>DROP_Stealth_XMAS_PSH</member>
+                  <member>DROP_Stealth_XMAS_ALL</member>
+                  <member>DROP_Stealth_FIN</member>
+                  <member>DROP_Stealth_SYN_RST</member>
+                  <member>DROP_Stealth_SYN_FIN</member>
+                  <member>DROP_Stealth_Null</member>
+                  <member>LOG_Stealth_XMAS</member>
+                  <member>LOG_Stealth_XMAS_PSH</member>
+                  <member>LOG_Stealth_XMAS_ALL</member>
+                  <member>LOG_Stealth_FIN</member>
+                  <member>LOG_Stealth_SYN_RST</member>
+                  <member>LOG_Stealth_SYN_FIN</member>
+                  <member>LOG_Stealth_Null</member>
+                </simplelist></para>
+              <para>Usage: <command>log_drop_scans</command></para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>log_fragments</term>
+            <listitem>
+              <para>Log fragments.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>drop_fragments</term>
+            <listitem>
+              <para>Drop fragments.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>log_invalid_state</term>
+            <listitem>
+              <para>Log packets in invalid state.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>drop_invalid_state</term>
+            <listitem>
+              <para>Drop packets in invalid state.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>logdrop_illegal_tcp</term>
+            <listitem>
+              <para>Log and/or drop non legal tcp packets.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>drop_dhcp</term>
+            <listitem>
+              <para>Drop dhcp broadcasts on certain interfaces.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>drop_netbios</term>
+            <listitem>
+              <para>Drop netbios broadcasts on certain interfaces</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>drop_upnp</term>
+            <listitem>
+              <para>Drop UPNP broadcasts on certain interfaces</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>reject_auth</term>
+            <listitem>
+              <para>Reject auth (tcp port 113) traffic.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>app_allow_wmp</term>
+            <listitem>
+              <para>Allow forwarding of Windows Media Player traffic on certain interfaces.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>app_allow_rmp</term>
+            <listitem>
+              <para>Allow forwarding of Real Media Player traffic on certain interfaces.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>intns_to_extns</term>
+            <listitem>
+              <para>Allow internal DNS servers to communicate with ISP name servers.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>lan_isp_smtp</term>
+            <listitem>
+              <para>Allow local networks to communicate with ISP SMTP servers.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>lan_ftp</term>
+            <listitem>
+              <para>Allow passive and/or active ftp forwarding traffic from certain LANs.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>enable_ipsec</term>
+            <listitem>
+              <para>Enable ipsec rules.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>restrict_output</term>
+            <listitem>
+              <para>Settings to restrict traffic in OUTPUT chain.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>set_ttl</term>
+            <listitem>
+              <para>Manipulate TTL on forwarded packets</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>mark_prio_syn</term>
+            <listitem>
+              <para>Prioritize SYN packets.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>mark_out_bulk</term>
+            <listitem>
+              <para>Mark OUTPUT bulk traffic.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>mark_fwd_bulkq</term>
+            <listitem>
+              <para>Mark FORWARD bulk traffic.</para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+        <para/>
+      </section>
+      <section xml:id="inline_funcs">
+        <title>inline functions</title>
+        <para/>
+      </section>
+      <section>
+        <title>Rulefile usage guidelines</title>
+        <para/>
+      </section>
+    </section>
+  </chapter>
+  <chapter xml:id="usage">
+    <title>Usage</title>
+    <subtitle>Running IP-Array</subtitle>
+    <para/>
+    <section xml:id="startup_params">
+      <title>Startup parameters and options</title>
+      <para/>
+      <section xml:id="usage_params">
+        <title>Parameters</title>
+        <para>These parameters control the 'mode' IP-Array runs on.</para>
+        <itemizedlist>
+          <listitem>
+            <para>start</para>
+            <para>All network connections are forbidden until all configuration has been read.
+              Module probing (if configured) is done first. After all commands are compiled, they
+              are applied at once. An iptables rule listing is saved for later difference
+              checks.</para>
+          </listitem>
+          <listitem>
+            <para>stop</para>
+            <para>All tables and chains get flushed, no firewalling is active any more. All tc qdisc
+              are removed, no traffic shaping is active any more. Modules configured to be loaded
+              are removed.</para>
+          </listitem>
+          <listitem>
+            <para>restart</para>
+            <para>Module probing (if configured) is done first. After all commands are compiled,
+              they are applied at once. An iptables rule listing is saved for later difference
+              checks.</para>
+          </listitem>
+          <listitem>
+            <para>test</para>
+            <para>Acts like the 'restart', but will use the testing configuration below the 'test'
+              folder. Also it will shedule a restore job (using the `at' command sheduler) for the
+              time specified with <varname>RELOAD_TIME</varname> in the <link
+                xlink:href="#conf_file_defaults">defaults</link> file.</para>
+          </listitem>
+          <listitem>
+            <para>open</para>
+            <para>Module probing (if configured) is done first.This mode leaves only the NAT rules
+              active (reads configuration and re-applies them), all raw, mangle and filter rules are
+              deleted. Policies are set to ACCEPT. An iptables rule listing is saved for later
+              difference checks.</para>
+          </listitem>
+          <listitem>
+            <para>tc-start</para>
+            <para>Start traffic shaping only. Mangle table rules will be (re)-applied. An iptables
+              rule listing is saved for later difference checks.</para>
+          </listitem>
+          <listitem>
+            <para>tc-stop</para>
+            <para>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
+              interfaces listed in <varname>NET_INTERFACES</varname> will be deleted. An iptables
+              rule listing is saved for later difference checks.</para>
+          </listitem>
+          <listitem>
+            <para>lockdown</para>
+            <para>All filter table policies will be set to DROP, all others will be set to ACCEPT.
+              All chains get flushed and custom chains are deleted. No more network connections are
+              allowed except:<simplelist>
+                <member>A: If the bash environment variable SSH_CONNECTION is set, IP-Array allow
+                  connections from that source address to the ssh server port.</member>
+                <member>B: If the environment variable is not set, but the ADMIN_CONNECTION variable
+                  is set in the main config file, IP-Array will allow the configured
+                  connection.</member>
+                <member>C: If the ALLOW_LOOPBACK variable is set in the main config file, loopback
+                  communication will be allowed.</member>
+              </simplelist></para>
+          </listitem>
+          <listitem>
+            <para>diff-last-activated</para>
+            <para>Every time IP-Array is not in 'test' mode and activates an iptables ruleset, it
+              saves a listing of the rules to a file. Using this parameter a (simple bash based)
+              difference check between the currently active ruleset and the listing of the file is
+              performed. Thus allowing to detect (unwanted) modifications.</para>
+          </listitem>
+          <listitem>
+            <para>dry-run</para>
+            <para>Configuration is processed and validated, but no commands will be applied. </para>
+          </listitem>
+          <listitem>
+            <para>save</para>
+            <para>The currently active iptables ruleset will be saved using 'iptables-save'.</para>
+          </listitem>
+          <listitem>
+            <para>save-known-good</para>
+            <para>Save the currently active iptables ruleset to file (the name of the 'known-good'
+              script can be set in the <link xlink:href="#conf_file_defaults">defaults</link> file.
+              It will be used if <varname>RESTORE_ON_START</varname> is set to `1' (quick start
+              activated).</para>
+          </listitem>
+          <listitem>
+            <para>restore</para>
+            <para>The previously saved ruleset (using the 'save' parameter) will be restored using
+              'iptables-restore'.</para>
+          </listitem>
+          <listitem>
+            <para>save-commands</para>
+            <para>Save all commands (modprobe, proc, tc, iptables) to a file.</para>
+          </listitem>
+          <listitem>
+            <para>save-iptables-commands</para>
+            <para>Save the generated iptables commands to a file.</para>
+          </listitem>
+          <listitem>
+            <para>save-modprobe-commands</para>
+            <para>Save the generated modprobe commands to a file.</para>
+          </listitem>
+          <listitem>
+            <para>save-proc-commands</para>
+            <para>Save the generated /proc commands to a file.</para>
+          </listitem>
+          <listitem>
+            <para>save-tc-commands</para>
+            <para>Save the generated tc commands to file.</para>
+          </listitem>
+          <listitem>
+            <para>save-shaping-commands</para>
+            <para>Save the generated tc and iptables mangle table (mark) commands to file.</para>
+          </listitem>
+          <listitem>
+            <para>prepare-restore-on-start</para>
+            <para>Create the '<emphasis role="bold">quick start</emphasis>' scripts. After the
+              configuration is completed this parameter allows to save it into scripts holding the
+              compiled commands, in order to quickly (re)apply it to the system. If iptables-save is
+              used (<varname>IPTSAVE_FAILS</varname> is set to `0') the currently active ruleset
+              will be saved. The names for these 'known-good' scripts can be set in the <link
+                xlink:href="#conf_file_defaults">defaults</link> file.</para>
+          </listitem>
+          <listitem>
+            <para>parse-xml</para>
+            <para>Compile bash scripts from the XML files.</para>
+          </listitem>
+          <listitem>
+            <para>version</para>
+            <para>Show version information.</para>
+          </listitem>
+          <listitem>
+            <para>help, -h, --help, -? [-PF | --public-functions] [name of public-function]</para>
+            <para>Show usage information.</para>
+            <para>If `--public-functions' is used as second argument, a list of available public
+              functions is printed. If a name of public function is given as third argument, a brief
+              description of the function is shown.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+      <section xml:id="usage_options">
+        <title>Options</title>
+        <para>Options with no further argument are listed first.</para>
+        <itemizedlist>
+          <listitem>
+            <para>-n, --no-autosave</para>
+            <para>Do not use the automatic saving and restoring logic (see <link
+                xlink:href="#autosave">autosave / restore</link>).</para>
+          </listitem>
+          <listitem>
+            <para>-p, --parse-xml</para>
+            <para>Read all XML files and overwrite already compiled bash scripts.</para>
+          </listitem>
+          <listitem>
+            <para>-pb, --parse-ruleblocks</para>
+            <para>Read XML ruleblock files and overwrite already compiled bash scripts.</para>
+          </listitem>
+          <listitem>
+            <para>-pr, --parse-rulefiles</para>
+            <para>Read XML rule files and overwrite already compiled bash scripts.</para>
+          </listitem>
+          <listitem>
+            <para>-pt, --parse-templates</para>
+            <para>Read XML template files and overwrite already compiled bash scripts.</para>
+          </listitem>
+          <listitem>
+            <para>-b, --base-dir directory</para>
+            <para>Set base directory to use (i.e. /etc/ip-array).</para>
+          </listitem>
+          <listitem>
+            <para>-c, --config-file file</para>
+            <para>Specify the name of the <link xlink:href="#conf_file_main_conf">main configuration
+                file</link> to use.</para>
+          </listitem>
+          <listitem>
+            <para>-d, --defaults-file full_path_to_file</para>
+            <para>Specify the full path the <link xlink:href="#conf_file_defaults">defaults</link>
+              file to use.</para>
+          </listitem>
+          <listitem>
+            <para>-e, --exe-dir directory</para>
+            <para>Set the directory to place the main executable of IP-Array into (i.e.
+              /usr/bin/ip-array).</para>
+          </listitem>
+          <listitem>
+            <para>-l, --lib-dir directory</para>
+            <para>Set the directory to place the function file(s) of IP-Array into (i.e.
+              /usr/lib/ip-array).</para>
+          </listitem>
+          <listitem>
+            <para>-s, --save-file file</para>
+            <para>Specify the name of the file used for saving.</para>
+          </listitem>
+          <listitem>
+            <para>-sv, --syslog-verbose 0-5</para>
+            <para>Specify the level of output verbosity to syslog. Allowed values are from `0' to
+              `5'.</para>
+          </listitem>
+          <listitem>
+            <para>-v, --verbose 0-8</para>
+            <para>Specify the level of output verbosity. Allowed values are from `0' to `8'.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
+    </section>
+    <section xml:id="startup_usage_examples">
+      <title>Usage examples</title>
+      <para>
+        <variablelist>
+          <varlistentry>
+            <term>/etc/init.d/ip-array dry-run -v 6 -sv 0 -pb</term>
+            <listitem>
+              <para>Run IP-Array in no-acting mode (don't apply commands). With a verbosity to
+                screen of `6' (quite detailed) and a syslog verbosity of `0'. Also parse the XML
+                ruleblock files and compile bash scripts out of them.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array parse-xml -sv 0</term>
+            <listitem>
+              <para>Just parse all XML files. Use the default screen verbosity and set syslog
+                verbosity to `0'.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array restart -p -n</term>
+            <listitem>
+              <para>Parse the XML files before reloading the configuration. Do not use the autosave
+                / restore logic.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array save -s home_net_config.ipt_save</term>
+            <listitem>
+              <para>Save the currently active iptables ruleset using iptables-save to the file
+                specified as 'home_net_config.ipt_save.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array test -d "/etc/default/ip-array/defaults_02.conf" -c
+              "xyz_test_02.conf" -sv 4 -v 0 -pb -pr</term>
+            <listitem>
+              <para>Run IP-Array in 'test' mode. Use the defaults config file specified with
+                '/etc/default/ip-array/defaults_02.conf'. Use the main configuration file specified
+                with: 'xyz_test_02.conf'. Set syslog verbosity to `4'. Set screen output verbosity
+                to `0'. Parse ruleblock and rule files.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array prepare-restore-on-start -v 1 -sv 0</term>
+            <listitem>
+              <para>Prepare the 'quick-start' scripts with a screen verbosity of `1' and syslog
+                verbosity of `0'.</para>
+            </listitem>
+          </varlistentry>
+        </variablelist>
+      </para>
+    </section>
+  </chapter>
+  <chapter xml:id="examples">
+    <title>Examples</title>
+    <subtitle>Example scenarios</subtitle>
+    <para/>
+    <section xml:id="example_single_host">
+      <title>Single host example</title>
+      <para/>
+    </section>
+    <section xml:id="example_lan_gatew">
+      <title>LAN gateway example</title>
+      <para/>
+    </section>
+    <section xml:id="example_multi_home">
+      <title>Multi-homed example</title>
+      <para/>
+    </section>
+  </chapter>
+  <chapter xml:id="faq"><title>FAQ</title><subtitle>Frequently Asked Questions</subtitle><qandaset>
+      <qandadiv>
+        <qandaentry>
+          <question>
+            <para>Why the name 'IP-Array'?</para>
+          </question>
+          <answer>
+            <para>IP-Array functionality is built around utilizing 'arrays', hence the name.</para>
+          </answer>
+        </qandaentry>
+        <qandaentry>
+          <question>
+            <para>Why a bash script?</para>
+          </question>
+          <answer>
+            <itemizedlist>
+              <listitem>
+                <para>I wanted to learn bash. Usually I choose myself a project and then learn while
+                  developing - same here.</para>
+              </listitem>
+              <listitem>
+                <para>Bash should be installed on every common linux distribution, hence no need for
+                  any additional packages.</para>
+              </listitem>
+              <listitem>
+                <para>You could say 'there are already a lot of iptables frontends available': Well,
+                  actually there are a couple of public bash firewall scripts available. Lots of
+                  them are quite unmaintained, or did not quite do what i wanted. Of course there
+                  are also accurate and good scripts around, so it's up to the user to decide. Also
+                  if you don't want to use any external program for whatever reason, IP-Array might
+                  become useful.</para>
+              </listitem>
+            </itemizedlist>
+          </answer>
+        </qandaentry>
+      </qandadiv>
+    </qandaset>
+  </chapter>
+  <chapter xml:id="appendix">
+    <title>Appendix</title>
+    <para/>
+    <section xml:id="support_info">
+      <title>Support</title>
+      <para>The preferred way to get support on IP-Array, is to open a forum post on the project
+        page. Alternatively you could send a mail at your own risk to AllKind@BonBon.net.</para>
+    </section>
+    <section xml:id="bug_report">
+      <title>Bug report</title>
+      <para>Please report bugs either via a forum post on the project homepage, or send email to
+        AllKind@BonBon.net.</para>
+    </section>
+    <section xml:id="co-develop">
+      <title>Co-Development</title>
+      <para>If you like IP-Array and want to help developing, see 'Help' section for ways to get in
+        contact.</para>
+    </section>
+  </chapter>
+</book>

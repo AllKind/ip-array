@@ -1,0 +1,13 @@
+
+Name:
+	intns_to_extns
+
+Description:
+	Permit forwarded DNS (TCP & UDP) traffic from local nameservers to remote ISP nameservers.
+	Requires `LAN_NS' variable to be configured.
+	
+Usage:
+	intns_to_extns
+	
+Example:
+	intns_to_extns

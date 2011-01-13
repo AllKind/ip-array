@@ -1,0 +1,13 @@
+
+Name:
+	reject_auth
+
+Description:
+	Reject INPUT AUTH (TCP port 113) traffic on certain interfaces.
+	Requires `REJECT_AUTH' variable to be configured.
+
+Usage:
+	reject_auth
+	
+Example:
+	reject_auth

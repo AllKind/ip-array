@@ -1,0 +1,289 @@
+<?xml version="1.0"?>
+
+<!-- NAT TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="0.1">
+
+	<!-- Ingress Templates -->
+
+	<template name="TEMPLATE_NAT_GENERIC_INGRESS">
+		<!-- 
+		Purpose: Generic ingress (incoming) Network Address Translation rules
+		Template options:
+		+ nat table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: nat ip address
+		10: nat port
+		11: nat option
+		Mandatory options: target, chain
+		-->
+		<table> nat </table>
+		<template_msg> ${ADDMSG} NAT ingress rules </template_msg>
+		<mandatory_vars>
+			target,chain
+		</mandatory_vars>
+		<load_template>
+			GT_BASE_OPTION_SET_INGRESS
+			BT_NAT_IP_PORT_OPTION
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_NAT_GENERIC_WITH_MAC_INGRESS">
+		<!-- 
+		Purpose: Generic ingress (incoming) Network Address Translation rules
+		+ mac address in match set
+		Template options:
+		+ nat table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: nat ip address
+		11: nat port
+		Mandatory options: target, chain, input device
+		-->
+		<table> nat </table>
+		<template_msg>
+			${ADDMSG} NAT ingress rules with source mac option
+		</template_msg>
+		<mandatory_vars>
+			target,chain,idev
+		</mandatory_vars>
+		<load_template>
+			GT_BASE_OPTION_SET_INGRESS_WITH_MAC
+			BT_NAT_IP_PORT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_DNAT_PREROUTING">
+		<!-- 
+		Purpose: DNAT rules in PREROUTING chain
+		Template options:
+		+ nat table
+		+ DNAT target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat ip address
+		8: nat port
+		Mandatory options: input device, nat ip address
+		-->
+		<template_msg> ${ADDMSG} DNAT rules </template_msg>
+		<mandatory_vars> idev,nat_ip </mandatory_vars>
+		<load_template>
+			BT_NAT_DNAT_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS
+			BT_NAT_IP_PORT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_DNAT_WITH_MAC_PREROUTING">
+		<!-- 
+		Purpose: DNAT rules in PREROUTING chain + mac address in match set
+		Template options:
+		+ nat table
+		+ DNAT target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: nat ip address
+		9: nat port
+		Mandatory options: input device, nat ip address
+		-->
+		<template_msg>
+			${ADDMSG} DNAT rules with source mac option
+		</template_msg>
+		<mandatory_vars> idev,nat_ip </mandatory_vars>
+		<load_template>
+			BT_NAT_DNAT_PREROUTING
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC
+			BT_NAT_IP_PORT
+		</load_template>
+	</template>
+
+	<!-- Egress Templates -->
+
+	<template name="TEMPLATE_NAT_GENERIC_EGRESS">
+		<!-- 
+		Purpose: Generic egress (outgoing) Network Address Translation rules
+		Template options:
+		+ nat table
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: nat ip address
+		10: nat port
+		Mandatory options: target, chain, output device
+		-->
+		<table> nat </table>
+		<template_msg> ${ADDMSG} NAT egress rules </template_msg>
+		<mandatory_vars>
+			target,chain,odev
+		</mandatory_vars>
+		<load_template>
+			GT_BASE_OPTION_SET_EGRESS
+			BT_NAT_IP_PORT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_SNAT_POSTROUTING">
+		<!-- 
+		Purpose: SNAT rules in POSTROUTING chain
+		Template options:
+		+ nat table
+		+ SNAT target
+		+ POSTROUTING chain
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat ip address
+		8: nat port
+		Mandatory options: output device, nat ip address
+		-->
+		<table> nat </table>
+		<target> SNAT </target>
+		<chain> POSTROUTING </chain>
+		<template_msg> ${ADDMSG} SNAT rules in POSTROUTING chain </template_msg>
+		<mandatory_vars> odev,nat_ip </mandatory_vars>
+		<load_template>
+			BT_BASIC_MATCH_SET_EGRESS
+			BT_NAT_IP_PORT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MASQ_POSTROUTING">
+		<!-- 
+		Purpose: MASQUERADE rules in POSTROUTING chain
+		Template options:
+		+ nat table
+		+ MASQUERADE target
+		+ POSTROUTING chain
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat port
+		Mandatory options: output device
+		-->
+		<table> nat </table>
+		<target> MASQUERADE </target>
+		<chain> POSTROUTING </chain>
+		<template_msg> ${ADDMSG} MASQUERADE rules </template_msg>
+		<mandatory_vars> odev </mandatory_vars>
+		<load_template> BT_BASIC_MATCH_SET_EGRESS </load_template>
+		<option_list_0> nat_port </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_REDIRECT_OUTPUT">
+		<!-- 
+		Purpose: REDIRECT rules in OUTPUT chain
+		Template options:
+		+ nat table
+		+ REDIRECT target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat port
+		Mandatory options: -
+		-->
+		<table> nat </table>
+		<target> REDIRECT </target>
+		<chain> OUTPUT </chain>
+		<template_msg> ${ADDMSG} OUTPUT REDIRECT rules </template_msg>
+		<load_template> BT_BASIC_MATCH_SET_EGRESS </load_template>
+		<option_list_0> nat_port </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_REDIRECT_PREROUTING">
+		<!-- 
+		Purpose: REDIRECT rules in PREROUTING chain
+		Template options:
+		+ nat table
+		+ REDIRECT target
+		+ PREROUTING chain
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat port
+		Mandatory options: -
+		-->
+		<table> nat </table>
+		<target> REDIRECT </target>
+		<chain> PREROUTING </chain>
+		<template_msg> ${ADDMSG} PREROUTING REDIRECT rules </template_msg>
+		<load_template> BT_BASIC_MATCH_SET_INGRESS </load_template>
+		<option_list_0> nat_port </option_list_0>
+	</template>
+
+	<template name="TEMPLATE_NETMAP_OUTPUT">
+		<!-- 
+		Purpose: NETMAP rules in OUTPUT chain
+		Template options:
+		+ nat table
+		+ NETMAP target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: nat ip address[/mask]
+		Mandatory options: nat ip address
+		-->
+		<table> nat </table>
+		<target> NETMAP </target>
+		<chain> OUTPUT </chain>
+		<template_msg> ${ADDMSG} OUTPUT NETMAP rules </template_msg>
+		<mandatory_vars> nat_ip </mandatory_vars>
+		<load_template> BT_ODEV_SRC_DST_ADDR </load_template>
+		<option_list_0> nat_ip </option_list_0>
+	</template>
+
+</ip_array_root>
+
