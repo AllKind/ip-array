@@ -114,7 +114,6 @@ bad_use_quit
 
 usage() # give help about command line usage
 {
-#echo -e "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
 printf "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
 Parameters:
 start                      Start mode. Lockdown mode until all rules are collected.
@@ -163,6 +162,7 @@ Options:
 -t, --test                 Schedule restore of active ruleset.
 -b, --base-dir directory   Base directory to use.
 -c, --config-file file     Main configuration file to use.
+-C, --config-dir directory Main configuration directory to use (below BASEDIR).
 -d, --defaults-file file   Defaults configuration file to use (/PATH/filename).
 -e, --exe-dir directory    Executable directory to use.
 -l, --lib-dir directory    Library directory to use.
@@ -265,6 +265,7 @@ while (($#)); do
 		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;;
 		-e|--exe-dir) BIN_DIR="${opt_arg}" ;;
 		-c|--config-file|\
+		-C|--config-dir|\
 		-b|--base-dir|\
 		-l|--lib-dir|\
 		-o|--set-option|\
@@ -304,11 +305,6 @@ esac
 	pr_err "\`${BIN_DIR}/${EXE_NAME}' does not exist, or is not readable."
 	bail_out ${ER_NOEX}
 }
-#[[ -x ${BIN_DIR}/${EXE_NAME} ]] || {
-#	pr_err "\`${BIN_DIR}/${EXE_NAME}' does not exist, or is not executable."
-#	bail_out ${ER_NOEX}
-#}
-#"${BIN_DIR}/${EXE_NAME}" ${MAIN_ARG} -d "${DEFAULTS_FILE}" -e "${BIN_DIR}" ${DEFAULT_OPTIONS} "${ARR_PARAMS[@]}" || bail_out $?
 
 export SHELL="${MY_SHELL}"
 "$MY_SHELL" -- "${BIN_DIR}/${EXE_NAME}" ${MAIN_ARG} -d "${DEFAULTS_FILE}" -e "${BIN_DIR}" ${DEFAULT_OPTIONS} "${ARR_PARAMS[@]}" || bail_out $?
