@@ -41,15 +41,13 @@
 # -------------------------------------------------------------------------
 
 # Configuration file holding the default and mandatory variables
-DEFAULTS_FILE="/root/ip-array_dev/etc/ip-array_dev/defaults/defaults.conf"
-
-BIN_DIR="/root/ip-array_dev/usr/local/bin/ip-array_dev"
-EXE_NAME="ip-array"
-DEFAULT_OPTIONS=""
+DEFAULTS_FILE=
+BIN_DIR=
+EXE_NAME=
+DEFAULT_OPTIONS=
 DEFAULT_START_OPTIONS="--verbose 2"
 DEFAULT_STOP_OPTIONS="--verbose 1"
-#MY_SHELL="/bin/bash"
-MY_SHELL="/usr/local/bin/bash4"
+MY_SHELL=
 
 # -------------------------------------------------------------------------
 # End of configuration area
@@ -277,9 +275,7 @@ while (($#)); do
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="${opt_arg}"
 		;;
-		-sh|--shell)
-			MY_SHELL="${opt_arg}"
-		;;
+		-sh|--shell) MY_SHELL="${opt_arg}" ;;
 		--) break ;;
 		*) pr_err "Unknown option: \`${option}'"
 			short_usage
@@ -291,13 +287,19 @@ while (($#)); do
 	shift
 done
 
+# set default values
+: ${BIN_DIR:=/usr/bin/ip-array}
+: ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf}
+: ${EXE_NAME:=ip-array}
+: ${MY_SHELL:=/bin/bash}
+
 case "${MAIN_ARG}" in
 	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
 	stop) DEFAULT_OPTIONS+="${DEFAULT_STOP_OPTIONS} " ;;
 esac
 
 # run main executable
-[[ -x ${MY_SHELL:=/bin/bash} ]] || {
+[[ -x ${MY_SHELL} ]] || {
 	pr_err "Shell binary \`${MY_SHELL}' does not exist, or is not executable."
 	bail_out ${ER_NOEX}
 }
@@ -306,8 +308,8 @@ esac
 	bail_out ${ER_NOEX}
 }
 
-export SHELL="${MY_SHELL}"
-"$MY_SHELL" -- "${BIN_DIR}/${EXE_NAME}" ${MAIN_ARG} -d "${DEFAULTS_FILE}" -e "${BIN_DIR}" ${DEFAULT_OPTIONS} "${ARR_PARAMS[@]}" || bail_out $?
+export SHELL="$MY_SHELL"
+"$MY_SHELL" -- "${BIN_DIR}/${EXE_NAME}" $MAIN_ARG -d "$DEFAULTS_FILE" -e "$BIN_DIR" $DEFAULT_OPTIONS "${ARR_PARAMS[@]}" || bail_out $?
 
 exit 0
 

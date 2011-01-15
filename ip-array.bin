@@ -1137,8 +1137,7 @@ done
 # -------------------------------------------------------------------------
 # load default configuration parameters from file
 # -------------------------------------------------------------------------
-[[ ${DEFAULTS_FILE} ]] || { err_msg "DEFAULTS_FILE is unset."; bail_out ${ER_NODEF}; }
-if [[ -r ${DEFAULTS_FILE} ]]; then 
+if [[ -r ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf} ]]; then 
 	if ((SYNTAX_CHECK)); then
 		check_syntax "${DEFAULTS_FILE}" || bail_out ${ER_LOAD}
 	fi
@@ -1169,6 +1168,9 @@ set_env
 [[ ${MAIN_ARG} = diff-last-activated && ${cmdline_save_file} ]] && DIFF_FILE="${cmdline_save_file}"
 
 # set some default values, if variables are unset
+: ${BASE_DIR:=/etc/ip-array}
+: ${BIN_DIR:=${0%/*}}
+: ${LIB_DIR:=/usr/lib/ip-array}
 : ${CONFIG:=ip-array.conf}
 : ${DIFF_FILE:=iptables_ruleset_saved_for_diff}
 : ${KNOWN_GOOD_RULES:=KNOWN_GOOD_IPT_RULES.save}
