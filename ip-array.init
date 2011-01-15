@@ -83,7 +83,7 @@ declare -x LC_ALL='C'
 declare -x PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # parameters
-declare -r MAIN_ARG="${1}"
+declare -r MAIN_ARG="$1"
 declare -a ARR_PARAMS
 
 # error exit codes
@@ -98,7 +98,7 @@ printf "%s\n" "$*" >&2
 } # -------------------------------------------------------------------------
 
 bad_use_quit() { # exit on bad command line usage
-exit ${ER_USE}
+exit $ER_USE
 } # -------------------------------------------------------------------------
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
@@ -189,7 +189,7 @@ exit 0
 # -------------------------------------------------------------------------
 
 # check for valid main arg
-case "${MAIN_ARG}" in
+case "$MAIN_ARG" in
 	"") usage ;;
 	'-?'|-h|help|--help)
 		shift
@@ -207,9 +207,9 @@ esac
 
 # get additional option arguments provided
 while (($#)); do
-	option="${1}" opt_arg="${2}"
+	option="$1" opt_arg="$2"
 	shift
-	case "${option}" in
+	case "$option" in
 		#options without an argument
 		-ct|--ipt-counters|\
 		-dr|--dry-run|\
@@ -223,13 +223,13 @@ while (($#)); do
 		-pb|--parse-ruleblocks|\
 		-pr|--parse-rulefiles|\
 		-pt|--parse-templates)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
 		;;
 		-t|--test) # schedule restore of active fw ruleset
 			case "$MAIN_ARG" in
 				start|stop|restart|tc-start|tc-stop|lockdown)
-					ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 					continue
 				;;
 				*) pr_err "Option \`${option}' is not valid with \`${MAIN_ARG}'."
@@ -238,30 +238,30 @@ while (($#)); do
 		;;
 		# could be 1 arg
 		-PF|--public-functions)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
-			[[ ${opt_arg} = +([[:word:]]) ]] && ARR_PARAMS[${#ARR_PARAMS[@]}]="${opt_arg}" || continue
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			[[ $opt_arg = +([[:word:]]) ]] && ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg" || continue
 		;;
 		-sc|--show-config)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
-			case "${opt_arg}" in
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			case "$opt_arg" in
 				all|main|defaults|targets|matches|ruleblocks|templates)
-			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="${opt_arg}"
+			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
 			esac
 		;;
 		-ns|--no-scripts)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
-			case "${opt_arg}" in
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			case "$opt_arg" in
 				all|prolog|epilog)
-			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="${opt_arg}"
+			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
 			esac
 		;;
 		# options which require an argument
-		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;;
-		-e|--exe-dir) BIN_DIR="${opt_arg}" ;;
+		-d|--defaults-file) DEFAULTS_FILE="$opt_arg" ;;
+		-e|--exe-dir) BIN_DIR="$opt_arg" ;;
 		-c|--config-file|\
 		-C|--config-dir|\
 		-b|--base-dir|\
@@ -272,15 +272,15 @@ while (($#)); do
 		-rt|--reload-time|\
 		-sv|--syslog-verbose|\
 		-v|--verbose)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${option}"
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="${opt_arg}"
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 		;;
-		-sh|--shell) MY_SHELL="${opt_arg}" ;;
+		-sh|--shell) MY_SHELL="$opt_arg" ;;
 		--) break ;;
 		*) pr_err "Unknown option: \`${option}'"
 			short_usage
 	esac
-	[[ ${opt_arg} ]] || {
+	[[ $opt_arg ]] || {
 		pr_err "Option \`${option}' requires an argument."
 		short_usage
 	}
@@ -293,19 +293,19 @@ done
 : ${EXE_NAME:=ip-array}
 : ${MY_SHELL:=/bin/bash}
 
-case "${MAIN_ARG}" in
+case "$MAIN_ARG" in
 	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
 	stop) DEFAULT_OPTIONS+="${DEFAULT_STOP_OPTIONS} " ;;
 esac
 
 # run main executable
-[[ -x ${MY_SHELL} ]] || {
+[[ -x $MY_SHELL ]] || {
 	pr_err "Shell binary \`${MY_SHELL}' does not exist, or is not executable."
-	bail_out ${ER_NOEX}
+	bail_out $ER_NOEX
 }
 [[ -r ${BIN_DIR}/${EXE_NAME} ]] || {
 	pr_err "\`${BIN_DIR}/${EXE_NAME}' does not exist, or is not readable."
-	bail_out ${ER_NOEX}
+	bail_out $ER_NOEX
 }
 
 export SHELL="$MY_SHELL"
