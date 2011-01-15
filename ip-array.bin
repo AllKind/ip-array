@@ -68,7 +68,7 @@ shopt -s extglob
 LC_ALL='C'
 
 # about me
-readonly ME
+readonly ME me=ip-array
 declare -r VERSION=([0]=0 [1]=05 [2]=75 [3]="")	# Version
 declare -r STR_VERSION="v.${VERSION[0]}.${VERSION[1]}.${VERSION[2]}${VERSION[3]}"
 
@@ -80,19 +80,19 @@ declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/loc
 
 # mutual exclusions lock-file
 if [[ -e /var/run ]]; then
-	declare -r LOCKFILE=/var/run/ip-array.pid
+	declare -r LOCKFILE=/var/run/${me}.pid
 else
-	declare -r LOCKFILE=/tmp/ip-array.pid
+	declare -r LOCKFILE=/tmp/${me}.pid
 fi
 
 # error exit codes
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
 
 # IP-Array function and definition files
-declare -r GLOBAL_DEFS="ip-array_global_defs"
-declare -r IPARRAY_MAIN_FUNCTIONS="ip-array_main_functions"
-declare -r IPARRAY_IPT_FUNCTIONS="ip-array_ipt_functions"
-declare -r IPARRAY_TC_FUNCTIONS="ip-array_tc_functions"
+declare -r GLOBAL_DEFS="${me}_global_defs"
+declare -r IPARRAY_MAIN_FUNCTIONS="${me}_main_functions"
+declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions"
+declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
 declare -r IPARRAY_FUNCTIONS="${IPARRAY_MAIN_FUNCTIONS} ${IPARRAY_IPT_FUNCTIONS} ${IPARRAY_TC_FUNCTIONS}"
 
 # mandatory defaults
@@ -1137,7 +1137,7 @@ done
 # -------------------------------------------------------------------------
 # load default configuration parameters from file
 # -------------------------------------------------------------------------
-if [[ -r ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf} ]]; then 
+if [[ -r ${DEFAULTS_FILE:=/etc/${me}/defaults.conf} ]]; then 
 	if ((SYNTAX_CHECK)); then
 		check_syntax "${DEFAULTS_FILE}" || bail_out ${ER_LOAD}
 	fi
@@ -1168,10 +1168,10 @@ set_env
 [[ ${MAIN_ARG} = diff-last-activated && ${cmdline_save_file} ]] && DIFF_FILE="${cmdline_save_file}"
 
 # set some default values, if variables are unset
-: ${BASE_DIR:=/etc/ip-array}
+: ${BASE_DIR:=/etc/${me}}
 : ${BIN_DIR:=${0%/*}}
-: ${LIB_DIR:=/usr/lib/ip-array}
-: ${CONFIG:=ip-array.conf}
+: ${LIB_DIR:=/usr/lib/${me}}
+: ${CONFIG:=${me}.conf}
 : ${DIFF_FILE:=iptables_ruleset_saved_for_diff}
 : ${KNOWN_GOOD_RULES:=KNOWN_GOOD_IPT_RULES.save}
 : ${KNOWN_GOOD_MODPROBES:=KNOWN_GOOD_MODPROBES.bash}
@@ -1181,7 +1181,7 @@ set_env
 : ${SERVICES:=/etc/services}
 : ${SAVE_FILE:=iptables_ruleset.save}
 : ${GEN_FORMAT:=cmd}
-: ${RULESETFILE:=ip-array_commands.bash}
+: ${RULESETFILE:=${me}_commands.bash}
 : ${IPTSAVE_FAILS:=0}
 : ${SYNTAX_CHECK:=1}
 : ${RELOAD_TIME:=7}

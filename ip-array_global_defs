@@ -78,7 +78,7 @@ declare -ir GLOBAL_READ_TIMEOUT=30		# number of seconds the read builtin waits f
 declare -r IF_CON="_to_"
 declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
 declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
-declare -r DEFAULT_RULESETFILE="ip-array_commands.bash"	# default file to save iptables commands to
+declare -r DEFAULT_RULESETFILE="${me}_commands.bash"	# default file to save iptables commands to
 
 # Various iptables aliases
 declare -r stE="ESTABLISHED"
