@@ -2809,12 +2809,11 @@ if ((parse_files == 1)); then
 	log -w "Saved parsed template file to: \`${parsed_file}'"
 fi
 load_file config "${parsed_file}" || return ${ER_LOAD}
-if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]} > 0)); then # dump generated templates to stdout
+if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdout
 	for rvar in ${cmdline_show_conf}; do
 		[[ ${rvar} = templates ]] && {
 			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of generated templates:" "${SEPSTR}"
 			for idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
-#				declare -p "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}" 2>/dev/null && printf "\n"
 				printf "%s=(\n" "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"
 				for i in $(arr_indicies "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"); do
 					eval 'printf "['${i}']=\"%s\"\n" "${'"${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"'['${i}']}"'
@@ -2934,16 +2933,13 @@ if ((parse_files == 1)); then
 	log -e "${PF}generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
 	log -w "Saved parsed ruleblock file to: \`${parsed_file}'"
 fi
-if [[ ${MODE} != PARSE-XML ]]; then
-	load_file config "${parsed_file}" || return ${ER_LOAD}
-fi
-if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} > 0)); then # dump generated ruleblocks to stdout
+
+load_file config "${parsed_file}" || return ${ER_LOAD}
+
+if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to stdout
 	for rvar in ${cmdline_show_conf}; do
 		[[ ${rvar} = ruleblocks ]] && {
 			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of generated ruleblocks:" "${SEPSTR}"
-#			for idx in ${!TEMP_RULEBLOCK_NAMES_ARRAY[@]}; do
-#				declare -p "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}" 2>/dev/null && printf "\n"
-#			done
 			for idx in ${!TEMP_RULEBLOCK_NAMES_ARRAY[@]}; do
 				printf "%s=(\n" "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"
 				for i in $(arr_indicies "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"); do

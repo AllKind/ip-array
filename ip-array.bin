@@ -577,7 +577,7 @@ Options:
 -s, --save-file file       File to use, when saving or restoring a ruleset.
 -sc, --show-config [type]  Select type of information to show. Available types:
                            \`all', \`main' (=default), \`defaults', \`targets', \`matches',
-                           \`ruleblocks', \`templates'.
+                           \`ruleblocks', \`templates', \`ipt_args'.
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -1081,12 +1081,12 @@ while (($#)); do
 			case "${opt_arg}" in
 				all)
 					if [[ ${MAIN_ARG} = show ]]; then
-						cmdline_show_conf="defaults main targets matches"
+						cmdline_show_conf="defaults main targets matches ipt_args"
 					else
-						cmdline_show_conf="defaults main targets matches ruleblocks templates"
+						cmdline_show_conf="defaults main targets matches ipt_args ruleblocks templates"
 					fi
 				;;
-				main|defaults|targets|matches|ruleblocks|templates)
+				main|defaults|targets|matches|ruleblocks|templates|ipt_args)
 					cmdline_show_conf="${cmdline_show_conf//${opt_arg}/}"
 					cmdline_show_conf+="${opt_arg} "
 				;;
@@ -1494,6 +1494,11 @@ for rvar in ${cmdline_show_conf}; do
 				pr_str "${2}"
 			done
 			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of supported iptables matches summary." "${SEPSTR}"
+		;;
+		ipt_args)
+			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of iptables arguments list:" "${SEPSTR}"
+			printf "%s\n" "${ARG_NAMES_LIST[@]}"
+			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of iptables arguments list." "${SEPSTR}"
 		;;
 		ruleblocks)
 			if ((PARSE_RULEBLOCKS == 0)); then

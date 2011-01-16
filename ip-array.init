@@ -172,7 +172,7 @@ Options:
 -s, --save-file file       File to use, when saving or restoring a ruleset.
 -sc, --show-config [type]  Select type of information to show. Available types:
                            \`all', \`main' (=default), \`defaults', \`targets', \`matches',
-                           \`ruleblocks', \`templates'.
+                           \`ruleblocks', \`templates', \`ipt_args'.
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -244,7 +244,7 @@ while (($#)); do
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|ruleblocks|templates)
+				all|main|defaults|targets|matches|ruleblocks|templates|ipt_args)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
