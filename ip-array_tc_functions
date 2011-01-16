@@ -50,7 +50,7 @@ END_OF_FUNC
 } # -------------------------------------------------------------------------
 
 val_tc_unit() { # validate tc units
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$(string_tolower "${1}")" in
 	(kbps|mbps|kbit|mbit|bps)
 		return 0
@@ -61,7 +61,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_tc_bw_val() { # validate tc bandwith values
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local digitval=${1//[[:alpha:]]/} alphaval=${1//[[:digit:]]/}
 if [[ ${digitval} ]]; then
 	val_numeric ${digitval} || return 1
@@ -75,7 +75,7 @@ fi
 } # -------------------------------------------------------------------------
 
 add_tc_cmd() { # add tc commands to the tc-command array
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="${@}"
 } # -------------------------------------------------------------------------
 
@@ -232,7 +232,7 @@ add_tc_cmd "filter add ${qdev} ${qparent} ${qproto} ${qprio} ${qhandle} ${qdomai
 
 tc_create_htb_qdisc() { # create htb qdiscs
 local -i htb_idx
-if ((${#HTB_QDISC[@]} > 0)); then
+if ((${#HTB_QDISC[@]})); then
 	log -I "Creating HTB QDISCs"
 	for htb_idx in ${!HTB_QDISC[@]}; do
 		set -- ${HTB_QDISC[htb_idx]}
@@ -249,7 +249,7 @@ fi
 
 tc_create_class() { # create TC classes
 local -i tcc_idx
-if ((${#TC_CLASS[@]} > 0)); then
+if ((${#TC_CLASS[@]})); then
 	log -I "Creating TC CLASSES"
 	for tcc_idx in ${!TC_CLASS[@]}; do
 		set -- ${TC_CLASS[tcc_idx]}
@@ -267,7 +267,7 @@ fi
 
 tc_create_sfq_qdisc() { # create sfq qdiscs
 local -i sfq_idx
-if ((${#SFQ_QDISC[@]} > 0)); then
+if ((${#SFQ_QDISC[@]})); then
 	log -I "Creating SFQ QDISCs"
 	for sfq_idx in ${!SFQ_QDISC[@]}; do
 		set -- ${SFQ_QDISC[sfq_idx]}
@@ -284,7 +284,7 @@ fi
 
 tc_create_filter() { # create TC filters
 local -i f_idx
-if ((${#TC_FILTER[@]} > 0)); then
+if ((${#TC_FILTER[@]})); then
 	log -I "Creating TC FILTERS"
 	for f_idx in ${!TC_FILTER[@]}; do
 		set -- ${TC_FILTER[f_idx]}
@@ -414,7 +414,7 @@ if [[ ${ENABLE_TC_SHAPING} ]]; then
 			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || create_chain mangle ${BIC_TC_FORWARD_EGRESS}
 			[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || create_chain mangle ${BIC_TC_POSTROUTING_EGRESS}
 			for rvar in ${TC_MARK_RULES}; do
-				load_rule_file "${rvar}" || return ${?}
+				load_rule_file "$rvar" || return $?
 			done
 			[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || add_rule mangle OUTPUT -j ${BIC_TC_OUTPUT}
 			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || add_rule mangle FORWARD -j ${BIC_TC_FORWARD_EGRESS}
@@ -431,14 +431,14 @@ fi
 } # -------------------------------------------------------------------------
 
 rm_qdisc() { # remove existing qdiscs
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 for rvar in ${1}; do
-	if [[ $("${TC}" qdisc show dev ${rvar} | lsearch_echo_reverse "pfifo_fast") ]]; then
-		log -e "${PF}removing qdisc for interface: ${rvar}"
+	if [[ $("${TC}" qdisc show dev $rvar | lsearch_echo_reverse "pfifo_fast") ]]; then
+		log -e "${PF}removing qdisc for interface: $rvar"
 		# add to tc command array
-		TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="qdisc del dev ${rvar} root"
+		TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="qdisc del dev $rvar root"
 	else
-		log -N "No qdisc found for interface: \`${rvar}'"
+		log -N "No qdisc found for interface: \`$rvar'"
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -446,7 +446,7 @@ done
 remove_qdiscs() { # Remove existing QDISCs
 ((ENABLE_TC_SHAPING == 1)) || return 0
 log -S "Removing qdiscs"
-case "${MODE}" in 
+case "$MODE" in 
 	(SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-COMMANDS) : ;;
 	(*) rm_qdisc "${NET_IFLIST}"
 esac
@@ -455,14 +455,14 @@ esac
 load_tc_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in ${TC_RULEBLOCKS}; do
-	load_ruleblock_conf "${rvar}" || return ${?}
+	load_ruleblock_conf "$rvar" || return $?
 done
 } # -------------------------------------------------------------------------
 
 load_tc_mangle_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in ${TC_MANGLE_RULEBLOCKS}; do
-	load_ruleblock_conf "${rvar}" || return ${?}
+	load_ruleblock_conf "$rvar" || return $?
 done
 } # -------------------------------------------------------------------------
 

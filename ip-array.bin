@@ -72,17 +72,17 @@ readonly ME me=ip-array
 declare -r VERSION=([0]=0 [1]=05 [2]=75 [3]="")	# Version
 declare -r STR_VERSION="v.${VERSION[0]}.${VERSION[1]}.${VERSION[2]}${VERSION[3]}"
 
-declare -r MAIN_ARG="${1}"
-declare -r PARAMS="${@}"
-declare -ir PID=${$}
+declare -r MAIN_ARG="$1"
+declare -r PARAMS="$@"
+declare -ir PID=$$
 
 declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # mutual exclusions lock-file
 if [[ -e /var/run ]]; then
-	declare -r LOCKFILE=/var/run/${me}.pid
+	declare -r LOCKFILE="/var/run/${me}.pid"
 else
-	declare -r LOCKFILE=/tmp/${me}.pid
+	declare -r LOCKFILE="/tmp/${me}.pid"
 fi
 
 # error exit codes
@@ -481,7 +481,7 @@ PUBLIC_FUNCTION_LIST=(
 # -------------------------------------------------------------------------
 # turn on debugging
 # -------------------------------------------------------------------------
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
 '
 	set
@@ -506,7 +506,7 @@ exit 0
 } # -------------------------------------------------------------------------
 
 bad_use_quit() {
-exit ${ER_USE}
+exit $ER_USE
 } # -------------------------------------------------------------------------
 
 short_usage() { # help hint
@@ -590,14 +590,14 @@ quit_welldone
 } # -------------------------------------------------------------------------
 
 print_sepstr() {
-pr_str "${SEPSTR}"
+pr_str "$SEPSTR"
 } # -------------------------------------------------------------------------
 
 check_syntax() { # check shell grammar of files to be sourced / executed
 local str_result
 str_result=$("${SHELL}" -n -O extglob -- "${1}" 2>&1) || {
 	printf "Syntax error in %s:\n\n%s\n" "\`${1}'" "${str_result}" >&2
-	return ${ER_LOAD}
+	return $ER_LOAD
 }
 } # -------------------------------------------------------------------------
 
@@ -672,23 +672,23 @@ if ((VERBOSE >= 1)); then pr_err "ERROR: ${*}"; fi
 } # -------------------------------------------------------------------------
 
 reqparm() { # announce parameters missing in functions
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 err_msg "${2} parameter(s) required for function: \`${1}()'."
 } # -------------------------------------------------------------------------
 
 val_bool_bin() { # check if a value is either '0' or '1'
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${1} = [0-1] ]]
 } # -------------------------------------------------------------------------
 
 prog_in_path() { # check wether a program exists in path
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 command -v "${1}" &>/dev/null
 } # -------------------------------------------------------------------------
 
 which_prog() { # find a program in $PATH
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
-local s_prog="${1}" oIFS="${IFS}"
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local s_prog="${1}" oIFS="$IFS"
 IFS=":"
 for rvar in ${PATH}; do
 	[[ -x ${rvar}/${s_prog} ]] && {
@@ -702,9 +702,9 @@ return 1
 } # -------------------------------------------------------------------------
 
 bin_ok() { # check for an executable file
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
-[[ -e ${1} ]] || { err_msg "File \`${1}' does not exist."; return ${ER_NOEX}; }
-[[ -x ${1} ]] || { err_msg "File \`${1}' is not executable."; return ${ER_FAIL}; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+[[ -e ${1} ]] || { err_msg "File \`${1}' does not exist."; return $ER_NOEX; }
+[[ -x ${1} ]] || { err_msg "File \`${1}' is not executable."; return $ER_FAIL; }
 } # -------------------------------------------------------------------------
 
 get_prog_paths() { # check for programs used by ip-array
@@ -714,7 +714,7 @@ if [[ ${MAIN_ARG} != @('-?'|-h|help|--help|version) ]]; then
 fi
 val_bool_bin "${AUTO_GET_PROGS:=0}" || {
 	err_msg "Illegal value \`${AUTO_GET_PROGS}' for \`AUTO_GET_PROGS'"
-	return ${ER_CONF}
+	return $ER_CONF
 }
 for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 	set -- ${IPARRAY_PROGRAMS[idx]}
@@ -735,7 +735,7 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 			prog_in_path "${prog_name}" && {
 				prog_path="$(which_prog "${prog_name}")" || {
 					err_msg "Failed locating the program \`${prog_name}' in \$PATH."
-					return ${ER_FAIL}
+					return $ER_FAIL
 				}
 #				set_var "${prog_var}" "${prog_path}" # set global program variable
 				printf -v "${prog_var}" "${prog_path}" # set global program variable
@@ -754,7 +754,7 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 			continue
 		;;
 		1) err_msg "Path for program \`${prog_name}' was not found."
-			return ${ER_FAIL}
+			return $ER_FAIL
 		;;
 		*) err_msg "Configuration error in array: IPARRAY_PROGRAMS."
 			return 1
@@ -763,7 +763,7 @@ done
 } # -------------------------------------------------------------------------
 
 check_dirs() { # check for existence of directories declared by varname
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 while (($#)); do
 	[[ ${!1} ]] || {
 		err_msg "\`${1}' variable is not defined."
@@ -771,14 +771,14 @@ while (($#)); do
 	}
 	[[ -d ${!1} ]] || {
 		err_msg "Directory \`${!1}' specified with \`${1}' variable, does not exist."
-		return ${ER_NOEX}
+		return $ER_NOEX
 	}
 	shift
 done
 } # -------------------------------------------------------------------------
 
 set_skel() { # set skeleton variables
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "${1}" in
 	stable|test)
 		RUNMODE="${1}"
@@ -809,27 +809,27 @@ done
 } # -------------------------------------------------------------------------
 
 show_pubfunc_help() { # show usage for a public function
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local f_name="${1}"
 for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
 	set -- ${PUBLIC_FUNCTION_LIST[idx]}
 	if [[ ${1} = ${f_name} ]]; then
 		[[ -r ${HELP_DIR}/${f_name}.txt ]] || {
 			err_msg "\`${HELP_DIR}/${f_name}.txt' does not exist"
-			return ${ER_NOEX}
+			return $ER_NOEX
 		}
 		"${CAT}" "${HELP_DIR}/${f_name}.txt" || return 1
 		return 0
 	fi
 done
 err_msg "Unknown public function name \`${f_name}'."
-return ${ER_USE}
+return $ER_USE
 } # -------------------------------------------------------------------------
 
 ipt_save() { # save the firewall with iptables-save
 if ((IPTSAVE_FAILS)); then
 	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
-	return ${ER_FAIL}
+	return $ER_FAIL
 fi
 local str_c="" str_file="${1:-${SAVE_FILE}}"
 if ((USE_COUNTERS)); then
@@ -838,7 +838,7 @@ fi
 verbose_msg "Saving iptables rules to \`${SAVE_DIR}/${str_file}'"
 if ! [[ -d ${SAVE_DIR} ]]; then
 	err_msg "\`${SAVE_DIR}' does not exit."
-	return ${ER_NOEX}
+	return $ER_NOEX
 fi
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
 	"${IPT}" -nL &>/dev/null
@@ -848,20 +848,20 @@ if [[ -r ${IP_TABLES_NAMES} ]]; then
 		notice_msg "Iptables rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
 	else
 		err_msg "Failed saving iptables rules."
-		return ${ER_FAIL}
+		return $ER_FAIL
 	fi
 else
 	err_msg "\`${IP_TABLES_NAMES}' does not exist!
  Load at least the ip_tables module and one of the table\
  (iptable_filter, iptable_nat, iptable_mangle or iptable_raw) modules."
-	return ${ER_NOEX}
+	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
 
 ipt_restore() { # restore the firewall with iptables-restore
 if ((IPTSAVE_FAILS)); then
 	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
-	return ${ER_FAIL}
+	return $ER_FAIL
 fi
 local str_c="" str_file="${1:-${SAVE_FILE}}"
 if ((USE_COUNTERS)); then
@@ -872,11 +872,11 @@ if [[ -r ${SAVE_DIR}/${str_file} ]]; then
 		notice_msg "Iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
 	else
 		err_msg "Failed restoring iptables rules."
-		return ${ER_FAIL}
+		return $ER_FAIL
 	fi
 else
 	err_msg "\`${SAVE_DIR}/${str_file}' does not exist."
-	return ${ER_NOEX}
+	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
 
@@ -885,7 +885,7 @@ local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}"
 check_dirs BIN_DIR || return $?
 if ! bin_ok "${BIN_DIR}/${0##*/}"; then # check if $0 is good
 	err_msg "Cannot work with \`\$0' variable."
-	return ${ER_FAIL}
+	return $ER_FAIL
 fi
 ipt_save "$str_file" || return $? # save currently active ruleset
 if rvar=$(\
@@ -896,7 +896,7 @@ then
 	return 0
 else
 	err_msg "Failed scheduling the restore job."
-	return ${ER_FAIL}
+	return $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
 
@@ -946,7 +946,7 @@ bail_out ${1:-${ER_LOAD}}
 
 trap_err() {
 pr_str "ERROR trap activated - exiting"
-bail_out_restore ${ER_FAIL}
+bail_out_restore $ER_FAIL
 }
 
 trap_gen() {
@@ -978,7 +978,7 @@ trap "trap_gen TERM" TERM
 # -------------------------------------------------------------------------
 # check for valid main arg
 # -------------------------------------------------------------------------
-case "${MAIN_ARG}" in
+case "$MAIN_ARG" in
 	"") usage ;;
 	'-?'|-h|help|--help) shift ;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
@@ -987,7 +987,7 @@ case "${MAIN_ARG}" in
 		shift
 		if ((UID > 0)); then
 			err_msg "Root check FAILED. You MUST be root (UID 0) to use ${ME}."
-			bail_out ${ER_FAIL}
+			bail_out $ER_FAIL
 		fi
 	;;
 	version) printf "%s %s\n" "${ME}" "${STR_VERSION}"
@@ -1097,7 +1097,7 @@ while (($#)); do
 		-sh|--shell)
 			[[ -x ${opt_arg} ]] || {
 				pr_err "Shell binary \`${opt_arg}' does not exist, or is not executable."
-				bail_out ${ER_NOEX}
+				bail_out $ER_NOEX
 			}
 			export SHELL="${opt_arg}"
 		;;
@@ -1139,15 +1139,15 @@ done
 # -------------------------------------------------------------------------
 if [[ -r ${DEFAULTS_FILE:=/etc/${me}/defaults.conf} ]]; then 
 	if ((SYNTAX_CHECK)); then
-		check_syntax "${DEFAULTS_FILE}" || bail_out ${ER_LOAD}
+		check_syntax "${DEFAULTS_FILE}" || bail_out $ER_LOAD
 	fi
 else
 	pr_err "Defaults file \`${DEFAULTS_FILE}' does not exist!"
-	bail_out ${ER_NOEX}
+	bail_out $ER_NOEX
 fi
 source "${DEFAULTS_FILE}" || {
 	pr_err "Failed loading defaults. Ensure \`DEFAULTS_FILE' is correctly set."
-	bail_out ${ER_LOAD}
+	bail_out $ER_LOAD
 }
 
 # -------------------------------------------------------------------------
@@ -1201,17 +1201,17 @@ done
 # check for numeric defaults
 [[ ${VERBOSE} = [0-9] ]] || {
 	err_msg "\`VERBOSE' is not in range of 0-9."
-	bail_out ${ER_CONF}
+	bail_out $ER_CONF
 }
 [[ ${SYSLOG_VERBOSE} = [0-6] ]] || {
 	err_msg "\`SYSLOG_VERBOSE' is not in range of 0-6."
-	bail_out ${ER_CONF}
+	bail_out $ER_CONF
 }
 # check for boolean defaults
 for rvar in IPTSAVE_FAILS; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`${rvar}' is not in range of 0-1."
-		bail_out ${ER_CONF}
+		bail_out $ER_CONF
 	}
 done
 
@@ -1220,11 +1220,11 @@ done
 if ((TEST_MODE)); then
 	[[ ${RELOAD_TIME} = +([[:digit:]]) ]] || {
 		err_msg "Invalid value \`${RELOAD_TIME}' for \`RELOAD_TIME'."
-		bail_out ${ER_CONF}
+		bail_out $ER_CONF
 	}
 	((RELOAD_TIME > 1)) || {
 		err_msg "\`RELOAD_TIME' is lower than 1 minutes."
-		bail_out ${ER_CONF}
+		bail_out $ER_CONF
 	}
 	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
 fi
@@ -1233,10 +1233,10 @@ fi
 if ((IPTSAVE_FAILS)); then
 	NO_AUTOSAVE=1 # ... we can't do auto-saving
 	if [[ ${GEN_FORMAT} = ipt ]]; then # ... if we save in iptables-save format
-		case "${MAIN_ARG}" in
+		case "$MAIN_ARG" in
 			start|stop|open|restart|test|tc-start|tc-stop) # if we apply commands (in lockdown we hope it'll work, as just very basic rules)
 				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
-				bail_out ${ER_CONF}
+				bail_out $ER_CONF
 			;;
 			*) warn_msg "Saving is done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
 		esac
@@ -1279,15 +1279,15 @@ readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
 # -------------------------------------------------------------------------
 if ! [[ -f ${LIB_DIR}/${GLOBAL_DEFS} ]]; then
 	err_msg "Global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}' does not exist."
-	bail_out ${ER_NOEX}
+	bail_out $ER_NOEX
 fi
 verbose_msg "Loading global definitions: ${LIB_DIR}/${GLOBAL_DEFS}"
 if ((SYNTAX_CHECK)); then
-	check_syntax "${LIB_DIR}/${GLOBAL_DEFS}" || bail_out ${ER_LOAD}
+	check_syntax "${LIB_DIR}/${GLOBAL_DEFS}" || bail_out $ER_LOAD
 fi
 source "${LIB_DIR}/${GLOBAL_DEFS}" || {
 	err_msg "Failed loading global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}'."
-	bail_out ${ER_LOAD}
+	bail_out $ER_LOAD
 }
 set_env # reset possibly messed up env
 # set those arrays as read-only
@@ -1298,7 +1298,7 @@ readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES PORTSCAN_ARRRAY\
 # -------------------------------------------------------------------------
 # react according to main argument
 # -------------------------------------------------------------------------
-case "${MAIN_ARG}" in
+case "$MAIN_ARG" in
 	'-?'|-h|help|--help)
 		if ((SHOW_PUBFUNC_LIST)); then
 			if [[ ${STR_PUBFUNC_NAME} ]]; then
@@ -1413,7 +1413,7 @@ esac
 # In any other mode then 'START' or 'STOP' set to:
 # Exit immediately if a simple command exits with a non-zero status
 # -------------------------------------------------------------------------
-case "${MODE}" in
+case "$MODE" in
 	(START|STOP)
 		set +o errexit
 		trap - ERR
@@ -1426,17 +1426,17 @@ esac
 # -------------------------------------------------------------------------
 # load main config file
 # -------------------------------------------------------------------------
-if [[ ! -f ${MAIN_CONFIG} ]]; then
-	err_msg "Main configuration file \`${MAIN_CONFIG}' does not exist."
-	bail_out ${ER_NOEX}
+if [[ ! -f $MAIN_CONFIG ]]; then
+	err_msg "Main configuration file \`$MAIN_CONFIG' does not exist."
+	bail_out $ER_NOEX
 fi
-notice_msg "Loading ${RUNMODE} config: ${MAIN_CONFIG}"
+notice_msg "Loading $RUNMODE config: $MAIN_CONFIG"
 if ((SYNTAX_CHECK)); then
-	check_syntax "${MAIN_CONFIG}" || bail_out ${ER_LOAD}
+	check_syntax "$MAIN_CONFIG" || bail_out $ER_LOAD
 fi
-source "${MAIN_CONFIG}" || {
-	err_msg "Failed loading main configuration file \`${MAIN_CONFIG}'."
-	bail_out ${ER_LOAD}
+source "$MAIN_CONFIG" || {
+	err_msg "Failed loading main configuration file \`$MAIN_CONFIG'."
+	bail_out $ER_LOAD
 }
 set_env # reset possibly messed up env
 
@@ -1448,13 +1448,13 @@ for idx in ${!ARR_RTIME_OPTS[@]}; do
 		if [[ ${ARR_RTIME_OPTS[idx]%%=*} =	${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
 			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\"${ARR_RTIME_OPTS[idx]#*=}\" || {
 				err_msg "Failed overriding main configuration variable. Failed command: \`${ARR_RTIME_OPTS[idx]}'."
-				bail_out ${ER_FAIL}
+				bail_out $ER_FAIL
 			}
 			continue 2
 		fi
 	done
 	err_msg "Unknown main configuration variable \`${ARR_RTIME_OPTS[idx]%%=*}'"
-	bail_out ${ER_CONF}
+	bail_out $ER_CONF
 done
 
 # -------------------------------------------------------------------------
@@ -1463,42 +1463,42 @@ done
 for rvar in ${cmdline_show_conf}; do
 	case "${rvar}" in
 		defaults)
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of defaults configuration:" "${SEPSTR}"
+			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of defaults configuration:" "$SEPSTR"
 			for i in ${!IPARRAY_PROGRAMS[@]}; do
 				declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" 2>/dev/null || continue
 			done
 			for i in ${!DEFAULTS_LIST[@]}; do
 				declare -p "${DEFAULTS_LIST[i]}" 2>/dev/null || continue
 			done
-			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of defaults configuration summary." "${SEPSTR}"
+			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of defaults configuration summary." "$SEPSTR"
 		;;
 		main)
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of main configuration:" "${SEPSTR}"
+			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of main configuration:" "$SEPSTR"
 			for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 				declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" 2>/dev/null || continue
 			done
-			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of main configuration summary." "${SEPSTR}"
+			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of main configuration summary." "$SEPSTR"
 		;;
 		targets)
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of supported targets:" "${SEPSTR}"
+			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of supported targets:" "$SEPSTR"
 			for idx in ${!IPARRAY_TARGETS[@]}; do
 				set -- ${IPARRAY_TARGETS[idx]}
 				pr_str "${2}"
 			done
-			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of supported targets summary." "${SEPSTR}"
+			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of supported targets summary." "$SEPSTR"
 		;;
 		matches)
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of supported iptables matches:" "${SEPSTR}"
+			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of supported iptables matches:" "$SEPSTR"
 			for idx in ${!IPARRAY_MODULES[@]}; do
 				set -- ${IPARRAY_MODULES[idx]}
 				pr_str "${2}"
 			done
-			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of supported iptables matches summary." "${SEPSTR}"
+			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of supported iptables matches summary." "$SEPSTR"
 		;;
 		ipt_args)
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of iptables arguments list:" "${SEPSTR}"
+			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of iptables arguments list:" "$SEPSTR"
 			printf "%s\n" "${ARG_NAMES_LIST[@]}"
-			printf "%s\n%s\n%s\n\n" "${SEPSTR}" "# End of iptables arguments list." "${SEPSTR}"
+			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of iptables arguments list." "$SEPSTR"
 		;;
 		ruleblocks)
 			if ((PARSE_RULEBLOCKS == 0)); then
@@ -1557,7 +1557,7 @@ verbose_msg "Loading functions"
 for rvar in ${IPARRAY_FUNCTIONS}; do
 	source "${LIB_DIR}/${rvar}" || {
 		err_msg "loading functions file: \`${LIB_DIR}/${rvar}'."
-		exit ${ER_LOAD}
+		exit $ER_LOAD
 	}
 done
 set_env # reset possibly messed up env
@@ -1575,7 +1575,7 @@ check_kern_ver || bail_out $?
 # mutual exclusion - lock
 # -------------------------------------------------------------------------
 verbose_msg "Creating lockfile"
-if (set -C; >"${LOCKFILE}") &>/dev/null; then
+if (set -C; >"$LOCKFILE") &>/dev/null; then
 	pr_str "$PID" >"$LOCKFILE"
 else
 	pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("${CAT}" "$LOCKFILE")', is another instance of $ME running?"
@@ -1585,7 +1585,7 @@ fi
 # -------------------------------------------------------------------------
 # if in a MODE that could make use of auto-backup, save ruleset
 # -------------------------------------------------------------------------
-case "${MAIN_ARG}" in
+case "$MAIN_ARG" in
 	start|restart|open|tc-start) autosave || bail_out $? ;;
 esac
 

@@ -35,7 +35,7 @@
 # ------------------------------------------------------------------------- #
 
 val_state() { # validate state specifications
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str
 #check_str_unique "${1//,/ }" || return 1
 #for str in $(string_toupper "$(IFS=, split_val ${1})"); do
@@ -51,7 +51,7 @@ done
 } # -------------------------------------------------------------------------
 
 val_rej_type() { # validate reject target types
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 case "$(string_tolower "${1}")" in
 	tcp-reset)
 		if [[ ${2} != @(tcp|6) ]]; then
@@ -69,7 +69,7 @@ esac
 } # -------------------------------------------------------------------------
 
 validate_reject_type() { # validate reject target types
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$(string_tolower "${1}")" in
 	tcp-reset|icmp-net-unreachable|icmp-host-unreachable|icmp-port-unreachable|icmp-proto-unreachable|\
 icmp-net-prohibited|icmp-host-prohibited|icmp-admin-prohibited)
@@ -81,7 +81,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_limit() { # validate iptables limit match values
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local err_msg="Illegal limit specification \`${@}'."
 set -- ${@//\// }
 local limit_num=${1} limit_val=${2}
@@ -98,7 +98,7 @@ fi
 } # -------------------------------------------------------------------------
 
 val_icmp_type() { # validate an icmp type[/code]
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local icmptype="${1}"
 local itc
 case "${icmptype}" in
@@ -125,7 +125,7 @@ return 0
 } # -------------------------------------------------------------------------
 
 val_proto() { # validate protocol specifications
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local val_prot="${1}"
 local -i p_idx return_code=0
 case "$(string_tolower "${val_prot}")" in
@@ -151,7 +151,7 @@ return ${return_code}
 } # -------------------------------------------------------------------------
 
 val_loglevel() { # validate syslog loglevel values
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$(string_tolower "${1}")" in
 	[[:digit:]])
 		if ((${1} < 0 || ${1} > 7)); then
@@ -172,7 +172,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_tos() { # validate TOS specifications allowed within iptables
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$(string_tolower "${1}")" in
 	minimize-delay|maximize-throughput|maximize-reliability|minimize-cost|normal-service)
 		return 0
@@ -186,7 +186,7 @@ esac
 } # -------------------------------------------------------------------------
 
 validate_target() { # target name validation
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "${1}" in
 	# catch some known
 	ACCEPT|DROP|RETURN) return 0 ;;
@@ -204,7 +204,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_table() { # validate iptables table names
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "${1}" in
 	filter|nat)
 		(($(subst_var "ENABLE_$(string_toupper "${1}")") == 1)) || {
@@ -253,7 +253,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_builtin_chain() { # validate iptables builtin chain names
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local err_msg="Illegal iptables chain name: \`${2}'."
 case "${1}" in
 	filter|security) [[ ${2} != @(INPUT|OUTPUT|FORWARD) ]] || return 0 ;;
@@ -275,7 +275,7 @@ return 1
 } # -------------------------------------------------------------------------
 
 val_userdef_chain_target() { # validate a user defined iptables chain or target name
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_tgt="${1}"
 [[ ${str_tgt} = goto:* ]] && str_tgt="${str_tgt#goto:}"
 ((${#str_tgt} > 30)) && {
@@ -304,7 +304,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_policy_target() { # validate iptables policy targets
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "${1}" in
 	ACCEPT|DROP) return 0 ;;
 	*) log -E "Illegal iptables policy target: \`${1}'."
@@ -313,7 +313,7 @@ esac
 } # -------------------------------------------------------------------------
 
 val_limit_burst() {
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 val_numeric_quiet "${1}" || {
 	log -E "Invalid burst value \`${1}'."
 	return 1
@@ -321,7 +321,7 @@ val_numeric_quiet "${1}" || {
 } # -------------------------------------------------------------------------
 
 val_icmp_types() { # validate a multiple icmp types string
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local i_type str_i_types="$(IFS=, split_val ${@/ })"
 local i_type str_i_types="${@//,/ }"
 check_multi_negation ${str_i_types} || return 1
@@ -331,7 +331,7 @@ done
 } # -------------------------------------------------------------------------
 
 validate_nat_ip() { # validate the ip address of a nat ip definition
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_ip str_natip="${1}"
 string_negated "${str_natip}" && {
 	log -E "Negating NAT source or destination IP is not allowed."
@@ -341,13 +341,13 @@ for str_ip in ${str_natip//-/ }; do val_ip4_addr ${str_ip} || return 1; done
 } # -------------------------------------------------------------------------
 
 val_nat_port() { # validate nat port specifications
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local nport
 for nport in ${1//-/ }; do val_port ${nport} || return 1; done
 } # -------------------------------------------------------------------------
 
 val_port() { # validate port specifications
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${1} = ':' ]] && return 0
 if [[ ${1} = @(+([[:digit:]]):*([[:digit:]])) ]]; then
 	local val_port="${1/:/ }"
@@ -389,7 +389,7 @@ done
 } # -------------------------------------------------------------------------
 
 val_set_flags() {
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 oIFS="$IFS"
 IFS=,
 set -- ${1}
@@ -407,7 +407,7 @@ ipt() {
 } # -------------------------------------------------------------------------
 
 add_rule() { # add iptables commands to the command array
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_tbl="${1}" str_chn="${2}"
 shift 2
 local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
@@ -415,13 +415,13 @@ if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
 	eval ${str_arr}[$(arr_members_sum ${str_arr})]='"-t ${str_tbl} -A ${str_chn} ${@//$'\t'/}"'
 else
 	log -E "Illegal iptables table name: \`${str_tbl}'."
-	return ${ER_CONF}
+	return $ER_CONF
 fi
 #IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -A ${str_chn} "${@//$'\t'/}""
 } # -------------------------------------------------------------------------
 
 insert_ipt_rule() {
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_tbl="${1}" str_chn="${2}"
 shift 2
 local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
@@ -430,14 +430,14 @@ if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
 #	${str_arr}[$(arr_members_sum "${str_arr}")]="\"${IPT}\" -t ${str_tbl} -I ${str_chn} "${@//$'\t'/}""
 else
 	log -E "Illegal iptables table name: \`${str_tbl}'."
-	return ${ER_CONF}
+	return $ER_CONF
 fi
-#val_table "${str_tbl}" || return ${ER_CONF}
+#val_table "${str_tbl}" || return $ER_CONF
 #IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -I ${str_chn} "${@//$'\t'/}""
 } # -------------------------------------------------------------------------
 
 create_chain() { # create an iptables chain
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_tbl="${1}" str_chain="${2}" str_silent="${3}"
 local -i c_idx
 val_table "${str_tbl}" || {
@@ -464,7 +464,7 @@ CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
 } # -------------------------------------------------------------------------
 
 #delete_chain() { # delete an iptables chain
-#[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+#[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 #local str_tbl="${1}" str_chain="${2}"
 #local -i c_idx
 #val_table "${str_tbl}" || {
@@ -501,7 +501,7 @@ if ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
 else
 	if ((mandatory == 1)); then
 		log -E "iptables target \`${ttarget}' does not exist."
-		return ${ER_FAIL}
+		return $ER_FAIL
 	else
 		set_var ${ttarget}_TGT_EXIST 0 # target does not exist, set according variable to 0
 		log -W "iptables target \`${ttarget}' does not exist."
@@ -523,7 +523,7 @@ if ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
 else
 	if ((mandatory == 1)); then
 		log -E "iptables module \`${tmod}' does not exist."
-		return ${ER_FAIL}
+		return $ER_FAIL
 	else
 		set_var "${tmod}_MOD_EXIST" 0 # module does not exist, set according variable to 0
 		log -W "iptables module \`${tmod}' does not exist."
@@ -545,7 +545,7 @@ if ((NO_IPT_COMPAT_CHECK)); then
 else
 	log -I "Checking for iptables targets"
 	for t_idx in ${!IPARRAY_TARGETS[@]}; do
-		val_ipt_tgt ${IPARRAY_TARGETS[t_idx]} || return ${?}
+		val_ipt_tgt ${IPARRAY_TARGETS[t_idx]} || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -563,7 +563,7 @@ if ((NO_IPT_COMPAT_CHECK)); then
 else
 	log -I "Checking for iptables match extension"
 	for m_idx in ${!IPARRAY_MODULES[@]}; do
-		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return ${?}
+		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -596,9 +596,9 @@ done < "${IP_TABLES_NAMES}"
 } # -------------------------------------------------------------------------
 
 flush_table() { # flush all chains in a specified table
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local tgt_tbl="${1}"
-val_table "${tgt_tbl}" || return ${?}
+val_table "${tgt_tbl}" || return $?
 local c chain rest
 log -S "Flushing chains in "${tgt_tbl}" table"
 while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
@@ -618,12 +618,12 @@ if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
 	ipt -nL &>/dev/null || {
 		log -E "Failed to initialize iptables"
-		return ${ER_FAIL}
+		return $ER_FAIL
 	}
 fi
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -E "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded."
-	return ${ER_FAIL}
+	return $ER_FAIL
 fi
 while read -t ${GLOBAL_READ_TIMEOUT} table; do
 	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
@@ -648,12 +648,12 @@ if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 #	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
 #	ipt -nL &>/dev/null || {
 #		log -E "Failed to initialize iptables"
-#		return ${ER_FAIL}
+#		return $ER_FAIL
 #	}
 fi
 #if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 #	log -E "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded."
-#	return ${ER_FAIL}
+#	return $ER_FAIL
 #fi
 while read -t ${GLOBAL_READ_TIMEOUT} table; do
 	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
@@ -705,7 +705,7 @@ END_OF_FUNC
 } # -------------------------------------------------------------------------
 
 test_chain() { # create / delete an iptables testing chain
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 case "${1}" in
 	create)
@@ -723,7 +723,7 @@ case "${1}" in
 			else
 				ipt -t ${rvar} -N ${BIC_TEST_CHAIN} || {
 					log -E "Failed creating chain ${BIC_TEST_CHAIN} in ${rvar} table"
-					return ${ER_FAIL}
+					return $ER_FAIL
 				}
 			fi
 		done
@@ -781,19 +781,19 @@ set_global_log_params() { # set default log parameters, if they are not set by t
 #	log -N "\`LOG_PREFIX' is not configured, setting it to the default value: \`IPT_BLOCK_'"
 #fi
 if [[ ${GLOBAL_LOGLIMIT} ]]; then
-	val_limit "${GLOBAL_LOGLIMIT}" || return ${ER_CONF}
+	val_limit "${GLOBAL_LOGLIMIT}" || return $ER_CONF
 else
 	GLOBAL_LOGLIMIT="1/s"
 	log -N "\`GLOBAL_LOGLIMIT' is not configured, setting it to the default value: \`1/s'"
 fi
 if [[ ${GLOBAL_BURSTLIMIT} ]]; then
-	val_limit_burst "${GLOBAL_BURSTLIMIT}" || return ${ER_CONF}
+	val_limit_burst "${GLOBAL_BURSTLIMIT}" || return $ER_CONF
 else
 	GLOBAL_BURSTLIMIT="3"
 	log -N "\`GLOBAL_BURSTLIMIT' is not configured, setting it to the default value: \`3'"
 fi
 if [[ ${GLOBAL_LOGLEVL} ]]; then
-	val_loglevel "${GLOBAL_LOGLEVL}" || return ${ER_CONF}
+	val_loglevel "${GLOBAL_LOGLEVL}" || return $ER_CONF
 else
 	GLOBAL_LOGLEVL="INFO"
 	log -N "\`GLOBAL_BURSTLIMIT' is not configured, setting it to the default value: \`INFO'"
@@ -851,7 +851,7 @@ load_known_traffic_map() {
 [[ ${KNOWN_TRAFFIC_MAP} ]] || return 0
 log -w "Loading KNOWN_TRAFFIC_MAP"
 fill_array 'KNOWN_TRAFFIC_MAP'
-((${#KNOWN_TRAFFIC_MAP[@]} > 0)) || {
+((${#KNOWN_TRAFFIC_MAP[@]})) || {
 	log -u 'KNOWN_TRAFFIC_MAP'
 	return 0
 }
@@ -867,7 +867,7 @@ fill_final_rule_map() { # fill FINAL_RULE_MAP array
 if [[ ${FINAL_RULE_MAP} ]]; then
 	log -w "Loading FINAL_RULE_MAP"
 	fill_array 'FINAL_RULE_MAP'
-	((${#FINAL_RULE_MAP[@]} > 0)) || return 0
+	((${#FINAL_RULE_MAP[@]})) || return 0
 	check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
 		log -E "Duplicate chain name in \`FINAL_RULE_MAP'."
 		raise_cfg_err_count
@@ -888,7 +888,7 @@ if [[ ${str_tables} ]]; then
 	check_str_unique "${str_tables}" || {
 		log -i "${JUMP_TREE}" 'JUMP_TREE'
 		raise_cfg_err_count
-		return ${ER_CONF}
+		return $ER_CONF
 	}
 fi
 #JUMP_TREE=(
@@ -914,7 +914,7 @@ case "${str_mode}" in
 	;;
 	*) log -i "${str_mode}" 'JUMP_TREE'
 		raise_cfg_err_count
-		return ${ER_CONF}
+		return $ER_CONF
 esac
 JUMP_TREE[1]="${str_mode}"
 case "${str_tables}" in
@@ -935,12 +935,12 @@ case "${str_tables}" in
 			val_table "${str_tbl}" || {
 				log -i "${str_tables}" 'JUMP_TREE'
 				raise_cfg_err_count
-				return ${ER_CONF}
+				return $ER_CONF
 			}
 			JUMP_TREE[2]+="${str_tbl} "
 		done
 esac
-if [[ ${DEBUG_INFO} ]]; then dbg_arr JUMP_TREE; fi
+if [[ $DEBUG_INFO ]]; then dbg_arr JUMP_TREE; fi
 } # -------------------------------------------------------------------------
 
 jump_tree_on() {
@@ -952,7 +952,7 @@ JUMP_TREE[0]=0
 } # -------------------------------------------------------------------------
 
 set_policy() { # set iptables policies
-[[ ${3} ]] || { reqparm ${FUNCNAME} 3; return 1; }
+[[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
 local pol_table="${1}" pol_chain="${2}" pol_policy="${3}"
 #IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${pol_table} -P ${pol_chain} ${pol_policy}"
 IPT_POL_ARRAY[${#IPT_POL_ARRAY[@]}]="-t ${pol_table} -P ${pol_chain} ${pol_policy}"
@@ -962,24 +962,24 @@ load_policy_map() { # load the global policies from user defined array
 if [[ ${POLICY_MAP} ]]; then
 	log -w "Loading POLICY_MAP"
 	fill_array 'POLICY_MAP'
-	((${#POLICY_MAP[@]} > 0)) || {
+	((${#POLICY_MAP[@]})) || {
 		log -u 'POLICY_MAP'
 		raise_cfg_err_count
-		return ${ER_NODEF}
+		return $ER_NODEF
 	}
 	check_array_unique 'POLICY_MAP' || {
 		raise_cfg_err_count
-		return ${ER_FAIL}
+		return $ER_FAIL
 	}
 	readonly POLICY_MAP
 else
 	log -u 'POLICY_MAP'
-	return ${ER_NODEF}
+	return $ER_NODEF
 fi
 } # -------------------------------------------------------------------------
 
 get_policy() {
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local -i pm_idx
 local str_tbl="${1}" str_chn="${2}"
 for pm_idx in ${!POLICY_MAP[@]}; do
@@ -996,12 +996,12 @@ return 1
 
 get_output_policy() { # query OUTPUT chains policy
 log -w "querying OUTPUT policy"
-OUTPUT_POLICY=$(get_policy filter OUTPUT) || return ${ER_NODEF}
+OUTPUT_POLICY=$(get_policy filter OUTPUT) || return $ER_NODEF
 readonly OUTPUT_POLICY
 } # -------------------------------------------------------------------------
 
 policy_all_en_disable() { # set all policies to accept or drop
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local pol=${1}
 local ipt_table ipt_chain
 log -T "Setting policies to ${pol}"
@@ -1014,7 +1014,7 @@ while read -t ${GLOBAL_READ_TIMEOUT} ipt_table; do
 		if [[ ${ipt_chain} = Chain@([[:space:]])+([[:upper:]])@([[:space:]])\(policy@([[:space:]])+([[:upper:]])\) ]]
 		then
 			set -- ${ipt_chain}
-			set_policy ${ipt_table} ${2} ${pol} || return ${?}
+			set_policy ${ipt_table} ${2} ${pol} || return $?
 		fi
 	done < <(ipt -t ${ipt_table} -nL)
 done < "${IP_TABLES_NAMES}"
@@ -1023,10 +1023,10 @@ done < "${IP_TABLES_NAMES}"
 set_global_policies() { # set global policies
 local -i idx
 log -S "Setting global policies"
-if ! ((${#POLICY_MAP[@]} > 0)); then
+if ! ((${#POLICY_MAP[@]})); then
 	log -r 'POLICY_MAP'
 	raise_cfg_err_count
-	return ${ER_NODEF}
+	return $ER_NODEF
 fi
 for idx in ${!POLICY_MAP[@]}; do
 	set -- ${POLICY_MAP[idx]}
@@ -1039,7 +1039,7 @@ for idx in ${!POLICY_MAP[@]}; do
 		log -W "It's not advisable to use a DROP policy for a non filter/security table chain."
 	fi
 	log -e "${PF}setting policy: table=${str_tbl} chain=${str_chn} policy=${str_policy}"
-	set_policy ${str_tbl} ${str_chn} ${str_policy} || return ${?}
+	set_policy ${str_tbl} ${str_chn} ${str_policy} || return $?
 done
 } # -------------------------------------------------------------------------
 
@@ -1051,7 +1051,7 @@ case "${RESTRICT_OUTPUT:=0}" in
 		if [[ ${OUTPUT_POLICY} = ACCEPT ]]; then
 			log -E "\`RESTRICT_OUTPUT' is set to \`${RESTRICT_OUTPUT}', but OUTPUT policy is set to ACCEPT."
 			raise_cfg_err_count
-			return ${ER_CONF}
+			return $ER_CONF
 		fi
 		OUTPUT_RULES_REQUIRED=0
 		NO_OUTPUT_MSG="RESTRICT_OUTPUT is set to \`${RESTRICT_OUTPUT}', not applying additional OUTPUT allow rules."
@@ -1066,19 +1066,19 @@ case "${RESTRICT_OUTPUT:=0}" in
 		if [[ ${OUTPUT_POLICY} = ACCEPT ]]; then
 			log -E "\`RESTRICT_OUTPUT' is set to \`1', but OUTPUT policy is set to ACCEPT."
 			raise_cfg_err_count
-			return ${ER_CONF}
+			return $ER_CONF
 		fi
 	;;
 	*) log -i "${RESTRICT_OUTPUT}" 'RESTRICT_OUTPUT'
 		raise_cfg_err_count
-		return ${ER_CONF}
+		return $ER_CONF
 esac
 if [[ ${NO_OUTPUT_MSG} ]]; then log -N "${NO_OUTPUT_MSG}"; fi
 } # -------------------------------------------------------------------------
 
 output_rules_required_msg() # display a notice message, if additional output rules are not required
 {
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local msg_mode="${1}" config_var="${2}"
 case "${msg_mode}" in
 	auto)
@@ -1117,7 +1117,7 @@ esac
 #iface_chains() {
 ## create chains per interface and the tables builtin chains
 ## and create cross interface chains (each IF -> each other IF)
-#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local iface oif str_chn
 #local -a ARR_CLIST
 #log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${1} table"
@@ -1182,7 +1182,7 @@ esac
 iface_chains() {
 # create chains per interface and the tables builtin chains
 # and create cross interface chains (each IF -> each other IF)
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local iface oif str_chn
 local -a ARR_CLIST
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${1} table"
@@ -1235,7 +1235,7 @@ done
 } # -------------------------------------------------------------------------
 
 #iface_jumps() { # create iptables cross interface jump entries
-#[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local str_tbl="${1}" iface oif str_jmsg str_chn str_tgt
 #local -i i idx
 #local -a arr_jcmd
@@ -1328,7 +1328,7 @@ done
 #} # -------------------------------------------------------------------------
 
 iface_jumps() { # create iptables cross interface jump entries
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_tbl="${1}" iface oif str_jmsg str_chn str_tgt
 local -i i idx
 local -a arr_jcmd
@@ -1403,7 +1403,7 @@ done
 } # -------------------------------------------------------------------------
 
 create_netname_chains() { # create traffic classification chains by netname or netname+interface
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_tbl="${1}" str_net str_onet str_clist str_cilist str_chn str_net_iface str_onet_iface
 local -i multi_bound
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
@@ -1575,7 +1575,7 @@ done
 } # -------------------------------------------------------------------------
 
 create_netname_jumps() { # create netname or netname+interface dependant traffic classification jumps
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_tbl="${1}" str str_net_data str_net str_net_iface str_netaddr str_clist str_chn str_onet str_onetaddr str_onetiface
 local str_param str_chn str_tgt str_i str_p str_jmsg str_if_done_list
 local -i i idx ridx multi_bound
@@ -1591,7 +1591,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && {
 		log -E "Jump tree creation in \`${JUMP_TREE[1]}' does not support virtual interfaces on external networks."
 		raise_cfg_err_count
-		return ${ER_CONF}
+		return $ER_CONF
 }
 	case "${str_tbl}" in
 		raw)
@@ -1735,7 +1735,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
-								return ${ER_FAIL}
+								return $ER_FAIL
 							fi
 							str_onetiface="$(get_net_iface ${str_onet})"
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
@@ -1759,7 +1759,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
-								return ${ER_FAIL}
+								return $ER_FAIL
 							fi
 							str_onetiface="$(get_net_iface ${str_onet})"
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
@@ -1794,7 +1794,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
-								return ${ER_FAIL}
+								return $ER_FAIL
 							fi
 							str_onetiface="$(get_net_iface ${str_onet})"
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
@@ -1850,7 +1850,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 						if [[ -z ${str_onetaddr} ]]; then
 							log -E "Unable to retrieve data of network \`${str_onet}'."
 							raise_gen_err_count
-							return ${ER_FAIL}
+							return $ER_FAIL
 						fi
 						str_onetiface="$(get_net_iface ${str_onet})"
 						[[ ${str_net_iface} = ${str_onetiface} ]] && continue
@@ -1883,7 +1883,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 						if [[ -z ${str_onetaddr} ]]; then
 							log -E "Unable to retrieve data of network \`${str_onet}'."
 							raise_gen_err_count
-							return ${ER_FAIL}
+							return $ER_FAIL
 						fi
 						str_onetiface="$(get_net_iface ${str_onet})"
 						[[ ${str_net_iface} = ${str_onetiface} ]] && continue
@@ -1962,12 +1962,12 @@ load_rule_file() {
 # - parse iptables xml rule file (if needed)
 # - transform the rules into a bash script
 # - source compiled file
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local rule_file="${RULE_DIR}/${1}" parsed_file="${RULE_DIR}/__parsed_${1%.xml}.bash"
 local -i parse_files=${PARSE_RULEFILES}
 [[ -r ${rule_file} ]] || {
 	log -x "${rule_file}"
-	return ${ER_NOEX}
+	return $ER_NOEX
 }
 if [[ -r ${parsed_file} ]]; then
 	if ((parse_files == 0)); then
@@ -1981,7 +1981,7 @@ if ((parse_files == 1)); then
 	if [[ -e ${parsed_file} ]]; then
 		"${RM}" -f "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
-			return ${ER_FAIL}
+			return $ER_FAIL
 		}
 	fi
 	exec 7> "${parsed_file}"
@@ -2004,7 +2004,7 @@ fi
 load_filter_rules() { # Load the filter table rule files
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2012,7 +2012,7 @@ fi
 load_security_rules() { # Load the security table rule files
 if ((ENABLE_SECURITY)); then
 	for rvar in ${SECURITY_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2020,7 +2020,7 @@ fi
 load_nat_rules() { # Load the nat table rule files
 if ((ENABLE_NAT)); then
 	for rvar in ${NAT_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2028,7 +2028,7 @@ fi
 load_mangle_rules() { # Load the mangle table rule files
 if ((ENABLE_MANGLE)); then
 	for rvar in ${MANGLE_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2036,7 +2036,7 @@ fi
 load_raw_rules() { # Load the raw table rule files
 if ((ENABLE_RAW)); then
 	for rvar in ${RAW_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2044,25 +2044,25 @@ fi
 load_rawpost_rules() { # Load the rawpost table rule files
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${RAWPOST_RULES}; do
-		load_rule_file "${rvar}" || return ${?}
+		load_rule_file "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
 
 load_all_ipt_rulefiles() { # load all rule files
 log -T "Loading rule files"
-load_raw_rules || return ${?}
-load_rawpost_rules || return ${?}
-load_mangle_rules || return ${?}
-load_nat_rules || return ${?}
-load_filter_rules || return ${?}
-load_security_rules || return ${?}
+load_raw_rules || return $?
+load_rawpost_rules || return $?
+load_mangle_rules || return $?
+load_nat_rules || return $?
+load_filter_rules || return $?
+load_security_rules || return $?
 } # -------------------------------------------------------------------------
 
 load_filter_ruleblocks() {
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2070,7 +2070,7 @@ fi
 load_security_ruleblocks() {
 if ((ENABLE_SECURITY)); then
 	for rvar in ${SECURITY_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2078,7 +2078,7 @@ fi
 load_mangle_ruleblocks() {
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${MANGLE_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2086,7 +2086,7 @@ fi
 load_nat_ruleblocks() {
 if ((ENABLE_NAT)); then
 	for rvar in ${NAT_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2094,7 +2094,7 @@ fi
 load_raw_ruleblocks() {
 if ((ENABLE_RAW)); then
 	for rvar in ${RAW_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2102,7 +2102,7 @@ fi
 load_rawpost_ruleblocks() {
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${RAWPOST_RULEBLOCKS}; do
-		load_ruleblock_conf "${rvar}" || return ${?}
+		load_ruleblock_conf "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2116,11 +2116,11 @@ local str_tbl str_chn
 }
 log -I "Creating custom chains"
 fill_array 'CHAIN_MAP'
-((${#CHAIN_MAP[@]} > 0)) || return 0
+((${#CHAIN_MAP[@]})) || return 0
 # check for unique rows in CHAIN_MAP
 check_array_unique 'CHAIN_MAP' || {
 	raise_cfg_err_count
-	return ${ER_FAIL}
+	return $ER_FAIL
 }
 for idx in ${!CHAIN_MAP[@]}; do
 	set -- ${CHAIN_MAP[idx]}
@@ -2163,7 +2163,7 @@ global_broadcasts_chain
 } # -------------------------------------------------------------------------
 
 classification_chains() {
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${JUMP_TREE[1]} = none || -z ${JUMP_TREE[2]} ]] && return 0
 local str_act="${1}" str_ctbl="${2}"
 local str_err="\`${str_ctbl}' table is not present on local system, unable to create classifying ${str_act} for this table."
@@ -2235,20 +2235,20 @@ esac
 } # -------------------------------------------------------------------------
 
 create_jump_tree() { # create all jump tree chains or jumps
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "${1}" in
 	chains|jumps) : ;;
 	*) log -o "${1}" ${FUNCNAME} || return 1
 esac
 for rvar in raw rawpost mangle nat filter security ; do
-	classification_chains ${1} ${rvar} || return ${?}
+	classification_chains ${1} ${rvar} || return $?
 done
 } # -------------------------------------------------------------------------
 
 all_chains_creation() {
-create_jump_tree 'chains' || return ${?}
-create_mandatory_chains || return ${?}
-create_custom_chains || return ${?}
+create_jump_tree 'chains' || return $?
+create_mandatory_chains || return $?
+create_custom_chains || return $?
 } # -------------------------------------------------------------------------
 
 #list_count_chain() {
@@ -2395,18 +2395,18 @@ allow_loopback_immediate &>/dev/null
 } # -------------------------------------------------------------------------
 
 ipt_mode_run() { # complete loading prerun
-set_chain_classifiction || return ${?}
-load_policy_map || return ${ER_FAIL}
-get_output_policy || return ${ER_FAIL}
-set_output_rule_mode || return ${?}
-fill_net_arrays || return ${?}
+set_chain_classifiction || return $?
+load_policy_map || return $ER_FAIL
+get_output_policy || return $ER_FAIL
+set_output_rule_mode || return $?
+fill_net_arrays || return $?
 load_known_traffic_map
 fill_final_rule_map
-load_all_templates || return ${?}
-load_all_ruleblocks || return ${?}
-set_global_policies || return ${?}
-flushdel_tables || return ${?}
-allow_loopback || return ${?}
+load_all_templates || return $?
+load_all_ruleblocks || return $?
+set_global_policies || return $?
+flushdel_tables || return $?
+allow_loopback || return $?
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -2432,7 +2432,7 @@ for tmp_arr_idx in ${!tmp_template_arr[@]}; do
 		template_msg)
 			log -E "\`template_msg' is not allowed in \`load_template'."
 			raise_cfg_err_count
-			return ${ER_CONF}
+			return $ER_CONF
 		;;
 		table|reverse_mode|reverse_condition)
 			# check if referencing template has such a record, if yes, don't use the template data
@@ -2486,15 +2486,15 @@ for tmp_arr_idx in ${!tmp_template_arr[@]}; do
 		;;
 	esac
 done
-((${#tmp_tgt_arr[@]} > 0)) && insert_array 'tmp_tgt_arr' 'target'
-((${#tmp_chn_arr[@]} > 0)) && insert_array 'tmp_chn_arr' 'chain'
-((${#tmp_opt0_arr[@]} > 0)) && insert_array 'tmp_opt0_arr' 'option_list_0'
-((${#tmp_opt1_arr[@]} > 0)) && insert_array 'tmp_opt1_arr' 'option_list_1'
-((${#tmp_aluse0_arr[@]} > 0)) && insert_array 'tmp_aluse0_arr' 'always_use_0'
-((${#tmp_aluse1_arr[@]} > 0)) && insert_array 'tmp_aluse1_arr' 'always_use_1'
-if ((${#tmp_loadtmpl_arr[@]} > 0)); then
+((${#tmp_tgt_arr[@]})) && insert_array 'tmp_tgt_arr' 'target'
+((${#tmp_chn_arr[@]})) && insert_array 'tmp_chn_arr' 'chain'
+((${#tmp_opt0_arr[@]})) && insert_array 'tmp_opt0_arr' 'option_list_0'
+((${#tmp_opt1_arr[@]})) && insert_array 'tmp_opt1_arr' 'option_list_1'
+((${#tmp_aluse0_arr[@]})) && insert_array 'tmp_aluse0_arr' 'always_use_0'
+((${#tmp_aluse1_arr[@]})) && insert_array 'tmp_aluse1_arr' 'always_use_1'
+if ((${#tmp_loadtmpl_arr[@]})); then
 	for ((tmp_arr_idx=$(last_arr_member tmp_loadtmpl_arr); tmp_arr_idx>=0; --tmp_arr_idx)); do
-		_load_another_ipt_template "${tmp_loadtmpl_arr[tmp_arr_idx]}" || return ${?}
+		_load_another_ipt_template "${tmp_loadtmpl_arr[tmp_arr_idx]}" || return $?
 	done
 fi
 return 0
@@ -2541,14 +2541,14 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 		continue
 	}
 	# load other templates
-	if ((${#load_template[@]} > 0)); then
+	if ((${#load_template[@]})); then
 		for ((opt_idx=$(last_arr_member load_template); opt_idx>=0; --opt_idx)); do
 			_load_another_ipt_template "${load_template[opt_idx]}" || return 1
 		done
 	fi
 
 	# check if there is at least one option list provided in the template
-	if ((${#option_list_0[@]} > 0)); then
+	if ((${#option_list_0[@]})); then
 		check_array_unique_assignement 'option_list_0' || {
 			raise_cfg_err_count
 			continue
@@ -2560,7 +2560,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 #			return 1
 		}
 
-		((${#option_list_1[@]} > 0)) && {
+		((${#option_list_1[@]})) && {
 			log -E "\`option_list_1' has members but \`option_list_0' is empty."
 			raise_cfg_err_count
 			continue
@@ -2583,7 +2583,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 
 	# look for target definitions in the template. If found validate the provided data.
-	if ((${#target[@]} > 0)); then
+	if ((${#target[@]})); then
 		check_array_unique 'target' || {
 			raise_cfg_err_count
 			continue
@@ -2598,7 +2598,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 
 	# look for chain defintions in the template. If found validate the provided data.
-	if ((${#chain[@]} > 0)); then
+	if ((${#chain[@]})); then
 		if [[ ${reverse_mode} = @(reverse|mirror) ]]; then
 			# Only two chain specifications are allowed
 			(($(last_arr_member 'chain') > 1)) && {
@@ -2622,7 +2622,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 
 	# look for state match definitions in the template. If found, validate the provided data.
 	# index [0] refers to chain[0] and index [1] to chain[1].
-	if ((${#state_match_arg[@]} > 0)); then
+	if ((${#state_match_arg[@]})); then
 		# Only two state match specifications are allowed
 		(($(last_arr_member 'state_match_arg') > 1)) && {
 			log -E "Not more than two state match specification strings allowed."
@@ -2639,7 +2639,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 
 	# look for mandatory options defintions in the template. If found validate the provided data.
-	if ((${#mandatory_vars[@]} > 0)); then
+	if ((${#mandatory_vars[@]})); then
 		# Only two mandatory options specifications are allowed
 		(($(last_arr_member 'mandatory_vars') > 1)) && {
 			log -E "Not more than two mandatory option specification strings allowed."
@@ -2661,7 +2661,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	if [[ ${reverse_mode} ]]; then
 		case "$(string_tolower "${reverse_mode}")" in
 			reverse) # option is reverse, check for valid option_list_1 
-				if ((${#option_list_1[@]} > 0)); then
+				if ((${#option_list_1[@]})); then
 					check_array_unique_assignement 'option_list_1' || {
 						raise_cfg_err_count
 						continue
@@ -2697,14 +2697,14 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 
 	# always_use options
-	((${#always_use_0[@]} > 0)) && {
+	((${#always_use_0[@]})) && {
 		check_array_unique_assignement 'always_use_0' || {
 			raise_cfg_err_count
 			continue
 		}
 	}
-	if ((${#always_use_1[@]} > 0)); then
-		((${#always_use_0[@]} > 0)) || {
+	if ((${#always_use_1[@]})); then
+		((${#always_use_0[@]})) || {
 			log -E "\' always_use_1' has members, but \`always_use_0' is empty."
 			raise_cfg_err_count
 			continue
@@ -2761,13 +2761,13 @@ load_ipt_templates() {
 # - load nested templates
 # - compile final bash arrays templates
 # - source compiled file
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local template_file="${TEMPLATE_DIR}/${1}" parsed_file="${TEMPLATE_DIR}/__parsed_${1%.xml}.bash"
 local -i parse_files=${PARSE_TEMPLATES}
 local -a TEMP_TEMPLATE_NAMES_ARRAY
 [[ -r ${template_file} ]] || {
 	log -x "${template_file}"
-	return ${ER_NOEX}
+	return $ER_NOEX
 }
 if [[ -r ${parsed_file} ]]; then
 	if ((parse_files == 0)); then
@@ -2781,7 +2781,7 @@ if ((parse_files == 1)); then
 	if [[ -e ${parsed_file} ]]; then
 		"${RM}" -f "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
-			return ${ER_FAIL}
+			return $ER_FAIL
 		}
 	fi
 	exec 7> "${parsed_file}"
@@ -2804,7 +2804,7 @@ if ((parse_files == 1)); then
 		return ${ER_LOAD}
 	}
 	exec 7>&-
-	[[ ${DEBUG_INFO} ]] && dbg_arr "TEMP_TEMPLATE_NAMES_ARRAY"
+	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_TEMPLATE_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_TEMPLATE_NAMES_ARRAY[@]} templates"
 	log -w "Saved parsed template file to: \`${parsed_file}'"
 fi
@@ -2829,14 +2829,14 @@ fi
 
 load_base_templates() { # load ipt base templates
 for rvar in ${BASE_TEMPLATES}; do
-	load_ipt_templates "${rvar}" || return ${?}
+	load_ipt_templates "${rvar}" || return $?
 done
 } # -------------------------------------------------------------------------
 
 load_ipt_filter_templates() { # load ipt filter templates
 if ((ENABLE_FILTER)); then
 	for rvar in ${IPT_FILTER_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2844,7 +2844,7 @@ fi
 load_ipt_security_templates() { # load ipt security templates
 if ((ENABLE_SECURITY)); then
 	for rvar in ${IPT_SECURITY_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2852,7 +2852,7 @@ fi
 load_ipt_mangle_templates() { # load ipt mangle templates
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${IPT_MANGLE_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2860,7 +2860,7 @@ fi
 load_ipt_nat_templates() { # load ipt nat templates
 if ((ENABLE_NAT)); then
 	for rvar in ${IPT_NAT_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2868,7 +2868,7 @@ fi
 load_ipt_raw_templates() { # load ipt raw templates
 if ((ENABLE_RAW)); then
 	for rvar in ${IPT_RAW_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2876,19 +2876,19 @@ fi
 load_ipt_rawpost_templates() { # load ipt rawpost templates
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${IPT_RAWPOST_TEMPLATES}; do
-		load_ipt_templates "${rvar}" || return ${?}
+		load_ipt_templates "${rvar}" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
 
 load_all_templates() { # load all templates
-load_base_templates || return ${?}
-load_ipt_filter_templates || return ${?}
-load_ipt_security_templates || return ${?}
-load_ipt_mangle_templates || return ${?}
-load_ipt_nat_templates || return ${?}
-load_ipt_raw_templates || return ${?}
-load_ipt_rawpost_templates || return ${?}
+load_base_templates || return $?
+load_ipt_filter_templates || return $?
+load_ipt_security_templates || return $?
+load_ipt_mangle_templates || return $?
+load_ipt_nat_templates || return $?
+load_ipt_raw_templates || return $?
+load_ipt_rawpost_templates || return $?
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -2896,13 +2896,13 @@ load_ipt_rawpost_templates || return ${?}
 # -------------------------------------------------------------------------
 
 load_ruleblock_conf() {
-[[ ${1} ]] || { reqparm ${FUNCNAME} 1; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local ruleblock_file="${RULEBLOCK_DIR}"/"${1}" parsed_file="${RULEBLOCK_DIR}"/"__parsed_${1%.xml}.bash"
 local -i parse_files=${PARSE_RULEBLOCKS}
 local -a TEMP_RULEBLOCK_NAMES_ARRAY
 [[ -r ${ruleblock_file} ]] || {
 	log -x "${ruleblock_file}"
-	return ${ER_NOEX}
+	return $ER_NOEX
 }
 if [[ -r ${parsed_file} ]]; then
 	if ((parse_files == 0)); then
@@ -2916,7 +2916,7 @@ if ((parse_files == 1)); then
 	if [[ -e ${parsed_file} ]]; then
 		"${RM}" -f "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
-			return ${ER_FAIL}
+			return $ER_FAIL
 		}
 	fi
 	exec 7> "${parsed_file}"
@@ -2929,7 +2929,7 @@ if ((parse_files == 1)); then
 		return ${ER_LOAD}
 	}
 	exec 7>&-
-	[[ ${DEBUG_INFO} ]] && dbg_arr "TEMP_RULEBLOCK_NAMES_ARRAY"
+	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_RULEBLOCK_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
 	log -w "Saved parsed ruleblock file to: \`${parsed_file}'"
 fi
@@ -2955,13 +2955,13 @@ fi
 } # -------------------------------------------------------------------------
 
 load_all_ruleblocks() {
-load_raw_ruleblocks || return ${?}
-load_rawpost_ruleblocks || return ${?}
-load_mangle_ruleblocks || return ${?}
-load_tc_ruleblocks || return ${?}
-load_tc_mangle_ruleblocks || return ${?}
-load_nat_ruleblocks || return ${?}
-load_filter_ruleblocks || return ${?}
+load_raw_ruleblocks || return $?
+load_rawpost_ruleblocks || return $?
+load_mangle_ruleblocks || return $?
+load_tc_ruleblocks || return $?
+load_tc_mangle_ruleblocks || return $?
+load_nat_ruleblocks || return $?
+load_filter_ruleblocks || return $?
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3829,13 +3829,13 @@ local -i tmp_opt_idx reference_positional_param
 # last array member of the option list
 local -i option_list_sum=$(last_arr_member option_list_${OPTION_LIST_IDX})
 local str_var_name
-[[ ${DEBUG_INFO} ]] && printf "%s\n" "mandatory_vars_${OPTION_LIST_IDX}: ${mandatory_vars[OPTION_LIST_IDX]}"
+[[ $DEBUG_INFO ]] && printf "%s\n" "mandatory_vars_${OPTION_LIST_IDX}: ${mandatory_vars[OPTION_LIST_IDX]}"
 # for every variable name (comma separated) in mandatory_vars check if it's defined
 #for str_var_name in $(IFS=, split_val ${mandatory_vars[OPTION_LIST_IDX]}); do
 for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 	reference_positional_param=1 # references to column #1 in the ruleblock
 	# check for a valid option name
-	_validate_ipt_option_name "${str_var_name}" || return ${ER_NODEF}
+	_validate_ipt_option_name "${str_var_name}" || return $ER_NODEF
 	# look in the option list for a matching name
 	for tmp_opt_idx in $(arr_indicies "option_list_${OPTION_LIST_IDX}"); do
 		# if the mandatory variable name is found in the option list
@@ -3844,7 +3844,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 			if [[ ${!str_var_name} ]]; then
 				[[ ${!str_var_name} = ${RULE_SEP} ]] && {
 					log -E "Mandatory configuration entry \`${str_var_name}' missing, placeholder not allowed at position \`${reference_positional_param}'."
-					return ${ER_NODEF}
+					return $ER_NODEF
 				}
 				break
 			fi
@@ -3855,7 +3855,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 				# now check if the mandatory variable is a rule separator, which is not allowed
 				[[ ${!reference_positional_param} = ${RULE_SEP} ]] && {
 					log -E "Mandatory configuration entry \`${str_var_name}' missing, placeholder not allowed at position \`${reference_positional_param}'."
-					return ${ER_NODEF}
+					return $ER_NODEF
 				}
 				# all seems good if we reach this point. variable is definded and not a placeholder.
 				# we can now continue with the next variable name
@@ -3863,7 +3863,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 			else
 				# fail condition. variable is not defined.
 				log -E "Mandatory configuration entry \`${str_var_name}' missing at position \`${reference_positional_param}'."
-				return ${ER_NODEF}
+				return $ER_NODEF
 			fi
 		fi
 		((reference_positional_param++)) # next positional parameter to be processed
@@ -3872,7 +3872,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 		# if this point is reached, the variable name is not found in the option list
 		# ergo it cannot be defined -> fail condition reached
 		log -E "Configuration error in \`${target_template}'.  Mandatory variable named \`${str_var_name}' is not defined in array \`option_list_${OPTION_LIST_IDX}'."
-		return ${ER_CONF}
+		return $ER_CONF
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -3880,7 +3880,7 @@ done
 _read_option_list() {
 # read the values of the template option list and fill the according arrays for later processing
 # the rule string is set as positional parameters
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	printf "%s\n" "Parameters to ${FUNCNAME}(): ${*}"
 	echo "Referenced option list in ${FUNCNAME}(): ${!reference_command_array}"
 }
@@ -3899,7 +3899,7 @@ for arr_element in ${!reference_command_array}; do
 	# definition strings, to retrieve the option name.
 	str_arr_var_name="${arr_element%%=*}"
 	# check if a known option name
-	_validate_ipt_option_name "${str_arr_var_name}" || return ${ER_CONF}
+	_validate_ipt_option_name "${str_arr_var_name}" || return $ER_CONF
 	# if users has defined a default value for the option in the template
 	# AND the according rule entry is the rule separator value, use the default value from the template
 	if [[ ${!str_arr_var_name} &&  ${!reference_positional_param} = ${RULE_SEP} ]]; then
@@ -3918,7 +3918,7 @@ for arr_element in ${!reference_command_array}; do
 			fi
 			eval arr_tmp_rule_opt_${OPTION_LIST_IDX}[tmp_opt_idx]=${str_arr_var_name}
 			eval 'arg_list_'${str_arr_var_name}'[OPTION_LIST_IDX]="'"${!reference_positional_param}"'"'
-			[[ ${DEBUG_INFO} ]] && dbg_arr "arg_list_${str_arr_var_name}"
+			[[ $DEBUG_INFO ]] && dbg_arr "arg_list_${str_arr_var_name}"
 			((++tmp_opt_idx))
 		fi
 	fi
@@ -3928,9 +3928,9 @@ done
 if [[ ${state_match_arg[OPTION_LIST_IDX]} ]]; then
 	eval arr_tmp_rule_opt_${OPTION_LIST_IDX}[tmp_opt_idx]="state"
 	arg_list_state[OPTION_LIST_IDX]="${state_match_arg[OPTION_LIST_IDX]}"
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "arg_list_state[${OPTION_LIST_IDX}]: ${arg_list_state[OPTION_LIST_IDX]}"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "arg_list_state[${OPTION_LIST_IDX}]: ${arg_list_state[OPTION_LIST_IDX]}"
 fi
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	printf "%s\n" "arr_tmp_rule_opt_${OPTION_LIST_IDX} in ${FUNCNAME}():"
 	dbg_arr "arr_tmp_rule_opt_${OPTION_LIST_IDX}"
 	printf "%s\n" "tmp_pos_par_val_array in ${FUNCNAME}():"
@@ -4011,7 +4011,7 @@ multi_destination_ports=0 multi_protocols=0 multi_input_devices=0 multi_output_d
 # if the table is not defined in the template, clear it to not reuse the value of the previous loop
 ((table_in_template == 0)) && table=""
 
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	printf "%s\n" "tmp_pos_par_val_array in ${FUNCNAME}():"
 	dbg_arr "tmp_pos_par_val_array"
 }
@@ -5087,7 +5087,7 @@ fi
 _pre_multiply_rules() {
 # compute multiple rules, if a multiple option type was provided
 # as comma separated input in the rule.
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local rule_array tmp_str_rulelist_array
 local -a tmp_multi_type_array
 local -i rule_idx rule_count_after new_rule_count range_idx multi_type_idx rev_idx
@@ -5115,7 +5115,7 @@ local -i rule_count_before=${RULE_COUNT}
 local -i rule_count_after=$((rule_count_before * multi_count))
 RULE_COUNT=${rule_count_after}
 
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	printf "%s\n" "Multiplying: ${str_rulelist_array} Global factor: ${RULE_MULTIPLICATOR} Rule Count before: ${rule_count_before} Current factor: ${multi_count} Rule sum: ${rule_count_after}"
 }
 # for every arg_list array, check if it contains data. if yes, duplicate the entries
@@ -5150,7 +5150,7 @@ for ((rule_idx=0; rule_idx<=rule_count_after-1; rule_idx=rule_idx+rule_count_bef
 			fi
 		fi
 		eval ${tmp_str_rulelist_array}'[range_idx]="'"${tmp_multi_type_array[multi_type_idx]}"'"'
-		[[ ${DEBUG_INFO} ]] && eval 'printf "%s\n" "'${tmp_str_rulelist_array}'['${range_idx}']: ${'${tmp_str_rulelist_array}'[range_idx]}"'
+		[[ $DEBUG_INFO ]] && eval 'printf "%s\n" "'${tmp_str_rulelist_array}'['${range_idx}']: ${'${tmp_str_rulelist_array}'[range_idx]}"'
 	done
 	let multi_type_idx+=1
 done
@@ -5203,7 +5203,7 @@ case "${1}" in
 	;;
 	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
 		tmp_mask=$(ip_vlsm ${1#*/}) || {
-			return ${ER_CONF}
+			return $ER_CONF
 		}
 		if [[ ${1%/*}/${tmp_mask} = ${str_netip}/${str_net_mask} ]]; then
 			return 0
@@ -5236,7 +5236,7 @@ done
 _set_chain_by_netname() { # set the target chain classified by netname
 #[[ ${str_target_chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]] || {
 [[ ${str_target_chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE||POST)ROUTING) ]] || {
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
 	return 0
 }
 local str_src="${arg_list_src[ARG_LIST_IDX]}" str_dst="${arg_list_dst[ARG_LIST_IDX]}"
@@ -5246,7 +5246,7 @@ local new_target_chain="" str_src_netname="" str_dst_netname="" str_in_dev="" st
 local -i idev_members=odev_members=src_net_negated=dst_net_negated=src_net_external=dst_net_external=idev_external=odev_external=0
 
 [[ -z ${str_src} && -z ${str_dst} && -z ${str_idev} && -z ${str_odev} ]] && {
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): src, dst, idev and odev are empty - nothing to match"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): src, dst, idev and odev are empty - nothing to match"
 	return 0
 }
 if [[ ${str_idev} ]]; then
@@ -5365,7 +5365,7 @@ done
 #esac
 ((src_net_negated == 1)) && { str_src_netname=""; src_net_dev=""; src_net_external=0 ; }
 ((dst_net_negated == 1)) && { str_dst_netname=""; dst_net_dev=""; dst_net_external=0 ; }
-[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): source network: '${str_src_netname}' destination network: '${str_dst_netname}'"
+[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): source network: '${str_src_netname}' destination network: '${str_dst_netname}'"
 
 [[ ${str_in_dev:-0} = ${str_out_dev:-1} ]] && {
 	log -W "Input and output device are equal, cannot set chain for \`${str_target_chain}'."
@@ -5492,7 +5492,7 @@ elif [[ ${str_dst_netname} ]]; then # only destination network is known
 		POSTROUTING) new_target_chain="${str_dst_netname}_POST" ;;
 	esac
 else  # no matching network, looking for matching interfaces
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): input interface: '${str_in_dev}' output interface: '${str_out_dev}'"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): input interface: '${str_in_dev}' output interface: '${str_out_dev}'"
 	[[ ${str_in_dev} || ${str_out_dev} ]] || {
 		log -W "No matching network or interface found, cannot set chain for \`${str_target_chain}'."
 		return 0
@@ -5671,20 +5671,20 @@ else  # no matching network, looking for matching interfaces
 fi
 
 if [[ ${new_target_chain} ]]; then
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
 		create_chain "${table}" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
 else
-	if [[ ${DEBUG_INFO} ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
+	if [[ $DEBUG_INFO ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
 fi
 } # -------------------------------------------------------------------------
 
 _set_chain_by_interface() { # set the target chain classified by interfaces
 [[ ${str_target_chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]] || {
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
 	return 0
 }
 local str_idev="${arg_list_idev[ARG_LIST_IDX]}" str_odev="${arg_list_odev[ARG_LIST_IDX]}"
@@ -5796,14 +5796,14 @@ elif ((iface_count == 2)); then # two interfaces in rule
 	esac
 fi
 if [[ ${new_target_chain} ]]; then
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
 		create_chain "${table}" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
 else
-	if [[ ${DEBUG_INFO} ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
+	if [[ $DEBUG_INFO ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
 fi
 } # -------------------------------------------------------------------------
 
@@ -5834,7 +5834,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			str_target_chain="${arg_list_chain[chain_idx]}"
 
 			# post rule multiplication checks
-			_post_multiply_checks || return ${ER_CONF}
+			_post_multiply_checks || return $ER_CONF
 
 			# set message string for iptables table
 			_process_table
@@ -5854,7 +5854,7 @@ for target_idx in ${!arg_list_target[@]}; do
 				# processing is name based: _process_${option_name}
 				[[ ${tmp_opt_array[tmp_opt_idx]} = @(target|chain) ]] && continue
 				if var_defined_silent "arg_list_${tmp_opt_array[tmp_opt_idx]}[${ARG_LIST_IDX}]"; then
-					_process_"${tmp_opt_array[tmp_opt_idx]}" || return ${ER_FAIL}
+					_process_"${tmp_opt_array[tmp_opt_idx]}" || return $ER_FAIL
 				fi
 			done
 
@@ -5862,8 +5862,8 @@ for target_idx in ${!arg_list_target[@]}; do
 			if ((JUMP_TREE[0] == 1)); then
 				if [[ ${JUMP_TREE[2]} ]] && lsearch "${table}" ${JUMP_TREE[2]}; then
 					case "${JUMP_TREE[1]}" in
-						interface) _set_chain_by_interface || return ${ER_CONF} ;;
-						netname|netname+interface) _set_chain_by_netname || return ${ER_CONF} ;;
+						interface) _set_chain_by_interface || return $ER_CONF ;;
+						netname|netname+interface) _set_chain_by_netname || return $ER_CONF ;;
 					esac
 				fi
 			fi
@@ -5959,7 +5959,7 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 	# log the generated message
 	log -e "${str_log}"
 	# add the generated rule
-	add_rule "${table}" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return ${?}
+	add_rule "${table}" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return $?
 	let RULES_GENERATED_COUNT+=1
 done
 } # -------------------------------------------------------------------------
@@ -6004,7 +6004,7 @@ process_ipt_ruleblock() {
 # reset possibly messed up environment
 set_env
 
-[[ ${2} ]] || { reqparm ${FUNCNAME} 2; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local target_template="${1}" target_ruleblock="${2}"
 
 # check for valid template name
@@ -6065,7 +6065,7 @@ eval local "${!reference_catalog_data}" &>/dev/null || {
 	raise_gen_err_count
 	return 0
 }
-[[ ${DEBUG_INFO} ]] && {
+[[ $DEBUG_INFO ]] && {
 	declare -p "${target_template}"
 	declare -p "${target_ruleblock}"
 }
@@ -6112,7 +6112,7 @@ if [[ ${reverse_mode} ]]; then
 			raise_cfg_err_count
 			return 0
 	esac
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "Reverse mode is set to: ${reverse_mode}"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "Reverse mode is set to: ${reverse_mode}"
 	# check if there is a 'reverse condition' defined in the template
 	# if it evaluates to true, the second iptables chain provided will not be included in rule generation
 	if [[ ${reverse_condition} ]]; then
@@ -6128,7 +6128,7 @@ if [[ ${reverse_mode} ]]; then
 			reverse_rule=0
 			second_optionlist=0
 			chain_max=0
-			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Reverse mode disabled by reverse condition: ${reverse_condition}"
+			[[ $DEBUG_INFO ]] && printf "%s\n" "Reverse mode disabled by reverse condition: ${reverse_condition}"
 		}
 	fi
 
@@ -6138,24 +6138,24 @@ fi
 # now we know there is a target definition in the template
 if [[ ${table} ]]; then
 	table_in_template=1
-	[[ ${DEBUG_INFO} ]] && printf "%s\n" "Table set in template: ${table}"
+	[[ $DEBUG_INFO ]] && printf "%s\n" "Table set in template: ${table}"
 fi
 
 # look for target definitions in the template.
 # now we know there is a target definition in the template
-if ((${#target[@]} > 0)); then
+if ((${#target[@]})); then
 	$(${copy_array} target arr_tmp_targets) || {
 		raise_gen_err_count
 		log -U ${FUNCNAME}
 		return 0
 	}
 	target_in_template=1
-	[[ ${DEBUG_INFO} ]] && for opt_idx in ${!target[@]}; do printf "%s\n" "Target set in template: ${target[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!target[@]}; do printf "%s\n" "Target set in template: ${target[opt_idx]}"; done
 fi
 
 # look for chain defintions in the template.
 # a maximum of two chains are allowed with reverse_mode.
-if ((${#chain[@]} > 0)); then
+if ((${#chain[@]})); then
 	chain_max=$((chain_max == -1 ? ${#chain[@]} - 1 : chain_max))
 #	for ((opt_idx=0; opt_idx<${#chain[@]} && opt_idx<=second_optionlist; opt_idx++)); do
 	for ((opt_idx=0; opt_idx<${#chain[@]} && opt_idx<=chain_max; opt_idx++)); do
@@ -6163,18 +6163,18 @@ if ((${#chain[@]} > 0)); then
 	done
 	# now we know there is a chain defined in the template.
 	chain_in_template=1
-	[[ ${DEBUG_INFO} ]] && for opt_idx in ${!chain[@]}; do printf "%s\n" "Chain set in template: ${chain[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!chain[@]}; do printf "%s\n" "Chain set in template: ${chain[opt_idx]}"; done
 fi
 # look for state match definitions in the template.
 # index [0] refers to chain[0] and index [1] to chain[1].
 # now we know there is a state definition in the template
-if ((${#state_match_arg[@]} > 0)); then
+if ((${#state_match_arg[@]})); then
 	state_in_template=1
-	[[ ${DEBUG_INFO} ]] && for opt_idx in ${!state_match_arg[@]}; do printf "%s\n" "State set in template: ${state_match_arg[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!state_match_arg[@]}; do printf "%s\n" "State set in template: ${state_match_arg[opt_idx]}"; done
 fi
 
 # always use certain options
-if ((${#always_use_0[@]} > 0)); then
+if ((${#always_use_0[@]})); then
 	for opt_idx in ${!always_use_0[@]}; do
 		if [[ ${always_use_0[opt_idx]#+([[:word:]])=} = emtpy ]]; then
 			if ((second_optionlist == 0)); then
@@ -6205,10 +6205,10 @@ if ((${#always_use_0[@]} > 0)); then
 			arr_alw_use_pos_p[${#arr_alw_use_pos_p[@]}]="${always_use_0[opt_idx]#+([[:word:]])=}"
 		fi
 	done
-	[[ ${DEBUG_INFO} ]] && dbg_arr "arr_alw_use_pos_p"
+	[[ $DEBUG_INFO ]] && dbg_arr "arr_alw_use_pos_p"
 	insert_array 'always_use_0' 'option_list_0'	
 	if ((second_optionlist == 1)); then
-		if ((${#always_use_1[@]} > 0)); then
+		if ((${#always_use_1[@]})); then
 			insert_array 'always_use_1' 'option_list_1'	
 		fi
 	fi
@@ -6283,7 +6283,7 @@ for tmp_arr_idx in ${!arr_tmp_ruleblock[@]}; do
 			raise_gen_err_count
 			return 0
 		}
-		[[ ${DEBUG_INFO} ]] && {
+		[[ $DEBUG_INFO ]] && {
 			printf "referenced option list: \n"
 			opt_idx=0; for rvar in ${!reference_command_array}; do printf "%s " "[${opt_idx}]: ${rvar}"; let opt_idx+=1; done; echo
 		}
@@ -6390,13 +6390,13 @@ allow_loopback() { # LOOPBACK ALLOW
 ((ENABLE_FILTER)) || return 0
 if [[ -z ${LOOPBACK_IF} ]]; then
 	log -u 'LOOPBACK_IF'
-	return ${ER_NODEF}
+	return $ER_NODEF
 fi
 case "${ALLOW_LOOPBACK}" in
 	0) log -w "Not allowing loopback communication" ;;
 	1)
 		log -S "Allowing loopback communication"
-		check_iface "${LOOPBACK_IF}" || return ${ER_FAIL}
+		check_iface "${LOOPBACK_IF}" || return $ER_FAIL
 		log -e "${PF}accept chain=INPUT idev=${LOOPBACK_IF}"
 		add_rule filter INPUT -i "${LOOPBACK_IF}" -j ACCEPT
 		log -e "${PF}accept chain=OUTPUT odev=${LOOPBACK_IF}"
@@ -6417,7 +6417,7 @@ case "${ALLOW_LOOPBACK}" in
 	0) log -w "Not allowing loopback communication" ;;
 	1)
 		log -I "Immediately allowing loopback communication"
-		check_iface "${LOOPBACK_IF}" || return ${ER_FAIL}
+		check_iface "${LOOPBACK_IF}" || return $ER_FAIL
 		ipt -t filter -A INPUT -i "${LOOPBACK_IF}" -j ACCEPT
 		ipt -t filter -A OUTPUT -o "${LOOPBACK_IF}" -j ACCEPT
 	;;
@@ -6460,7 +6460,7 @@ log_drop_scans() { # log/drop portscans
 ((ENABLE_FILTER)) || return 0
 local -i idx
 local str_chain str_chainlist str_lpfix
-if ! ((${#PORTSCAN_ARRRAY[@]} > 0)); then
+if ! ((${#PORTSCAN_ARRRAY[@]})); then
 	log -r PORTSCAN_ARRRAY
 	return 1
 fi
@@ -6496,7 +6496,7 @@ for idx in ${!PORTSCAN_ARRRAY[@]}; do
 		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} DROP ${stcpf}"
 	fi
 done
-if ((${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]} > 0)); then
+if ((${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]})); then
 	if ((PROC_IP_FORWARD == 1)); then
 		str_chainlist="INPUT FORWARD"
 	else
@@ -6971,7 +6971,7 @@ allow_out_dns() { # allow local to remote DNS server traffic
 	log -w "Not allowing local host to ISP nameservers traffic"
 	return 0
 }
-if ! ((${#LOCAL_NS[@]} > 0)); then
+if ! ((${#LOCAL_NS[@]})); then
 	log -u 'LOCAL_NS'
 	return 0
 fi
@@ -7052,7 +7052,7 @@ allow_out_ntp() { # allow local to remote NTP server traffic
 	log -w "Not allowing local host to NTP server(s) traffic"
 	return 0
 }
-if ! ((${#TIME_SERVERS[@]} > 0)); then
+if ! ((${#TIME_SERVERS[@]})); then
 	log -u 'TIME_SERVERS'
 	return 0
 fi
@@ -7209,7 +7209,7 @@ lan_isp_smtp() { # allow subnets to use certain SMTP servers
 	log -w "Not using automatic ISP SMTP server configuration"
 	return 0
 }
-if ! ((${#ISP_SMTP[@]} > 0)); then
+if ! ((${#ISP_SMTP[@]})); then
 	log -u 'ISP_SMTP'
 	return 0
 fi
@@ -7305,11 +7305,11 @@ intns_to_extns() { # allow internal DNS servers udp traffic to providers name se
 	log -w "Not using automated provider DNS configuration"
 	return 0
 }
-((${#ISP_NS[@]} > 0)) || {
+((${#ISP_NS[@]})) || {
 	log -u 'ISP_NS'
 	return 0
 }
-((${#LAN_NS[@]} > 0)) || {
+((${#LAN_NS[@]})) || {
 	log -u 'LAN_NS'
 	return 0
 }
@@ -7427,7 +7427,7 @@ local TEMPLATE_BUILTIN_FWD_FTP_ALLOW=(
 "option_list_0[8]=helper"
 )
 local -a RULEBLOCK_BUILTIN_FWD_FTP_ALLOW
-local oIFS="${IFS}"
+local oIFS="$IFS"
 for rvar in ${LAN_FTP}; do
 	local IFS=":"
 	set -- ${rvar}
@@ -7541,7 +7541,7 @@ local TEMPLATE_BUILTIN_VPN_ALLOW_ALL_BRANCH=(
 )
 local -a RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH
 # get local data
-((${#VPN_MAP[@]} > 0)) || {
+((${#VPN_MAP[@]})) || {
 	log -r 'VPN_MAP'
 	raise_cfg_err_count
 	return 0
@@ -7712,7 +7712,7 @@ done
 
 apply_final_rule() {
 ((ENABLE_FILTER)) || return 0
-((${#FINAL_RULE_MAP[@]} > 0)) || {
+((${#FINAL_RULE_MAP[@]})) || {
 	log -w "Not applying final rules"
 	return 0
 }
@@ -7736,7 +7736,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 	local str_chain="${1}" str_action="${2}" str_limit="${3:-${GLOBAL_LOGLIMIT}}" str_burst="${4:-${GLOBAL_BURSTLIMIT}}" \
 		str_loglevel="${5:-${GLOBAL_LOGLEVL}}" str_log_options="${6}" str_pol=""
 	if [[ ${str_chain} = @(INPUT|OUTPUT|FORWARD) ]]; then
-			str_pol="$(get_policy filter ${str_chain})_" || return ${?}
+			str_pol="$(get_policy filter ${str_chain})_" || return $?
 	fi
 	case "${str_action}" in
 		log)
@@ -7864,15 +7864,15 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	fi
 #	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
 #		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
 #			comment="${line#*'<!--'*([[:blank:]])}"
 #			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ended in same line: '${line}'"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
 #				comment="${comment%'-->'*([[:blank:]])}"
 #				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
 #				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
 #			else
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
 #				RESULT_ARR[IDX++]=""
 #				[[ ${comment}  ]] && RESULT_ARR[IDX++]="# ${comment}";
 #				let comment_mode+=1
@@ -7881,13 +7881,13 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #		fi
 #		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
 #			if ((comment_mode > 0)); then
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ends with: '${line}' #${line_count}"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ends with: '${line}' #${line_count}"
 #				comment="${line%'-->'*([[:blank:]])}"
 #				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
 #				let comment_mode-=1
 #				line="${line#*'-->'}"
 #			fi
-#			((comment_mode == 0)) && [[ ${DEBUG_INFO} ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
+#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
 #		fi
 #		if ((comment_mode > 0)); then
 #			[[ ${line} && ${line} != +([[:space:]]) ]] && RESULT_ARR[IDX++]="# ${line}"
@@ -7908,7 +7908,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Incompatible rulefile syntax version."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' opened - syntax version = '${syntax_version}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened - syntax version = '${syntax_version}'"
 #			root_tag_open=1
 #			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -7922,13 +7922,13 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Root closing tag found on line \`${line_count}', but there is an opened tag: \`${tag_name}'."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' closed on line \`${line_count}'."
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed on line \`${line_count}'."
 #			root_tag_open=0
 #			line="${line#*"</${root_tag}>"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif [[ ${line} = @(*([[:space:]])<+([[:word:]])>*) ]]; then
 #		# line contains a tag
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
 #			if ((root_tag_open == 0)); then # check if we already have an root tag open
 #				log -E "Opening tag found on line \`${line_count}', but there is no opened root tag."
 #				return 1
@@ -7939,17 +7939,17 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			tag_open=1 # open tag
 #			# find name of tag
 #			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "tag name: '${tag_name}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag name: '${tag_name}'"
 #			line="${line#*"<${tag_name}>"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif ((tag_open == 1)) && [[ ${line} = @(*</"${tag_name}">*) ]]; then
 #		# line contains current tags closing tag
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
 #			line_content="${line%</"${tag_name}">*}" # remove closing tag string to retrieve line content
 #			line="${line#"${line_content}"}" # remove line content from line
 #			line="${line#</"${tag_name}">}" # remove closing tag string from line
 #			line_content="$(strip_blanks "${line_content}")"
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "tag ${tag_name} content: '${line_content}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} content: '${line_content}'"
 #			if [[ ${line_content} ]]; then
 #				case "${tag_name}" in # save tags content
 #					rule)
@@ -7974,7 +7974,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif ((tag_open == 1)) && [[ ${line} ]]; then
 #		# still some content in line and a tag is opened - add line content to template option
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
 #			line_content="${line%%<*([/])*([[:word:]])>*}" # remove any tags to retrieve line content
 #			line="${line#"${line_content}"}" # remove line content from line
 #			line_content="$(strip_blanks "${line_content}")"
@@ -8014,7 +8014,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	return 1
 #fi
 ## print collected array assignments
-#if ((${#RESULT_ARR[@]} > 0)); then
+#if ((${#RESULT_ARR[@]})); then
 #	printf "%s\n" "${RESULT_ARR[@]}" >&7
 #else
 #	log -W "No rules found."
@@ -8037,21 +8037,21 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]] && continue
 #	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
 #		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
 #			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ended in same line: '${line}'"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
 #				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
 #			else
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
 #				let comment_mode+=1
 #				line="${line#'<!--'}"
 #			fi
 #		fi
 #		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ends with: '${line}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ends with: '${line}'"
 #			line="${line#*'-->'}"
 #			let comment_mode-=1
-#			((comment_mode == 0)) && [[ ${DEBUG_INFO} ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
+#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
 #		fi
 #		((comment_mode > 0)) && continue 2 # if multiline comment tag is open ignore line
 #		[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -8069,7 +8069,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Incompatible template syntax version \`${syntax_version}'."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
 #			root_tag_open=1
 #			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -8079,7 +8079,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Root closing tag found on line \`${line_count}', but there is no opened root tag."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
 #			root_tag_open=0
 #			line="${line#*"</${root_tag}>"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -8097,7 +8097,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			template_name="${line#*"<${template_tag}"+([[:blank:]])name=\"}"
 #			template_name="${template_name%"\">"*}"
 #			line="${line#*"<${template_tag}"*">"}" # remove tag string from line
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "NAME of template: '${template_name}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "NAME of template: '${template_name}'"
 #			for i in ${!TEMPLATE_NAMES_ARRAY[@]}; do # check for duplicate template names
 #				if [[ ${TEMPLATE_NAMES_ARRAY[i]} = ${template_name} ]]; then
 #					log -E "Duplicate template name \`${template_name}'."
@@ -8121,7 +8121,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Empty template \`${template_name}', no tags were found."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Template '${template_name}' closed #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Template '${template_name}' closed #${line_count}"
 #			tag_open=0 template_open=0 m_count=0 tag_count=0 tmp_arr=()
 #			# array assignment closing string
 #			RESULT_ARR[IDX++]="$(printf "%s\n" ")")"
@@ -8129,7 +8129,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif [[ ${line} = @(*([[:space:]])<+([[:word:]])>*) ]]; then
 #		# line contains a tag
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
 #			if ((root_tag_open == 0)); then # check if we already have an root tag open
 #				log -E "Opening tag found on line \`${line_count}', but there is no opened root tag."
 #				return 1
@@ -8143,12 +8143,12 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			tag_open=1 # open tag
 #			# find name of tag
 #			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "tag name: '${tag_name}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag name: '${tag_name}'"
 #			line="${line#*"<${tag_name}>"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif ((tag_open == 1)) && [[ ${line} = @(*</"${tag_name}">*) ]]; then
 #		# line contains current tags closing tag
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
 #			line_content="${line%</"${tag_name}">*}" # remove closing tag string to retrieve line content
 #			line="${line#"${line_content}"}" # remove line content from line
 #			line="${line#</"${tag_name}">}" # remove closing tag string from line
@@ -8159,7 +8159,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #					for n in ${line_content}; do
 #						tmp_arr[${#tmp_arr[@]}]="${n}"
 #					done
-#					if ((${#tmp_arr[@]} > 0)); then
+#					if ((${#tmp_arr[@]})); then
 #						for i in ${!tmp_arr[@]}; do
 #							RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${tag_name}[$i]="${tmp_arr[i]}"\"")"
 ##							RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${tag_name}[$i]="${tmp_arr[i]//\"/\\\"}"\"")"
@@ -8173,7 +8173,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				table|reverse_mode|reverse_condition|template_msg)
 #				# string type options
 #					[[ ${line_content} ]] && tmp_arr[${#tmp_arr[@]}]="${line_content}"
-#					if ((${#tmp_arr[@]} > 0)); then
+#					if ((${#tmp_arr[@]})); then
 #						RESULT_ARR[IDX++]="$(printf "%s " "[${m_count}]=\"${tag_name}=${tmp_arr[@]}\""; echo)"
 ##						RESULT_ARR[IDX++]="$(printf "%s " "[${m_count}]=\"${tag_name}=${tmp_arr[@]//\"/\\\"}\""; echo)"
 #						let m_count++
@@ -8186,7 +8186,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #					return 1
 #				;;
 #			esac
-#			[[ ${DEBUG_INFO} ]] && {
+#			[[ $DEBUG_INFO ]] && {
 #				printf "%s\n" "tag ${tag_name} content:"
 #				printf "%s\n" "${tmp_arr[@]}"
 #			}
@@ -8199,7 +8199,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Tag opened, but no template opened on line \`${line_count}'."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
 #			line_content="${line%%<*([/])*([[:word:]])>*}" # remove any tags to retrieve line content
 #			line="${line#"${line_content}"}" # remove line content from line
 #			line_content="$(strip_blanks "${line_content}")"
@@ -8255,7 +8255,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	return 1
 #fi
 ## print collected array assignments
-#if ((${#RESULT_ARR[@]} > 0)); then
+#if ((${#RESULT_ARR[@]})); then
 #	printf "%s\n" "${RESULT_ARR[@]}" >&7
 #else
 #	log -W "No templates found."
@@ -8282,15 +8282,15 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	fi
 #	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
 #		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
 #			comment="${line#*'<!--'*([[:blank:]])}"
 #			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Comment ended in same line: '${line}'"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
 #				comment="${comment%'-->'*([[:blank:]])}"
 #				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
 #				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
 #			else
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
 #				[[ ${comment}  ]] && RESULT_ARR[IDX++]="# ${comment}"
 #				let comment_mode+=1
 #				line="${line#'<!--'}"
@@ -8298,13 +8298,13 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #		fi
 #		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
 #			if ((comment_mode > 0)); then
-#				[[ ${DEBUG_INFO} ]] && printf "%s\n" "comment ends with: '${line}' #${line_count}"
+#				[[ $DEBUG_INFO ]] && printf "%s\n" "comment ends with: '${line}' #${line_count}"
 #				comment="${line%'-->'*([[:blank:]])}"
 #				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
 #				let comment_mode-=1
 #				line="${line#*'-->'}"
 #			fi
-#			((comment_mode == 0)) && [[ ${DEBUG_INFO} ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
+#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
 #		fi
 #		if ((comment_mode > 0)); then
 #			[[ ${line} && ${line} != +([[:space:]]) ]] && RESULT_ARR[IDX++]="# ${line}"
@@ -8325,7 +8325,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Incompatible ruleblock syntax version \`${syntax_version}'."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
 #			root_tag_open=1
 #			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -8335,7 +8335,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Root closing tag found on line \`${line_count}', but there is no opened root tag."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
 #			root_tag_open=0
 #			line="${line#*"</${root_tag}>"}" # remove tag string from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
@@ -8353,7 +8353,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			ruleblock_name="${line#*"<${ruleblock_tag}"+([[:blank:]])name=\"}"
 #			ruleblock_name="${ruleblock_name%"\">"*}"
 #			line="${line#*"<${ruleblock_tag}"*">"}" # remove tag string from line
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "NAME of ruleblock: '${ruleblock_name}'"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "NAME of ruleblock: '${ruleblock_name}'"
 #			for i in ${!RULEBLOCK_NAMES_ARRAY[@]}; do # check for duplicate ruleblock names
 #				if [[ ${RULEBLOCK_NAMES_ARRAY[i]} = ${ruleblock_name} ]]; then
 #					log -E "Duplicate ruleblock name \`${ruleblock_name}'."
@@ -8374,7 +8374,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #				log -E "Ruleblock closing tag found on line \`${line_count}', but no ruleblock is opened."
 #				return 1
 #			fi
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Ruleblock '${ruleblock_name}' closed"
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Ruleblock '${ruleblock_name}' closed"
 #			ruleblock_open=0 m_count=0 tmp_arr=()
 #			# array assignment closing string
 #			RESULT_ARR[IDX++]="$(printf "%s\n" ")")"
@@ -8382,7 +8382,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #			line="${line#*</"${ruleblock_tag}">}" # remove ruleblock closing tag from line
 #			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
 #		elif ((ruleblock_open == 1)); then
-#			[[ ${DEBUG_INFO} ]] && printf "%s\n" "Adding rule: [${m_count}]=\"${line}\""
+#			[[ $DEBUG_INFO ]] && printf "%s\n" "Adding rule: [${m_count}]=\"${line}\""
 #			RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${line//\"/\\\"}\"")"
 #			let m_count++
 #			continue 2
@@ -8397,7 +8397,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #	return 1
 #fi
 ## print collected array assignments
-#if ((${#RESULT_ARR[@]} > 0)); then
+#if ((${#RESULT_ARR[@]})); then
 #	printf "%s\n" "${RESULT_ARR[@]}" >&7
 #else
 #	log -W "No ruleblocks found."
