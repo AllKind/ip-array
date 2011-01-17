@@ -37,7 +37,7 @@
 
 color_msg() { # print a couloured message
 [[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
-local msg_redir="${1}" msg_prefix="${2}" msg_col="${3}" msg_format="${4}"
+local msg_redir="$1" msg_prefix="$2" msg_col="$3" msg_format="$4"
 shift 4
 case "${msg_prefix}" in # set if this message needs a bold prefix
 	(NOTICE|WARNING|ERROR) # these are the known prefixes
@@ -60,7 +60,7 @@ esac
 
 no_color_msg() { # print a non couloured message
 [[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
-local msg_redir="${1}" msg_prefix="${2}"
+local msg_redir="$1" msg_prefix="$2"
 shift 4
 case "${msg_prefix}" in
 	(NOTICE|WARNING|ERROR) # these are the known prefixes
@@ -78,8 +78,8 @@ esac
 } # -------------------------------------------------------------------------
 
 log() { # Logging FUNCTION
-[[ ${2} ]] || { err_msg "2 parameters required for function: ${FUNCNAME}()"; return 1; }
-local log_param="${1}"
+[[ $2 ]] || { err_msg "2 parameters required for function: ${FUNCNAME}()"; return 1; }
+local log_param="$1"
 shift
 local log_message="${@//[$'\t']/}"
 case "${log_param}" in
@@ -89,10 +89,10 @@ case "${log_param}" in
 		((SYSLOG_VERBOSE >= 5)) && syslog ${LOG_FACILITY} info "${log_message}"
 	;;
 	-f) log -W "Failed ${log_message}" ;;
-	-i) log -E "Illegal value \`${1}' for \`${2}'." ;;
+	-i) log -E "Illegal value \`$1' for \`$2'." ;;
 	-l) syslog ${LOG_FACILITY} notice "${log_message}" ;;
 	-m) printf "%s\n" "${log_message}"; syslog ${LOG_FACILITY} notice "${log_message}" ;;
-	-o) log -E "Illegal parameter \`${1}' for function: ${2}()." ;;
+	-o) log -E "Illegal parameter \`$1' for function: ${2}()." ;;
 	-r) log -E "Array \`${log_message}' has no members." ;;
 	-s) log -E "System is missing the \`${log_message}' match extension." ;;
 	-t) log -E "System is missing the \`${log_message}' target." ;;
@@ -133,7 +133,7 @@ case "${log_param}" in
 		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-U) # Unknown error
-		log -E "Unknown error in function \`${1}()'."
+		log -E "Unknown error in function \`$1()'."
 	;;
 	-W) # Warning message
 		((VERBOSE >= 2)) && ${log_msg} stderr WARNING "${COLOR_MSG_WARNING}" normal ${*}
@@ -148,21 +148,21 @@ return 0
 
 syslog() { # log to syslog using logger utility
 if ((ENABLE_SYSLOG == 1)); then # only log if logging to syslog is enabled
-	[[ ${3} ]] || { err_msg "3 parameters required for function: \`${FUNCNAME}()'"; return 1; }
-	local s_facility="${1}" s_level="${2}"
+	[[ $3 ]] || { err_msg "3 parameters required for function: \`${FUNCNAME}()'"; return 1; }
+	local s_facility="$1" s_level="$2"
 	shift 2
-	"${LOGGER}" -p "${s_facility}.${s_level}" -t "${ME}[${PID}]" "${*}" || err_msg "failed logging to syslog: \`${*}'"
+	"${LOGGER}" -p "${s_facility}.${s_level}" -t "${ME}[${PID}]" "$*" || err_msg "failed logging to syslog: \`${*}'"
 fi
 } # -------------------------------------------------------------------------
 
 reqparm() { # announce parameters missing in functions
-[[ ${2} ]] || { err_msg "2 parameters required for function: \`${FUNCNAME}()'" ; return 1; }
-log -E "${2} parameter(s) required for function: \`${1}'"
+[[ $2 ]] || { err_msg "2 parameters required for function: \`${FUNCNAME}()'" ; return 1; }
+log -E "$2 parameter(s) required for function: \`$1'"
 } # -------------------------------------------------------------------------
 
 file_readable() { # check if a file is really readable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local file="${1}" pv
+local file="$1" pv
 read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}" || {
 	log -E "File \`${file}' is not readable."
 	return $ER_FAIL
@@ -171,7 +171,7 @@ read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}" || {
 
 proc_file_writable() { # check if a /proc file is really writable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local file="${1}" pv
+local file="$1" pv
 if read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}"; then
 	(printf "%s\n" "${pv}" > "${file}") &>/dev/null
 else
@@ -181,24 +181,24 @@ fi
 
 check_prog() { # check for mandatory programs
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ -e "${1}" ]] || { log -E "Binary ${1} does not exist"; return $ER_NOEX; }
-[[ -x "${1}" ]] || { log -E "Binary ${1} is not executable"; return $ER_FAIL; }
+[[ -e "$1" ]] || { log -E "Binary $1 does not exist"; return $ER_NOEX; }
+[[ -x "$1" ]] || { log -E "Binary $1 is not executable"; return $ER_FAIL; }
 } # -------------------------------------------------------------------------
 
 #set_var() { # set variables to a specific value
 #[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-#eval "${1}"='"${2}"'
+#eval "$1"='"$2"'
 #} # -------------------------------------------------------------------------
 
 set_var() { # set variables to a specific value
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${1} = +([[:word:]]) ]] || {
-#	err_msg "\`${1}' is not a valid variable name."
-	log -E "\`${1}' is not a valid variable name."
+[[ $1 = +([[:word:]]) ]] || {
+#	err_msg "\`$1' is not a valid variable name."
+	log -E "\`$1' is not a valid variable name."
 	return 1
 }
-#eval "${1}"'="${2}"'
-printf -v "${1}" "${2}"
+#eval "$1"'="$2"'
+printf -v "$1" "$2"
 } # -------------------------------------------------------------------------
 
 subst_var() { # substitute a variable name to its value
@@ -218,7 +218,7 @@ printf "%s\n" "${1#\!}"
 
 demask() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${1} = */* ]] && printf "%s\n" "${1%/*}" || printf "%s\n" "${1}"
+[[ $1 = */* ]] && printf "%s\n" "${1%/*}" || printf "%s\n" "$1"
 } # -------------------------------------------------------------------------
 
 split_val() { # split separator separated values and echo the result
@@ -259,7 +259,7 @@ done
 
 string_tolower() { # convert upper case characters into lower case
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local to_low_string="${@}"
+local to_low_string="$@"
 if ((BASH_VERSINFO[0] == 3)); then
 	case "${to_low_string}" in
 		+(*[[:upper:]]*))
@@ -299,7 +299,7 @@ printf "%s\n" "${to_low_string}"
 
 string_toupper() { # convert lower case characters into upper case
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local to_up_string="${@}"
+local to_up_string="$@"
 if ((BASH_VERSINFO[0] == 3)); then
 	case "${to_up_string}" in
 		+(*[[:lower:]]*))
@@ -338,16 +338,16 @@ printf "%s\n" "${to_up_string}"
 } # -------------------------------------------------------------------------
 
 strip_blanks() { # strip leading and trailing [:blank:] type chars
-[[ ${1} ]] || return 0
-local s_var="${1}"
+[[ $1 ]] || return 0
+local s_var="$1"
 [[ ${s_var:0:1} = [[:blank:]] ]] && s_var="${s_var##+([[:blank:]])}"
 [[ ${s_var:$((${#s_var} - 1))} = [[:blank:]] ]] && s_var="${s_var%%+([[:blank:]])}"
 printf "%s\n" "${s_var}"
 } # -------------------------------------------------------------------------
 
 strip_blanks_var() { # strip leading and trailing [:blank:] type chars
-[[ ${1} ]] || return 0
-local s_var="${1}"
+[[ $1 ]] || return 0
+local s_var="$1"
 [[ ${!s_var} ]] || return 0
 local tmp="${!s_var}"
 [[ ${tmp:0:1} = [[:blank:]] ]] && tmp="${tmp##+([[:blank:]])}"
@@ -356,13 +356,13 @@ eval "${s_var}"='"${tmp}"'
 } # -------------------------------------------------------------------------
 
 escape_varname() {
-local s_var="${1}"
+local s_var="$1"
 [[ ${!s_var} ]] || return 0
 printf "%q\n" "${!s_var}"
 } # -------------------------------------------------------------------------
 
 re_normalize() {
-local s_var="${1}"
+local s_var="$1"
 [[ ${!s_var} ]] || return 0
 local tmp="${!s_var}"
 #set -x
@@ -379,7 +379,7 @@ printf "%s\n" "${tmp}"
 } # -------------------------------------------------------------------------
 
 re_normalize2() {
-local s_var="${1}"
+local s_var="$1"
 [[ ${!s_var} ]] || return 0
 local tmp="${!s_var}"
 ##set -x
@@ -397,10 +397,10 @@ printf "%s\n" "${tmp}"
 
 lsearch() { # search word in list
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}"
+local str_search="$1"
 shift
 while (($#)); do
-	[[ ${str_search} = ${1} ]] && return
+	[[ ${str_search} = $1 ]] && return
 	shift
 done
 return 1
@@ -408,11 +408,11 @@ return 1
 
 lsearch_lines() { # search for a given word in std input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line
+local str_search="$1" str_line
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
 	while (($#)); do
-		[[ ${str_search} = ${1} ]] && return
+		[[ ${str_search} = $1 ]] && return
 		shift
 	done
 done
@@ -421,12 +421,12 @@ return 1
 
 lsearch_echo() { # search for the first occurence of a given word in input and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line
+local str_search="$1" str_line
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
-	str_input="${@}"
+	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = ${1} ]] && {
+		[[ ${str_search} = $1 ]] && {
 			printf "%s\n" "${str_input}"
 			return 0
 		}
@@ -438,12 +438,12 @@ return 1
 
 lsearch_echo_multiline() { # search for a given word in input (multi line) and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line
+local str_search="$1" str_line
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
-	str_input="${@}"
+	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = ${1} ]] && {
+		[[ ${str_search} = $1 ]] && {
 			printf "%s\n" "${str_input}"
 			break
 		}
@@ -455,12 +455,12 @@ done
 
 lsearch_echo_reverse() { # show only the part of the input, which does not contain 'word'
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line str_input
+local str_search="$1" str_line str_input
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
-	str_input="${@}"
+	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = ${1} ]] && continue 2
+		[[ ${str_search} = $1 ]] && continue 2
 		shift
 	done
 	printf "%s\n" "${str_input}"
@@ -469,20 +469,20 @@ done
 
 lsearch_echo_reverse_single() { # search for a given word, remove first occurence, print rest
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line str_input
+local str_search="$1" str_line str_input
 local -i found_str=0
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
 	while (($#)); do
-		[[ ${str_search} = ${1} ]] && ((found_str == 0)) && {
+		[[ ${str_search} = $1 ]] && ((found_str == 0)) && {
 			found_str=1
 			shift
 			continue
 		}
 		if [[ -z ${str_input} ]]; then
-			str_input="${1}"
+			str_input="$1"
 		else
-			str_input+=" ${1}"
+			str_input+=" $1"
 		fi
 		shift
 	done
@@ -492,7 +492,7 @@ done
 
 lsearch_regex() { # perform a regex search in input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line
+local str_search="$1" str_line
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	[[ ${str_line} =~ ${str_search} ]] && {
 		printf "%s\n" "${str_line}"
@@ -504,12 +504,12 @@ return 1
 
 lsearch_regex_echo_object() { # perform a regex search in input and print result
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="${1}" str_line
+local str_search="$1" str_line
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	set -- ${str_line}
 	while (($#)); do
-		[[ ${1} =~ ${str_search} ]] && {
-			printf "%s\n" "${1}"
+		[[ $1 =~ ${str_search} ]] && {
+			printf "%s\n" "$1"
 			return 0
 		}
 		shift
@@ -522,7 +522,7 @@ return 1
 #{
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local str_search str_line
-#str_search="${1}"
+#str_search="$1"
 #while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 #	[[ "${str_line}" =~ "${str_search}" ]] && {
 #		echo "${str_line}"
@@ -534,17 +534,17 @@ check_var_overlap() { # check for overlapping variable names
 # $1 = name of variable (maybe user config var) to be checked,
 # $2 = local function variable name to be checked against
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-[[ ${1} != ${2} ]] || {
-	log -E "Name \`${1}' is overlapping with the local variable name \`${2}'."
+[[ $1 != $2 ]] || {
+	log -E "Name \`$1' is overlapping with the local variable name \`$2'."
 	return 1
 }
 } # -------------------------------------------------------------------------
 
 check_unique() { # check for unique words in input
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_s="${1}"
+local str_s="$1"
 shift
-if printf "%s\n" "${@}" | lsearch_echo_reverse_single "${str_s}" | lsearch_lines "${str_s}"
+if printf "%s\n" "$@" | lsearch_echo_reverse_single "${str_s}" | lsearch_lines "${str_s}"
 then
 	return 1
 fi
@@ -552,7 +552,7 @@ fi
 
 check_str_unique() { # check for unique words in string
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_unique="${@}" str_search
+local str_unique="$@" str_search
 for str_search in ${str_unique}; do
 	check_unique "${str_search}" "${str_unique}" || {
 		log -E "Duplicate entry \`${str_search}'."
@@ -564,29 +564,29 @@ done
 
 val_numeric() { # check if a value is numeric
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${1} = +([[:digit:]]) ]] || {
-	log -E "Value \`${1}' is not numeric."
+[[ $1 = +([[:digit:]]) ]] || {
+	log -E "Value \`$1' is not numeric."
 	return 1
 }
 } # -------------------------------------------------------------------------
 
 val_numeric_quiet() { # silenlty check if a value is numeric
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${1} = +([[:digit:]]) ]]
+[[ $1 = +([[:digit:]]) ]]
 } # -------------------------------------------------------------------------
 
 val_range() {
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-((${1} < ${2})) || {
-	log -E "Starting value \`${1}' of range is not greater than end of range value \`${2}'."
+(($1 < $2)) || {
+	log -E "Starting value \`$1' of range is not greater than end of range value \`$2'."
 	return 1
 }
 } # -------------------------------------------------------------------------
 
 #val_xdigit() {
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#[[ ${1} = +([[:xdigit:]]) ]] || {
-#	log -E "Value \`${1}' is not hexadecimal."
+#[[ $1 = +([[:xdigit:]]) ]] || {
+#	log -E "Value \`$1' is not hexadecimal."
 #	return 1
 #}
 #} # -------------------------------------------------------------------------
@@ -606,7 +606,7 @@ check_vars() { # check for undefined variables and report an error if mising
 declare -i var_missing=0
 while (($#)); do
 	if ! [[ ${!1} ]]; then
-		log -E "Variable \`${1}' is undefined."
+		log -E "Variable \`$1' is undefined."
 		let var_missing+=1
 	fi
 	shift
@@ -619,12 +619,12 @@ check_vars_no_sep() { # check for undefined variables, or options which must not
 declare -i var_missing=var_sep=0
 while (($#)); do
 	if ! [[ ${!1} ]]; then
-		log -E "\`${1}' is not set"
+		log -E "\`$1' is not set"
 		let var_missing+=1
 	else
 		if [[ ${!1} = ${RULE_SEP} ]]; then
 			let var_sep+=1
-			log -E "\`${1}' is mandatory. Placeholder not allowed."
+			log -E "\`$1' is mandatory. Placeholder not allowed."
 		fi
 	fi
 	shift
@@ -633,20 +633,20 @@ done
 } # -------------------------------------------------------------------------
 
 check_var_no_sep_silent() { # check for undefined variable, or option which must not be a placeholder.
-[[ ${1} ]] || return 1
-[[ ${1} != ${RULE_SEP} ]]
+[[ $1 ]] || return 1
+[[ $1 != ${RULE_SEP} ]]
 } # -------------------------------------------------------------------------
 
 var_defined_silent() { # silently check for an undefined variable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${!1} ]]
-#eval '[[ ${'"${1}"'} ]]'
+#eval '[[ ${'"$1"'} ]]'
 } # -------------------------------------------------------------------------
 
 build_list() {
-local str_sep="${1}"
+local str_sep="$1"
 shift
-local str_list="${*}"
+local str_list="$*"
 str_list="$(strip_blanks "${str_list}")"
 printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
 } # -------------------------------------------------------------------------
@@ -662,8 +662,8 @@ printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
 #find_char_in_string()
 #{
 #[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-#char_search="${1}"
-#str_search="${2}"
+#char_search="$1"
+#str_search="$2"
 #for i in $(seq 0 $((${#str_search}-1))); do
 #	[ "${str_search:${i}:1}" = "${char_search}" ] && return 0
 #done
@@ -672,56 +672,56 @@ printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
 
 arr_members_sum() { # echo the amount of members an array ($1) contains
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'echo "${#'"${1}"'[@]}"'
+eval 'echo "${#'"$1"'[@]}"'
 } # -------------------------------------------------------------------------
 
 last_arr_member() { # retrieve the last member of an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'set -- -1 ${!'"${1}"'[@]}'
+eval 'set -- -1 ${!'"$1"'[@]}'
 printf "%s\n" "${!#}"
 } # -------------------------------------------------------------------------
 
 arr_indicies() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'printf "%s\n" "${!'"${1}"'[*]}"'
+eval 'printf "%s\n" "${!'"$1"'[*]}"'
 } # -------------------------------------------------------------------------
 
 arr_populated() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($(arr_members_sum "${1}") > 0))
+(($(arr_members_sum "$1") > 0))
 } # -------------------------------------------------------------------------
 
 show_arr_as_string() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'printf "%s\n" "${'"${1}"'[*]}"'
+eval 'printf "%s\n" "${'"$1"'[*]}"'
 } # -------------------------------------------------------------------------
 
 show_arr_members() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'printf "%s\n" "${'"${1}"'[@]}"'
+eval 'printf "%s\n" "${'"$1"'[@]}"'
 } # -------------------------------------------------------------------------
 
 #check_array_empty_indicies() { # check for empty indicies in an array
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#(($(($(last_arr_member "${1}") + 1)) == $(arr_members_sum "${1}")))
+#(($(($(last_arr_member "$1") + 1)) == $(arr_members_sum "$1")))
 #} # -------------------------------------------------------------------------
 
 cp_array() { # command builder function to copy the content from one array to another
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-check_var_overlap "${1}" 's_arr' || return 1
-check_var_overlap "${2}" 'd_arr' || return 1
+check_var_overlap "$1" 's_arr' || return 1
+check_var_overlap "$2" 'd_arr' || return 1
 local -i arr_idx
-local s_arr="${1}" d_arr="${2}"
+local s_arr="$1" d_arr="$2"
 eval "${d_arr}"'=()'
 printf "%s\n" 'eval for arr_idx in ${!'"${s_arr}"'[@]}; do '"${d_arr}"'[arr_idx]="${'"${s_arr}"'[arr_idx]}"; done'
 } # -------------------------------------------------------------------------
 
 append_array() { # append the content of an array to another array
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-check_var_overlap "${1}" 'first_arr' || return 1
-check_var_overlap "${2}" 'sec_arr' || return 1
+check_var_overlap "$1" 'first_arr' || return 1
+check_var_overlap "$2" 'sec_arr' || return 1
 local -i arr_idx
-local first_arr="${1}" sec_arr="${2}"
+local first_arr="$1" sec_arr="$2"
 arr_populated "${sec_arr}" || return 0
 local -i arr_height=$(($(last_arr_member "${first_arr}") + 1))
 
@@ -735,9 +735,9 @@ insert_array() {
 # insert the content of an array into another array,
 # starting before first index of target array.
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-check_var_overlap "${1}" 'insert_arr' || return 1
-check_var_overlap "${2}" 'append_arr' || return 1
-local insert_arr="${1}" append_arr="${2}"
+check_var_overlap "$1" 'insert_arr' || return 1
+check_var_overlap "$2" 'append_arr' || return 1
+local insert_arr="$1" append_arr="$2"
 append_array "${insert_arr}" "${append_arr}"
 $(${copy_array} "${insert_arr}" "${append_arr}")
 } # -------------------------------------------------------------------------
@@ -745,18 +745,18 @@ $(${copy_array} "${insert_arr}" "${append_arr}")
 dbg_arr() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i dbg_idx
-for dbg_idx in $(arr_indicies ${1}); do
+for dbg_idx in $(arr_indicies $1); do
 	eval 'printf "%s[%s]: %s\n" "'${1}'" "'${dbg_idx}'" "${'${1}'['${dbg_idx}']}"'
 done
 } # -------------------------------------------------------------------------
 
 show_array_column() { # show only specified columns of an array content
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-check_var_overlap "${1}" 't_arr' || return 1
+check_var_overlap "$1" 't_arr' || return 1
 local -a t_arr
 local -i arr_idx
 local str_output col
-$(${copy_array} "${1}" 't_arr')
+$(${copy_array} "$1" 't_arr')
 shift
 local columns_to_show="${@:-1}"
 for arr_idx in ${!t_arr[@]}; do
@@ -771,8 +771,8 @@ done
 
 check_array_unique() { # check for unique entries in an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-check_var_overlap "${1}" 'uniq_arr' || return 1
-local uniq_arr="${1}"
+check_var_overlap "$1" 'uniq_arr' || return 1
+local uniq_arr="$1"
 local -a tmp_arr
 local -i arr_idx arr_idx2 last_index
 if arr_populated "${uniq_arr}"; then
@@ -793,8 +793,8 @@ done
 
 check_array_unique_assignement() { # check for unique assignments in a template
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-check_var_overlap "${1}" 'uniq_arr' || return 1
-local uniq_arr="${1}"
+check_var_overlap "$1" 'uniq_arr' || return 1
+local uniq_arr="$1"
 local -a tmp_arr
 local -i arr_idx arr_idx2 last_index
 if arr_populated "${uniq_arr}"; then
@@ -816,17 +816,17 @@ done
 fill_array() { # read content of a variable and fill it into an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${!1} ]] || {
-	log -e "Variable \`${1}' is not set"
+	log -e "Variable \`$1' is not set"
 	return 0
 }
-check_var_overlap "${1}" 'arr_var_content' || return 1
+check_var_overlap "$1" 'arr_var_content' || return 1
 local rline
 declare -i array_cnt=line_cnt=ignore_cnt=0
 local arr_var_content="${!1}" # eval variable name
 case "${arr_var_content}" in
 	(+([[:space:]])) # array variable contains only space class chars
-		log -N "\`${1}' is empty"
-		unset "${1}"
+		log -N "\`$1' is empty"
+		unset "$1"
 		return 0
 	;;
 	*) while read -r -t ${GLOBAL_READ_TIMEOUT} rline; do
@@ -842,13 +842,13 @@ case "${arr_var_content}" in
 				continue
 			}
 			# if all test are passed, add line to array
-			eval "${1}"'[array_cnt++]="'"${rline}"'"'
+			eval "$1"'[array_cnt++]="'"${rline}"'"'
 		done < <(printf "%s\n" "${arr_var_content}")
 	;;
 esac
 if ((line_cnt == ignore_cnt)); then # if line and ignore counters are equal, unset array variable
-	log -N "\`${1}' contains only empty or comment lines"
-	unset "${1}"
+	log -N "\`$1' contains only empty or comment lines"
+	unset "$1"
 fi
 } # -------------------------------------------------------------------------
 
@@ -856,8 +856,8 @@ fill_array_from_file() {
 # fill the first column (except comments and empty lines) of a file into an array
 # dupe lines are removed
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-check_var_overlap "${1}" 'array_name' || return 1
-local array_name="${1}" file_name="${2}"
+check_var_overlap "$1" 'array_name' || return 1
+local array_name="$1" file_name="$2"
 local str_name rest last_entry
 local -i arr_idx=0
 while read -r -t ${GLOBAL_READ_TIMEOUT} str_name rest; do
@@ -917,7 +917,7 @@ while (( $(( $x & $mask )) != 0 )); do
 done
 
 if (( $(( $mask & 2147483647 )) != 0 )); then # 2147483647 = 0x7fffffff
-	log -E "Invalid net mask: ${1}"
+	log -E "Invalid net mask: $1"
 	return 1
 else
 	printf "%s\n" ${vlsm}
@@ -961,7 +961,7 @@ fi
 
 cfg_err() { # report and count ruleblock rules config errors
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local barray="${1}" bindex="${2}"
+local barray="$1" bindex="$2"
 shift 2
 if [[ ${barray} = quick-rule ]]; then
 	log -E "Bad entry in rule: \`${*}'"
@@ -975,7 +975,7 @@ cmd_err_count() {
 # raise command error counters according to error category and display message
 # exit program if EXIT_ON_ERROR is enabled
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local prog_msg err_category="${1}"
+local prog_msg err_category="$1"
 shift
 case "${err_category}" in
 	ipt) prog_msg="iptables" ;;
@@ -1004,7 +1004,7 @@ local IFS="${Oifs}"
 	log -E "Error while retrieving kernel version!"
 	return 1
 }
-local -i k_major=${1} k_minor=${2} p_level=${3:0:2}
+local -i k_major=$1 k_minor=$2 p_level=${3:0:2}
 
 # Save kernel version, so we can check version depending matters (TO DO!)
 KERN_VER=("${k_major}" "${k_minor}" "${p_level:-0}")
@@ -1030,7 +1030,7 @@ return 0
 
 load_file() { # source other files with custom message
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local s_category=${1}
+local s_category=$1
 shift
 local s_file=${*}
 local -i ret_code=0
@@ -1081,7 +1081,7 @@ fi
 
 rm_mod() { # remove a module
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local mod_to_rm="${1}"
+local mod_to_rm="$1"
 [[ -d ${MODULE_DIR} ]] || {
 	log -E "\`${MODULE_DIR}' does not exist."
 	return $ER_NOEX
@@ -1107,7 +1107,7 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 		REPLY=${REPLY##*/}
 		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
 			# in any mode that is not saving commands, check if module is loaded
-			if [[ ${MODE} != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
+			if [[ $MODE != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
 			then
 				if ! "${LSMOD}" | my_cut | lsearch_lines "${mod_to_rm}"; then
 					log -W "Module ${mod_to_rm} is not loaded"
@@ -1151,9 +1151,9 @@ fi
 
 load_mod() { # load a module
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local module_name="${1}"
+local module_name="$1"
 shift
-local module_params="${@}"
+local module_params="$@"
 [[ -d ${MODULE_DIR} ]] || {
 	log -E "\`${MODULE_DIR}' does not exist."
 	return $ER_NOEX
@@ -1178,13 +1178,13 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 	while read -r ; do
 		REPLY="${REPLY##*/}"
 		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
-			if [[ ${MODE} != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
+			if [[ $MODE != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
 			then
 			# in any mode that is not saving commands, check if module is already loaded
 				if "${LSMOD}" | my_cut | lsearch_lines "${module_name}"; then
 					log -N "Module ${module_name} is already loaded"
 					# remember the module sate, by writing it to an array
-#					[[ ${MODE} != DRY-RUN ]] && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
+#					[[ $MODE != DRY-RUN ]] && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
 					((EXEC_COMMANDS)) && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
 					return 0
 				fi
@@ -1239,7 +1239,7 @@ local -i idx
 	log -v "MODULES_TO_LOAD"
 	return 0
 }
-case "${1}" in
+case "$1" in
 	load)
 		log -S "Loading modules"
 		for idx in ${!MODULES_TO_LOAD[@]}; do
@@ -1256,7 +1256,7 @@ esac
 } # -------------------------------------------------------------------------
 
 restore_module_state() { # try to restore initial (remembered) module state
-[[ ${MODE} = @(OPEN|RESTART|TC-START) ]] || return 0
+[[ $MODE = @(OPEN|RESTART|TC-START) ]] || return 0
 ((${#MOD_STATE_ARRAY[@]})) || {
 	log -v 'MOD_STATE_ARRAY'
 	return 0
@@ -1267,9 +1267,9 @@ local -i idx
 log -I "Trying to restore initial module state"
 for idx in ${!MOD_STATE_ARRAY[@]}; do
 	set -- ${MOD_STATE_ARRAY[idx]}
-	module_state="${1}" module_name="${2}"
+	module_state="$1" module_name="$2"
 	shift 2
-	module_params="${@}"
+	module_params="$@"
 	case "${module_state}" in
 		load)
 			log -e "${PF}probing module: ${module_name}"
@@ -1302,7 +1302,7 @@ fi
 
 set_proc() { # set the proc values
 [[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
-local proc_val="${1}" proc_path="${2}" proc_msg="${3}" proc_mode_msg
+local proc_val="$1" proc_path="$2" proc_msg="$3" proc_mode_msg
 [[ -f ${proc_path} ]] || {
 	log -x "${proc_path}"
 	raise_cfg_err_count
@@ -1340,10 +1340,10 @@ local vsingle proc_dev proc_set vname vtype ppath epath procmsg vresult
 
 for idx in ${!SYSCTL_ARRAY[@]}; do
 	set -- ${SYSCTL_ARRAY[idx]}
-	vname="${1}" vtype="${2}" ppath="${3}"
+	vname="$1" vtype="$2" ppath="$3"
 	shift 3
 	if [[ ${vtype} = iface_bool ]]; then
-		epath="${1}"
+		epath="$1"
 		shift
 	fi
 	path_found=0
@@ -1355,8 +1355,8 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 	}
 	IFS="|"
 	for rvar in ${ppath}; do
-		if [[ -e ${rvar} ]]; then
-			ppath="${rvar}"
+		if [[ -e $rvar ]]; then
+			ppath="$rvar"
 			path_found=1
 			break
 		fi
@@ -1380,7 +1380,7 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 				(+(*([[:space:]])+([[:graph:]])[:][0-1]*([[:space:]]))) # valid config string
 					for vsingle in ${vresult}; do # for every interface entry
 						set -- ${vsingle//:/ }
-						proc_dev="${1}" proc_set="${2}"
+						proc_dev="$1" proc_set="$2"
 						check_iface "${proc_dev}" || {
 							log -i "${vresult}" "${vname}"
 							raise_cfg_err_count
@@ -1449,7 +1449,7 @@ done
 } # -------------------------------------------------------------------------
 
 restore_proc_state() { # try to restore initial (remembered) /proc settings
-[[ ${MODE} = @(OPEN|RESTART|TC-START) ]] || return 0
+[[ $MODE = @(OPEN|RESTART|TC-START) ]] || return 0
 ((${#PROC_STATE_ARRAY[@]})) || {
 	log -v 'PROC_STATE_ARRAY'
 	return 0
@@ -1459,10 +1459,10 @@ local -i idx
 log -I "Trying to restore initial proc configuration"
 for idx in ${!PROC_STATE_ARRAY[@]}; do
 	eval 'set -- '"${PROC_STATE_ARRAY[idx]}"
-		proc_val="${1}"
+		proc_val="$1"
 		shift
 	log -e "${PF}restoring: "${proc_val}" to \`${*}'"
-	printf "%s\n" "${proc_val}" >"${*}" || {
+	printf "%s\n" "${proc_val}" >"$*" || {
 		log -E "failed setting "${proc_val}" to \`${*}'"
 	}
 done
@@ -1474,7 +1474,7 @@ done
 
 get_route_iface() { # retrieve and echo the interface an IP is routed over
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-"${IP}" -o route get ${1} | my_cut -c '5'
+"${IP}" -o route get $1 | my_cut -c '5'
 } # -------------------------------------------------------------------------
 
 get_default_route_iface() { # get and echo the interface of the default route.
@@ -1483,12 +1483,12 @@ get_default_route_iface() { # get and echo the interface of the default route.
 
 #get_default_table_route_iface() { # get and echo the interface of the default route, of a specified table
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#"${IP}" route list table "${1}" | lsearch_regex '^default' | my_cut -c '5'
+#"${IP}" route list table "$1" | lsearch_regex '^default' | my_cut -c '5'
 #} # -------------------------------------------------------------------------
 
 get_if_data() { # load interface data into an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local iface="${1}" str_data
+local iface="$1" str_data
 [[ ${iface} = +([[:word:]]) ]] || {
 	log -E "Interface name \`${iface}' contains characters not of type [:word:]. Cannot work with that."
 	raise_gen_err_count
@@ -1499,7 +1499,7 @@ while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
 	set -- ${REPLY} # array format: interface | alias | IP | netmask | broadcast
 	[[ $(eval 'echo "${'$((${#} - 1))'}"') = secondary ]] && continue
 	str_data="${!#} ${2%/*} ${2#*/}"
-	case "${3}" in
+	case "$3" in
 		brd) # fill array: handle | ip-addr | netmask | broadcast-addr
 			str_data+=" ${4}"
 #			INTERFACE_ARRAY[${#INTERFACE_ARRAY[@]}]="${iface} ${str_data}"
@@ -1518,7 +1518,7 @@ readonly IFDATA_ARRAY_"${iface}"
 
 get_if_ipv4_data() { # query an interfaces IPv4 data and put that into an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_wanted_iface="${1}"
+local str_wanted_iface="$1"
 if ! arr_populated "IFDATA_ARRAY_${str_wanted_iface}"; then
 	log -W "IFDATA_ARRAY_${str_wanted_iface} has no members. Unable to retrieve data for interface: ${str_wanted_iface}."
 	return 1
@@ -1556,7 +1556,7 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 	if_regged=0 if_is_ipsec=0
 	set -- ${NET_INTERFACES[net_idx]}
 	strERR="NET_INTERFACES ${net_idx} ${NET_INTERFACES[net_idx]}"
-	nif="${1}" nalias="${2}" loc="${3}" netname="${4}"
+	nif="$1" nalias="$2" loc="$3" netname="$4"
 	[[ ${4} ]] || {
 		cfg_err ${strERR}
 		continue
@@ -1633,8 +1633,8 @@ done
 #}
 for rvar in NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
 do
-	readonly ${rvar}
-	if [[ $DEBUG_INFO ]]; then declare -p ${rvar} 2>/dev/null; fi
+	readonly $rvar
+	if [[ $DEBUG_INFO ]]; then declare -p $rvar 2>/dev/null; fi
 done
 #readonly NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
 } # -------------------------------------------------------------------------
@@ -1648,7 +1648,7 @@ readonly NET_IFLIST="$(strip_blanks "${NET_IFLIST}")"
 readonly NET_IFLIST_CHECK_STRING="$(build_list '|' "${NET_IFLIST}")"
 
 for rvar in ${NET_IFLIST}; do
-	lsearch "${rvar}" ${NET_NAME_LIST} && {
+	lsearch "$rvar" ${NET_NAME_LIST} && {
 		log -E "Network names must not be the same as interface names."
 		raise_cfg_err_count
 		return $ER_CONF
@@ -1663,7 +1663,7 @@ done
 }
 for rvar in NET_IFLIST DEF_ROUTE_IF
 do
-	if [[ $DEBUG_INFO ]]; then declare -p ${rvar}; fi
+	if [[ $DEBUG_INFO ]]; then declare -p $rvar; fi
 done
 return 0
 } # -------------------------------------------------------------------------
@@ -1673,7 +1673,7 @@ get_net_data() { # query and echo a networks data by its name
 if arr_populated "NETDATA_ARRAY_${1}"; then
 	show_arr_as_string "NETDATA_ARRAY_${1}"
 else
-	log -E "Unable to retrieve data for network: \' ${1}'."
+	log -E "Unable to retrieve data for network: \`$1'."
 	raise_gen_err_count
 	return 1
 fi
@@ -1700,8 +1700,8 @@ eval 'printf "%s\n" "${NETDATA_ARRAY_'${1}'[4]}/${NETDATA_ARRAY_'${1}'[3]}"'
 
 val_ipv4_cidr_mask() { # validate an IPv4 cidr netmask
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#val_numeric_quiet ${1} || return 1
-((${1} >= 0 && ${1} <= 32))
+#val_numeric_quiet $1 || return 1
+(($1 >= 0 && ${1} <= 32))
 } # -------------------------------------------------------------------------
 
 #val_ipv4_netmask() { # validate an IPv4 IP netmask
@@ -1725,20 +1725,20 @@ ip_vlsm "$1" &>/dev/null
 val_oct_range() { # check if an IP address octet is in the valid range
 [[ ${4} ]] || { reqparm ${FUNCNAME} 4; return 1; }
 local oct
-for oct in "${1}" "${2}" "${3}" "${4}"; do
+for oct in "$1" "$2" "$3" "$4"; do
 	val_8bit "${oct}" || return 1
 done
 } # -------------------------------------------------------------------------
 
 is_ifname_wcard() { # check if last letter of interface name is a '+'
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ $(show_last_char "${1}") = '+' ]]
+[[ $(show_last_char "$1") = '+' ]]
 } # -------------------------------------------------------------------------
 
 val_ifname() { # 'pre-validate' interface names
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IFACE_CHECK == 0)) || return 0
-local ifname="${1}"
+local ifname="$1"
 if ((${#ifname} < 2)); then
 	log -E "Interface name \`${ifname}' is too short."
 	return 1
@@ -1762,7 +1762,7 @@ check_iface ${ifname} || return 1
 
 val_ipv4_addr_no_range() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-val_ip4_addr "${1}" || return 1
+val_ip4_addr "$1" || return 1
 [[ ${IPSTRING} != IPRANGE ]] || {
 	log -E "IP-range address not valid in context."
 	return 1
@@ -1772,8 +1772,8 @@ val_ip4_addr "${1}" || return 1
 check_iface() { # validate interface existence
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IFACE_CHECK == 0)) || return 0
-"${IP}" link show ${1} &>/dev/null || {
-	log -E "Interface ${1} does not exist."
+"${IP}" link show $1 &>/dev/null || {
+	log -E "Interface $1 does not exist."
 	return 1
 }
 } # -------------------------------------------------------------------------
@@ -1790,7 +1790,7 @@ done
 
 val_ip4_addr() { # validate IPv4 addresses
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local range_ip str_ip_addr="${1}"
+local range_ip str_ip_addr="$1"
 IPSTRING=""
 case "${str_ip_addr}" in
 	# IP string is global shortcut
@@ -1855,7 +1855,7 @@ esac
 
 classify_ip4_addr() { # classify IPv4 addresses
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "${1}" in
+case "$1" in
 	# IP string is global shortcut
 	(0/0 | 0.0.0.0/0) echo "IPNET" ;;
 	# IP string is single IP
@@ -1867,28 +1867,17 @@ case "${1}" in
 	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
 		echo "IPRANGE"
 	;;
-	(*) log -E "Unknown error while processing \`${1}'."; return 1 ;;
+	(*) log -E "Unknown error while processing \`$1'."; return 1 ;;
 esac
 } # -------------------------------------------------------------------------
 
-#val_mac() { # validate MAC addresses
-#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#case "${1}" in
-#	(@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]])\
-#:@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]):@([[:xdigit:]][[:xdigit:]]))
-#		return 0
-#	;;
-#	(*) log -E "Invalid MAC address \`${1}'."; return 1 ;;
-#esac
-#} # -------------------------------------------------------------------------
-
 val_mac() { # validate MAC addresses
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "${1}" in
+case "$1" in
 	[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]])
 		return 0
 	;;
-	(*) log -E "Invalid MAC address \`${1}'."; return 1 ;;
+	(*) log -E "Invalid MAC address \`$1'."; return 1 ;;
 esac
 } # -------------------------------------------------------------------------
 
@@ -1904,14 +1893,14 @@ done
 
 check_multi_negation_first_allowed() { # check for multiple negations, allow first occurance
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-string_negated "${1}" && shift
-check_multi_negation "${@}" || return 1
+string_negated "$1" && shift
+check_multi_negation "$@" || return 1
 } # -------------------------------------------------------------------------
 
 check_multi_negation() { # check for multiple negations
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 while (($#)); do
-	string_negated "${1}" && {
+	string_negated "$1" && {
 		log -E "Negations in a multi match are logicaly incorrect, ignoring entry."
 		return 1
 	}
@@ -1921,8 +1910,8 @@ done
 
 val_ttl() { # validate TTL manipulation values
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#if ((${1} < 0 || ${1} > 255)); then
-if ! val_8bit "${1}"; then
+#if (($1 < 0 || ${1} > 255)); then
+if ! val_8bit "$1"; then
 	log -E "TTL value must be between 0 and 255."
 	return 1
 fi
@@ -1931,7 +1920,7 @@ fi
 val_tcp_flags() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 set -- ${1/:/ }
-#local str_mask="$(IFS=, split_val ${1})" str_comp="$(IFS=, split_val ${2})" str_flag
+#local str_mask="$(IFS=, split_val $1)" str_comp="$(IFS=, split_val $2)" str_flag
 local str_mask="${1//,/ }" str_comp="${2//,/ }" str_flag
 check_str_unique "${str_mask}" || return 1
 check_str_unique "${str_comp}" || return 1
@@ -1942,59 +1931,59 @@ done
 
 val_dscp() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "${1}" in
+case "$1" in
 	+([[:digit:]])|0x+([[:xdigit:]]))
-		val_6bit "${1}" || {
-			log -E "DSCP value \`${1}' is out of bounds."
+		val_6bit "$1" || {
+			log -E "DSCP value \`$1' is out of bounds."
 			return 1
 		}
 	;;
 	BE|EF|AF[1-4][1-3]|CS[1-4]) : ;;
-	*) log -i "${1}" "DSCP descriptor"
+	*) log -i "$1" "DSCP descriptor"
 		return 1
 esac
 } # -------------------------------------------------------------------------
 
 val_6bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((${1} >= 0 && ${1} <= 0x3F))
+(($1 >= 0 && ${1} <= 0x3F))
 } # -------------------------------------------------------------------------
 
 val_8bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((${1} >= 0 && ${1} <= 0xFF))
+(($1 >= 0 && ${1} <= 0xFF))
 } # -------------------------------------------------------------------------
 
 val_16bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((${1} >= 0 && ${1} <= 0xFFFF))
+(($1 >= 0 && ${1} <= 0xFFFF))
 } # -------------------------------------------------------------------------
 
 val_32bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((${1} >= 0 && ${1} <= 0xFFFFFFFF))
+(($1 >= 0 && ${1} <= 0xFFFFFFFF))
 } # -------------------------------------------------------------------------
 
 val_32bit_off1() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((${1} >= 1 && ${1} <= 0xFFFFFFFF))
+(($1 >= 1 && ${1} <= 0xFFFFFFFF))
 } # -------------------------------------------------------------------------
 
 val_nf_mark() { # validate netfilter mark and mark-mask values
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-val_32bit "${1}" || {
-	log -E "Mark value or mask \`${1}' is out of bounds. Should be 32bit: 0-0xFFFFFFFF (4294967295)."
+val_32bit "$1" || {
+	log -E "Mark value or mask \`$1' is out of bounds. Should be 32bit: 0-0xFFFFFFFF (4294967295)."
 	return 1
 }
 } # -------------------------------------------------------------------------
 
 val_log_facility() { # validate logging facility values, to be valid for logger utility
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$(string_tolower ${1})" in
+case "$(string_tolower $1)" in
 	(auth|authpriv|cron|daemon|ftp|kern|lpr|mail|news|security|syslog|user|uucp|local[0-7])
 		return 0
 	;;
-	(*) err_msg "Invalid log facility value \`${1}'."
+	(*) err_msg "Invalid log facility value \`$1'."
 		return 1
 esac
 return 0
@@ -2004,15 +1993,15 @@ val_spi() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_spi
 set -- ${1/:/ }
-for str_spi in "${@}"; do
+for str_spi in "$@"; do
 	val_numeric "${str_spi}" || return 1
 	val_32bit "${str_spi}" || {
 		log -E "SPI value is out of range."
 		return 1
 	}
 done
-if [[ ${2} ]]; then
-	val_range "${1}" "${2}" || return 1
+if [[ $2 ]]; then
+	val_range "$1" "$2" || return 1
 fi
 } # -------------------------------------------------------------------------
 
@@ -2029,10 +2018,10 @@ log -w "Pre-validating configuration entries"
 }
 for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
 	set -- ${CONFIG_ENTRY_ARRAY[cfg_idx]}
-	local conf_var=${1} var_type=${2} # declare name of config entry and its type
-	declare -i conf_mandatory=${3} # config entry is mandatory to be correctly set
+	local conf_var=$1 var_type=$2 # declare name of config entry and its type
+	declare -i conf_mandatory=$3 # config entry is mandatory to be correctly set
 	shift 3
-	local check_cmd="${@}"
+	local check_cmd="$@"
 	local var_content=${!conf_var} # substitute the content of the desired variable
 	if [[ -z ${var_content} ]]; then # if substitution returns a non empty variable
 		if ((conf_mandatory == 1)); then
@@ -2152,7 +2141,7 @@ local col_cat_name msg_color user_col_cat_name
 log -w "Setting message colours"
 for c_idx in ${!MSG_COLOR_ARRAY[@]}; do
 	set -- ${MSG_COLOR_ARRAY[c_idx]}
-	col_cat_name="${1}" msg_color="${2}"
+	col_cat_name="$1" msg_color="$2"
 	user_col_cat_name="${!col_cat_name}"
 	# see if variable is defined by user
 	if [[ ${user_col_cat_name} ]]; then
@@ -2247,13 +2236,13 @@ if ((ENABLE_COLORS == 1)) ; then
  ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
  ${WHITE}${FONT_BOLD}- MODE:${COL_TERM}${GREEN}${FONT_BOLD} ${MODE}${COL_TERM}"
 else
-	echo "Initializing ${ME} Firewall ${STR_VERSION} - MODE: ${MODE}"
+	echo "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
 fi
 ((VERBOSE >= 7)) && {
 	printf "PID: %d\n" ${PID}
 	printf "Parameters: %s\n" "${PARAMS}"
 }
-syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: ${MODE} - Parameters: ${PARAMS}"
+syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: $MODE - Parameters: ${PARAMS}"
 if ((EXEC_COMMANDS == 0)); then
 	log -T "Dry-run! Not executing generated commands"
 fi
@@ -2267,8 +2256,8 @@ check_vars ${MANDATORY_VARIABLES} || return $ER_NODEF
 check_sys_files() { # CHECK SYSTEM STANDARD FILES
 log -w "Checking for mandatory system files"
 for rvar in "${PROTOCOLS}" "${SERVICES}"; do
-	if [[ ! -f ${rvar} ]]; then
-		log -x "${rvar}"
+	if [[ ! -f $rvar ]]; then
+		log -x "$rvar"
 		return $ER_NOEX
 	fi
 done
@@ -2345,8 +2334,8 @@ fi
 load_configs() { # LOAD CONFIG FILES
 log -S "Loading config files"
 for rvar in ${CONFIG_FILES}; do
-	load_file config "${CONFIG_DIR}"/"${rvar}" || {
-		log -E "Failed loading config file ${CONFIG_DIR}/${rvar}."
+	load_file config "${CONFIG_DIR}"/"$rvar" || {
+		log -E "Failed loading config file ${CONFIG_DIR}/$rvar."
 		return $ER_FAIL
 	}
 done
@@ -2361,17 +2350,17 @@ fi
 	log -v 'SCRIPT_MAP'
 	return 0
 }
-local scr_mode="${1}" r_modes scr_type scripts_to_run r_m scrpt
+local scr_mode="$1" r_modes scr_type scripts_to_run r_m scrpt
 [[ ${scr_mode} = @(prolog|epilog) ]] || {
 	log -o "${scr_mode}" ${FUNCNAME}
 	return 1
 }
 for scr_idx in ${!SCRIPT_MAP[@]}; do
 	set -- ${SCRIPT_MAP[scr_idx]}
-#	r_modes="$(IFS=, split_val ${1})" scr_type="${2}"
-	r_modes="${1//,/ }" scr_type="${2}"
+#	r_modes="$(IFS=, split_val $1)" scr_type="$2"
+	r_modes="${1//,/ }" scr_type="$2"
 	shift 2
-	scripts_to_run="${@}"
+	scripts_to_run="$@"
 	[[ ${scr_type} = @(epilog|prolog) ]] || {
 		log -E "Invalid script mode descriptor \`${scr_type}' in \`SCRIPT_MAP' at index \`${scr_idx}'. \
 			Must be either epilog or prolog."
@@ -2379,7 +2368,7 @@ for scr_idx in ${!SCRIPT_MAP[@]}; do
 		continue
 	}
 	for r_m in ${r_modes}; do
-		if [[ ${r_m} = ${MAIN_ARG} || ${r_m} = all ]] && [[ ${scr_type} = ${scr_mode} ]]; then
+		if [[ ${r_m} = $MAIN_ARG || ${r_m} = all ]] && [[ ${scr_type} = ${scr_mode} ]]; then
 			[[ $scr_type = $cmdline_skip_scripts ]] && {
 				log -N "Not running $cmdline_skip_scripts scripts."
 				continue
@@ -2422,14 +2411,14 @@ done
 
 #xtract_assignment() {
 #local str_w str_v
-#IFS='=' read -r str_w str_v < <(printf "%s\n" "${@}")
+#IFS='=' read -r str_w str_v < <(printf "%s\n" "$@")
 #printf "'%s' '%s'\n" "${str_w}" "${str_v}"
 #}
 
 _get_attribute_data() {
 for i in ${attr_indicies}; do
 #	eval 'set -- '$(xtract_assignment "$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")")
-#	printf "%s %s\n" "$1" "$2" # str_attr_name="${1}" str_attr_val="${2}"
+#	printf "%s %s\n" "$1" "$2" # str_attr_name="$1" str_attr_val="$2"
 	str_attr="$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")"
 	printf "%s %s\n" "${str_attr%%=*}" "${str_attr#*=}"
 done
@@ -2467,7 +2456,7 @@ local -a ARR_TAG_REF=(
 )
 for tag_idx in ${!ARR_TAGS[@]}; do
 	set -- ${ARR_TAGS[tag_idx]}
-	str_act="${1}" tag_name="${2}"
+	str_act="$1" tag_name="$2"
 	case "${str_act}" in
 		open)
 			[[ $DEBUG_INFO ]] && {
@@ -2607,7 +2596,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							for i in $(arr_indicies "ARR_CONT_NO_${tag_idx}"); do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
 								eval 'set -- '"${str_cont}"
-								for tmp_content in "${@}"; do
+								for tmp_content in "$@"; do
 									RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}[$((opt_idx++))]=${tmp_content}\""
 								done
 							done
@@ -2651,7 +2640,7 @@ local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val at
 local -a RESULT_ARR
 for tag_idx in ${!ARR_TAGS[@]}; do
 	set -- ${ARR_TAGS[tag_idx]}
-	str_act="${1}" tag_name="${2}"
+	str_act="$1" tag_name="$2"
 	case "${str_act}" in
 		open)
 			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
@@ -2760,7 +2749,7 @@ local -a RESULT_ARR ARR_GLOBAL_OPTS ARR_TMP_GLOB_TEMPLATE ARR_GLOB_TMP_RULEBLOCK
 
 for tag_idx in ${!ARR_TAGS[@]}; do
 	set -- ${ARR_TAGS[tag_idx]}
-	str_act="${1}" tag_name="${2}"
+	str_act="$1" tag_name="$2"
 	case "${str_act}" in
 		open)
 			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
@@ -2865,7 +2854,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 #								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
 								str_cont=""
-								for str_attr in "${@}"; do
+								for str_attr in "$@"; do
 									str_cont+="${str_attr%%=*}=\"${str_attr#*=}\" "
 								done
 #								tmp_content+="${str_cont}"
@@ -2980,7 +2969,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
 #								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
-								for str_attr in "${@}"; do
+								for str_attr in "$@"; do
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 									_validate_ipt_option_name "${str_attr_name}" || return 1
 									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name+="=${str_attr_val}"
@@ -3037,7 +3026,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
 #								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
-								for str in "${@}"; do
+								for str in "$@"; do
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str%%=*}\""
 									if [[ ${str#*=} = *[[:blank:]]* ]]; then
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str#*=}' "
@@ -3152,7 +3141,7 @@ fi
 
 xml_parser() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_interpreter="${1}"
+local str_interpreter="$1"
 local line tag_name attributes last_tag tmp_content str_attr str_attr_name str_attr_val
 local -i tag_idx=0 tmp_tag_idx=0 comment_mode=0 comment_idx=0 attr_idx=0 cont_idx=0 cont_expect=0 attr_expect=0 line_count=0 x
 local -a ARR_TAGS ARR_TMP_TAGS
@@ -3224,7 +3213,7 @@ while read -r; do let line_count+=1
 			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
 			if [[ ${attributes} && ${attributes} != +([[:blank:]]) ]]; then
 				eval 'set -- '"$(re_normalize attributes)"
-				for str_attr in "${@}"; do
+				for str_attr in "$@"; do
 					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
 #					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"${str_attr}"'"'
 				done
@@ -3245,7 +3234,7 @@ while read -r; do let line_count+=1
 			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
 			if [[ ${attributes} && ${attributes} != +([[:space:]]) ]]; then
 				eval 'set -- '"$(re_normalize attributes)"
-				for str_attr in "${@}"; do
+				for str_attr in "$@"; do
 					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
 				done
 			fi
@@ -3344,7 +3333,7 @@ esac
 save_command_array() { # save a selected command array to a file
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local appl_msg proc_val
-local cmd_arr=${1} # name of the array
+local cmd_arr=$1 # name of the array
 local -i work_arr_sum idx
 if ! ((${#CMD_NAMES_ARRAY[@]})); then
 	log -u 'CMD_NAMES_ARRAY'
@@ -3352,7 +3341,7 @@ if ! ((${#CMD_NAMES_ARRAY[@]})); then
 fi
 for idx in ${!CMD_NAMES_ARRAY[@]}; do
 	set -- ${CMD_NAMES_ARRAY[idx]}
-	[[ ${1} != ${cmd_arr} ]] && continue # not the array we want
+	[[ $1 != ${cmd_arr} ]] && continue # not the array we want
 	shift 2
 	appl_msg=${*}
 	work_arr_sum=$(arr_members_sum ${cmd_arr})
@@ -3368,7 +3357,7 @@ case "${cmd_arr}" in
 	(PROC_CMD_ARRAY)
 		for idx in ${!PROC_CMD_ARRAY[@]}; do
 			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
-				proc_val="${1}"
+				proc_val="$1"
 				shift
 			printf "%s\n" "echo \""${proc_val}"\" >\"${*}\"" >>"${RULESETFILE}"
 		done
@@ -3458,14 +3447,14 @@ for str_tbl in rawpost security raw nat mangle filter; do
 	printf "*%s\n" "${str_tbl}" >>"${RULESETFILE}"
 	for tidx in ${!IPT_POL_ARRAY[@]}; do
 		eval 'set -- '"${IPT_POL_ARRAY[tidx]}"
-		if [[ ${2} = ${str_tbl} ]]; then
-			printf ":%s %s %s\n" "${4}" "${5}" "[0:0]" >>"${RULESETFILE}"
+		if [[ $2 = ${str_tbl} ]]; then
+			printf ":%s %s %s\n" "$4" "$5" "[0:0]" >>"${RULESETFILE}"
 		fi
 	done
 	for tidx in ${!IPT_CCHAIN_ARRAY[@]}; do
 		eval 'set -- '"${IPT_CCHAIN_ARRAY[tidx]}"
-		if [[ ${2} = ${str_tbl} ]]; then
-			printf ":%s %s %s\n" "${4}" "-" "[0:0]" >>"${RULESETFILE}"
+		if [[ $2 = ${str_tbl} ]]; then
+			printf ":%s %s %s\n" "$4" "-" "[0:0]" >>"${RULESETFILE}"
 		fi
 	done
 	case "${str_tbl}" in
@@ -3528,13 +3517,13 @@ if [[ ${GEN_FORMAT} != ipt ]]; then
 		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 	do
 		if arr_populated "${cmd_array}"; then
-			[[ ${MODE} = SAVE-SHAPING-COMMANDS ]] || printf "IP_TABLES_NAMES=%s\n" "\"${IP_TABLES_NAMES}\"" >>"${RULESETFILE}"
+			[[ $MODE = SAVE-SHAPING-COMMANDS ]] || printf "IP_TABLES_NAMES=%s\n" "\"${IP_TABLES_NAMES}\"" >>"${RULESETFILE}"
 			printf "IPT=%s\n" "\"${IPT}\"" >>"${RULESETFILE}"
 			break
 		fi
 	done
 else
-	if [[ ${MODE} = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+	if [[ $MODE = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 		printf "IPT_RESTORE=%s\n" "\"${IPT_RESTORE}\"" >>"${RULESETFILE}"
 	fi
 fi
@@ -3651,14 +3640,14 @@ fi
 case "$MODE" in # act according to runtime mode
 	(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
 		log -T "Saving generated script to: ${RULESETFILE}"
-		if [[ ${MODE} = SAVE-IPT-COMMANDS && ${GEN_FORMAT} = ipt ]]; then
+		if [[ $MODE = SAVE-IPT-COMMANDS && ${GEN_FORMAT} = ipt ]]; then
 			iptsave_rulesets || return $?
 		else
 			save_rulesets || return $?
 		fi
 	;;
 	(*)
-#		if [[ ${MODE} = DRY-RUN ]]; then
+#		if [[ $MODE = DRY-RUN ]]; then
 		if ((EXEC_COMMANDS == 0)); then
 			log -T "Would apply generated commands"
 		else
@@ -3667,18 +3656,18 @@ case "$MODE" in # act according to runtime mode
 		# for every command array listed in CMD_NAMES_ARRAY show rule count
 		for i in ${!CMD_NAMES_ARRAY[@]}; do
 			set -- ${CMD_NAMES_ARRAY[i]}
-			str_arr_name=${1}
+			str_arr_name=$1
 			shift 2
 			work_arr_sum=$(arr_members_sum ${str_arr_name})
 			((work_arr_sum)) || continue
-#			if [[ ${MODE} = DRY-RUN ]]; then
+#			if [[ $MODE = DRY-RUN ]]; then
 			if ((EXEC_COMMANDS == 0)); then
 				log -S "Would apply ${work_arr_sum} ${*}"
 			else
 				log -S "Applying ${work_arr_sum} ${*}"
 			fi
 		done
-#		if [[ ${MODE} = DRY-RUN ]]; then # do not apply rules in dry-run mode
+#		if [[ $MODE = DRY-RUN ]]; then # do not apply rules in dry-run mode
 		((EXEC_COMMANDS)) || return 0 # do not apply rules in dry-run mode
 		# merge iptables command arrays
 		for str_arr_name in IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
@@ -3706,7 +3695,7 @@ case "$MODE" in # act according to runtime mode
 			elif [[ ${GEN_FORMAT} = cmd ]]; then
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval 'set -- '"${IPT_CMD_ARRAY[i]}"
-					"${IPT}" "${@}" &>/dev/null || cmd_err_count ipt "${IPT}" "${*}"
+					"${IPT}" "$@" &>/dev/null || cmd_err_count ipt "${IPT}" "$*"
 				done
 			else
 				log -U ${FUNCNAME}; return 1
@@ -3742,8 +3731,8 @@ case "$MODE" in # act according to runtime mode
 				((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
 			fi
 			if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
-#				if [[ ${MAIN_ARG} != @(stop|'test'|dry-run) ]] || ((TEST_MODE || EXEC_COMMANDS)); then
-				if [[ ${MAIN_ARG} != @(stop|'test') ]] || ((TEST_MODE == 0)); then
+#				if [[ $MAIN_ARG != @(stop|'test'|dry-run) ]] || ((TEST_MODE || EXEC_COMMANDS)); then
+				if [[ $MAIN_ARG != @(stop|'test') ]] || ((TEST_MODE == 0)); then
 					log -I "Saving rule listings for later difference checks"
 					if ((ENABLE_RAW == 1)); then
 						((RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
@@ -3764,7 +3753,7 @@ case "$MODE" in # act according to runtime mode
 			[[ $DEBUG_INFO ]] && dbg_arr "TC_CMD_ARRAY"
 			for i in ${!TC_CMD_ARRAY[@]}; do
 				eval 'set -- '"${TC_CMD_ARRAY[i]}"
-				"${TC}" "${@}" &>/dev/null || cmd_err_count tc "${*}"
+				"${TC}" "$@" &>/dev/null || cmd_err_count tc "$*"
 			done
 		fi
 		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
@@ -3772,10 +3761,10 @@ case "$MODE" in # act according to runtime mode
 			[[ $DEBUG_INFO ]] && dbg_arr "PROC_CMD_ARRAY"
 			for i in ${!PROC_CMD_ARRAY[@]}; do
 				eval 'set -- '"${PROC_CMD_ARRAY[i]}"
-				proc_val="${1}"
+				proc_val="$1"
 				shift
-				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo "$(read p_val < "${1}"; echo "${p_val}")")' '${1}'"
-				printf "%s\n" "${proc_val}" >"${1}" 2>/dev/null || cmd_err_count proc "printf %s\n ${proc_val} >${1}"
+				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo "$(read p_val < "$1"; echo "${p_val}")")' '${1}'"
+				printf "%s\n" "${proc_val}" >"$1" 2>/dev/null || cmd_err_count proc "printf %s\n ${proc_val} >${1}"
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
 		fi
@@ -3826,7 +3815,7 @@ case "$MAIN_ARG" in
 	lockdown) mode_msg="locked down" ;;
 	open) mode_msg="opened" ;;
 	parse-xml) mode_msg="parsed XML files" ;;
-	prepare-restore-on-start) mode_msg="prepared in ${MODE} mode" ;;
+	prepare-restore-on-start) mode_msg="prepared in $MODE mode" ;;
 	restart) mode_msg="reloaded" ;;
 	start) mode_msg="loaded" ;;
 	stop) mode_msg="stopped" ;;
@@ -3845,7 +3834,7 @@ case "$MAIN_ARG" in
 		return 1
 esac
 
-[[ ${MAIN_ARG} = @(dry-run|open|restart|start|save-commands|save-iptables-commands|save-shaping-commands|tc-start|tc-stop|'test') ]] && {
+[[ $MAIN_ARG = @(dry-run|open|restart|start|save-commands|save-iptables-commands|save-shaping-commands|tc-start|tc-stop|'test') ]] && {
 	log -w "${RULES_PROCESSED_COUNT} ruleblock rules have been processed, of which ${QUICK_RULES_COUNT} were quick-rules."
 	log -w "Resulting in ${RULES_GENERATED_COUNT} generated and ${INLINE_RULES_GENERATED_COUNT} inline rules"
 }
@@ -3889,7 +3878,7 @@ check_prog "${TC}"
 
 set_tc_mode() { # if requested by startup parameter, enable traffic shaping
 if ((ENABLE_TC_SHAPING == 0)); then
-	if [[ ${MODE} = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 		log -W "Traffic shaping is disabled in the configuration file."
 	fi
 fi
@@ -3980,7 +3969,7 @@ fi
 } # -------------------------------------------------------------------------
 
 run_main() {
-case "${1}" in
+case "$1" in
 #	DRY-RUN|RESTART|SAVE-COMMANDS|START)
 	RESTART|SAVE-COMMANDS|START)
 	# All of these modes use all IP-Array features
@@ -3991,9 +3980,9 @@ case "${1}" in
 	#  until all rules are generated and applied at the end
 		set_placeholder || return $?
 		set_global_log_params || return $?
-		[[ ${MODE} = SAVE-COMMANDS ]] && set_rulesetfile
+		[[ $MODE = SAVE-COMMANDS ]] && set_rulesetfile
 		common_start || return $?
-		if [[ ${MODE} = START ]]; then
+		if [[ $MODE = START ]]; then
 			set_default_policies_immediate || return $?
 			flushdel_tables_immediate || return $?
 			allow_loopback_immediate
@@ -4022,8 +4011,8 @@ case "${1}" in
 		module_handling || return $?
 		compatibility_check || return $?
 		for rvar in raw rawpost security; do
-			if (($(subst_var "$(string_toupper "${rvar}")_TABLE_PRESENT") == 0)); then
-				log -W "\`${rvar}' table is not present on the local system."
+			if (($(subst_var "$(string_toupper "$rvar")_TABLE_PRESENT") == 0)); then
+				log -W "\`$rvar' table is not present on the local system."
 			fi
 		done
 		if ((NO_PROC == 0)); then
@@ -4100,7 +4089,7 @@ case "${1}" in
 			load_all_ipt_rulefiles || return $?
 			if ((ENABLE_IPSEC == 1)); then
 				for rvar in ${IPSEC_RULES}; do
-					load_rule_file "${rvar}" || return $?
+					load_rule_file "$rvar" || return $?
 				done
 			fi
 		fi

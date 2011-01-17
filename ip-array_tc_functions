@@ -51,7 +51,7 @@ END_OF_FUNC
 
 val_tc_unit() { # validate tc units
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$(string_tolower "${1}")" in
+case "$(string_tolower "$1")" in
 	(kbps|mbps|kbit|mbit|bps)
 		return 0
 	;;
@@ -76,7 +76,7 @@ fi
 
 add_tc_cmd() { # add tc commands to the tc-command array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="${@}"
+TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="$@"
 } # -------------------------------------------------------------------------
 
 tc_add_htbqd() { # add htb qdiscs
