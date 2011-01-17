@@ -111,7 +111,7 @@ declare -i SHOW_PUBFUNC_LIST=0
 declare STR_PUBFUNC_NAME
 
 # skeleton variables
-declare MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
+declare MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
 declare cmdline_conf_file cmdline_save_file cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
@@ -1270,11 +1270,11 @@ readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
 # -------------------------------------------------------------------------
 # global variables
 # -------------------------------------------------------------------------
+verbose_msg "Loading global definitions: ${LIB_DIR}/${GLOBAL_DEFS}"
 if ! [[ -f ${LIB_DIR}/${GLOBAL_DEFS} ]]; then
 	err_msg "Global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}' does not exist."
 	bail_out $ER_NOEX
 fi
-verbose_msg "Loading global definitions: ${LIB_DIR}/${GLOBAL_DEFS}"
 if ((SYNTAX_CHECK)); then
 	check_syntax "${LIB_DIR}/${GLOBAL_DEFS}" || bail_out $ER_LOAD
 fi
