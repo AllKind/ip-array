@@ -545,6 +545,7 @@ version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
 Options:
 -ct, --ipt-counters        Save/restore counters, when using \`save', or \`restore'.
+-dg, --debug               Enable additional debugging output.
 -dr, --dry-run             Commands are not applied.
 -na, --no-autosave         Do not autosave and restore, using iptables-save/restore.
 -nc, --no-compat-check     Do not perform checks for iptables targets, extensions and tables.
@@ -1001,6 +1002,12 @@ while (($#)); do
 	case "${option}" in
 		-ct|--ipt-counters) # use counters for iptables-save/restore
 			USE_COUNTERS=1
+			continue
+		;;
+		-dg|--debug) # enable additional debugging info
+			export DEBUG_INFO=YES
+			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
+'
 			continue
 		;;
 		-dr|--dry-run) # use counters for iptables-save/restore
