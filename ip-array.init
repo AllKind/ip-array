@@ -165,6 +165,7 @@ Options:
 -d, --defaults-file file   Defaults configuration file to use (/PATH/filename).
 -e, --exe-dir directory    Executable directory to use.
 -l, --lib-dir directory    Library directory to use.
+-r, --run-dir directory    Locking directory to store the pid file (/var/run).
 -o, --set-option assignment [...]
                            Override variables of the main config file (i.e. -o ENABLE_COLORS=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
@@ -276,6 +277,7 @@ while (($#)); do
 		-C|--config-dir|\
 		-b|--base-dir|\
 		-l|--lib-dir|\
+		-r|--run-dir|\
 		-o|--set-option|\
 		-s|--save-file|\
 		-gf|--gen-format|\

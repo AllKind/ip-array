@@ -78,13 +78,6 @@ declare -ir PID=$$
 
 declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
-# mutual exclusions lock-file
-if [[ -e /var/run ]]; then
-	declare -r LOCKFILE="/var/run/${me}.pid"
-else
-	declare -r LOCKFILE="/tmp/${me}.pid"
-fi
-
 # error exit codes
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
 
@@ -121,8 +114,8 @@ declare STR_PUBFUNC_NAME
 declare MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
-declare cmdline_conf_file cmdline_save_file cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_syslog_verbosity cmdline_verbosity \
-	cmdline_show_conf cmdline_reload_time cmdline_skip_scripts
+declare cmdline_conf_file cmdline_save_file cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
+	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time cmdline_skip_scripts
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -565,6 +558,7 @@ Options:
 -d, --defaults-file file   Defaults configuration file to use (/PATH/filename).
 -e, --exe-dir directory    Executable directory to use.
 -l, --lib-dir directory    Library directory to use.
+-r, --run-dir directory    Locking directory to store the pid file (/var/run).
 -o, --set-option assignment [...]
                            Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
@@ -787,7 +781,7 @@ case "$1" in
 		TEMPLATE_DIR="${CONFIG_DIR}/templates.d"
 		MAIN_CONFIG="${CONFIG_DIR}/${cmdline_conf_file:=${CONFIG}}"
 		# check if the dir structure exists
-		check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || return $?
+		check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || return $?
 	;;
 	*) err_msg "Invalid option \`${rmode}' for function ${FUNCNAME}"
 		return 1
@@ -1071,6 +1065,7 @@ while (($#)); do
 		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;; # custom defaults config file
 		-e|--exe-dir) cmdline_bin_dir="${opt_arg}" ;; # custom executable directory
 		-l|--lib-dir) cmdline_lib_dir="${opt_arg}" ;; # custom library directory
+		-r|--run-dir) cmdline_run_dir="${opt_arg}" ;; # custom locking directory
 		-o|--set-option) # override main config vars
 			[[ ${opt_arg} = +([[:word:]])=* ]] || {
 				pr_err "Option \`${option}' requires a valid assignment as argument (i.e. foo=bar)."
@@ -1191,6 +1186,10 @@ set_env
 : ${VERBOSE:=6}
 # directory to save rulesets and commands to
 : ${SAVE_DIR:="${BASE_DIR}/save.d"}
+
+# directory and file for locking
+LOCK_DIR="${cmdline_run_dir:=/var/run}"
+declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 
 # check for numeric defaults
 [[ ${VERBOSE} = [0-9] ]] || {
