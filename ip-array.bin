@@ -95,9 +95,6 @@ declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions"
 declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
 declare -r IPARRAY_FUNCTIONS="${IPARRAY_MAIN_FUNCTIONS} ${IPARRAY_IPT_FUNCTIONS} ${IPARRAY_TC_FUNCTIONS}"
 
-# mandatory defaults
-declare -r DEFAULTS="BASE_DIR CONFIG LIB_DIR RELOAD_TIME"
-
 # don't perform autosave, modprobe, proc, compatibility,... check - yes/no
 declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
 
@@ -515,7 +512,6 @@ bad_use_quit
 } # -------------------------------------------------------------------------
 
 usage() { # Help function
-#echo -e "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
 printf "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
 Parameters:
 start                      Start mode. Lockdown mode until all rules are collected.
@@ -1189,14 +1185,6 @@ set_env
 : ${VERBOSE:=6}
 # directory to save rulesets and commands to
 : ${SAVE_DIR:="${BASE_DIR}/save.d"}
-
-# check for mandatory defaults
-for rvar in ${DEFAULTS}; do
-	[[ ${!rvar} ]] || {
-		err_msg "Defaults are not correctly set: \`${rvar}' is undefined."
-		bail_out ${ER_NODEF}
-	}
-done
 
 # check for numeric defaults
 [[ ${VERBOSE} = [0-9] ]] || {

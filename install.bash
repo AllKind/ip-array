@@ -159,7 +159,7 @@ done
 : ${INITDIR:=/etc/init.d}
 : ${PREFIX:=/usr/local}
 : ${DATAROOTDIR:=${PREFIX}/share}
-: ${BINDIR:=${PREFIX}/sbin}
+: ${BINDIR:=${PREFIX}/bin}
 : ${LIBDIR:=${PREFIX}/lib}
 : ${SYSCONFDIR:=${PREFIX}/etc}
 : ${DEFAULTSDIR:=${SYSCONFDIR}/${ME}}

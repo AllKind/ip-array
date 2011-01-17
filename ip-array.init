@@ -201,7 +201,7 @@ case "$MAIN_ARG" in
 	show|start|stop|test|tc-start|tc-stop|version)
 		shift
 	;;
-	*) pr_err "Unknown parameter: \`${MAIN_ARG}'"
+	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
 		short_usage
 esac
 
@@ -232,7 +232,7 @@ while (($#)); do
 					ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 					continue
 				;;
-				*) pr_err "Option \`${option}' is not valid with \`${MAIN_ARG}'."
+				*) pr_err "Option \`$option' is not valid with \`$MAIN_ARG'."
 					bad_use_quit
 			esac
 		;;
@@ -300,7 +300,7 @@ esac
 
 # run main executable
 [[ -x $MY_SHELL ]] || {
-	pr_err "Shell binary \`${MY_SHELL}' does not exist, or is not executable."
+	pr_err "Shell binary \`$MY_SHELL' does not exist, or is not executable."
 	bail_out $ER_NOEX
 }
 [[ -r ${BIN_DIR}/${EXE_NAME} ]] || {
