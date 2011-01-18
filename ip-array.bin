@@ -114,7 +114,8 @@ declare STR_PUBFUNC_NAME
 declare MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
-declare cmdline_conf_file cmdline_save_file cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
+declare cmdline_def_file cmdline_conf_file cmdline_save_file \
+	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
 	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time cmdline_skip_scripts
 declare -a ARR_RTIME_OPTS
 
@@ -184,6 +185,7 @@ SERVICES
 PROTOCOLS
 BASE_DIR
 LIB_DIR
+LOCK_DIR
 CONFIG
 SAVE_FILE
 RULESETFILE
@@ -705,7 +707,7 @@ local prog_auto prog_var prog_name prog_mandatory prog_path
 if [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]]; then
 	notice_msg "Checking for mandatory programs"
 fi
-val_bool_bin "${AUTO_GET_PROGS:=0}" || {
+val_bool_bin "${AUTO_GET_PROGS:=1}" || {
 	err_msg "Illegal value \`${AUTO_GET_PROGS}' for \`AUTO_GET_PROGS'"
 	return $ER_CONF
 }
@@ -1064,7 +1066,8 @@ while (($#)); do
 		-b|--base-dir) cmdline_base_dir="${opt_arg}" ;; # custom base directory
 		-c|--config-file) cmdline_conf_file="${opt_arg}" ;; # custom main config file
 		-C|--config-dir) cmdline_conf_dir="${opt_arg}" ;; # custom main config directory 
-		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;; # custom defaults config file
+#		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;; # custom defaults config file
+		-d|--defaults-file) cmdline_def_file="${opt_arg}" ;; # custom defaults config file
 		-e|--exe-dir) cmdline_bin_dir="${opt_arg}" ;; # custom executable directory
 		-l|--lib-dir) cmdline_lib_dir="${opt_arg}" ;; # custom library directory
 		-r|--run-dir) cmdline_run_dir="${opt_arg}" ;; # custom locking directory
@@ -1112,15 +1115,20 @@ while (($#)); do
 		;;
 		-gf|--gen-format) # iptables command generation format
 			case "${opt_arg}" in
-				cmd|ipt) : ;;
+				cmd|ipt) GEN_FORMAT="${opt_arg}" ;;
 				*) pr_err "Format for saving iptables commands must be specified with \`cmd', or \`ipt'."
 					bad_use_quit
 			esac
-			GEN_FORMAT="${opt_arg}"
 		;;
 		-rt|--reload-time) cmdline_reload_time="${opt_arg}" ;; # time span in minutes until restoring ruleset (test parameter)
 		-sv|--syslog-verbose) cmdline_syslog_verbosity="${opt_arg}" ;; # syslog logging verbosity level
-		-v|--verbose) cmdline_verbosity="${opt_arg}" ;; # stdout/err verbosity level
+		-v|--verbose) # stdout/err verbosity level
+			[[ $opt_arg = [0-9] ]] || {
+				err_msg "$option argument \`$opt_arg' is not in range of 0-9."
+				bail_out $ER_CONF
+			}
+			 cmdline_verbosity="${opt_arg}" VERBOSE="${opt_arg}"
+		 ;;
 		--) break ;;
 		*)
 			pr_err "Unknown option: \`${option}'"
@@ -1136,18 +1144,38 @@ done
 # -------------------------------------------------------------------------
 # load default configuration parameters from file
 # -------------------------------------------------------------------------
-if [[ -r ${DEFAULTS_FILE:=/etc/${me}/defaults.conf} ]]; then 
-	if ((SYNTAX_CHECK)); then
-		check_syntax "${DEFAULTS_FILE}" || bail_out $ER_LOAD
-	fi
-else
-	pr_err "Defaults file \`${DEFAULTS_FILE}' does not exist!"
-	bail_out $ER_NOEX
+if [[ $cmdline_def_file ]]; then
+	DEFAULTS_FILE="$cmdline_def_file"
 fi
-source "${DEFAULTS_FILE}" || {
-	pr_err "Failed loading defaults. Ensure \`DEFAULTS_FILE' is correctly set."
-	bail_out $ER_LOAD
-}
+if [[ -z $DEFAULTS_FILE ]]; then
+	notice_msg "No defaults file specified. Trying: \`/etc/${me}/defaults.conf'."
+	DEFAULTS_FILE="/etc/${me}/defaults.conf"
+	i=0
+else
+	i=1
+fi
+if [[ -r $DEFAULTS_FILE ]]; then 
+	verbose_msg "Loading defaults file: \`$DEFAULTS_FILE'."
+	if ((SYNTAX_CHECK)); then
+		check_syntax "$DEFAULTS_FILE" || bail_out $ER_LOAD
+	fi
+	source "$DEFAULTS_FILE" || {
+		err_msg "Failed loading defaults. Ensure \`DEFAULTS_FILE' is correctly set."
+		bail_out $ER_LOAD
+	}
+else
+	if [[ $cmdline_def_file ]]; then
+		err_msg "Defaults file \`$DEFAULTS_FILE' does not exist!"
+		bail_out $ER_NOEX
+	else
+		if ((i)); then
+			err_msg "Defaults file \`$DEFAULTS_FILE' does not exist!"
+			bail_out $ER_NOEX
+		else
+			warn_msg "No defaults file specified and \`/etc/${me}/defaults.conf' does not exist. Trying default values."
+		fi
+	fi
+fi
 
 # -------------------------------------------------------------------------
 # environment settings and checks
@@ -1184,6 +1212,7 @@ set_env
 : ${IPTSAVE_FAILS:=0}
 : ${SYNTAX_CHECK:=1}
 : ${RELOAD_TIME:=7}
+: ${ENABLE_SYSLOG:=0}
 : ${SYSLOG_VERBOSE:=1}
 : ${VERBOSE:=6}
 # directory to save rulesets and commands to
