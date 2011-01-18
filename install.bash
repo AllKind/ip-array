@@ -42,6 +42,7 @@ fi
 
 # shell options
 set +f -o braceexpand
+umask 0027
 
 # variables
 PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin
@@ -217,6 +218,9 @@ install_dir -m 0644 "${ME}"_*_functions "${LIBDIR}/$ME"
 install_file -m 0640 defaults.conf "${DEFAULTSDIR}/defaults.conf"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
+
+# create versions file
+"${BINDIR}/$ME" version > "${DEFAULTSDIR}/version"
 
 printf "Finished Install\n"
 exit 0
