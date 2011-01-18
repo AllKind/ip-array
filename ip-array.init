@@ -172,9 +172,10 @@ Options:
                            Available types: \`cmd' (=default), \`ipt'.
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
 -s, --save-file file       File to use, when saving or restoring a ruleset.
--sc, --show-config [type]  Select type of information to show. Available types:
-                           \`all', \`main' (=default), \`defaults', \`targets', \`matches',
-                           \`ruleblocks', \`templates', \`ipt_args'.
+-sc, --show-config [type] [...]
+                           Select type of information to show. Available types:
+                           all, main (=default), defaults, targets, matches,
+                           ruleblocks, templates, ipt_args.
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -182,6 +183,7 @@ Options:
                            Only available with the \`help' parameter.
                            List public functions, or show help about one of them.
 --                         Stop further options processing.
+\nParameters, options and their arguments must be separated by whitespace.\n
 "
 exit 0
 } # -------------------------------------------------------------------------
