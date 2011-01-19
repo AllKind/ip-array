@@ -133,10 +133,10 @@ case "${log_param}" in
 		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-U) # Unknown error
-		log -E "Unknown error in function \`$1()'."
+		log -E "Unknown error in function \`${1}()'."
 	;;
 	-W) # Warning message
-		((VERBOSE >= 2)) && ${log_msg} stderr WARNING "${COLOR_MSG_WARNING}" normal ${*}
+		((VERBOSE >= 2)) && ${log_msg} stderr WARNING "${COLOR_MSG_WARNING}" normal ${log_message}
 		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} warning "WARNING: ${log_message}"
 	;;
 	*) err_msg "unknow option \`${log_param}' for function: ${FUNCNAME}()"
@@ -151,7 +151,7 @@ if ((ENABLE_SYSLOG == 1)); then # only log if logging to syslog is enabled
 	[[ $3 ]] || { err_msg "3 parameters required for function: \`${FUNCNAME}()'"; return 1; }
 	local s_facility="$1" s_level="$2"
 	shift 2
-	"${LOGGER}" -p "${s_facility}.${s_level}" -t "${ME}[${PID}]" "$*" || err_msg "failed logging to syslog: \`${*}'"
+	"${LOGGER}" -p "${s_facility}.${s_level}" -t "${ME}[${PID}]" "$*" || err_msg "failed logging to syslog: \`$*'"
 fi
 } # -------------------------------------------------------------------------
 
@@ -964,9 +964,9 @@ cfg_err() { # report and count ruleblock rules config errors
 local barray="$1" bindex="$2"
 shift 2
 if [[ ${barray} = quick-rule ]]; then
-	log -E "Bad entry in rule: \`${*}'"
+	log -E "Bad entry in rule: \`$*'"
 else
-	log -E "Bad entry in ruleblock \`${barray}' at index \`${bindex}': \`${*}'"
+	log -E "Bad entry in ruleblock \`${barray}' at index \`${bindex}': \`$*'"
 fi
 raise_cfg_err_count
 } # -------------------------------------------------------------------------
@@ -987,7 +987,7 @@ case "${err_category}" in
 		return 1
 esac
 eval let ${err_category}_err_count+=1
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="${log_msg} stderr NOPREFIX \"${COLOR_MSG_ERROR}\" normal \"Failed applying ${prog_msg} commmand: '${*}'\""
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="${log_msg} stderr NOPREFIX \"${COLOR_MSG_ERROR}\" normal \"Failed applying ${prog_msg} commmand: '$*'\""
 if ((EXIT_ON_ERROR == 1)); then
 	exit_on_err_act $ER_FAIL
 fi
@@ -1032,7 +1032,7 @@ load_file() { # source other files with custom message
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local s_category=$1
 shift
-local s_file=${*}
+local s_file=$*
 local -i ret_code=0
 case "${s_category}" in
 	script)	log -e "${PF}loading script: ${s_file}" ;;
@@ -1054,7 +1054,7 @@ enable -n umask
 if ((SYNTAX_CHECK == 1)); then
 	check_syntax "${s_file}" || return $?
 fi
-source "${s_file}" || ret_code=${?}
+source "${s_file}" || ret_code=$?
 
 # reset environment
 set_env
@@ -1347,7 +1347,7 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 		shift
 	fi
 	path_found=0
-	procmsg=${*} # message to display
+	procmsg=$* # message to display
 	vresult="${!vname}" # substitue sysctl variable names
 	[[ ${vresult} ]] || {
 		log -w "\`${vname}' is not defined."
@@ -1461,9 +1461,9 @@ for idx in ${!PROC_STATE_ARRAY[@]}; do
 	eval 'set -- '"${PROC_STATE_ARRAY[idx]}"
 		proc_val="$1"
 		shift
-	log -e "${PF}restoring: "${proc_val}" to \`${*}'"
+	log -e "${PF}restoring: "${proc_val}" to \`$*'"
 	printf "%s\n" "${proc_val}" >"$*" || {
-		log -E "failed setting "${proc_val}" to \`${*}'"
+		log -E "failed setting "${proc_val}" to \`$*'"
 	}
 done
 } # -------------------------------------------------------------------------
@@ -2023,18 +2023,18 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 	shift 3
 	local check_cmd="$@"
 	local var_content=${!conf_var} # substitute the content of the desired variable
-	if [[ -z ${var_content} ]]; then # if substitution returns a non empty variable
+	if [[ -z $var_content ]]; then # if substitution returns a non empty variable
 		if ((conf_mandatory == 1)); then
-			log -E "Config entry \`${conf_var}' is mandatory, but not defined."
+			log -E "Config entry \`$conf_var' is mandatory, but not defined."
 			return $ER_FAIL
 		else
 			if [[ ${conf_var%%_*} != PROC ]]; then
 				case "${var_type}" in # react according to type of variable
 					bool) # config entry should be 0 or 1
-							set_var "${conf_var}" '0'
-							log -N "Config entry \`${conf_var}' is not defined, setting it to \`0'."
+							set_var "$conf_var" '0'
+							log -N "Config entry \`$conf_var' is not defined, setting it to \`0'."
 					;;
-					*) log -N "Config entry \`${conf_var}' is not defined." ;;
+					*) log -N "Config entry \`$conf_var' is not defined." ;;
 				esac
 			fi
 			continue
@@ -2042,52 +2042,52 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 	fi
 	case "${var_type}" in # react according to type of variable
 		alnum) # config entry should be alphanumeric
-			if [[ ${var_content} != +([[:alnum:]]) ]]; then
+			if [[ $var_content != +([[:alnum:]]) ]]; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' contains non alphanumeric characters."
+					log -E "Config entry \`$conf_var' contains non alphanumeric characters."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' contains non alphanumeric characters. Unsetting it."
-					unset ${conf_var}
+					log -W "Config entry \`$conf_var' contains non alphanumeric characters. Unsetting it."
+					unset $conf_var
 					raise_cfg_err_count
 					continue
 				fi
 			fi
 		;;
 		alpha) # config entry should be alphabetic
-			if [[ ${var_content} != +([[:alpha:]]) ]]; then
+			if [[ $var_content != +([[:alpha:]]) ]]; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' contains non alphabetic characters."
+					log -E "Config entry \`$conf_var' contains non alphabetic characters."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' contains non alphabetic characters. Unsetting it."
-					unset ${conf_var}
+					log -W "Config entry \`$conf_var' contains non alphabetic characters. Unsetting it."
+					unset $conf_var
 					raise_cfg_err_count
 					continue
 				fi
 			fi
 		;;
 		bool) # config entry should be 0 or 1
-			if ! val_bool_bin "${var_content}"; then
+			if ! val_bool_bin "$var_content"; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' is not \`0' or \`1'."
+					log -E "Config entry \`$conf_var' is not \`0' or \`1'."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' is not \`0' or \`1'. Setting it to \`0'."
-					set_var "${conf_var}" '0'
+					log -W "Config entry \`$conf_var' is not \`0' or \`1'. Setting it to \`0'."
+					set_var "$conf_var" '0'
 					raise_cfg_err_count
 					continue
 				fi
 			fi
 		;;
 		digit) # config entry should only contain digits
-			if [[ ${var_content} != +([[:digit:]]) ]]; then
+			if [[ $var_content != +([[:digit:]]) ]]; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' is not numeric."
+					log -E "Config entry \`$conf_var' is not numeric."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' is not numeric. Unsetting it."
-					unset ${conf_var}
+					log -W "Config entry \`$conf_var' is not numeric. Unsetting it."
+					unset $conf_var
 					raise_cfg_err_count
 					continue
 				fi
@@ -2095,13 +2095,13 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 		;;
 		graph) # config entry should only contain:
 				# Graphical characters: `[:alnum:]' and `[:punct:]'.
-			if [[ ${var_content} != +([[:graph:]]) ]]; then
+			if [[ $var_content != +([[:graph:]]) ]]; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' contains non graph class characters."
+					log -E "Config entry \`$conf_var' contains non graph class characters."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' contains non graph class characters. Unsetting it."
-					unset ${conf_var}
+					log -W "Config entry \`$conf_var' contains non graph class characters. Unsetting it."
+					unset $conf_var
 					raise_cfg_err_count
 					continue
 				fi
@@ -2110,24 +2110,24 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 		print) # config entry should only contain:
 				# Printable characters: `[:alnum:]', `[:punct:]', and space. 
 				# + newline and tab
-			if [[ ${var_content} != +([[:print:]$'\n'$'\t']) ]]; then
+			if [[ $var_content != +([[:print:]$'\n'$'\t']) ]]; then
 				if ((conf_mandatory == 1)); then
-					log -E "Config entry \`${conf_var}' allows only print class characters, newline and tab."
+					log -E "Config entry \`$conf_var' allows only print class characters, newline and tab."
 					return $ER_FAIL
 				else
-					log -W "Config entry \`${conf_var}' contains non print class characters. Unsetting it."
-					unset ${conf_var}
+					log -W "Config entry \`$conf_var' contains non print class characters. Unsetting it."
+					unset $conf_var
 					raise_cfg_err_count
 					continue
 				fi
 			fi
 		;;
-		*) log -E "Invalid option \`${var_type}'."
+		*) log -E "Invalid option \`$var_type'."
 			return 1
 	esac
 	# if a validation command is defined in the array, run it here
-	if [[ ${check_cmd} ]]; then
-		eval "${check_cmd}" || return $?
+	if [[ $check_cmd ]]; then
+		eval "$check_cmd" || return $?
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -2218,7 +2218,7 @@ readonly RULE_SEP
 # -------------------------------------------------------------------------
 
 set_rulesetfile() { # set default ruleset file to save rules to
-if [[ -z ${RULESETFILE} ]]; then
+if [[ -z $RULESETFILE ]]; then
 	RULESETFILE="${SAVE_DIR}"/"${DEFAULT_RULESETFILE}"
 	log -W "\`RULESETFILE' is unset, setting it to the default value: \`${SAVE_DIR}/${DEFAULT_RULESETFILE}'"
 else
@@ -2335,7 +2335,7 @@ load_configs() { # LOAD CONFIG FILES
 log -S "Loading config files"
 for rvar in ${CONFIG_FILES}; do
 	load_file config "${CONFIG_DIR}"/"$rvar" || {
-		log -E "Failed loading config file ${CONFIG_DIR}/$rvar."
+		log -E "Failed loading config file ${CONFIG_DIR}/${rvar}."
 		return $ER_FAIL
 	}
 done
@@ -3343,7 +3343,7 @@ for idx in ${!CMD_NAMES_ARRAY[@]}; do
 	set -- ${CMD_NAMES_ARRAY[idx]}
 	[[ $1 != ${cmd_arr} ]] && continue # not the array we want
 	shift 2
-	appl_msg=${*}
+	appl_msg=$*
 	work_arr_sum=$(arr_members_sum ${cmd_arr})
 	break
 done
@@ -3351,75 +3351,75 @@ if ! ((work_arr_sum)); then # if it has members
 	log -W "${cmd_arr} is empty, no ${appl_msg} to save"
 	return 0
 fi
-log -S "Saving ${work_arr_sum} ${appl_msg}"
-printf "\n# %s\n" "${appl_msg}" >>"${RULESETFILE}"
+log -S "Saving $work_arr_sum ${appl_msg}"
+printf "\n# %s\n" "${appl_msg}" >>"$RULESETFILE"
 case "${cmd_arr}" in
 	(PROC_CMD_ARRAY)
 		for idx in ${!PROC_CMD_ARRAY[@]}; do
 			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
 				proc_val="$1"
 				shift
-			printf "%s\n" "echo \""${proc_val}"\" >\"${*}\"" >>"${RULESETFILE}"
+			printf "%s\n" "echo \""${proc_val}"\" >\"${*}\"" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_POL_ARRAY)
 		for idx in ${!IPT_POL_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_POL_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_POL_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_FLUSH_ARRAY)
 		for idx in ${!IPT_FLUSH_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_FLUSH_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_FLUSH_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_CCHAIN_ARRAY)
 		for idx in ${!IPT_CCHAIN_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_CCHAIN_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_CCHAIN_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_RAW_CMD_ARRAY)
 		for idx in ${!IPT_RAW_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_RAW_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_RAW_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_MANGLE_CMD_ARRAY)
 		for idx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_MANGLE_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_MANGLE_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_NAT_CMD_ARRAY)
 		for idx in ${!IPT_NAT_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_NAT_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_NAT_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_FILTER_CMD_ARRAY)
 		for idx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_FILTER_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_FILTER_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_SECURITY_CMD_ARRAY)
 		for idx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_SECURITY_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_SECURITY_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_RAWPOST_CMD_ARRAY)
 		for idx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_RAWPOST_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_RAWPOST_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(IPT_CMD_ARRAY)
 		for idx in ${!IPT_CMD_ARRAY[@]}; do
-			printf "\"\$IPT\" %s\n" "${IPT_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$IPT\" %s\n" "${IPT_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(TC_CMD_ARRAY)
 		for idx in ${!TC_CMD_ARRAY[@]}; do
-			printf "\"\$TC\" %s\n" "${TC_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$TC\" %s\n" "${TC_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 	(MODULE_CMD_ARRAY)
 		for idx in ${!MODULE_CMD_ARRAY[@]}; do
-			printf "\"\$MP\" %s\n" "${MODULE_CMD_ARRAY[idx]}" >>"${RULESETFILE}"
+			printf "\"\$MP\" %s\n" "${MODULE_CMD_ARRAY[idx]}" >>"$RULESETFILE"
 		done
 	;;
 esac
@@ -3428,148 +3428,148 @@ esac
 iptsave_rulesets() { # save generated iptables commands in iptables-save format
 local -i tidx
 local str_tbl str_ton
-if [[ -f ${RULESETFILE} ]]; then
-	if [[ -w ${RULESETFILE} ]]; then
-		log -w "${RULESETFILE} already exists. Deleting it."
-		"${RM}" -f "${RULESETFILE}"
+if [[ -f $RULESETFILE ]]; then
+	if [[ -w $RULESETFILE ]]; then
+		log -w "$RULESETFILE already exists. Deleting it."
+		"${RM}" -f "$RULESETFILE"
 	else
-		log -E "\`${RULESETFILE}' is not writable"
+		log -E "\`$RULESETFILE' is not writable"
 		return $ER_FAIL
 	fi
 fi
 for str_tbl in rawpost security raw nat mangle filter; do
 	str_ton=$(subst_var "ENABLE_$(string_toupper "${str_tbl}")")
 	((${str_ton:-0} == 1)) || continue
-	printf "# Generated by %s %s at %s\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}" || {
-		log -F "creating \`${RULESETFILE}'"
+	printf "# Generated by %s %s at %s\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"$RULESETFILE" || {
+		log -F "creating \`$RULESETFILE'"
 		return $ER_FAIL
 	}
-	printf "*%s\n" "${str_tbl}" >>"${RULESETFILE}"
+	printf "*%s\n" "${str_tbl}" >>"$RULESETFILE"
 	for tidx in ${!IPT_POL_ARRAY[@]}; do
 		eval 'set -- '"${IPT_POL_ARRAY[tidx]}"
 		if [[ $2 = ${str_tbl} ]]; then
-			printf ":%s %s %s\n" "$4" "$5" "[0:0]" >>"${RULESETFILE}"
+			printf ":%s %s %s\n" "$4" "$5" "[0:0]" >>"$RULESETFILE"
 		fi
 	done
 	for tidx in ${!IPT_CCHAIN_ARRAY[@]}; do
 		eval 'set -- '"${IPT_CCHAIN_ARRAY[tidx]}"
 		if [[ $2 = ${str_tbl} ]]; then
-			printf ":%s %s %s\n" "$4" "-" "[0:0]" >>"${RULESETFILE}"
+			printf ":%s %s %s\n" "$4" "-" "[0:0]" >>"$RULESETFILE"
 		fi
 	done
 	case "${str_tbl}" in
 		rawpost)
 			for tidx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_RAWPOST_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_RAWPOST_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 		security)
 			for tidx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_SECURITY_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_SECURITY_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 		raw)
 			for tidx in ${!IPT_RAW_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_RAW_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_RAW_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 		nat)
 			for tidx in ${!IPT_NAT_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_NAT_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_NAT_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 		mangle)
 			for tidx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_MANGLE_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_MANGLE_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 		filter)
 			for tidx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_FILTER_CMD_ARRAY[tidx]#*${str_tbl} }" >>"${RULESETFILE}"
+				printf "%s\n" "${IPT_FILTER_CMD_ARRAY[tidx]#*${str_tbl} }" >>"$RULESETFILE"
 			done
 		;;
 	esac
-	printf "%s\n" "COMMIT" >>"${RULESETFILE}"
-	printf "# Completed on %s\n" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}"
+	printf "%s\n" "COMMIT" >>"$RULESETFILE"
+	printf "# Completed on %s\n" "$("${DATE}" --rfc-2822)" >>"$RULESETFILE"
 done
 } # -------------------------------------------------------------------------
 
 save_rulesets() { # save the rules from the command arrays into a file
-local cmd_array tmp_rfile="${RULESETFILE}"
+local cmd_array tmp_rfile="$RULESETFILE"
 # create the file to save commands to
-if [[ -f ${RULESETFILE} ]]; then
-	if [[ -w ${RULESETFILE} ]]; then
-		log -w "${RULESETFILE} already exists. Deleting it."
+if [[ -f $RULESETFILE ]]; then
+	if [[ -w $RULESETFILE ]]; then
+		log -w "$RULESETFILE already exists. Deleting it."
 	else
-		log -E "\`${RULESETFILE}' is not writable"
+		log -E "\`$RULESETFILE' is not writable"
 		return $ER_FAIL
 	fi
 fi
-#printf "#!/bin/bash\n\n# Script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >"${RULESETFILE}" || {
+#printf "#!/bin/bash\n\n# Script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >"$RULESETFILE" || {
 printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$("$DATE" --rfc-2822)" >"$RULESETFILE" || {
-	log -F "creating \`${RULESETFILE}'"
+	log -F "creating \`$RULESETFILE'"
 	return $ER_FAIL
 }
 # add vars
-arr_populated 'MODULE_CMD_ARRAY' && printf "MP=%s\n" "\"${MODPROBE}\"" >>"${RULESETFILE}"
-if [[ ${GEN_FORMAT} != ipt ]]; then
+arr_populated 'MODULE_CMD_ARRAY' && printf "MP=%s\n" "\"${MODPROBE}\"" >>"$RULESETFILE"
+if [[ $GEN_FORMAT != ipt ]]; then
 	for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
 		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 	do
-		if arr_populated "${cmd_array}"; then
-			[[ $MODE = SAVE-SHAPING-COMMANDS ]] || printf "IP_TABLES_NAMES=%s\n" "\"${IP_TABLES_NAMES}\"" >>"${RULESETFILE}"
-			printf "IPT=%s\n" "\"${IPT}\"" >>"${RULESETFILE}"
+		if arr_populated $cmd_array; then
+			[[ $MODE = SAVE-SHAPING-COMMANDS ]] || printf "IP_TABLES_NAMES=%s\n" "\"${IP_TABLES_NAMES}\"" >>"$RULESETFILE"
+			printf "IPT=%s\n" "\"${IPT}\"" >>"$RULESETFILE"
 			break
 		fi
 	done
 else
 	if [[ $MODE = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
-		printf "IPT_RESTORE=%s\n" "\"${IPT_RESTORE}\"" >>"${RULESETFILE}"
+		printf "IPT_RESTORE=%s\n" "\"${IPT_RESTORE}\"" >>"$RULESETFILE"
 	fi
 fi
 arr_populated 'TC_CMD_ARRAY' && {
-	printf "TC=%s\n" "\"${TC}\"" >>"${RULESETFILE}"
-	printf "GREP=%s\n" "\"${GREP}\"" >>"${RULESETFILE}"
-	printf "NET_IFLIST=%s\n" "\"${NET_IFLIST}\"" >>"${RULESETFILE}"
+	printf "TC=%s\n" "\"${TC}\"" >>"$RULESETFILE"
+	printf "GREP=%s\n" "\"${GREP}\"" >>"$RULESETFILE"
+	printf "NET_IFLIST=%s\n" "\"${NET_IFLIST}\"" >>"$RULESETFILE"
 }
 # act according to runtime mode
 case "$MODE" in
 	(SAVE-COMMANDS) # save all commands
-		if [[ ${GEN_FORMAT} = ipt ]]; then
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+		if [[ $GEN_FORMAT = ipt ]]; then
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
 			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY || return $?; }
-			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"${RULESETFILE}"
+			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"$RULESETFILE"
 			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
-				if arr_populated "${cmd_array}"; then
-					save_command_array ${cmd_array} || return $?
+				if arr_populated $cmd_array; then
+					save_command_array $cmd_array || return $?
 				fi
 			done
 			RULESETFILE="${RULESETFILE%.bash}.iptsave"
-			log -I "Saving generated iptables-save formatted script to: ${RULESETFILE}"
+			log -I "Saving generated iptables-save formatted script to: $RULESETFILE"
 			iptsave_rulesets || return $?
 			RULESETFILE="${tmp_rfile}"
-		elif [[ ${GEN_FORMAT} = cmd ]]; then
-			show_flush_del_pub_save >>"${RULESETFILE}"
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+		elif [[ $GEN_FORMAT = cmd ]]; then
+			show_flush_del_pub_save >>"$RULESETFILE"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
 			for cmd_array in MODULE_CMD_ARRAY IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
 				IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
 			do
-				if arr_populated "${cmd_array}"; then
-					[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"${RULESETFILE}"
-					[[ ${cmd_array} = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
-					save_command_array ${cmd_array} || return $?
+				if arr_populated $cmd_array; then
+					[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$RULESETFILE"
+					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
+					save_command_array $cmd_array || return $?
 				fi
 			done
 		fi
 	;;
 	(SAVE-IPT-COMMANDS) # save iptables commands only
-		show_flush_del_pub_save >>"${RULESETFILE}"
+		show_flush_del_pub_save >>"$RULESETFILE"
 		for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 			IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 		do
-			if arr_populated "${cmd_array}"; then
-				[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"${RULESETFILE}"
-				save_command_array ${cmd_array} || return $?
+			if arr_populated $cmd_array; then
+				[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$RULESETFILE"
+				save_command_array $cmd_array || return $?
 			fi
 		done
 	;;
@@ -3580,45 +3580,45 @@ case "$MODE" in
 		save_command_array PROC_CMD_ARRAY || return $?
 	;;
 	(SAVE-TC-COMMANDS) # save tc commands only
-		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
-		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
+		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
 		save_command_array TC_CMD_ARRAY || return $?
 	;;
 	(SAVE-SHAPING-COMMANDS) # save tc and iptables mangle table commands
-		if [[ ${GEN_FORMAT} = ipt ]]; then
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
-			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"${RULESETFILE}"
-			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+		if [[ $GEN_FORMAT = ipt ]]; then
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
+			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"$RULESETFILE"
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
 			save_command_array TC_CMD_ARRAY || return $?
 			RULESETFILE="${RULESETFILE%.bash}.iptsave"
-			log -I "Saving generated iptables-save formatted script to: ${RULESETFILE}"
+			log -I "Saving generated iptables-save formatted script to: $RULESETFILE"
 			iptsave_rulesets || return $?
 			RULESETFILE="${tmp_rfile}"
-		elif [[ ${GEN_FORMAT} = cmd ]]; then
-			flush_table_pub_save >>"${RULESETFILE}"
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"${RULESETFILE}"
+		elif [[ $GEN_FORMAT = cmd ]]; then
+			flush_table_pub_save >>"$RULESETFILE"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
 			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_MANGLE_CMD_ARRAY; do
-				if arr_populated "${cmd_array}"; then
-					[[ ${cmd_array} = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"${RULESETFILE}"
-					save_command_array ${cmd_array} || return $?
+				if arr_populated $cmd_array; then
+					[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"$RULESETFILE"
+					save_command_array $cmd_array || return $?
 				fi
 			done
-			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"${RULESETFILE}"
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
 			save_command_array TC_CMD_ARRAY || return $?
 		fi
 	;;
 esac
 # write a signature to the saved command file
-if [[ -w ${RULESETFILE} ]]; then
-	printf "\n# END of script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"${RULESETFILE}"
+if [[ -w $RULESETFILE ]]; then
+	printf "\n# END of script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"$RULESETFILE"
 else
-	log -E "\`${RULESETFILE}' is not writable"
+	log -E "\`$RULESETFILE' is not writable"
 	return $ER_FAIL
 fi
-if [[ -f ${RULESETFILE} ]]; then
-	log -e "Successfully saved script to: ${RULESETFILE}"
+if [[ -f $RULESETFILE ]]; then
+	log -e "Successfully saved script to: $RULESETFILE"
 else
-	log -x "${RULESETFILE}"
+	log -x "$RULESETFILE"
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
@@ -3639,8 +3639,8 @@ if ! ((work_arr_sum)); then
 fi
 case "$MODE" in # act according to runtime mode
 	(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
-		log -T "Saving generated script to: ${RULESETFILE}"
-		if [[ $MODE = SAVE-IPT-COMMANDS && ${GEN_FORMAT} = ipt ]]; then
+		log -T "Saving generated script to: $RULESETFILE"
+		if [[ $MODE = SAVE-IPT-COMMANDS && $GEN_FORMAT = ipt ]]; then
 			iptsave_rulesets || return $?
 		else
 			save_rulesets || return $?
@@ -3662,9 +3662,9 @@ case "$MODE" in # act according to runtime mode
 			((work_arr_sum)) || continue
 #			if [[ $MODE = DRY-RUN ]]; then
 			if ((EXEC_COMMANDS == 0)); then
-				log -S "Would apply ${work_arr_sum} ${*}"
+				log -S "Would apply $work_arr_sum $*"
 			else
-				log -S "Applying ${work_arr_sum} ${*}"
+				log -S "Applying $work_arr_sum $*"
 			fi
 		done
 #		if [[ $MODE = DRY-RUN ]]; then # do not apply rules in dry-run mode
@@ -3677,25 +3677,25 @@ case "$MODE" in # act according to runtime mode
 		done
 		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 			[[ $DEBUG_INFO ]] && dbg_arr "IPT_CMD_ARRAY"
-			if [[ ${GEN_FORMAT} = ipt ]]; then
+			if [[ $GEN_FORMAT = ipt ]]; then
 				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$("${DATE}" +%F_%T)_rnd${RANDOM}"
 				iptsave_rulesets || {
-					[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
+					[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
 					cmd_err_count misc 'saving ruleset in iptables-save format'
 					return $ER_FAIL
 				}
 #				SAVE_FILE="${RULESETFILE##*/}"
 				USE_COUNTERS=0 # no way worked out to add counters
 				ipt_restore "${RULESETFILE##*/}" || {
-					[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
+					[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
 					cmd_err_count ipt 'restoring ruleset in iptables-save format'
 					return $ER_FAIL
 				}
-				[[ -e ${RULESETFILE} ]] && "${RM}" -f "${RULESETFILE}"
-			elif [[ ${GEN_FORMAT} = cmd ]]; then
+				[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
+			elif [[ $GEN_FORMAT = cmd ]]; then
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval 'set -- '"${IPT_CMD_ARRAY[i]}"
-					"${IPT}" "$@" &>/dev/null || cmd_err_count ipt "${IPT}" "$*"
+					"${IPT}" "$@" &>/dev/null || cmd_err_count ipt "${IPT} $*"
 				done
 			else
 				log -U ${FUNCNAME}; return 1
@@ -3753,7 +3753,7 @@ case "$MODE" in # act according to runtime mode
 			[[ $DEBUG_INFO ]] && dbg_arr "TC_CMD_ARRAY"
 			for i in ${!TC_CMD_ARRAY[@]}; do
 				eval 'set -- '"${TC_CMD_ARRAY[i]}"
-				"${TC}" "$@" &>/dev/null || cmd_err_count tc "$*"
+				"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
 			done
 		fi
 		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
@@ -3763,8 +3763,8 @@ case "$MODE" in # act according to runtime mode
 				eval 'set -- '"${PROC_CMD_ARRAY[i]}"
 				proc_val="$1"
 				shift
-				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo "$(read p_val < "$1"; echo "${p_val}")")' '${1}'"
-				printf "%s\n" "${proc_val}" >"$1" 2>/dev/null || cmd_err_count proc "printf %s\n ${proc_val} >${1}"
+				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo $(read p_val < "$1"; echo "${p_val}"))' '${1}'"
+				printf "%s\n" "$proc_val" >"$1" 2>/dev/null || cmd_err_count proc "printf %s\n $proc_val >${1}"
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
 		fi
@@ -3781,13 +3781,13 @@ display_errors() { # display error sum
 local vname
 local -i idx
 local -a arr_err_idx=(
-"$gen_err_count ${gen_err_count} unclassified errors occured"
-"$cfg_err_count Found ${cfg_err_count} bad config entries"
-"$proc_err_count Failed applying ${proc_err_count} proc commands"
-"$ipt_err_count Failed applying ${ipt_err_count} iptables commands"
-"$inline_err_count Failed applying ${inline_err_count} inline iptables commands"
-"$tc_err_count Failed applying ${tc_err_count} traffic shaping commands"
-"$misc_err_count Failed applying ${misc_err_count} miscellaneous commands"
+"$gen_err_count $gen_err_count unclassified errors occured"
+"$cfg_err_count Found $cfg_err_count bad config entries"
+"$proc_err_count Failed applying $proc_err_count proc commands"
+"$ipt_err_count Failed applying $ipt_err_count iptables commands"
+"$inline_err_count Failed applying $inline_err_count inline iptables commands"
+"$tc_err_count Failed applying $tc_err_count traffic shaping commands"
+"$misc_err_count Failed applying $misc_err_count miscellaneous commands"
 )
 if ((ENABLE_COLORS == 1)) ; then
 	echo -e "\n${RED}${FONT_BOLD}${ERRORS} errors${COL_TERM} occured while processing"
@@ -3865,7 +3865,8 @@ else
 	fi
 	log -l "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
 fi
-log -w "Exiting after $((SECONDS / 60)) minutes and $((SECONDS - $(($((SECONDS / 60)) * 60)))) seconds of execution time"
+rvar=$SECONDS
+log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 60)))) seconds of execution time"
 } # -------------------------------------------------------------------------
 
 check_tc() {
@@ -4128,8 +4129,7 @@ case "$1" in
 
 		log -T "Preparing known-good iptables ruleset"
 		if ((IPTSAVE_FAILS == 0)); then
-#			SAVE_FILE="${KNOWN_GOOD_RULES}"
-			ipt_save "${KNOWN_GOOD_RULES}" || bail_out ${?}
+			ipt_save "${KNOWN_GOOD_RULES}" || bail_out $?
 		else
 			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
 			MODE='SAVE-IPT-COMMANDS'
@@ -4165,23 +4165,22 @@ case "$1" in
 		load_pro_epilog_scripts 'prolog'
 		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES} ]]; then
 			log -N "Loading known good modprobe commands."
-			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
 		else
 			log -N "No modprobe script found."
 		fi
 		if ((IPTSAVE_FAILS == 0)); then
-#			SAVE_FILE="${KNOWN_GOOD_RULES}"
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
 				log -E "Failed restoring saved script. Starting regulary."
-				run_main "START" || bail_out ${?}
+				run_main "START" || bail_out $?
 				return 0
 			}
 		else
 			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_RULES} ]]; then
 				log -N "Loading known good iptables commands."
-				"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_RULES}" || {
+				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_RULES}" || {
 					log -E "Failed restoring saved script. Starting regulary."
-					run_main "START" || bail_out ${?}
+					run_main "START" || bail_out $?
 					return 0
 				}
 			else
@@ -4190,14 +4189,14 @@ case "$1" in
 		fi
 		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL} ]]; then
 			log -N "Loading known good traffic shaping commands."
-			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
 		else
 			log -N "No traffic shaping script found."
 		fi
 		# /proc settings at last, as filesystem may not be fully populated before
 		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET} ]]; then
 			log -N "Loading known good /proc settings."
-			"${SHELL}" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "${SHELL} -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
 		else
 			log -N "No /proc settings script found."
 		fi

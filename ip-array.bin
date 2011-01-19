@@ -474,8 +474,7 @@ PUBLIC_FUNCTION_LIST=(
 # turn on debugging
 # -------------------------------------------------------------------------
 [[ $DEBUG_INFO ]] && {
-	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
-'
+	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 	set
 	shopt
 	trap -p
@@ -687,12 +686,12 @@ local s_prog="$1" oIFS="$IFS"
 IFS=":"
 for rvar in ${PATH}; do
 	[[ -x ${rvar}/${s_prog} ]] && {
-		IFS="${oIFS}"
+		IFS="$oIFS"
 		pr_str "${rvar}/${s_prog}"
 		return 0
 	}
 done
-IFS="${oIFS}"
+IFS="$oIFS"
 return 1
 } # -------------------------------------------------------------------------
 
@@ -713,29 +712,29 @@ val_bool_bin "${AUTO_GET_PROGS:=1}" || {
 }
 for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 	set -- ${IPARRAY_PROGRAMS[idx]}
-	prog_var="$1" prog_name="$2" prog_mandatory="${3}"
+	prog_var="$1" prog_name="$2" prog_mandatory="$3"
 	case "${AUTO_GET_PROGS}" in
 		0) # no automatic detection
 			prog_path="${!prog_var}"
-			[[ ${prog_path} ]] && { # user has defined the according variable
-				bin_ok "${prog_path}" && {
+			[[ $prog_path ]] && { # user has defined the according variable
+				bin_ok "$prog_path" && {
 					[[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-						verbose_msg "found ${prog_name} at: ${prog_path}"
+						verbose_msg "found $prog_name at: $prog_path"
 					}
 					continue
 				}
 			}
 		;;
 		1) # automatic detection
-			prog_in_path "${prog_name}" && {
-				prog_path="$(which_prog "${prog_name}")" || {
-					err_msg "Failed locating the program \`${prog_name}' in \$PATH."
+			prog_in_path "$prog_name" && {
+				prog_path=$(which_prog "$prog_name") || {
+					err_msg "Failed locating the program \`$prog_name' in \$PATH."
 					return $ER_FAIL
 				}
-#				set_var "${prog_var}" "${prog_path}" # set global program variable
-				printf -v "${prog_var}" "${prog_path}" # set global program variable
+#				set_var "${prog_var}" "$prog_path" # set global program variable
+				printf -v "${prog_var}" "$prog_path" # set global program variable
 				[[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-					verbose_msg "found ${prog_name} at: ${prog_path}"
+					verbose_msg "found $prog_name at: $prog_path"
 				}
 				continue
 			}
@@ -744,11 +743,11 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 	# positive cases are done, this is only run if program was not found
 	case "${prog_mandatory}" in
 		0) [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-				warn_msg "Path for program \`${prog_name}' was not found."
+				warn_msg "Path for program \`$prog_name' was not found."
 			}
 			continue
 		;;
-		1) err_msg "Path for program \`${prog_name}' was not found."
+		1) err_msg "Path for program \`$prog_name' was not found."
 			return $ER_FAIL
 		;;
 		*) err_msg "Configuration error in array: IPARRAY_PROGRAMS."
@@ -762,7 +761,7 @@ check_dirs() { # check for existence of directories declared by varname
 while (($#)); do
 	[[ ${!1} ]] || {
 		err_msg "\`$1' variable is not defined."
-		return ${ER_NODEF}
+		return $ER_NODEF
 	}
 	[[ -d ${!1} ]] || {
 		err_msg "Directory \`${!1}' specified with \`$1' variable, does not exist."
@@ -787,7 +786,7 @@ case "$1" in
 		# check if the dir structure exists
 		check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || return $?
 	;;
-	*) err_msg "Invalid option \`${rmode}' for function ${FUNCNAME}"
+	*) err_msg "Invalid option \`$1' for function $FUNCNAME"
 		return 1
 esac
 } # -------------------------------------------------------------------------
@@ -822,7 +821,7 @@ return $ER_USE
 
 ipt_save() { # save the firewall with iptables-save
 if ((IPTSAVE_FAILS)); then
-	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
+	err_msg "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 	return $ER_FAIL
 fi
 local str_c="" str_file="${1:-${SAVE_FILE}}"
@@ -854,7 +853,7 @@ fi
 
 ipt_restore() { # restore the firewall with iptables-restore
 if ((IPTSAVE_FAILS)); then
-	err_msg "\`IPTSAVE_FAILS' is set to \`1'."
+	err_msg "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 	return $ER_FAIL
 fi
 local str_c="" str_file="${1:-${SAVE_FILE}}"
@@ -1232,7 +1231,7 @@ declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 	bail_out $ER_CONF
 }
 # check for boolean defaults
-for rvar in IPTSAVE_FAILS; do
+for rvar in ENABLE_SYSLOG IPTSAVE_FAILS; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`$rvar' is not in range of 0-1."
 		bail_out $ER_CONF
@@ -1259,10 +1258,10 @@ if ((IPTSAVE_FAILS)); then
 	if [[ ${GEN_FORMAT} = ipt ]]; then # ... if we save in iptables-save format
 		case "$MAIN_ARG" in
 			start|stop|open|restart|test|tc-start|tc-stop) # if we apply commands (in lockdown we hope it'll work, as just very basic rules)
-				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
+				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 				bail_out $ER_CONF
 			;;
-			*) warn_msg "Saving is done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`1'."
+			*) warn_msg "Saving is done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 		esac
 	fi
 fi

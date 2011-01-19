@@ -217,8 +217,7 @@ while (($#)); do
 		#options without an argument
 		-dg|--debug)
 			export DEBUG_INFO=YES
-			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
-'
+			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			set
 			shopt
 			trap -p
