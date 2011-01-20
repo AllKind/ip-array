@@ -1065,7 +1065,6 @@ while (($#)); do
 		-b|--base-dir) cmdline_base_dir="${opt_arg}" ;; # custom base directory
 		-c|--config-file) cmdline_conf_file="${opt_arg}" ;; # custom main config file
 		-C|--config-dir) cmdline_conf_dir="${opt_arg}" ;; # custom main config directory 
-#		-d|--defaults-file) DEFAULTS_FILE="${opt_arg}" ;; # custom defaults config file
 		-d|--defaults-file) cmdline_def_file="${opt_arg}" ;; # custom defaults config file
 		-e|--exe-dir) cmdline_bin_dir="${opt_arg}" ;; # custom executable directory
 		-l|--lib-dir) cmdline_lib_dir="${opt_arg}" ;; # custom library directory
@@ -1231,7 +1230,7 @@ declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 	bail_out $ER_CONF
 }
 # check for boolean defaults
-for rvar in ENABLE_SYSLOG IPTSAVE_FAILS; do
+for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`$rvar' is not in range of 0-1."
 		bail_out $ER_CONF
@@ -1266,9 +1265,6 @@ if ((IPTSAVE_FAILS)); then
 	fi
 fi
 
-# check for mandatory directories
-#check_dirs SAVE_DIR || bail_out $?
-
 # -------------------------------------------------------------------------
 # turn on debugging (verbose level is known now)
 # -------------------------------------------------------------------------
@@ -1293,9 +1289,10 @@ if [[ $MAIN_ARG = 'test' ]]; then
 else
 	set_skel 'stable' || bail_out $?
 fi
-# make skeleton variables readonly
+# make important variables readonly
 readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
-	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR
+	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR \
+	SERVICES PROTOCOLS BASE_DIR CONFIG GEN_FORMAT IPTSAVE_FAILS RELOAD_TIME
 
 # -------------------------------------------------------------------------
 # global variables
