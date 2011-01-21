@@ -879,7 +879,7 @@ fi
 
 set_chain_classifiction() {
 local str_mode str_tables str_tbl
-JUMP_TREE="$(string_tolower "${JUMP_TREE:-none}")"
+JUMP_TREE=$(string_tolower "${JUMP_TREE:-none}")
 set -- ${JUMP_TREE}
 str_mode="$1"
 shift
@@ -1409,7 +1409,7 @@ local -i multi_bound
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - logic differs from local networks
 	multi_bound=0
-	str_net_iface="$(get_net_iface ${str_net})"
+	str_net_iface=$(get_net_iface ${str_net})
 	# network with alias, if JUMP_TREE[3] = 0, also create interface depandant chains
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && multi_bound=1
 	case "${str_tbl}" in # each table has a different logic depending on the builtin chains
@@ -1482,7 +1482,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - 
 done
 for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 	multi_bound=0
-	str_net_iface="$(get_net_iface ${str_net})"
+	str_net_iface=$(get_net_iface ${str_net})
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && multi_bound=1
 	case "${str_tbl}" in
 		raw)
@@ -1583,7 +1583,7 @@ local -a arr_stage1 arr_stage2 arr_stage3 arr_stage4 arr_stage5
 log -I "Creating ${JUMP_TREE[1]} jump tree in ${str_tbl} table"
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 	multi_bound=0
-	str_net_data="$(get_net_data ${str_net})" || continue
+	str_net_data=$(get_net_data ${str_net}) || continue
 	set -- ${str_net_data}
 #	str_net_iface="$1" str_netaddr="$3"
 	str_net_iface="$1" str_netaddr="${5}/${4}"
@@ -1693,7 +1693,7 @@ str_if_done_list=""
 for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 	str_clist="" str_cilist=""
 	multi_bound=0
-	str_net_data="$(get_net_data ${str_net})" || continue
+	str_net_data=$(get_net_data ${str_net}) || continue
 	set -- ${str_net_data}
 	str_net_iface="$1" str_netaddr="${5}/${4}"
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && multi_bound=1
@@ -1731,13 +1731,13 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					fi
 					if ((PROC_IP_FORWARD == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
-							str_onetaddr="$(get_net_addr ${str_onet})"
+							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
 								return $ER_FAIL
 							fi
-							str_onetiface="$(get_net_iface ${str_onet})"
+							str_onetiface=$(get_net_iface ${str_onet})
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
 							arr_stage1[${#arr_stage1[@]}]="PREROUTING -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}_PRE"
 						done
@@ -1755,13 +1755,13 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					fi
 					if ((PROC_IP_FORWARD == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
-							str_onetaddr="$(get_net_addr ${str_onet})"
+							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
 								return $ER_FAIL
 							fi
-							str_onetiface="$(get_net_iface ${str_onet})"
+							str_onetiface=$(get_net_iface ${str_onet})
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
 							arr_stage1[${#arr_stage1[@]}]="PREROUTING -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}_PRE"
 							arr_stage1[${#arr_stage1[@]}]="POSTROUTING -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}_POST"
@@ -1790,13 +1790,13 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					fi
 					if ((PROC_IP_FORWARD == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
-							str_onetaddr="$(get_net_addr ${str_onet})"
+							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
 								log -E "Unable to retrieve data of network \`${str_onet}'."
 								raise_gen_err_count
 								return $ER_FAIL
 							fi
-							str_onetiface="$(get_net_iface ${str_onet})"
+							str_onetiface=$(get_net_iface ${str_onet})
 							[[ ${str_net_iface} = ${str_onetiface} ]] && continue
 							arr_stage1[${#arr_stage1[@]}]="PREROUTING -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}_PRE"
 							arr_stage1[${#arr_stage1[@]}]="POSTROUTING -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}_POST"
@@ -1846,13 +1846,13 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 				fi
 				if ((PROC_IP_FORWARD == 1)); then
 					for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
-						str_onetaddr="$(get_net_addr ${str_onet})"
+						str_onetaddr=$(get_net_addr ${str_onet})
 						if [[ -z ${str_onetaddr} ]]; then
 							log -E "Unable to retrieve data of network \`${str_onet}'."
 							raise_gen_err_count
 							return $ER_FAIL
 						fi
-						str_onetiface="$(get_net_iface ${str_onet})"
+						str_onetiface=$(get_net_iface ${str_onet})
 						[[ ${str_net_iface} = ${str_onetiface} ]] && continue
 						arr_stage1[${#arr_stage1[@]}]="${str_net_iface}${IF_CON}${str_onetiface} -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}"
 					done
@@ -1879,13 +1879,13 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 				fi
 				if ((PROC_IP_FORWARD == 1)); then
 					for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
-						str_onetaddr="$(get_net_addr ${str_onet})"
+						str_onetaddr=$(get_net_addr ${str_onet})
 						if [[ -z ${str_onetaddr} ]]; then
 							log -E "Unable to retrieve data of network \`${str_onet}'."
 							raise_gen_err_count
 							return $ER_FAIL
 						fi
-						str_onetiface="$(get_net_iface ${str_onet})"
+						str_onetiface=$(get_net_iface ${str_onet})
 						[[ ${str_net_iface} = ${str_onetiface} ]] && continue
 						if ((JUMP_TREE[3] == 1)); then
 							arr_stage2[${#arr_stage2[@]}]="FORWARD -s ${str_netaddr} -d ${str_onetaddr} -j ${str_net}_${str_onet}"
@@ -1932,7 +1932,7 @@ done
 for ((idx=1; idx<=5; ++idx)); do # five stages of classification
 	arr_populated "arr_stage${idx}" || continue
 	for ridx in $(arr_indicies "arr_stage${idx}"); do # create log messages and add_rule commands
-		str_jmsg="$(eval 'printf "%s\n" "${arr_stage'${idx}'[ridx]}"')"
+		str_jmsg=$(eval 'printf "%s\n" "${arr_stage'${idx}'[ridx]}"')
 		[[ ${str_jmsg} ]] || continue # should not be
 		str_jmsg="${str_jmsg/'! -i '/idev=!}"
 		str_jmsg="${str_jmsg/'! -o '/odev=!}"
@@ -3298,7 +3298,7 @@ MSG_LIST_CONNLIMIT[RULE_LIST_IDX]="connlimit=${arg_list_connlimit[ARG_LIST_IDX]}
 _process_m_dscp() { # fill the dscp match rulelist and msglist arrays
 local str_neg=""
 string_negated "${arg_list_m_dscp[ARG_LIST_IDX]}" && str_neg="! "
-local str_val="$(remove_negation "${arg_list_m_dscp[ARG_LIST_IDX]}")"
+local str_val=$(remove_negation "${arg_list_m_dscp[ARG_LIST_IDX]}")
 case "${str_val}" in
 	+([[:digit:]])|0x+([[:xdigit:]]))
 		RULELIST_M_DSCP[RULE_LIST_IDX]="-m dscp ${str_neg}--dscp ${str_val} "
@@ -3422,7 +3422,7 @@ _process_addrtype() { # fill the iptables addrtype match rulelist and msglist ar
 local str_neg=""
 string_negated "${arg_list_addrtype[ARG_LIST_IDX]}" && str_neg="! "
 set -- ${arg_list_addrtype[ARG_LIST_IDX]/:/ }
-local str_addr="$(remove_negation "$1")" str_atype="$2"
+local str_addr=$(remove_negation "$1") str_atype="$2"
 RULELIST_PKTTYPE[RULE_LIST_IDX]="-m addrtype ${str_neg}--${str_addr}-type ${str_atype} "
 MSG_LIST_PKTTYPE[RULE_LIST_IDX]="${str_addr}-addrtype=${str_atype} "
 } # -------------------------------------------------------------------------
@@ -4020,7 +4020,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 	tmp_opt_var="${tmp_pos_par_val_array[pos_idx]%% *}"
 #	tmp_opt_var_value="${tmp_pos_par_val_array[pos_idx]##* }"
 	tmp_opt_var_value="${tmp_pos_par_val_array[pos_idx]#* }"
-	tmp_opt_var_value_neg_ok="$(remove_negation "${tmp_opt_var_value}")"
+	tmp_opt_var_value_neg_ok=$(remove_negation "${tmp_opt_var_value}")
 	case "${tmp_opt_var}" in
 		(table)
 			val_table "${tmp_opt_var_value}" || return 1
@@ -4088,7 +4088,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				if string_negated "${tmp_opt_var_value}"; then
 					str_var="!$(get_net_addr "${tmp_opt_var_value_neg_ok}")"
 				else
-					str_var="$(get_net_addr "${tmp_opt_var_value}")"
+					str_var=$(get_net_addr "${tmp_opt_var_value}")
 				fi
 				[[ ${str_var} ]] || {
 					log -E "Unable to retrieve address for net \`${tmp_opt_var_value_neg_ok}'."
@@ -5502,7 +5502,7 @@ else  # no matching network, looking for matching interfaces
 		return 0
 	}
 	for str_netname in ${NET_NAME_LIST}; do
-		str_net_iface="$(get_net_iface ${str_netname})"
+		str_net_iface=$(get_net_iface ${str_netname})
 		[[ ${str_net_iface} = ${str_in_dev} ]] && str_src_netname="${str_netname}"
 		[[ ${str_net_iface} = ${str_out_dev} ]] && str_dst_netname="${str_netname}"
 		if [[ ${str_src_netname} && ${str_dst_netname} ]]; then # both interfaces are known networks
@@ -6481,9 +6481,9 @@ for idx in ${!PORTSCAN_ARRRAY[@]}; do
 	set -- ${PORTSCAN_ARRRAY[idx]}
 	local sname=$1 print_name=${1//_/ }
 	shift
-	local stcpf="$(build_list ':' "$*")" # tcp-flags
-	local logscan="$(subst_var LOG_${sname})" # substitute each scan name with the according LOG variable.
-	local dropscan="$(subst_var DROP_${sname})" # substitute each scan name with the according DROP variable.
+	local stcpf=$(build_list ':' "$*") # tcp-flags
+	local logscan=$(subst_var LOG_${sname}) # substitute each scan name with the according LOG variable.
+	local dropscan=$(subst_var DROP_${sname}) # substitute each scan name with the according DROP variable.
 	if ((logscan == 1)); then # LOG scan
 		if ((dropscan == 1)); then
 			str_lpfix="${LOG_PREFIX}DROP"
@@ -6738,10 +6738,10 @@ done
 	raise_cfg_err_count
 	return 0
 }
-[[ ${str_iflist} ]] && RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]="$(build_list ',' "${str_iflist}")"
+[[ ${str_iflist} ]] && RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]=$(build_list ',' "${str_iflist}")
 [[ ${str_netlist} ]] && {
 	for str in ${str_netlist}; do
-		str_net_if="$(get_net_iface "${str}")"
+		str_net_if=$(get_net_iface "${str}")
 		[[ ${str_net_if} ]] || {
 			log -d "${str}"
 			raise_gen_err_count
@@ -6800,9 +6800,9 @@ for str in ${str_iflist}; do
 	done < <(get_if_ipv4_data "${str}" -i -m -b)
 done
 for str in ${str_netlist}; do
-	str_net_data="$(get_net_data "${str}")" || continue
+	str_net_data=$(get_net_data "${str}") || continue
 	set -- ${str_net_data}
-	str_iface="$1" iface_ip="$(ip_network "${3}/${4}")" iface_mask="$4" iface_brd="${6}"
+	str_iface="$1" iface_ip=$(ip_network "${3}/${4}") iface_mask="$4" iface_brd="${6}"
 	if [[ -z ${iface_brd} ]]; then
 		log -E "Unable to retrieve broadcast address for interface \`${str}'."
 		raise_gen_err_count
@@ -6840,7 +6840,7 @@ local TEMPLATE_BUILTIN_DROP_DHCP=(
 "always_use_0[2]=dport=67,68"
 "always_use_0[3]=state=NEW"
 )
-local -a RULEBLOCK_BUILTIN_DROP_DHCP[${#RULEBLOCK_BUILTIN_DROP_DHCP[@]}]="$(build_list ',' "${DROP_DHCP}")"
+local -a RULEBLOCK_BUILTIN_DROP_DHCP[${#RULEBLOCK_BUILTIN_DROP_DHCP[@]}]=$(build_list ',' "${DROP_DHCP}")
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_DHCP RULEBLOCK_BUILTIN_DROP_DHCP
 } # -------------------------------------------------------------------------
 
@@ -6860,7 +6860,7 @@ local TEMPLATE_BUILTIN_DROP_UPNP=(
 "always_use_0[1]=dport=1900"
 "always_use_0[2]=state=NEW"
 )
-local -a RULEBLOCK_BUILTIN_DROP_UPNP[${#RULEBLOCK_BUILTIN_DROP_UPNP[@]}]="$(build_list ',' "${DROP_UPNP}")"
+local -a RULEBLOCK_BUILTIN_DROP_UPNP[${#RULEBLOCK_BUILTIN_DROP_UPNP[@]}]=$(build_list ',' "${DROP_UPNP}")
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_UPNP RULEBLOCK_BUILTIN_DROP_UPNP
 } # -------------------------------------------------------------------------
 
@@ -7012,7 +7012,7 @@ for idx in ${!LOCAL_NS[@]}; do
 	nslist=${1//,/ } ext_net=$2
 	strERR="LOCAL_NS ${idx} ${LOCAL_NS[idx]}"
 	if [[ ${ext_net} ]]; then # get external interface
-		ext_netif="$(get_net_iface "${ext_net}")"
+		ext_netif=$(get_net_iface "${ext_net}")
 		[[ ${ext_netif} ]] || {
 			log -d "${ext_net}"
 			cfg_err ${strERR}
@@ -7021,7 +7021,7 @@ for idx in ${!LOCAL_NS[@]}; do
 	fi
 	for ns_host in ${nslist}; do
 		if [[ -z ${ext_netif} ]]; then
-			ext_if="$(get_route_iface "${ns_host}")"
+			ext_if=$(get_route_iface "${ns_host}")
 			[[ ${ext_if} ]] || {
 				log -E "Unable to retrieve interface to route ${ns_host} over."
 				raise_gen_err_count
@@ -7039,7 +7039,7 @@ done
 if [[ ${ns_if_list} ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[@]} > 1)); then
 	((REVERSE_INPUT_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]
 	create_chain filter "${BIC_LOCAL_NAMESERVERS}"
-	RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[@]}]="$(build_list ',' "${ns_if_list}")"
+	RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[@]}]=$(build_list ',' "${ns_if_list}")
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW 
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS 
 else
@@ -7092,7 +7092,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 	NTP_SERVERS=${1//,/ } ext_net=$2
 	strERR="TIME_SERVERS ${idx} ${TIME_SERVERS[idx]}"
 	if [[ ${ext_net} ]]; then # get external interface
-		ext_netif="$(get_net_iface ${ext_net})"
+		ext_netif=$(get_net_iface ${ext_net})
 		[[ ${ext_netif} ]] || {
 			log -d "${ext_net}"
 			cfg_err ${strERR}
@@ -7101,7 +7101,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 	fi
 	for ntp_host in ${NTP_SERVERS}; do
 		if [[ -z ${ext_netif} ]]; then
-			ext_if="$(get_route_iface "${ntp_host}")"
+			ext_if=$(get_route_iface "${ntp_host}")
 			[[ ${ext_if} ]] || {
 				log -E "Unable to retrieve interface to route ${ntp_host} over."
 				raise_gen_err_count
@@ -7118,7 +7118,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 done
 if [[ ${ntp_if_list} ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[@]} > 1 )); then
 	((REVERSE_INPUT_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[0]
-	local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[@]}]="$(build_list ',' "${ntp_if_list}")"
+	local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[@]}]=$(build_list ',' "${ntp_if_list}")
 	create_chain filter "${BIC_NTP_SVR_CHAIN}"
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS
@@ -7258,19 +7258,19 @@ for idx in ${!ISP_SMTP[@]}; do
 		continue
 	}
 	if [[ ${ext_net} ]]; then
-		ext_netif="$(get_net_iface "${ext_net}")"
+		ext_netif=$(get_net_iface "${ext_net}")
 		[[ ${ext_netif} ]] || {
 			log -d "${ext_net}"
 			raise_gen_err_count
 			continue
 		}
 	fi
-	loc_netdata="$(get_net_data "${loc_net}")" || continue
+	loc_netdata=$(get_net_data "${loc_net}") || continue
 	set -- ${loc_netdata}
 	loc_netif="$1" netaddr="${5}/${4}"
 	for smtp_host in ${smtp_ips}; do
 		[[ ${ext_net} ]] || {
-			ext_netif="$(get_route_iface "${smtp_host}")"
+			ext_netif=$(get_route_iface "${smtp_host}")
 			[[ ${ext_netif} ]] || {
 				log -E "Unable to retrieve interface to route ${smtp_host} over."
 				raise_gen_err_count
@@ -7445,7 +7445,7 @@ for rvar in ${LAN_FTP}; do
 		if lsearch "${str_out}" ${NET_IFLIST}; then
 			str_odev="${str_out}"
 		elif lsearch "${str_out}" ${NET_NAME_LIST}; then
-			str_odev="$(get_net_iface "${str_out}")"
+			str_odev=$(get_net_iface "${str_out}")
 			[[ ${str_odev} ]] || {
 				log -d "${str_out}"
 				raise_gen_err_count
@@ -7461,8 +7461,8 @@ for rvar in ${LAN_FTP}; do
 		str_iface="${str_in}"
 		str_net_addr="${RULE_SEP}"
 	elif lsearch "${str_in}" ${NET_NAME_LIST}; then
-		str_iface="$(get_net_iface "${str_in}")"
-		str_net_addr="$(get_net_addr "${str_in}")"
+		str_iface=$(get_net_iface "${str_in}")
+		str_net_addr=$(get_net_addr "${str_in}")
 		[[ ${str_iface} && ${str_net_addr} ]] || {
 			log -E "Unable to retrieve data for network \`${str_in}'"
 			raise_gen_err_count
@@ -7478,7 +7478,7 @@ for rvar in ${LAN_FTP}; do
 		raise_cfg_err_count
 		continue
 	}
-	str_ftpmode="$(string_tolower "${str_ftpmode}")"
+	str_ftpmode=$(string_tolower "${str_ftpmode}")
 	[[ ${str_ftpmode} = @(all|active|passive|none) ]] || {
 		log -i "${str_ftpmode}" "FTP mode descriptor"
 		raise_cfg_err_count
@@ -7692,7 +7692,7 @@ for idx in ${!KNOWN_TRAFFIC_MAP[@]}; do
 		local str_state="${stER}" str_state_cmd="${stateER}"
 	fi
 	if [[ ${str_place} && ${str_place} != ${RULE_SEP} ]]; then
-		local str_place="$(string_tolower "${str_place}")"
+		local str_place=$(string_tolower "${str_place}")
 		[[ ${str_place} = @(top|bottom) ]] || {
 			log -E "Invalid value \`${str_place}' for rule placement descriptor in variable \`KNOWN_TRAFFIC_MAP'."
 			raise_cfg_err_count
@@ -7747,7 +7747,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="$(string_toupper ${str_action}) ${str_chain}"
 		;;
 		logdrop|logreject)
-			str_tmp_act="$(string_toupper ${str_action/log/})"
+			str_tmp_act=$(string_toupper ${str_action/log/})
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit} ${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_tmp_act}_${str_chain}: ${str_log_options}"
 			if [[ ${str_action} = logdrop && ${str_pol} = DROP_ ]]; then
 				log -N "Policy for ${str_chain} already is set to DROP, not applying additional final drop rule."

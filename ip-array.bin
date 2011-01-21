@@ -381,13 +381,13 @@ declare -a CREATED_CHAINS_ARRAY		# List of created chains
 
 declare -a MODULE_CMD_ARRAY	# Array to cache the modprobe commands
 declare -a IPT_CMD_ARRAY	# Array to cache the iptables commands
-# arrays for each iptables table
-declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 declare -a IPT_POL_ARRAY	# Array to cache the iptables policy commands
 declare -a IPT_FLUSH_ARRAY	# Array to cache the iptables chain flushing commands
 declare -a IPT_CCHAIN_ARRAY	# Array to cache the iptables chain creation commands
 declare -a TC_CMD_ARRAY		# Array to cache the tc commands
 declare -a PROC_CMD_ARRAY	# Array to cache the sysctl commands
+# arrays for each iptables table
+declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
 declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error

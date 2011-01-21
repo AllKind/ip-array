@@ -383,12 +383,13 @@ local s_var="$1"
 [[ ${!s_var} ]] || return 0
 local tmp="${!s_var}"
 ##set -x
-##tmp="${tmp//\'/}"
+tmp="${tmp//\'/}"
 #tmp="${tmp//\`/}"
 #tmp="${tmp//\\/\\\\}"
 ##tmp="${tmp//\´/}"
 ##tmp="${tmp//\\/\\\\}"
-#tmp="${tmp//\"/\\\"}"
+tmp="${tmp//\\/}"
+tmp="${tmp//\"/\\\"}"
 ##tmp="${tmp//>/\\>}"
 ##set +x
 printf "%s\n" "${tmp}"
@@ -3250,7 +3251,7 @@ while read -r; do let line_count+=1
 			}
 			tmp_content="${line%%'<'/+([[:word:]])'>'*}"
 			strip_blanks_var 'tmp_content'
-			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
 			ARR_TAGS[tag_idx++]="close ${tag_name}"
 			cont_expect=0 attr_expect=0 comment_idx=0
@@ -3261,7 +3262,7 @@ while read -r; do let line_count+=1
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close a tag, but there is no tag opened."; return 1; }
 			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
 			strip_blanks_var 'tmp_content'
-			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
 			ARR_TAGS[tag_idx++]="close ${last_tag}"
 			cont_expect=0 attr_expect=0 comment_idx=0
@@ -3272,7 +3273,7 @@ while read -r; do let line_count+=1
 					if ((attr_expect == 1)); then
 						if [[ ${line} = *([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
 							str_attr="${line%%[[:blank:]]*}"
-							eval 'ARR_ATTR_NO_'$((tag_idx-1))'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+							eval 'ARR_ATTR_NO_'$((tag_idx-1))'[attr_idx++]="'$(re_normalize str_attr)'"'
 							line="${line#"${str_attr}"}"
 							continue
 						elif [[ ${line} = *([[:blank:]])\>* ]]; then
@@ -3541,6 +3542,7 @@ case "$MODE" in
 			printf "\n%s < %s\n" "\"\$IPT_RESTORE\"" "\"${RULESETFILE%.bash}.iptsave\"" >>"$RULESETFILE"
 			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
+					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
 					save_command_array $cmd_array || return $?
 				fi
 			done
