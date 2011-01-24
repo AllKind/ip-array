@@ -756,6 +756,26 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 done
 } # -------------------------------------------------------------------------
 
+run_rm() {
+"${RM:-/bin/rm}" -f -- "${@}"
+} # -------------------------------------------------------------------------
+
+run_date() {
+"${DATE:-/bin/date}" "${@}"
+} # -------------------------------------------------------------------------
+
+run_find() {
+"${FIND:-/usr/bin/find}" "${@}"
+} # -------------------------------------------------------------------------
+
+run_modprobe() {
+"${MODPROBE:-/sbin/modprobe}" "${@}"
+} # -------------------------------------------------------------------------
+
+run_iproute() {
+"${IP:-/sbin/ip}" "${@}"
+} # -------------------------------------------------------------------------
+
 check_dirs() { # check for existence of directories declared by varname
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 while (($#)); do
@@ -885,7 +905,7 @@ if rvar=$(\
 	printf "%s %s -e %s -d %s -s %s -v 2\n" "\"${BIN_DIR}/${0##*/}\"" "restore" "\"${BIN_DIR}\"" "\"${DEFAULTS_FILE}\"" "\"${str_file}\"" \
 	| "${AT}" now + ${RELOAD_TIME} minutes 2>&1)
 then
-	notice_msg "Restoring saved ruleset using ${AT} with: \`${rvar#*$'\n'}'."
+	notice_msg "Restoring saved ruleset using \`${AT}' with: \`${rvar#*$'\n'}'."
 	return 0
 else
 	err_msg "Failed scheduling the restore job."
@@ -895,7 +915,7 @@ fi
 
 autosave() { # automatically save a temporary ruleset, which will be restored on error
 if ((NO_AUTOSAVE == 0 && IPTSAVE_FAILS == 0)); then
-	AUTOSAVE_FILE="_autosave-generated_iptables-save_$("${DATE}" +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
+	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
 	ipt_save "${AUTOSAVE_FILE}" || return $?
 	readonly AUTOSAVE_FILE
 fi
@@ -904,7 +924,7 @@ fi
 cleanup_autosave() { # remove automatically saved temporary ruleset
 if [[ ${AUTOSAVE_FILE} ]]; then
 	if [[ -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
-		"${RM}" -f "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
+		run_rm "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
 			err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
 		}
 	fi
@@ -913,7 +933,7 @@ fi
 
 cleanup_lock() { # remove temp lockfile
 if [[ -e $LOCKFILE ]]; then
-	"$RM" -f "$LOCKFILE" || :
+	run_rm -f "$LOCKFILE" || :
 fi
 } # -------------------------------------------------------------------------
 

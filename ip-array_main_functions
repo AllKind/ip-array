@@ -1072,8 +1072,8 @@ set_env
 
 check_mod_dir() {
 if ((${#MODS_TO_RM[@]} > 0 || ${#MODULES_TO_LOAD[@]} > 0)); then
-	[[ -d ${MODULE_DIR} ]] || {
-		log -E "\`${MODULE_DIR}' does not exist."
+	[[ -d $MODULE_DIR ]] || {
+		log -E "\`$MODULE_DIR' does not exist."
 		raise_cfg_err_count
 		return $ER_NOEX
 	}
@@ -1083,12 +1083,12 @@ fi
 rm_mod() { # remove a module
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local mod_to_rm="$1"
-[[ -d ${MODULE_DIR} ]] || {
-	log -E "\`${MODULE_DIR}' does not exist."
+[[ -d $MODULE_DIR ]] || {
+	log -E "\`$MODULE_DIR' does not exist."
 	return $ER_NOEX
 }
 # see if mod name exists in module path
-local str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${mod_to_rm}.*" 2>/dev/null)"
+local str_psearch=$(run_find "$MODULE_DIR" -name "${mod_to_rm}.*" 2>/dev/null)
 # see if mod name is an alias
 if [[ -z ${str_psearch} ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
@@ -1097,7 +1097,7 @@ if [[ -z ${str_psearch} ]]; then # was not found in module path
 			[[ ${str_alias} = ${mod_to_rm} ]] && {
 				log -N "Module name \`${mod_to_rm}' is an alias for \`${str_realmod}'."
 				mod_to_rm="${str_realmod}"
-				str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${mod_to_rm}.*" 2>/dev/null)"
+				str_psearch=$(run_find "$MODULE_DIR" -name "${mod_to_rm}.*" 2>/dev/null)
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
@@ -1120,7 +1120,7 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 			# in dry run and save commands modes, just probe with modprobe -n
 #				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
 				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
-					"${MODPROBE}" -nr "${mod_to_rm}" || {
+					run_modprobe -nr "${mod_to_rm}" || {
 						log -f "removing ${mod_to_rm}"
 					}
 					# add commands to the command array, to be saved after collecting all commands
@@ -1129,7 +1129,7 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 				;;
 				*)  # not in dry run or commands saving mode, so perform the module probing
 					if ((EXEC_COMMANDS)); then
-						"${MODPROBE}" -r "${mod_to_rm}" || {
+						run_modprobe -r "${mod_to_rm}" || {
 							log -f "removing ${mod_to_rm}"
 							return $ER_FAIL
 						}
@@ -1137,7 +1137,7 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 						MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="load ${mod_to_rm}"
 						return 0
 					else
-						"${MODPROBE}" -nr "${mod_to_rm}" || {
+						run_modprobe -nr "${mod_to_rm}" || {
 							log -f "removing ${mod_to_rm}"
 						}
 					fi
@@ -1155,12 +1155,12 @@ load_mod() { # load a module
 local module_name="$1"
 shift
 local module_params="$@"
-[[ -d ${MODULE_DIR} ]] || {
-	log -E "\`${MODULE_DIR}' does not exist."
+[[ -d $MODULE_DIR ]] || {
+	log -E "\`$MODULE_DIR' does not exist."
 	return $ER_NOEX
 }
 # see if mod name exists in module path
-local str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${module_name}.*" 2>/dev/null)"
+local str_psearch=$(run_find "$MODULE_DIR" -name "${module_name}.*" 2>/dev/null)
 # see if mod name is an alias
 if [[ -z ${str_psearch} ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
@@ -1169,7 +1169,7 @@ if [[ -z ${str_psearch} ]]; then # was not found in module path
 			[[ ${str_alias} = ${module_name} ]] && {
 				log -N "Module name \`${module_name}' is an alias for \`${str_realmod}'."
 				module_name="${str_realmod}"
-				str_psearch="$("${FIND}" "${MODULE_DIR}" -name "${module_name}.*" 2>/dev/null)"
+				str_psearch=$(run_find "$MODULE_DIR" -name "${module_name}.*" 2>/dev/null)
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
@@ -1195,7 +1195,7 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 			# in dry run and save commands modes, just probe with modprobe -n
 #				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
 				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
-					"${MODPROBE}" -n "${module_name}" ${module_params} || {
+					run_modprobe -n "${module_name}" ${module_params} || {
 						log -f "probing module: ${module_name} ${module_params}"
 					}
 					# add commands to the command array, to be executed after collecting all commands
@@ -1203,14 +1203,14 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 				;;
 				*)	# not in dry run or commands saving mode, so perform the module probing
 				if ((EXEC_COMMANDS)); then
-					"${MODPROBE}" "${module_name}" ${module_params} || {
+					run_modprobe "${module_name}" ${module_params} || {
 						log -f "probing module: ${module_name} ${module_params}"
 						return $ER_FAIL
 					}
 					# remember mod state, to be restored in case of error
 					MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="unload ${module_name} ${module_params}"
 				else
-					"${MODPROBE}" -n "${module_name}" ${module_params} || {
+					run_modprobe -n "${module_name}" ${module_params} || {
 						log -f "probing module: ${module_name} ${module_params}"
 					}
 				fi
@@ -1274,7 +1274,7 @@ for idx in ${!MOD_STATE_ARRAY[@]}; do
 	case "${module_state}" in
 		load)
 			log -e "${PF}probing module: ${module_name}"
-			"${MODPROBE}" "${module_name}" ${module_params} || {
+			run_modprobe "${module_name}" ${module_params} || {
 				log -f "probing module: ${module_name} ${module_params}"
 			}
 		;;
@@ -1292,7 +1292,7 @@ done
 if ((${#unload_arr[@]})); then
 	for ((idx=$(last_arr_member unload_arr); idx>=0; --idx)); do
 		log -e "${PF}removing ${unload_arr[idx]}"
-		"${MODPROBE}" -r "${unload_arr[idx]}" || log -f "removing ${unload_arr[idx]}"
+		run_modprobe -r "${unload_arr[idx]}" || log -f "removing ${unload_arr[idx]}"
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -1475,16 +1475,16 @@ done
 
 get_route_iface() { # retrieve and echo the interface an IP is routed over
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-"${IP}" -o route get $1 | my_cut -c '5'
+run_iproute -o route get $1 | my_cut -c '5'
 } # -------------------------------------------------------------------------
 
 get_default_route_iface() { # get and echo the interface of the default route.
-"${IP}" route list | lsearch_regex '^default' | my_cut -c '5'
+run_iproute route list | lsearch_regex '^default' | my_cut -c '5'
 } # -------------------------------------------------------------------------
 
 #get_default_table_route_iface() { # get and echo the interface of the default route, of a specified table
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#"${IP}" route list table "$1" | lsearch_regex '^default' | my_cut -c '5'
+#run_iproute route list table "$1" | lsearch_regex '^default' | my_cut -c '5'
 #} # -------------------------------------------------------------------------
 
 get_if_data() { # load interface data into an array
@@ -1512,7 +1512,7 @@ while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
 #		;;
 	esac
 	eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
-done < <("${IP}" -4 addr show "${iface}" 2>/dev/null | lsearch_echo_multiline inet) # show interface data
+done < <(run_iproute -4 addr show "${iface}" 2>/dev/null | lsearch_echo_multiline inet) # show interface data
 [[ $DEBUG_INFO ]] && dbg_arr IFDATA_ARRAY_"${iface}"
 readonly IFDATA_ARRAY_"${iface}"
 } # -------------------------------------------------------------------------
@@ -1748,7 +1748,7 @@ else
 fi
 #if [[ $(show_last_char "${ifname}") = '+' ]]; then # check if last letter of interface name is a '+'
 if is_ifname_wcard "${ifname}"; then
-	if "${IP}" link show | my_cut -d ':' -c '2' | lsearch_regex "${ifname:0:${lastl}}.*" &>/dev/null
+	if run_iproute link show | my_cut -d ':' -c '2' | lsearch_regex "${ifname:0:${lastl}}.*" &>/dev/null
 	then
 		log -N "${ifname} is not a known device, but it looks like a valid iptables interface wildcard."
 		return 0
@@ -1773,7 +1773,7 @@ val_ip4_addr "$1" || return 1
 check_iface() { # validate interface existence
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IFACE_CHECK == 0)) || return 0
-"${IP}" link show $1 &>/dev/null || {
+run_iproute link show $1 &>/dev/null || {
 	log -E "Interface $1 does not exist."
 	return 1
 }
@@ -3432,7 +3432,7 @@ local str_tbl str_ton
 if [[ -f $RULESETFILE ]]; then
 	if [[ -w $RULESETFILE ]]; then
 		log -w "$RULESETFILE already exists. Deleting it."
-		"${RM}" -f "$RULESETFILE"
+		run_rm "$RULESETFILE"
 	else
 		log -E "\`$RULESETFILE' is not writable"
 		return $ER_FAIL
@@ -3441,7 +3441,7 @@ fi
 for str_tbl in rawpost security raw nat mangle filter; do
 	str_ton=$(subst_var "ENABLE_$(string_toupper "${str_tbl}")")
 	((${str_ton:-0} == 1)) || continue
-	printf "# Generated by %s %s at %s\n" "$ME" "$STR_VERSION" "$("$DATE" --rfc-2822)" >>"$RULESETFILE" || {
+	printf "# Generated by %s %s at %s\n" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >>"$RULESETFILE" || {
 		log -F "creating \`$RULESETFILE'"
 		return $ER_FAIL
 	}
@@ -3491,7 +3491,7 @@ for str_tbl in rawpost security raw nat mangle filter; do
 		;;
 	esac
 	printf "%s\n" "COMMIT" >>"$RULESETFILE"
-	printf "# Completed on %s\n" "$("$DATE" --rfc-2822)" >>"$RULESETFILE"
+	printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$RULESETFILE"
 done
 } # -------------------------------------------------------------------------
 
@@ -3513,7 +3513,7 @@ if [[ -f $RULESETFILE ]]; then
 	fi
 fi
 #printf "#!/bin/bash\n\n# Script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >"$RULESETFILE" || {
-printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$("$DATE" --rfc-2822)" >"$RULESETFILE" || {
+printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >"$RULESETFILE" || {
 	log -F "creating \`$RULESETFILE'"
 	return $ER_FAIL
 }
@@ -3618,7 +3618,7 @@ case "$MODE" in
 esac
 # write a signature to the saved command file
 if [[ -w $RULESETFILE ]]; then
-	printf "\n# END of script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$("${DATE}" --rfc-2822)" >>"$RULESETFILE"
+	printf "\n# END of script generated by %s %s at %s\n\n" "${ME}" "${STR_VERSION}" "$(run_date --rfc-2822)" >>"$RULESETFILE"
 else
 	log -E "\`$RULESETFILE' is not writable"
 	return $ER_FAIL
@@ -3686,20 +3686,19 @@ case "$MODE" in # act according to runtime mode
 		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 			[[ $DEBUG_INFO ]] && dbg_arr "IPT_CMD_ARRAY"
 			if [[ $GEN_FORMAT = ipt ]]; then
-				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$("${DATE}" +%F_%T)_rnd${RANDOM}"
+				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}"
 				iptsave_rulesets || {
-					[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
+					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
 					cmd_err_count misc 'saving ruleset in iptables-save format'
 					return $ER_FAIL
 				}
-#				SAVE_FILE="${RULESETFILE##*/}"
 				USE_COUNTERS=0 # no way worked out to add counters
 				ipt_restore "${RULESETFILE##*/}" || {
-					[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
+					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
 					cmd_err_count ipt 'restoring ruleset in iptables-save format'
 					return $ER_FAIL
 				}
-				[[ -e $RULESETFILE ]] && "${RM}" -f "$RULESETFILE"
+				[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
 			elif [[ $GEN_FORMAT = cmd ]]; then
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval 'set -- '"${IPT_CMD_ARRAY[i]}"
@@ -3888,7 +3887,7 @@ check_prog "${TC}"
 set_tc_mode() { # if requested by startup parameter, enable traffic shaping
 if ((ENABLE_TC_SHAPING == 0)); then
 	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
-		log -W "Traffic shaping is disabled in the configuration file."
+		log -W "Traffic shaping is disabled by configuration."
 	fi
 fi
 if ((ENABLE_TC_SHAPING)); then
@@ -4136,7 +4135,7 @@ case "$1" in
 		TC_CMD_ARRAY=()
 
 		log -T "Preparing known-good iptables ruleset"
-		if ((IPTSAVE_FAILS == 0)); then
+		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_save "${KNOWN_GOOD_RULES}" || bail_out $?
 		else
 			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
@@ -4171,13 +4170,17 @@ case "$1" in
 		trap - ERR
 		start_msg
 		load_pro_epilog_scripts 'prolog'
-		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES} ]]; then
-			log -N "Loading known good modprobe commands."
-			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+		if ((NO_MODPROBE == 0)); then
+			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES} ]]; then
+				log -N "Loading known good modprobe commands."
+				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+			else
+				log -N "No modprobe script found."
+			fi
 		else
-			log -N "No modprobe script found."
+			log -N "Modprobing is disabled by configuration."
 		fi
-		if ((IPTSAVE_FAILS == 0)); then
+		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
 				log -E "Failed restoring saved script. Starting regulary."
 				run_main "START" || bail_out $?
@@ -4195,18 +4198,26 @@ case "$1" in
 				log -N "No iptables script found."
 			fi
 		fi
-		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL} ]]; then
-			log -N "Loading known good traffic shaping commands."
-			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+		if ((ENABLE_TC_SHAPING)); then
+			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL} ]]; then
+				log -N "Loading known good traffic shaping commands."
+				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+			else
+				log -N "No traffic shaping script found."
+			fi
 		else
-			log -N "No traffic shaping script found."
+			log -N "Traffic shaping is disabled by configuration."
 		fi
 		# /proc settings at last, as filesystem may not be fully populated before
-		if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET} ]]; then
-			log -N "Loading known good /proc settings."
-			"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+		if ((NO_PROC == 0)); then
+			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET} ]]; then
+				log -N "Loading known good /proc settings."
+				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+			else
+				log -N "No /proc settings script found."
+			fi
 		else
-			log -N "No /proc settings script found."
+			log -N "/proc settings are disabled by configuration."
 		fi
 		common_end
 	;;

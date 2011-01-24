@@ -402,7 +402,7 @@ fi
 
 
 # -------------------------------------------------------------------------
-ipt() {
+run_ipt() {
 "${IPT}" "$@"
 } # -------------------------------------------------------------------------
 
@@ -495,9 +495,9 @@ local ttarget=$2 ttable=$3
 shift 3
 local tparam="$@"
 log -e "${PF}checking for ${ttarget} target"
-if ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
+if run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
 	set_var ${ttarget}_TGT_EXIST 1 # target exists, set according variable to 1
-	ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
+	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
 else
 	if ((mandatory == 1)); then
 		log -E "iptables target \`${ttarget}' does not exist."
@@ -517,9 +517,9 @@ local tmod=$2 ttable=$3
 shift 3
 local tparam="$@"
 log -e "${PF}checking for ${tmod} extension"
-if ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
+if run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
 	set_var "${tmod}_MOD_EXIST" 1 # module exists, set according variable to 1
-	ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
+	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
 else
 	if ((mandatory == 1)); then
 		log -E "iptables module \`${tmod}' does not exist."
@@ -573,7 +573,7 @@ local table c chain rest
 log -I "Immediately applying default policies"
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded"
-	ipt -nL &>/dev/null
+	run_ipt -nL &>/dev/null
 #	return 0
 fi
 while read -t ${GLOBAL_READ_TIMEOUT} table; do
@@ -582,16 +582,16 @@ while read -t ${GLOBAL_READ_TIMEOUT} table; do
 			if [[ ${table} = filter ]]; then
 #				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD) ]]; then
-					ipt -t ${table} -P ${chain} 'DROP' &>/dev/null || continue
+					run_ipt -t ${table} -P ${chain} 'DROP' &>/dev/null || continue
 				fi
 			else
 #				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
-					ipt -t ${table} -P ${chain} 'ACCEPT' &>/dev/null || continue
+					run_ipt -t ${table} -P ${chain} 'ACCEPT' &>/dev/null || continue
 				fi
 			fi
 		fi
-	done < <(ipt -t ${table} -nL)
+	done < <(run_ipt -t ${table} -nL)
 done < "${IP_TABLES_NAMES}"
 } # -------------------------------------------------------------------------
 
@@ -606,7 +606,7 @@ while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
 #		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${tgt_tbl} -F ${chain}"
 		IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${tgt_tbl} -F ${chain}"
 	fi
-done < <(ipt -t "${tgt_tbl}" -nL)
+done < <(run_ipt -t "${tgt_tbl}" -nL)
 #IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t "${tgt_tbl}" -X"
 IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t "${tgt_tbl}" -X"
 } # -------------------------------------------------------------------------
@@ -616,7 +616,7 @@ local table c chain rest
 log -I "Immediately flushing and deleting existing chains"
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
-	ipt -nL &>/dev/null || {
+	run_ipt -nL &>/dev/null || {
 		log -E "Failed to initialize iptables"
 		return $ER_FAIL
 	}
@@ -628,10 +628,10 @@ fi
 while read -t ${GLOBAL_READ_TIMEOUT} table; do
 	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
 		if [[ ${c} = Chain ]]; then
-			ipt -t ${table} -F ${chain} || log -f "flushing ${chain} chain"
+			run_ipt -t ${table} -F ${chain} || log -f "flushing ${chain} chain"
 		fi
-	done < <(ipt -t ${table} -nL 2>/dev/null)
-	ipt -t ${table} -X || log -f "deleting user defined chains in ${table} table"
+	done < <(run_ipt -t ${table} -nL 2>/dev/null)
+	run_ipt -t ${table} -X || log -f "deleting user defined chains in ${table} table"
 done < "${IP_TABLES_NAMES}"
 } # -------------------------------------------------------------------------
 
@@ -646,7 +646,7 @@ if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded?"
 	return 0
 #	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
-#	ipt -nL &>/dev/null || {
+#	run_ipt -nL &>/dev/null || {
 #		log -E "Failed to initialize iptables"
 #		return $ER_FAIL
 #	}
@@ -661,7 +661,7 @@ while read -t ${GLOBAL_READ_TIMEOUT} table; do
 #			IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${table} -F ${chain}"
 			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -F ${chain}"
 		fi
-	done < <(ipt -t ${table} -nL 2>/dev/null)
+	done < <(run_ipt -t ${table} -nL 2>/dev/null)
 	IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -X"
 done < "${IP_TABLES_NAMES}"
 } # -------------------------------------------------------------------------
@@ -717,11 +717,11 @@ case "$1" in
 			if [[ $rvar = rawpost ]]; then
 				((RAWPOST_TABLE_PRESENT == 1)) || continue
 			fi
-			if ipt -t $rvar -nL ${BIC_TEST_CHAIN} &>/dev/null; then
+			if run_ipt -t $rvar -nL ${BIC_TEST_CHAIN} &>/dev/null; then
 				log -W "chain ${BIC_TEST_CHAIN} in $rvar table already exists"
 				continue
 			else
-				ipt -t $rvar -N ${BIC_TEST_CHAIN} || {
+				run_ipt -t $rvar -N ${BIC_TEST_CHAIN} || {
 					log -E "Failed creating chain ${BIC_TEST_CHAIN} in $rvar table"
 					return $ER_FAIL
 				}
@@ -737,8 +737,8 @@ case "$1" in
 			if [[ $rvar = rawpost ]]; then
 				((RAWPOST_TABLE_PRESENT == 1)) || continue
 			fi
-			ipt -t $rvar -F ${BIC_TEST_CHAIN} || log -f "flushing chain ${BIC_TEST_CHAIN} in $rvar table"
-			ipt -t $rvar -X ${BIC_TEST_CHAIN} || log -f "deleting chain ${BIC_TEST_CHAIN} in $rvar table"
+			run_ipt -t $rvar -F ${BIC_TEST_CHAIN} || log -f "flushing chain ${BIC_TEST_CHAIN} in $rvar table"
+			run_ipt -t $rvar -X ${BIC_TEST_CHAIN} || log -f "deleting chain ${BIC_TEST_CHAIN} in $rvar table"
 		done
 	;;
 	*) log -o "$1" ${FUNCNAME}
@@ -804,7 +804,7 @@ readonly GLOBAL_LOGLIMIT GLOBAL_BURSTLIMIT GLOBAL_LOGLEVL
 check_mangle_chains() {
 ((ENABLE_MANGLE)) || return 0
 if ((MANGLE_CHAINS_PRESENT == 0)); then
-	ipt -t mangle -nL INPUT &>/dev/null && MANGLE_CHAINS_PRESENT=1
+	run_ipt -t mangle -nL INPUT &>/dev/null && MANGLE_CHAINS_PRESENT=1
 fi
 } # -------------------------------------------------------------------------
 
@@ -818,7 +818,7 @@ check_raw_table() {
 	return 0
 }
 log -w "Checking for raw table"
-ipt -t raw -nL &>/dev/null || RAW_TABLE_PRESENT=0
+run_ipt -t raw -nL &>/dev/null || RAW_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 check_rawpost_table() {
@@ -831,7 +831,7 @@ check_rawpost_table() {
 	return 0
 }
 log -w "Checking for rawpost table"
-ipt -t rawpost -nL &>/dev/null || RAWPOST_TABLE_PRESENT=0
+run_ipt -t rawpost -nL &>/dev/null || RAWPOST_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 check_security_table() {
@@ -844,7 +844,7 @@ check_security_table() {
 	return 0
 }
 log -w "Checking for security table"
-ipt -t security -nL &>/dev/null || SECURITY_TABLE_PRESENT=0
+run_ipt -t security -nL &>/dev/null || SECURITY_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 load_known_traffic_map() {
@@ -1016,7 +1016,7 @@ while read -t ${GLOBAL_READ_TIMEOUT} ipt_table; do
 			set -- ${ipt_chain}
 			set_policy ${ipt_table} $2 ${pol} || return $?
 		fi
-	done < <(ipt -t ${ipt_table} -nL)
+	done < <(run_ipt -t ${ipt_table} -nL)
 done < "${IP_TABLES_NAMES}"
 } # -------------------------------------------------------------------------
 
@@ -1979,7 +1979,7 @@ fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML rule file: \`${rule_file}'"
 	if [[ -e ${parsed_file} ]]; then
-		"${RM}" -f "${parsed_file}" || {
+		run_rm "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
 			return $ER_FAIL
 		}
@@ -1989,7 +1989,7 @@ if ((parse_files == 1)); then
 	printf '#!%s\n\n' "$SHELL" >&7
 	xml_parser 'rules' < "${rule_file}" || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && "${RM}" -f "${parsed_file}"
+		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
 		log -E "Failed parsing rule file: \`${rule_file}'"
 		return ${ER_LOAD}
 	}
@@ -2255,7 +2255,7 @@ create_custom_chains || return $?
 #local -i cidx=0
 #while read; do
 #	let cidx+=1
-#done < <(ipt -nL "$1" 2>/dev/null)
+#done < <(run_ipt -nL "$1" 2>/dev/null)
 #printf "%s\n" "${cidx}"
 #} # -------------------------------------------------------------------------
 
@@ -2273,7 +2273,7 @@ local -i lim=1 idx=0
 local -a empty_chains cmd_arr cmd_arr_ref
 local c str_chain str_target rest str_Ochain rnum
 local str_tbl="${1:-filter}"
-ipt -nL -t ${str_tbl} &>/dev/null || {
+run_ipt -nL -t ${str_tbl} &>/dev/null || {
 	log -f "listing \`${str_tbl}' table."
 	return 0
 }
@@ -2289,7 +2289,7 @@ while read c str_chain rest; do
 		fi
 #		((++idx))
 	fi
-done < <(ipt -nL -t ${str_tbl} 2>/dev/null)
+done < <(run_ipt -nL -t ${str_tbl} 2>/dev/null)
 #if ((idx == lim)) && [[ ${str_Ochain} != @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then # last chain to display could be empty
 if ((idx == lim)) && [[ ${str_Ochain} != @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then # last chain to display could be empty
 	log -w "${PF}found empty chain: \`${str_Ochain}'"
@@ -2311,7 +2311,7 @@ while read rnum str_target rest; do
 			break
 		fi
 	done
-done < <(ipt -nL --line-numbers -t ${str_tbl} 2>/dev/null)
+done < <(run_ipt -nL --line-numbers -t ${str_tbl} 2>/dev/null)
 if ((${#empty_chains[@]})); then
 	for idx in ${!empty_chains[@]}; do
 		log -e "${PF}deleting table=${str_tbl} chain=${empty_chains[idx]}"
@@ -2332,7 +2332,7 @@ return 0
 delete_unreferenced_chains() {
 local str_tbl="${1:-filter}" c str_chain rest
 log -N "Removing unreferenced chains in ${str_tbl} table"
-ipt -nL -t ${str_tbl} &>/dev/null || {
+run_ipt -nL -t ${str_tbl} &>/dev/null || {
 	log -f "listing \`${str_tbl}' table."
 	return 0
 }
@@ -2340,22 +2340,22 @@ while read c str_chain rest; do
 	if [[ ${c} = Chain ]]; then
 		if [[ ${rest} = "(0 references)" ]]; then
 			log -e "removing table=${str_tbl} chain=${str_chain}"
-			ipt -t ${str_tbl} -F "${str_chain}" &>/dev/null || {
+			run_ipt -t ${str_tbl} -F "${str_chain}" &>/dev/null || {
 				cmd_err_count ipt "${IPT} -t ${str_tbl} -F ${str_chain}"
 			}
-			ipt -t ${str_tbl} -X "${str_chain}" &>/dev/null || {
+			run_ipt -t ${str_tbl} -X "${str_chain}" &>/dev/null || {
 				cmd_err_count ipt "${IPT} -t ${str_tbl} -X ${str_chain}"
 			}
 		fi
 	fi
-done < <(ipt -t ${str_tbl} -nL 2>/dev/null)
+done < <(run_ipt -t ${str_tbl} -nL 2>/dev/null)
 return 0
 } # -------------------------------------------------------------------------
 
 save_for_diff() { # save output of iptables -nL, to be compared to the currently active ruleset
 local str_tbl="${1:-filter}"
 log -w "${PF}saving ${str_tbl}"
-ipt -t ${str_tbl} -nL >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
+run_ipt -t ${str_tbl} -nL >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
 	cmd_err_count 'ipt' "${IPT} -t ${str_tbl} -nL >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
 	return 0
 }
@@ -2368,7 +2368,7 @@ local str_dfile="${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" tmp_dfile="${SAVE_DIR}/tmp
 	log -E "\`${str_dfile}' does not exist, or is not readable."
 	return 0
 }
-ipt -t ${str_tbl} -nL >"${tmp_dfile}" || {
+run_ipt -t ${str_tbl} -nL >"${tmp_dfile}" || {
 	log -F "saving ${str_tbl} table ruleset to: \`${tmp_dfile}'"
 	cmd_err_count 'ipt' "${IPT} -t ${str_tbl} -nL >${tmp_dfile}"
 	return 0
@@ -2380,7 +2380,7 @@ else
 	printf "%s\n %s\n" "WARNING: Active iptables ruleset of ${str_tbl} table differs from the one saved to:" "\`${str_dfile}'"
 	log -l "WARNING: Active iptables ruleset of ${str_tbl} table differs from the one saved to: \`${str_dfile}'"
 fi
-"${RM}" -f "${tmp_dfile}" || {
+run_rm "${tmp_dfile}" || {
 	log -F "removing \`${tmp_dfile}'"
 	cmd_err_count 'misc' "${RM}" -f "${tmp_dfile}"
 	return 0
@@ -2779,7 +2779,7 @@ fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML template file: \`${template_file}'"
 	if [[ -e ${parsed_file} ]]; then
-		"${RM}" -f "${parsed_file}" || {
+		run_rm "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
 			return $ER_FAIL
 		}
@@ -2787,19 +2787,19 @@ if ((parse_files == 1)); then
 	exec 7> "${parsed_file}"
 	xml_parser 'templates' < "${template_file}" || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && "${RM}" -f "${parsed_file}"
+		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
 		log -E "Failed parsing templates file: \`${template_file}'"
 		return ${ER_LOAD}
 	}
 	exec 7>&-
 	source "${parsed_file}"
-	"${RM}" -f "${parsed_file}"
+	run_rm "${parsed_file}"
 	exec 7> "${parsed_file}"
 #	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
 	validate_generate_final_templates || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && "${RM}" -f "${parsed_file}"
+		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
 		log -E "Failed parsing templates file: \`${template_file}'"
 		return ${ER_LOAD}
 	}
@@ -2914,7 +2914,7 @@ fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML ruleblock file: \`${ruleblock_file}'"
 	if [[ -e ${parsed_file} ]]; then
-		"${RM}" -f "${parsed_file}" || {
+		run_rm "${parsed_file}" || {
 			log -F "removing old parsed file \`${parsed_file}'."
 			return $ER_FAIL
 		}
@@ -2924,7 +2924,7 @@ if ((parse_files == 1)); then
 	printf '#!%s\n\n' "$SHELL" >&7
 	xml_parser 'ruleblocks' < "${ruleblock_file}" || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && "${RM}" -f "${parsed_file}"
+		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
 		log -E "Failed parsing ruleblock file: \`${ruleblock_file}'"
 		return ${ER_LOAD}
 	}
@@ -6418,8 +6418,8 @@ case "${ALLOW_LOOPBACK}" in
 	1)
 		log -I "Immediately allowing loopback communication"
 		check_iface "${LOOPBACK_IF}" || return $ER_FAIL
-		ipt -t filter -A INPUT -i "${LOOPBACK_IF}" -j ACCEPT
-		ipt -t filter -A OUTPUT -o "${LOOPBACK_IF}" -j ACCEPT
+		run_ipt -t filter -A INPUT -i "${LOOPBACK_IF}" -j ACCEPT
+		run_ipt -t filter -A OUTPUT -o "${LOOPBACK_IF}" -j ACCEPT
 	;;
 	*) log -i "${ALLOW_LOOPBACK}" 'ALLOW_LOOPBACK'
 		return 0
@@ -6448,8 +6448,8 @@ else
 	log -W " \`SSH_CONNECTION' and \`ADMIN_CONNECTION' are unset, unable to create admin connection rules."
 	return 0
 fi
-ipt -I INPUT -s ${admin_src} -d ${admin_dst} -p tcp --dport ${admin_dst_port} -j ACCEPT
-ipt -I OUTPUT -d ${admin_src} -s ${admin_dst} -p tcp --sport ${admin_dst_port} -j ACCEPT
+run_ipt -I INPUT -s ${admin_src} -d ${admin_dst} -p tcp --dport ${admin_dst_port} -j ACCEPT
+run_ipt -I OUTPUT -d ${admin_src} -s ${admin_dst} -p tcp --sport ${admin_dst_port} -j ACCEPT
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
