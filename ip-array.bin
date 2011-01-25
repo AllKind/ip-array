@@ -39,6 +39,10 @@ ME="IP-Array"	# NOMEN
 # -------------------------------------------------------------------------
 # bash version check
 # -------------------------------------------------------------------------
+if [ -z "$BASH" ]; then
+	echo "\`BASH' variable is not available. Not running bash?"
+	exit 112
+fi
 if [ -z ${BASH_VERSINFO[0]} ]; then
 	echo "\`BASH_VERSINFO' variable is not available. Not running bash?"
 	exit 112
@@ -1003,7 +1007,7 @@ case "$MAIN_ARG" in
 			bail_out $ER_FAIL
 		fi
 	;;
-	version) printf "%s %s\n" "${ME}" "${STR_VERSION}"
+	version) printf "%s %s\n" "$ME" "$STR_VERSION"
 		quit_welldone
 	;;
 	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
@@ -1016,15 +1020,14 @@ esac
 while (($#)); do
 	option="$1" opt_arg="$2"
 	shift
-	case "${option}" in
+	case "$option" in
 		-ct|--ipt-counters) # use counters for iptables-save/restore
 			USE_COUNTERS=1
 			continue
 		;;
 		-dg|--debug) # enable additional debugging info
 			export DEBUG_INFO=YES
-			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]
-'
+			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			continue
 		;;
 		-dr|--dry-run) # use counters for iptables-save/restore
@@ -1056,7 +1059,7 @@ while (($#)); do
 			continue
 		;;
 		-ns|--no-scripts) # don't run pro/epilog scripts
-			case "${opt_arg}" in
+			case "$opt_arg" in
 				all|epilog|prolog) cmdline_skip_scripts="$opt_arg" ;;
 				*) cmdline_skip_scripts="all"
 					 continue
@@ -1080,25 +1083,25 @@ while (($#)); do
 		;;
 		-PF|--public-functions) # help about public functions
 			SHOW_PUBFUNC_LIST=1
-			[[ ${opt_arg} = +([[:word:]]) ]] && STR_PUBFUNC_NAME="${opt_arg}" || continue
+			[[ $opt_arg = +([[:word:]]) ]] && STR_PUBFUNC_NAME="$opt_arg" || continue
 		;;
-		-b|--base-dir) cmdline_base_dir="${opt_arg}" ;; # custom base directory
-		-c|--config-file) cmdline_conf_file="${opt_arg}" ;; # custom main config file
-		-C|--config-dir) cmdline_conf_dir="${opt_arg}" ;; # custom main config directory 
-		-d|--defaults-file) cmdline_def_file="${opt_arg}" ;; # custom defaults config file
-		-e|--exe-dir) cmdline_bin_dir="${opt_arg}" ;; # custom executable directory
-		-l|--lib-dir) cmdline_lib_dir="${opt_arg}" ;; # custom library directory
-		-r|--run-dir) cmdline_run_dir="${opt_arg}" ;; # custom locking directory
+		-b|--base-dir) cmdline_base_dir="$opt_arg" ;; # custom base directory
+		-c|--config-file) cmdline_conf_file="$opt_arg" ;; # custom main config file
+		-C|--config-dir) cmdline_conf_dir="$opt_arg" ;; # custom main config directory 
+		-d|--defaults-file) cmdline_def_file="$opt_arg" ;; # custom defaults config file
+		-e|--exe-dir) cmdline_bin_dir="$opt_arg" ;; # custom executable directory
+		-l|--lib-dir) cmdline_lib_dir="$opt_arg" ;; # custom library directory
+		-r|--run-dir) cmdline_run_dir="$opt_arg" ;; # custom locking directory
 		-o|--set-option) # override main config vars
-			[[ ${opt_arg} = +([[:word:]])=* ]] || {
-				pr_err "Option \`${option}' requires a valid assignment as argument (i.e. foo=bar)."
+			[[ $opt_arg = +([[:word:]])=* ]] || {
+				pr_err "Option \`$option' requires a valid assignment as argument (i.e. foo=bar)."
 				short_usage
 			}
-			ARR_RTIME_OPTS[${#ARR_RTIME_OPTS[@]}]="${opt_arg}"
+			ARR_RTIME_OPTS[${#ARR_RTIME_OPTS[@]}]="$opt_arg"
 		;;
-		-s|--save-file) cmdline_save_file="${opt_arg}" ;; # file to save/restore to/from
+		-s|--save-file) cmdline_save_file="$opt_arg" ;; # file to save/restore to/from
 		-sc|--show-config) # show config summary
-			case "${opt_arg}" in
+			case "$opt_arg" in
 				all)
 					if [[ $MAIN_ARG = show ]]; then
 						cmdline_show_conf="defaults main targets matches ipt_args"
@@ -1108,18 +1111,18 @@ while (($#)); do
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|ipt_args)
 					cmdline_show_conf="${cmdline_show_conf//${opt_arg}/}"
-					cmdline_show_conf+="${opt_arg} "
+					cmdline_show_conf+="$opt_arg "
 				;;
 				*) cmdline_show_conf="main"
 					continue
 			esac
 		;;
 		-sh|--shell)
-			[[ -x ${opt_arg} ]] || {
-				pr_err "Shell binary \`${opt_arg}' does not exist, or is not executable."
+			[[ -x $opt_arg ]] || {
+				pr_err "Shell binary \`$opt_arg' does not exist, or is not executable."
 				bail_out $ER_NOEX
 			}
-			export SHELL="${opt_arg}"
+			export SHELL="$opt_arg"
 		;;
 		-t|--test)
 			case "$MAIN_ARG" in
@@ -1127,33 +1130,33 @@ while (($#)); do
 					TEST_MODE=1
 					continue
 				;;
-				*) pr_err "Option \`${option}' is not valid with \`$MAIN_ARG'."
+				*) pr_err "Option \`$option' is not valid with \`$MAIN_ARG'."
 					bad_use_quit
 			esac
 		;;
 		-gf|--gen-format) # iptables command generation format
-			case "${opt_arg}" in
-				cmd|ipt) GEN_FORMAT="${opt_arg}" ;;
+			case "$opt_arg" in
+				cmd|ipt) GEN_FORMAT="$opt_arg" ;;
 				*) pr_err "Format for saving iptables commands must be specified with \`cmd', or \`ipt'."
 					bad_use_quit
 			esac
 		;;
-		-rt|--reload-time) cmdline_reload_time="${opt_arg}" ;; # time span in minutes until restoring ruleset (test parameter)
-		-sv|--syslog-verbose) cmdline_syslog_verbosity="${opt_arg}" ;; # syslog logging verbosity level
+		-rt|--reload-time) cmdline_reload_time="$opt_arg" ;; # time span in minutes until restoring ruleset (test parameter)
+		-sv|--syslog-verbose) cmdline_syslog_verbosity="$opt_arg" ;; # syslog logging verbosity level
 		-v|--verbose) # stdout/err verbosity level
 			[[ $opt_arg = [0-9] ]] || {
 				err_msg "$option argument \`$opt_arg' is not in range of 0-9."
 				bail_out $ER_CONF
 			}
-			 cmdline_verbosity="${opt_arg}" VERBOSE="${opt_arg}"
+			 cmdline_verbosity="$opt_arg" VERBOSE="$opt_arg"
 		 ;;
 		--) break ;;
 		*)
-			pr_err "Unknown option: \`${option}'"
+			pr_err "Unknown option: \`$option'"
 			short_usage
 	esac
-	[[ ${opt_arg} ]] || {
-		pr_err "Option \`${option}' requires an argument."
+	[[ $opt_arg ]] || {
+		pr_err "Option \`$option' requires an argument."
 		short_usage
 	}
 	if (($#)); then shift; fi
