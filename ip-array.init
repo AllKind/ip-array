@@ -219,11 +219,6 @@ while (($#)); do
 	shift
 	case "$option" in
 		#options without an argument
-		-dg|--debug)
-			export DEBUG_INFO=YES
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
-			continue
-		;;
 		-ct|--ipt-counters|\
 		-dr|--dry-run|\
 		-na|--no-autosave|\
@@ -236,6 +231,11 @@ while (($#)); do
 		-pb|--parse-ruleblocks|\
 		-pr|--parse-rulefiles|\
 		-pt|--parse-templates)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			continue
+		;;
+		-dg|--debug)
+			export DEBUG_INFO=YES
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
 		;;
@@ -291,11 +291,11 @@ while (($#)); do
 		;;
 		-sh|--shell) MY_SHELL="$opt_arg" ;;
 		--) break ;;
-		*) pr_err "Unknown option: \`${option}'"
+		*) pr_err "Unknown option: \`$option'"
 			short_usage
 	esac
 	[[ $opt_arg ]] || {
-		pr_err "Option \`${option}' requires an argument."
+		pr_err "Option \`$option' requires an argument."
 		short_usage
 	}
 	shift

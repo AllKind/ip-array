@@ -234,7 +234,7 @@ my_cut() {
 local OldIFS="$IFS" NewIFS colums_to_show str_line str_output col_idx
 OPTIND=1
 while getopts :d:c: option; do
-	case "${option}" in
+	case "$option" in
 		d) NewIFS="${OPTARG}" ;;
 		c) colums_to_show=${OPTARG} ;;
 		?) return 1 ;;
@@ -984,7 +984,7 @@ case "${err_category}" in
 	tc) prog_msg="tc" ;;
 	inline) prog_msg="inline" ;;
 	misc) prog_msg="this" ;;
-	*) log -o "${err_category}" ${FUNCNAME}
+	*) log -o "${err_category}" $FUNCNAME
 		return 1
 esac
 eval let ${err_category}_err_count+=1
@@ -1039,7 +1039,7 @@ case "${s_category}" in
 	script)	log -e "${PF}loading script: ${s_file}" ;;
 	rule)	log -R "Loading rule file: ${s_file}" ;;
 	config)	log -C "Loading config file: ${s_file}" ;;
-	*)	log -o "${s_category}" ${FUNCNAME}; return 1 ;;
+	*)	log -o "${s_category}" $FUNCNAME; return 1 ;;
 esac
 [[ -r ${s_file} ]] || {
 	log -x "${s_file}"
@@ -1088,7 +1088,7 @@ local mod_to_rm="$1"
 	return $ER_NOEX
 }
 # see if mod name exists in module path
-local str_psearch=$(run_find "$MODULE_DIR" -name "${mod_to_rm}.*" 2>/dev/null)
+local str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${mod_to_rm}.*")
 # see if mod name is an alias
 if [[ -z ${str_psearch} ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
@@ -1097,7 +1097,7 @@ if [[ -z ${str_psearch} ]]; then # was not found in module path
 			[[ ${str_alias} = ${mod_to_rm} ]] && {
 				log -N "Module name \`${mod_to_rm}' is an alias for \`${str_realmod}'."
 				mod_to_rm="${str_realmod}"
-				str_psearch=$(run_find "$MODULE_DIR" -name "${mod_to_rm}.*" 2>/dev/null)
+				str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${mod_to_rm}.*")
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
@@ -1160,7 +1160,7 @@ local module_params="$@"
 	return $ER_NOEX
 }
 # see if mod name exists in module path
-local str_psearch=$(run_find "$MODULE_DIR" -name "${module_name}.*" 2>/dev/null)
+local str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${module_name}.*")
 # see if mod name is an alias
 if [[ -z ${str_psearch} ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
@@ -1169,7 +1169,7 @@ if [[ -z ${str_psearch} ]]; then # was not found in module path
 			[[ ${str_alias} = ${module_name} ]] && {
 				log -N "Module name \`${module_name}' is an alias for \`${str_realmod}'."
 				module_name="${str_realmod}"
-				str_psearch=$(run_find "$MODULE_DIR" -name "${module_name}.*" 2>/dev/null)
+				str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${module_name}.*")
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
@@ -1284,7 +1284,7 @@ for idx in ${!MOD_STATE_ARRAY[@]}; do
 		unload)
 			unload_arr[${#unload_arr[@]}]="${module_name}"
 		;;
-		*) log -o "${module_state}" ${FUNCNAME}
+		*) log -o "${module_state}" $FUNCNAME
 			return 1
 		;;
 	esac
@@ -1437,7 +1437,7 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 				continue
 			}
 		;;
-		*) log -o "${vtype}" ${FUNCNAME}
+		*) log -o "${vtype}" $FUNCNAME
 			return 1
 	esac
 	# all checks are done, ready to set (queue) the proc command
@@ -1512,7 +1512,7 @@ while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
 #		;;
 	esac
 	eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
-done < <(run_iproute -4 addr show "${iface}" 2>/dev/null | lsearch_echo_multiline inet) # show interface data
+done < <(dn2 run_iproute -4 addr show "${iface}" | lsearch_echo_multiline inet) # show interface data
 [[ $DEBUG_INFO ]] && dbg_arr IFDATA_ARRAY_"${iface}"
 readonly IFDATA_ARRAY_"${iface}"
 } # -------------------------------------------------------------------------
@@ -1528,12 +1528,12 @@ shift
 local columns_to_show option
 OPTIND=1 # reset options index variable
 while getopts :himb option; do
-	case "${option}" in
+	case "$option" in
 		h) columns_to_show+=" 1" ;; # iface handle
 		i) columns_to_show+=" 2" ;; # ip-addr
 		m) columns_to_show+=" 3" ;; # netmask
 		b) columns_to_show+=" 4" ;; # broadcast-addr
-		*) log -o "${option}" ${FUNCNAME}
+		*) log -o "$option" $FUNCNAME
 			return 1
 		;;
 	esac
@@ -1635,7 +1635,7 @@ done
 for rvar in NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
 do
 	readonly $rvar
-	if [[ $DEBUG_INFO ]]; then declare -p $rvar 2>/dev/null; fi
+	if [[ $DEBUG_INFO ]]; then dn declare -p $rvar; fi
 done
 #readonly NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
 } # -------------------------------------------------------------------------
@@ -1720,11 +1720,11 @@ val_ipv4_cidr_mask() { # validate an IPv4 cidr netmask
 
 val_ipv4_netmask() { # validate an IPv4 IP netmask
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-ip_vlsm "$1" &>/dev/null
+dn ip_vlsm "$1"
 } # -------------------------------------------------------------------------
 
 val_oct_range() { # check if an IP address octet is in the valid range
-[[ ${4} ]] || { reqparm ${FUNCNAME} 4; return 1; }
+[[ ${4} ]] || { reqparm $FUNCNAME 4; return 1; }
 local oct
 for oct in "$1" "$2" "$3" "$4"; do
 	val_8bit "${oct}" || return 1
@@ -1773,7 +1773,7 @@ val_ip4_addr "$1" || return 1
 check_iface() { # validate interface existence
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IFACE_CHECK == 0)) || return 0
-run_iproute link show $1 &>/dev/null || {
+dn run_iproute link show $1 || {
 	log -E "Interface $1 does not exist."
 	return 1
 }
@@ -2353,7 +2353,7 @@ fi
 }
 local scr_mode="$1" r_modes scr_type scripts_to_run r_m scrpt
 [[ ${scr_mode} = @(prolog|epilog) ]] || {
-	log -o "${scr_mode}" ${FUNCNAME}
+	log -o "${scr_mode}" $FUNCNAME
 	return 1
 }
 for scr_idx in ${!SCRIPT_MAP[@]}; do
@@ -3702,7 +3702,7 @@ case "$MODE" in # act according to runtime mode
 			elif [[ $GEN_FORMAT = cmd ]]; then
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval 'set -- '"${IPT_CMD_ARRAY[i]}"
-					"${IPT}" "$@" &>/dev/null || cmd_err_count ipt "${IPT} $*"
+					dn "$IPT" "$@" || cmd_err_count ipt "$IPT $*"
 				done
 			else
 				log -U ${FUNCNAME}; return 1
@@ -3760,7 +3760,7 @@ case "$MODE" in # act according to runtime mode
 			[[ $DEBUG_INFO ]] && dbg_arr "TC_CMD_ARRAY"
 			for i in ${!TC_CMD_ARRAY[@]}; do
 				eval 'set -- '"${TC_CMD_ARRAY[i]}"
-				"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
+				dn "${TC}" "$@" || cmd_err_count tc "${TC} $*"
 			done
 		fi
 		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings

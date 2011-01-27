@@ -80,10 +80,10 @@ TC_CMD_ARRAY[${#TC_CMD_ARRAY[@]}]="$@"
 } # -------------------------------------------------------------------------
 
 tc_add_htbqd() { # add htb qdiscs
-[[ ${5} ]] || { reqparm ${FUNCNAME} 5; return 1; }
+[[ ${5} ]] || { reqparm $FUNCNAME 5; return 1; }
 OPTIND=1 # reset options index variable
 while getopts :d:u:h:f:r: option; do # enumerate options
-	case "${option}" in
+	case "$option" in
 		d) 	check_iface "${OPTARG}" || return 1
 			local qdev="dev ${OPTARG}"
 		;;
@@ -97,7 +97,7 @@ while getopts :d:u:h:f:r: option; do # enumerate options
 		r) 	val_numeric "${OPTARG}" || return 1
 			local qr2q="r2q ${OPTARG}"
 		;;
-		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
 done
 OPTIND=1 # reset options index variable
@@ -105,10 +105,10 @@ add_tc_cmd "qdisc add ${qdev} ${quser} ${qhandle} htb ${qdef} ${qr2q}"
 } # -------------------------------------------------------------------------
 
 tc_add_sfqd() { # add sfq qdiscs
-[[ ${4} ]] || { reqparm ${FUNCNAME} 4; return 1; }
+[[ ${4} ]] || { reqparm $FUNCNAME 4; return 1; }
 OPTIND=1 # reset options index variable
 while getopts :d:p:h:t: option; do # enumerate options
-	case "${option}" in
+	case "$option" in
 		d) 	check_iface "${OPTARG}" || return 1
 			local qdev="dev ${OPTARG}"
 		;;
@@ -121,7 +121,7 @@ while getopts :d:p:h:t: option; do # enumerate options
 		t) 	val_numeric "${OPTARG}" || return 1
 			local qperturb="perturb ${OPTARG}"
 		;;
-		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
 done
 OPTIND=1 # reset options index variable
@@ -129,10 +129,10 @@ add_tc_cmd "qdisc add ${qdev} ${qparent} ${qhandle} sfq ${qperturb}"
 } # -------------------------------------------------------------------------
 
 tc_add_class() { # add tc classes
-[[ ${5} ]] || { reqparm ${FUNCNAME} 5; return 1; }
+[[ ${5} ]] || { reqparm $FUNCNAME 5; return 1; }
 OPTIND=1 # reset options index variable
 while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
-	case "${option}" in
+	case "$option" in
 		d)	# device
 			check_iface "${OPTARG}" || return 1
 			local qdev="dev ${OPTARG}" m_dev="dev=${OPTARG} "
@@ -193,7 +193,7 @@ while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
 				fi
 			fi
 		;;
-		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
 done
 OPTIND=1 # reset options index variable
@@ -202,10 +202,10 @@ add_tc_cmd "class add ${qdev} ${qparent} ${qclassid} htb ${qrate} ${qceil} ${qbu
 } # -------------------------------------------------------------------------
 
 tc_add_filter() { # add tc filters
-[[ ${7} ]] || { reqparm ${FUNCNAME} 7; return 1; }
+[[ ${7} ]] || { reqparm $FUNCNAME 7; return 1; }
 OPTIND=1 # reset options index variable
 while getopts :d:p:o:r:h:m:i: option; do # enumerate options
-	case "${option}" in
+	case "$option" in
 		d)	check_iface "${OPTARG}" || return 1
 			local qdev="dev ${OPTARG}"
 		;;
@@ -223,7 +223,7 @@ while getopts :d:p:o:r:h:m:i: option; do # enumerate options
 		i) 	val_numeric "${OPTARG/:/}" || return 1
 			local qclassid="classid ${OPTARG}"
 		;;
-		*) log -o "${option}" ${FUNCNAME}; return 1 ;;
+		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
 done
 OPTIND=1 # reset options index variable

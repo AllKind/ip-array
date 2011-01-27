@@ -495,7 +495,7 @@ local ttarget=$2 ttable=$3
 shift 3
 local tparam="$@"
 log -e "${PF}checking for ${ttarget} target"
-if run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
+if dn run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam}; then
 	set_var ${ttarget}_TGT_EXIST 1 # target exists, set according variable to 1
 	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
 else
@@ -517,7 +517,7 @@ local tmod=$2 ttable=$3
 shift 3
 local tparam="$@"
 log -e "${PF}checking for ${tmod} extension"
-if run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam} &>/dev/null; then
+if dn run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam}; then
 	set_var "${tmod}_MOD_EXIST" 1 # module exists, set according variable to 1
 	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
 else
@@ -573,7 +573,7 @@ local table c chain rest
 log -I "Immediately applying default policies"
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded"
-	run_ipt -nL &>/dev/null
+	dn run_ipt -nL
 #	return 0
 fi
 while read -t ${GLOBAL_READ_TIMEOUT} table; do
@@ -582,12 +582,12 @@ while read -t ${GLOBAL_READ_TIMEOUT} table; do
 			if [[ ${table} = filter ]]; then
 #				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD) ]]; then
-					run_ipt -t ${table} -P ${chain} 'DROP' &>/dev/null || continue
+					dn run_ipt -t ${table} -P ${chain} 'DROP' || continue
 				fi
 			else
 #				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
-					run_ipt -t ${table} -P ${chain} 'ACCEPT' &>/dev/null || continue
+					dn run_ipt -t ${table} -P ${chain} 'ACCEPT' || continue
 				fi
 			fi
 		fi
@@ -616,7 +616,7 @@ local table c chain rest
 log -I "Immediately flushing and deleting existing chains"
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then
 	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
-	run_ipt -nL &>/dev/null || {
+	dn run_ipt -nL || {
 		log -E "Failed to initialize iptables"
 		return $ER_FAIL
 	}
@@ -717,7 +717,7 @@ case "$1" in
 			if [[ $rvar = rawpost ]]; then
 				((RAWPOST_TABLE_PRESENT == 1)) || continue
 			fi
-			if run_ipt -t $rvar -nL ${BIC_TEST_CHAIN} &>/dev/null; then
+			if dn run_ipt -t $rvar -nL ${BIC_TEST_CHAIN}; then
 				log -W "chain ${BIC_TEST_CHAIN} in $rvar table already exists"
 				continue
 			else
@@ -753,14 +753,14 @@ test_ipset() {
 case "$1" in
 	create)
 		log -w "creating test ipset"
-		"${IPSET}" -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 &>/dev/null || {
+		dn "${IPSET}" -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
 	;;
 	delete)
 		log -w "deleting test ipset"
-		"${IPSET}" -X "${ME}_TEST_SET" &>/dev/null || {
+		dn "${IPSET}" -X "${ME}_TEST_SET" || {
 			log -f "deleting testing set: \`${ME}_TEST_SET'"
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
@@ -804,7 +804,7 @@ readonly GLOBAL_LOGLIMIT GLOBAL_BURSTLIMIT GLOBAL_LOGLEVL
 check_mangle_chains() {
 ((ENABLE_MANGLE)) || return 0
 if ((MANGLE_CHAINS_PRESENT == 0)); then
-	run_ipt -t mangle -nL INPUT &>/dev/null && MANGLE_CHAINS_PRESENT=1
+	dn run_ipt -t mangle -nL INPUT && MANGLE_CHAINS_PRESENT=1
 fi
 } # -------------------------------------------------------------------------
 
@@ -818,7 +818,7 @@ check_raw_table() {
 	return 0
 }
 log -w "Checking for raw table"
-run_ipt -t raw -nL &>/dev/null || RAW_TABLE_PRESENT=0
+dn run_ipt -t raw -nL || RAW_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 check_rawpost_table() {
@@ -831,7 +831,7 @@ check_rawpost_table() {
 	return 0
 }
 log -w "Checking for rawpost table"
-run_ipt -t rawpost -nL &>/dev/null || RAWPOST_TABLE_PRESENT=0
+dn run_ipt -t rawpost -nL || RAWPOST_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 check_security_table() {
@@ -844,7 +844,7 @@ check_security_table() {
 	return 0
 }
 log -w "Checking for security table"
-run_ipt -t security -nL &>/dev/null || SECURITY_TABLE_PRESENT=0
+dn run_ipt -t security -nL || SECURITY_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 load_known_traffic_map() {
@@ -2273,7 +2273,7 @@ local -i lim=1 idx=0
 local -a empty_chains cmd_arr cmd_arr_ref
 local c str_chain str_target rest str_Ochain rnum
 local str_tbl="${1:-filter}"
-run_ipt -nL -t ${str_tbl} &>/dev/null || {
+dn run_ipt -nL -t ${str_tbl} || {
 	log -f "listing \`${str_tbl}' table."
 	return 0
 }
@@ -2332,7 +2332,7 @@ return 0
 delete_unreferenced_chains() {
 local str_tbl="${1:-filter}" c str_chain rest
 log -N "Removing unreferenced chains in ${str_tbl} table"
-run_ipt -nL -t ${str_tbl} &>/dev/null || {
+dn run_ipt -nL -t ${str_tbl} || {
 	log -f "listing \`${str_tbl}' table."
 	return 0
 }
@@ -2340,10 +2340,10 @@ while read c str_chain rest; do
 	if [[ ${c} = Chain ]]; then
 		if [[ ${rest} = "(0 references)" ]]; then
 			log -e "removing table=${str_tbl} chain=${str_chain}"
-			run_ipt -t ${str_tbl} -F "${str_chain}" &>/dev/null || {
+			dn run_ipt -t ${str_tbl} -F "${str_chain}" || {
 				cmd_err_count ipt "${IPT} -t ${str_tbl} -F ${str_chain}"
 			}
-			run_ipt -t ${str_tbl} -X "${str_chain}" &>/dev/null || {
+			dn run_ipt -t ${str_tbl} -X "${str_chain}" || {
 				cmd_err_count ipt "${IPT} -t ${str_tbl} -X ${str_chain}"
 			}
 		fi
@@ -2373,7 +2373,7 @@ run_ipt -t ${str_tbl} -nL >"${tmp_dfile}" || {
 	cmd_err_count 'ipt' "${IPT} -t ${str_tbl} -nL >${tmp_dfile}"
 	return 0
 }
-if "${DIFF}" "${tmp_dfile}" "${str_dfile}" &>/dev/null; then
+if dn "${DIFF}" "${tmp_dfile}" "${str_dfile}"; then
 	printf "%s\n %s\n" "Active iptables ruleset of ${str_tbl} table is the same as the one saved to:" "\`${str_dfile}'"
 	log -l "Active iptables ruleset of ${str_tbl} table is the same as the one saved to: \`${str_dfile}'"
 else
@@ -2388,10 +2388,10 @@ run_rm "${tmp_dfile}" || {
 } # -------------------------------------------------------------------------
 
 fail_lockdown() {
-set_default_policies_immediate &>/dev/null
-flushdel_tables_immediate &>/dev/null
+dn set_default_policies_immediate
+dn flushdel_tables_immediate
 allow_admin_connection
-allow_loopback_immediate &>/dev/null
+dn allow_loopback_immediate
 } # -------------------------------------------------------------------------
 
 ipt_mode_run() { # complete loading prerun

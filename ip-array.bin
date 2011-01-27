@@ -587,6 +587,14 @@ Options:
 quit_welldone
 } # -------------------------------------------------------------------------
 
+dn() {
+"${@}" &>/dev/null
+} # -------------------------------------------------------------------------
+
+dn2() {
+"${@}" 2>/dev/null
+} # -------------------------------------------------------------------------
+
 print_sepstr() {
 pr_str "$SEPSTR"
 } # -------------------------------------------------------------------------
@@ -681,7 +689,8 @@ val_bool_bin() { # check if a value is either '0' or '1'
 
 prog_in_path() { # check wether a program exists in path
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-command -v "$1" &>/dev/null
+#command -v "$1" &>/dev/null
+dn command -v "$1" &>/dev/null
 } # -------------------------------------------------------------------------
 
 which_prog() { # find a program in $PATH
@@ -858,7 +867,8 @@ if ! [[ -d ${SAVE_DIR} ]]; then
 	return $ER_NOEX
 fi
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
-	"${IPT}" -nL &>/dev/null
+#	"${IPT}" -nL &>/dev/null
+	dn "${IPT}" -nL
 fi
 if [[ -r ${IP_TABLES_NAMES} ]]; then
 	if "${IPT_SAVE}" ${str_c}>"${SAVE_DIR}/${str_file}"; then
@@ -1519,17 +1529,20 @@ for rvar in ${cmdline_show_conf}; do
 		defaults)
 			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of defaults configuration:" "$SEPSTR"
 			for i in ${!IPARRAY_PROGRAMS[@]}; do
-				declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" 2>/dev/null || continue
+#				declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" 2>/dev/null || continue
+				dn2 declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" || continue
 			done
 			for i in ${!DEFAULTS_LIST[@]}; do
-				declare -p "${DEFAULTS_LIST[i]}" 2>/dev/null || continue
+#				declare -p "${DEFAULTS_LIST[i]}" 2>/dev/null || continue
+				dn2 declare -p "${DEFAULTS_LIST[i]}" || continue
 			done
 			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of defaults configuration summary." "$SEPSTR"
 		;;
 		main)
 			printf "%s\n%s\n%s\n" "$SEPSTR" "# Starting dump of main configuration:" "$SEPSTR"
 			for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
-				declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" 2>/dev/null || continue
+#				declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" 2>/dev/null || continue
+				dn2 declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" || continue
 			done
 			printf "%s\n%s\n%s\n\n" "$SEPSTR" "# End of main configuration summary." "$SEPSTR"
 		;;
