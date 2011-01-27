@@ -898,7 +898,7 @@ fi
 } # -------------------------------------------------------------------------
 
 sched_restore() { # schedule ruleset restore job
-local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}"
+local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
 check_dirs BIN_DIR || return $?
 if ! bin_ok "${BIN_DIR}/${0##*/}"; then # check if $0 is good
 	err_msg "Cannot work with \`\$0' variable."
@@ -906,10 +906,16 @@ if ! bin_ok "${BIN_DIR}/${0##*/}"; then # check if $0 is good
 fi
 ipt_save "$str_file" || return $? # save currently active ruleset
 if rvar=$(\
-	printf "%s %s -e %s -d %s -s %s -v 2\n" "\"${BIN_DIR}/${0##*/}\"" "restore" "\"${BIN_DIR}\"" "\"${DEFAULTS_FILE}\"" "\"${str_file}\"" \
-	| "${AT}" now + ${RELOAD_TIME} minutes 2>&1)
+	printf "%s -- %s %s -e %s -d %s -s %s -v 2\n" "\"${SHELL}\"" "\"${BIN_DIR}/${0##*/}\"" "restore" "\"${BIN_DIR}\"" "\"${DEFAULTS_FILE}\"" "\"${str_file}\"" \
+	| "$AT" now + $RELOAD_TIME minutes 2>&1)
 then
-	notice_msg "Restoring saved ruleset using \`${AT}' with: \`${rvar#*$'\n'}'."
+	str_job="${rvar#*$'\n'}"
+	notice_msg "Restoring saved ruleset using \`$AT' with: \`$str_job'."
+	[[ $DEBUG_INFO ]] && {
+		str_job="${str_job#job }"
+		str_job="${str_job%% *}"
+		"$AT" -c $str_job
+	}
 	return 0
 else
 	err_msg "Failed scheduling the restore job."
@@ -920,13 +926,13 @@ fi
 autosave() { # automatically save a temporary ruleset, which will be restored on error
 if ((NO_AUTOSAVE == 0 && IPTSAVE_FAILS == 0)); then
 	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
-	ipt_save "${AUTOSAVE_FILE}" || return $?
+	ipt_save "$AUTOSAVE_FILE" || return $?
 	readonly AUTOSAVE_FILE
 fi
 } # -------------------------------------------------------------------------
 
 cleanup_autosave() { # remove automatically saved temporary ruleset
-if [[ ${AUTOSAVE_FILE} ]]; then
+if [[ $AUTOSAVE_FILE ]]; then
 	if [[ -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
 		run_rm "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
 			err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
@@ -954,9 +960,9 @@ exit ${1:-${ER_LOAD}}
 } # -------------------------------------------------------------------------
 
 bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
-if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)) && [[ ${AUTOSAVE_FILE} ]]; then
-	pr_str "Restoring automatically saved iptables ruleset from: \`${AUTOSAVE_FILE}'"
-	ipt_restore "${AUTOSAVE_FILE}" || :
+if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)) && [[ $AUTOSAVE_FILE ]]; then
+	pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
+	ipt_restore "$AUTOSAVE_FILE" || :
 fi
 bail_out ${1:-${ER_LOAD}}
 } # -------------------------------------------------------------------------
@@ -1026,6 +1032,11 @@ while (($#)); do
 			continue
 		;;
 		-dg|--debug) # enable additional debugging info
+		[[ $DEBUG_INFO ]] && {
+			set
+			shopt
+			trap -p
+		}
 			export DEBUG_INFO=YES
 			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			continue
@@ -1244,11 +1255,11 @@ LOCK_DIR="${cmdline_run_dir:=/var/run}"
 declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 
 # check for numeric defaults
-[[ ${VERBOSE} = [0-9] ]] || {
+[[ $VERBOSE = [0-9] ]] || {
 	err_msg "\`VERBOSE' is not in range of 0-9."
 	bail_out $ER_CONF
 }
-[[ ${SYSLOG_VERBOSE} = [0-6] ]] || {
+[[ $SYSLOG_VERBOSE = [0-6] ]] || {
 	err_msg "\`SYSLOG_VERBOSE' is not in range of 0-6."
 	bail_out $ER_CONF
 }
@@ -1263,8 +1274,8 @@ done
 # check for valid RELOAD_TIME specification
 #if [[ $MAIN_ARG = 'test' ]]; then
 if ((TEST_MODE)); then
-	[[ ${RELOAD_TIME} = +([[:digit:]]) ]] || {
-		err_msg "Invalid value \`${RELOAD_TIME}' for \`RELOAD_TIME'."
+	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
+		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
 		bail_out $ER_CONF
 	}
 	((RELOAD_TIME > 1)) || {
@@ -1277,7 +1288,7 @@ fi
 # if IPTSAVE_FAILS is enabled ...
 if ((IPTSAVE_FAILS)); then
 	NO_AUTOSAVE=1 # ... we can't do auto-saving
-	if [[ ${GEN_FORMAT} = ipt ]]; then # ... if we save in iptables-save format
+	if [[ $GEN_FORMAT = ipt ]]; then # ... if we save in iptables-save format
 		case "$MAIN_ARG" in
 			start|stop|open|restart|test|tc-start|tc-stop) # if we apply commands (in lockdown we hope it'll work, as just very basic rules)
 				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."

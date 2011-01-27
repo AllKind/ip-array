@@ -221,10 +221,7 @@ while (($#)); do
 		#options without an argument
 		-dg|--debug)
 			export DEBUG_INFO=YES
-			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
-			set
-			shopt
-			trap -p
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
 		;;
 		-ct|--ipt-counters|\
@@ -314,6 +311,14 @@ case "$MAIN_ARG" in
 	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
 	stop) DEFAULT_OPTIONS+="${DEFAULT_STOP_OPTIONS} " ;;
 esac
+
+# show debug info
+[[ $DEBUG_INFO ]] && {
+	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
+	set
+	shopt
+	trap -p
+}
 
 # run main executable
 [[ -x $MY_SHELL ]] || {
