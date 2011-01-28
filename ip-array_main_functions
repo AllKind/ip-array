@@ -1071,7 +1071,7 @@ set_env
 # ------------------------------------------------------------------------- #
 
 check_mod_dir() {
-if ((${#MODS_TO_RM[@]} > 0 || ${#MODULES_TO_LOAD[@]} > 0)); then
+if ((${#MODS_TO_RM[@]} || ${#MODULES_TO_LOAD[@]})); then
 	[[ -d $MODULE_DIR ]] || {
 		log -E "\`$MODULE_DIR' does not exist."
 		raise_cfg_err_count

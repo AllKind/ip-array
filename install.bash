@@ -35,8 +35,8 @@
 # ------------------------------------------------------------------------- #
 
 # bash check
-if [ -z "${BASH_VERSINFO[0]}" ]; then
-	echo "\`BASH_VERSINFO' variable is not available. Not running bash?"
+if [ -z "$BASH" ]; then
+	echo "\`BASH' variable is not available. Not running bash?"
 	exit 1
 fi
 
