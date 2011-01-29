@@ -171,35 +171,18 @@ declare copy_array					# Function "Pointer"
 declare -r copy_array=cp_array		# Statement Builder
 
 declare -r DEFAULTS_LIST=(
-COLOR_MSG_MAIN_TITLE
-COLOR_MSG_SUBTITLE
-COLOR_MSG_INFO_TITLE
-COLOR_MSG_ERROR
-COLOR_MSG_WARNING
-COLOR_MSG_NOTICE
-COLOR_MSG_CONFIG_LOAD
-COLOR_MSG_RULE_LOAD
+COLOR_MSG_MAIN_TITLE COLOR_MSG_SUBTITLE COLOR_MSG_INFO_TITLE
+COLOR_MSG_ERROR COLOR_MSG_WARNING COLOR_MSG_NOTICE
+COLOR_MSG_CONFIG_LOAD COLOR_MSG_RULE_LOAD
 ENABLE_COLORS
-ENABLE_SYSLOG
-LOG_FACILITY
-VERBOSE
-SYSLOG_VERBOSE
+ENABLE_SYSLOG LOG_FACILITY
+VERBOSE SYSLOG_VERBOSE
 AUTO_GET_PROGS
-SERVICES
-PROTOCOLS
-BASE_DIR
-LIB_DIR
-LOCK_DIR
-CONFIG
-CONF_DIR
-SAVE_FILE
-RULESETFILE
-DIFF_FILE
+SERVICES PROTOCOLS
+BASE_DIR CONF_DIR LIB_DIR LOCK_DIR SHARE_DIR
+CONFIG SAVE_FILE RULESETFILE DIFF_FILE
 RESTORE_ON_START
-KNOWN_GOOD_RULES
-KNOWN_GOOD_MODPROBES
-KNOWN_GOOD_PROC_SET
-KNOWN_GOOD_TRAFFIC_CONTROL
+KNOWN_GOOD_RULES KNOWN_GOOD_MODPROBES KNOWN_GOOD_PROC_SET KNOWN_GOOD_TRAFFIC_CONTROL
 IPTSAVE_FAILS
 SYNTAX_CHECK
 RELOAD_TIME
@@ -207,63 +190,29 @@ RELOAD_TIME
 
 # Valid rule option names
 declare -r ARG_NAMES_LIST=(
-table
-target
-chain
-idev
-odev
-src
-dst
-mac
+table target chain
+idev odev
+src dst mac
 fragment
 proto
-sport
-dport
-tcp_flags
-tcp_syn
-tcp_option
+sport dport
+tcp_flags tcp_syn tcp_option
 icmp_type
 reject_type
 state
-limit
-limit_burst
-log_level
-log_prefix
-log_options
-nflog_group
-nflog_prefix
-nflog_range
-nflog_thresh
-ulog_group
-ulog_prefix
-ulog_range
-ulog_thresh
-connbytes
-connlimit
-ctstate
-ctproto
-ctorigsrc
-ctorigdst
-ctreplsrc
-ctrepldst
-ctorigsrcport
-ctorigdstport
-ctreplsrcport
-ctrepldstport
-ctstatus
-ctexpire
-ctdir
-ahspi
-espspi
+limit limit_burst
+log_level log_prefix log_options
+nflog_group nflog_prefix nflog_range nflog_thresh
+ulog_group ulog_prefix ulog_range ulog_thresh
+connbytes connlimit
+ctstate ctproto ctorigsrc ctorigdst ctreplsrc ctrepldst ctorigsrcport ctorigdstport ctreplsrcport ctrepldstport ctstatus ctexpire ctdir
+ahspi espspi
 helper
 length
 owner
-addrtype
-pkttype
+addrtype pkttype
 socket
-nat_ip
-nat_port
-nat_option
+nat_ip nat_port nat_option
 m_connmark
 m_dscp
 m_mark
@@ -271,10 +220,7 @@ m_set
 m_tos
 m_ttl
 nfqueue
-t_mark
-t_connmark
-t_secmark
-t_connsecmark
+t_mark t_connmark t_secmark t_connsecmark
 t_class
 t_set
 t_ttl
@@ -694,7 +640,6 @@ val_bool_bin() { # check if a value is either '0' or '1'
 
 prog_in_path() { # check wether a program exists in path
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#command -v "$1" &>/dev/null
 dn command -v "$1" &>/dev/null
 } # -------------------------------------------------------------------------
 
@@ -869,7 +814,6 @@ if ! [[ -d ${SAVE_DIR} ]]; then
 	return $ER_NOEX
 fi
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
-#	"${IPT}" -nL &>/dev/null
 	dn "${IPT}" -nL
 fi
 if [[ -r ${IP_TABLES_NAMES} ]]; then
@@ -1231,6 +1175,7 @@ set_env
 [[ ${cmdline_conf_dir} ]] && CONF_DIR="${cmdline_conf_dir}"
 [[ ${cmdline_bin_dir} ]] && BIN_DIR="${cmdline_bin_dir}"
 [[ ${cmdline_lib_dir} ]] && LIB_DIR="${cmdline_lib_dir}"
+[[ ${cmdline_run_dir} ]] && LOCK_DIR="${cmdline_run_dir}"
 [[ ${cmdline_conf_file} ]] && CONFIG="${cmdline_conf_file}"
 [[ ${cmdline_reload_time} ]] && RELOAD_TIME="${cmdline_reload_time}"
 [[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
@@ -1244,6 +1189,10 @@ set_env
 : ${BASE_DIR:=/etc/${me}}
 : ${BIN_DIR:=${0%/*}}
 : ${LIB_DIR:=/usr/lib/${me}}
+: ${LOCK_DIR:=/var/run}
+: ${SAVE_DIR:="${BASE_DIR}/save.d"}
+: ${SHARE_DIR:=/usr/share/${me}}
+: ${HELP_DIR:=${SHARE_DIR}/help.d}
 : ${CONF_DIR:=conf.d}
 : ${CONFIG:=${me}.conf}
 : ${DIFF_FILE:=iptables_ruleset_saved_for_diff}
@@ -1262,13 +1211,7 @@ set_env
 : ${ENABLE_SYSLOG:=0}
 : ${SYSLOG_VERBOSE:=1}
 : ${VERBOSE:=6}
-# directory to save rulesets and commands to
-: ${SAVE_DIR:="${BASE_DIR}/save.d"}
-# directory for interactive help files
-: ${HELP_DIR:=${BASE_DIR}/help.d}
-
-# directory and file for locking
-LOCK_DIR="${cmdline_run_dir:=/var/run}"
+# file for locking
 declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 
 # check for numeric defaults
@@ -1289,7 +1232,6 @@ for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK; do
 done
 
 # check for valid RELOAD_TIME specification
-#if [[ $MAIN_ARG = 'test' ]]; then
 if ((TEST_MODE)); then
 	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
 		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
@@ -1342,7 +1284,7 @@ else
 fi
 
 # check if the dir structure exists
-check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || return $?
+check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR RULEBLOCK_DIR TEMPLATE_DIR SAVE_DIR || bail_out $?
 
 # make important variables readonly
 readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
@@ -1393,7 +1335,6 @@ case "$MAIN_ARG" in
 		MODE='DIFF'
 	;;
 	dry-run) # don't apply commands
-#		MODE='DRY-RUN'
 		MODE='RESTART'
 		EXEC_COMMANDS=0
 	;;

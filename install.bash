@@ -205,7 +205,7 @@ install_dir -m 0640 conf.d/rules.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/rules.d"
 install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/templates.d"
 
 install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
-install_dir -m 0644 help.d/public_functions/*.txt "${SYSCONFDIR}/${ME}/help.d"
+install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d"
 install_dir -m 0644 help.d/docbook/* "${DOCDIR}/${ME}/docbook"
 install_dir -m 0644 help.d/examples/* "${DOCDIR}/${ME}/examples"
 install_dir -m 0644 help.d/html/* "${DOCDIR}/${ME}/html"
