@@ -3721,49 +3721,30 @@ case "$MODE" in # act according to runtime mode
 			fi
 			if ((REMOVE_EMPTY_CHAINS == 1)); then # delete empty chains
 				log -I "Removing empty chains"
-				if ((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)); then
-					delete_empty_chains 'raw'
-				fi
-				if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
-					delete_empty_chains 'rawpost'
-				fi
+				((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_empty_chains 'raw'
+				((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_empty_chains 'rawpost'
 				((ENABLE_MANGLE == 1)) && delete_empty_chains 'mangle'
 				((ENABLE_NAT == 1))&& delete_empty_chains 'nat'
-				if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
-					delete_empty_chains 'security'
-				fi
+				((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_empty_chains 'security'
 				((ENABLE_FILTER == 1)) && delete_empty_chains
 			fi
 			if ((REMOVE_UNREF_CHAINS == 1)); then # delete unreferenced chains
 				log -I "Removing chains with 0 references"
-				if ((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)); then
-					delete_unreferenced_chains 'raw'
-				fi
-				if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
-					delete_unreferenced_chains 'rawpost'
-				fi
+				((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'raw'
+				((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'rawpost'
 				((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_unreferenced_chains 'mangle'
 				((ENABLE_NAT == 1)) && delete_unreferenced_chains 'nat'
-				if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
-					delete_unreferenced_chains 'security'
-				fi
+				((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'security'
 				((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
 			fi
 			if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
-#				if [[ $MAIN_ARG != @(stop|'test'|dry-run) ]] || ((TEST_MODE || EXEC_COMMANDS)); then
-				if [[ $MAIN_ARG != @(stop|'test') ]] || ((TEST_MODE == 0)); then
+				if [[ $MAIN_ARG != @(lockdown|stop|'test') ]] && ((TEST_MODE == 0)); then
 					log -I "Saving rule listings for later difference checks"
-					if ((ENABLE_RAW == 1)); then
-						((RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
-					fi
-					if ((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)); then
-						save_for_diff 'rawpost'
-					fi
+					((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
+					((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && save_for_diff 'rawpost'
 					((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
 					((ENABLE_NAT == 1)) && save_for_diff 'nat'
-					if ((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)); then
-						save_for_diff 'security'
-					fi
+					((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security'
 					((ENABLE_FILTER == 1)) && save_for_diff 
 				fi
 			fi
