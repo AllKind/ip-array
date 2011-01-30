@@ -424,11 +424,24 @@ PUBLIC_FUNCTION_LIST=(
 # -------------------------------------------------------------------------
 # turn on debugging
 # -------------------------------------------------------------------------
+
+pr_banner() {
+printf "%s\n%s\n%s\n" "$SEPSTR" "# $*" "$SEPSTR"
+} # -------------------------------------------------------------------------
+
+pr_sbanner() {
+printf "%s\n%s\n" "$SEPSTR" "# $*"
+} # -------------------------------------------------------------------------
+
 [[ $DEBUG_INFO ]] && {
 	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
+	pr_banner "DEBUG: ENVIRONMENT"
 	set
+	pr_banner "DEBUG: SHELL OPTIONS"
 	shopt
+	pr_banner "DEBUG: TRAPS"
 	trap -p
+	pr_banner "DEBUG: end"
 }
 
 # -------------------------------------------------------------------------
@@ -542,12 +555,8 @@ dn2() { # send stderr to /dev/null
 "$@" 2>/dev/null
 } # -------------------------------------------------------------------------
 
-#print_sepstr() {
-#pr_str "$SEPSTR"
-#} # -------------------------------------------------------------------------
-
-pr_banner() {
-printf "%s\n%s\n%s\n" "$SEPSTR" "# $*" "$SEPSTR"
+pr_sepstr() {
+pr_str "$SEPSTR"
 } # -------------------------------------------------------------------------
 
 check_syntax() { # check shell grammar of files to be sourced / executed
@@ -870,7 +879,9 @@ then
 	[[ $DEBUG_INFO ]] && {
 		str_job="${str_job#job }"
 		str_job="${str_job%% *}"
+		pr_banner "DEBUG: at job"
 		"$AT" -c $str_job
+		pr_banner "DEBUG: end"
 	}
 	return 0
 else
@@ -988,11 +999,15 @@ while (($#)); do
 			continue
 		;;
 		-dg|--debug) # enable additional debugging info
-		[[ $DEBUG_INFO ]] && {
-			set
-			shopt
-			trap -p
-		}
+			[[ $DEBUG_INFO ]] || {
+				pr_banner "DEBUG: ENVIRONMENT"
+				set
+				pr_banner "DEBUG: SHELL OPTIONS"
+				shopt
+				pr_banner "DEBUG: TRAPS"
+				trap -p
+				pr_banner "DEBUG: end"
+			}
 			export DEBUG_INFO=YES
 			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			continue
@@ -1190,7 +1205,7 @@ set_env
 : ${BIN_DIR:=${0%/*}}
 : ${LIB_DIR:=/usr/lib/${me}}
 : ${LOCK_DIR:=/var/run}
-: ${SAVE_DIR:="${BASE_DIR}/save.d"}
+: ${SAVE_DIR:=${BASE_DIR}/save.d}
 : ${SHARE_DIR:=/usr/share/${me}}
 : ${HELP_DIR:=${SHARE_DIR}/help.d}
 : ${CONF_DIR:=conf.d}

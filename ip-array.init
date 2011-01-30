@@ -236,6 +236,7 @@ while (($#)); do
 		;;
 		-dg|--debug)
 			export DEBUG_INFO=YES
+			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
 		;;
@@ -301,6 +302,13 @@ while (($#)); do
 	shift
 done
 
+# show debug info
+[[ $DEBUG_INFO ]] && {
+	set
+	shopt
+	trap -p
+}
+
 # set default values
 : ${BIN_DIR:=/usr/bin/ip-array}
 : ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf}
@@ -311,14 +319,6 @@ case "$MAIN_ARG" in
 	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
 	stop) DEFAULT_OPTIONS+="${DEFAULT_STOP_OPTIONS} " ;;
 esac
-
-# show debug info
-[[ $DEBUG_INFO ]] && {
-	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
-	set
-	shopt
-	trap -p
-}
 
 # run main executable
 [[ -x $MY_SHELL ]] || {
