@@ -3947,6 +3947,21 @@ load_configs || return $?
 fill_proto_svc_arrays || return $?
 } # -------------------------------------------------------------------------
 
+ipt_mode_run() { # complete iptables loading prerun
+set_chain_classification || return $?
+load_policy_map || return $ER_FAIL
+get_output_policy || return $ER_FAIL
+set_output_rule_mode || return $?
+fill_net_arrays || return $?
+load_known_traffic_map
+fill_final_rule_map
+load_all_templates || return $?
+load_all_ruleblocks || return $?
+set_global_policies || return $?
+flushdel_tables || return $?
+allow_loopback || return $?
+} # -------------------------------------------------------------------------
+
 tc_mode_run() { # tc Mode only actions
 minimal_run || return $?
 load_base_templates || return $?
@@ -4062,6 +4077,7 @@ case "$1" in
 		common_start || return $?
 		minimal_run || return $?
 		set_tc_mode
+		set_chain_classification || return $?
 		load_base_templates || return $?
 		load_ipt_nat_templates || return $?
 		load_nat_ruleblocks || return $?
@@ -4269,6 +4285,7 @@ case "$1" in
 		set_rulesetfile || return $?
 		set_tc_mode
 		common_start || return $?
+		set_chain_classification || return $?
 		tc_mode_run || return $?
 		load_tc_ruleblocks || return $?
 		load_tc_mangle_ruleblocks || return $?
@@ -4305,6 +4322,7 @@ case "$1" in
 		set_tc_mode
 		common_start || return $?
 		tc_mode_run || return $?
+		set_chain_classification || return $?
 		load_mangle_ruleblocks || return $?
 		load_tc_mangle_ruleblocks || return $?
 		load_tc_ruleblocks || return $?
@@ -4323,8 +4341,11 @@ case "$1" in
 	# Stop traffic shaping only
 	# mangle table is reloaded
 		common_stop || return $?
+		set_placeholder || return $?
+		set_global_log_params || return $?
 		compatibility_check || return $?
 		set_tc_mode
+		set_chain_classification || return $?
 		load_base_templates || return $?
 		load_ipt_mangle_templates || return $?
 		load_mangle_ruleblocks || return $?
