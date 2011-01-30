@@ -63,6 +63,7 @@ trap "echo ERROR trap activated - exiting; enable exit; exit 114" ERR
 trap "echo Received SIGHUP signal - exiting; enable exit; exit 0" HUP
 trap "echo Received SIGINT signal - exiting; enable exit; exit 0" INT
 trap "echo Received SIGQUIT signal - exiting; enable exit; exit 0" QUIT
+trap "echo Received SIGSTOP signal - exiting; enable exit; exit 0" STOP 
 trap "echo Received SIGTERM signal - exiting; enable exit; exit 0" TERM
 
 # -------------------------------------------------------------------------
@@ -84,6 +85,21 @@ declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/loc
 
 # error exit codes
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
+
+# Colour defines with ANSI codes
+declare -r COL_ESC='\033['	# Escape colored outupt
+declare -r COL_TERM="${COL_ESC}m"	# Terminate colored outupt
+declare -r FONT_BOLD=';1m'
+declare -r FONT_NORMAL='m'
+
+declare -r BLACK="${COL_ESC};30"
+declare -r BLUE="${COL_ESC};34"
+declare -r CYAN="${COL_ESC};36"
+declare -r GREEN="${COL_ESC};32"
+declare -r MAGENTA="${COL_ESC};35"
+declare -r RED="${COL_ESC};31"
+declare -r WHITE="${COL_ESC};37"
+declare -r YELLOW="${COL_ESC};33"
 
 # IP-Array function and definition files
 declare -r GLOBAL_DEFS="${me}_global_defs"
@@ -124,7 +140,7 @@ declare cmdline_def_file cmdline_conf_file cmdline_save_file \
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
-declare -r BUILTIN_LIST=$(enable -p|while read rvar x;do printf "%s " "${x}";done;echo)
+declare -r BUILTIN_LIST=$(enable -p|while read rvar x;do printf "%s " "$x";done;echo)
 
 declare -r SEPSTR="# -------------------------------------------------------------------------"
 
@@ -729,23 +745,27 @@ done
 } # -------------------------------------------------------------------------
 
 run_rm() {
-"${RM:-/bin/rm}" -f -- "${@}"
+"${RM:-/bin/rm}" -f -- "$@"
 } # -------------------------------------------------------------------------
 
 run_date() {
-"${DATE:-/bin/date}" "${@}"
+"${DATE:-/bin/date}" "$@"
 } # -------------------------------------------------------------------------
 
 run_find() {
-"${FIND:-/usr/bin/find}" "${@}"
+"${FIND:-/usr/bin/find}" "$@"
 } # -------------------------------------------------------------------------
 
 run_modprobe() {
-"${MODPROBE:-/sbin/modprobe}" "${@}"
+"${MODPROBE:-/sbin/modprobe}" "$@"
+} # -------------------------------------------------------------------------
+
+run_ipt() {
+"${IPT:-/sbin/iptables}" "$@"
 } # -------------------------------------------------------------------------
 
 run_iproute() {
-"${IP:-/sbin/ip}" "${@}"
+"${IP:-/sbin/ip}" "$@"
 } # -------------------------------------------------------------------------
 
 check_dirs() { # check for existence of directories declared by varname
@@ -823,7 +843,7 @@ if ! [[ -d ${SAVE_DIR} ]]; then
 	return $ER_NOEX
 fi
 if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
-	dn "${IPT}" -nL
+	dn run_ipt -nL
 fi
 if [[ -r ${IP_TABLES_NAMES} ]]; then
 	if "${IPT_SAVE}" ${str_c}>"${SAVE_DIR}/${str_file}"; then
@@ -937,14 +957,14 @@ bail_out ${1:-${ER_LOAD}}
 trap_err() {
 pr_str "ERROR trap activated - exiting"
 bail_out_restore $ER_FAIL
-}
+} # -------------------------------------------------------------------------
 
 trap_gen() {
 printf "\tReceived \`SIG%s' signal - exiting\n" "$1"
 cleanup
 builtin enable exit
 exit 0
-}
+} # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
   #     #
@@ -963,6 +983,7 @@ trap "trap_err" ERR
 trap "trap_gen HUP" HUP
 trap "trap_gen INT" INT
 trap "trap_gen QUIT" QUIT
+trap "trap_gen STOP" STOP
 trap "trap_gen TERM" TERM
 
 # -------------------------------------------------------------------------
@@ -976,7 +997,7 @@ case "$MAIN_ARG" in
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
 		shift
 		if ((UID > 0)); then
-			err_msg "Root check FAILED. You MUST be root (UID 0) to use ${ME}."
+			err_msg "Root check FAILED. You MUST be root (UID 0) to use $ME."
 			bail_out $ER_FAIL
 		fi
 	;;
@@ -1333,8 +1354,8 @@ readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES PORTSCAN_ARRRAY\
 case "$MAIN_ARG" in
 	'-?'|-h|help|--help)
 		if ((SHOW_PUBFUNC_LIST)); then
-			if [[ ${STR_PUBFUNC_NAME} ]]; then
-				show_pubfunc_help "${STR_PUBFUNC_NAME}" || bail_out $?
+			if [[ $STR_PUBFUNC_NAME ]]; then
+				show_pubfunc_help "$STR_PUBFUNC_NAME" || bail_out $?
 			else
 				show_pubfunc_list
 			fi
@@ -1380,7 +1401,7 @@ case "$MAIN_ARG" in
 		quit_welldone
 	;;
 	save-known-good) # save known good ruleset with iptables-save
-		ipt_save "${KNOWN_GOOD_RULES}" || bail_out $?
+		ipt_save "$KNOWN_GOOD_RULES" || bail_out $?
 		quit_welldone
 	;;
 	save-commands) # save all commands to file
@@ -1415,7 +1436,7 @@ case "$MAIN_ARG" in
 			# apply commands after reading all rules
 			# if RESTORE_ON_START is enabled, do iptables-restore,
 			# and load previously saved known good scripts
-		case "${RESTORE_ON_START}" in
+		case "$RESTORE_ON_START" in
 			0|"")
 				MODE='START'
 			;;

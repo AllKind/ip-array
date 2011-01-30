@@ -34,21 +34,6 @@
 #
 # ------------------------------------------------------------------------- #
 
-# Colour defines with ANSI codes
-declare -r COL_ESC='\033['	# Escape colored outupt
-declare -r COL_TERM="${COL_ESC}m"	# Terminate colored outupt
-declare -r FONT_BOLD=';1m'
-declare -r FONT_NORMAL='m'
-
-declare -r BLACK="${COL_ESC};30"
-declare -r BLUE="${COL_ESC};34"
-declare -r CYAN="${COL_ESC};36"
-declare -r GREEN="${COL_ESC};32"
-declare -r MAGENTA="${COL_ESC};35"
-declare -r RED="${COL_ESC};31"
-declare -r WHITE="${COL_ESC};37"
-declare -r YELLOW="${COL_ESC};33"
-
 # System
 declare -r IP_TABLES_NAMES="/proc/net/ip_tables_names"	# path to index of iptables table names
 declare -r PROC_SNET="/proc/sys/net"	# path to sys/net sysctl config
@@ -211,33 +196,24 @@ IPARRAY_MODULES=(
 # Array with match extensions, which are available in all tables
 GLOBAL_MATCH_LIST=(
 FRAGMENT
-IDEV
-ODEV
-MAC
-SRC
-DST
+IDEV ODEV
+MAC SRC DST
 PROTO
-SPORT
-DPORT
-TCP_FLAGS
-TCP_SYN
-TCP_OPTION
+SPORT DPORT
+TCP_FLAGS TCP_SYN TCP_OPTION
 ICMP_TYPE
 M_DSCP
 TOS
 CONNBYTES
-AHSPI
-ESPSPI
-ADDRTYPE
-PKTTYPE
+AHSPI ESPSPI
+ADDRTYPE PKTTYPE
 OWNER
 LENGTH
 SOCKET
 M_MARK
 M_TTL
 M_SET
-LIMIT
-LIMIT_BURST
+LIMIT LIMIT_BURST
 COMMENT
 )
 

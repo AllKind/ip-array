@@ -72,7 +72,7 @@ if ((BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] == 0)); then
 fi
 
 # starting traps
-trap "builtin enable exit; exit 0" HUP INT QUIT TERM
+trap "builtin enable exit; exit 0" HUP INT QUIT STOP TERM
 trap "echo ERROR trap activated - exiting; builtin enable exit; exit 114" ERR
 
 # -------------------------------------------------------------------------
