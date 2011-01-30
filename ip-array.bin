@@ -136,7 +136,7 @@ declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR 
 # command line options
 declare cmdline_def_file cmdline_conf_file cmdline_save_file \
 	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
-	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time cmdline_skip_scripts
+	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time cmdline_skip_scripts cmdline_gen_format
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -199,6 +199,7 @@ BASE_DIR CONF_DIR LIB_DIR LOCK_DIR SHARE_DIR
 CONFIG SAVE_FILE RULESETFILE DIFF_FILE
 RESTORE_ON_START
 KNOWN_GOOD_RULES KNOWN_GOOD_MODPROBES KNOWN_GOOD_PROC_SET KNOWN_GOOD_TRAFFIC_CONTROL
+GEN_FORMAT
 IPTSAVE_FAILS
 SYNTAX_CHECK
 RELOAD_TIME
@@ -1148,7 +1149,7 @@ while (($#)); do
 		;;
 		-gf|--gen-format) # iptables command generation format
 			case "$opt_arg" in
-				cmd|ipt) GEN_FORMAT="$opt_arg" ;;
+				cmd|ipt) cmdline_gen_format="$opt_arg" ;;
 				*) pr_err "Format for saving iptables commands must be specified with \`cmd', or \`ipt'."
 					bad_use_quit
 			esac
@@ -1225,6 +1226,7 @@ set_env
 [[ ${cmdline_reload_time} ]] && RELOAD_TIME="${cmdline_reload_time}"
 [[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
 [[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"
+[[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
 # set the diff-file to the provided file name
