@@ -170,12 +170,13 @@ Options:
 -e, --exe-dir directory    Executable directory to use.
 -l, --lib-dir directory    Library directory to use.
 -r, --run-dir directory    Locking directory to store the pid file (/var/run).
+-s, --save-file file       File to use, when saving or restoring a ruleset.
+-co, --color 0|1           Enable or disable coloured output.
 -o, --set-option assignment [...]
-                           Override variables of the main config file (i.e. -o ENABLE_COLORS=0).
+                           Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
                            Available types: \`cmd' (=default), \`ipt'.
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
--s, --save-file file       File to use, when saving or restoring a ruleset.
 -sc, --show-config [type] [...]
                            Select type of information to show. Available types:
                            all, main (=default), defaults, targets, matches,
@@ -283,6 +284,7 @@ while (($#)); do
 		-r|--run-dir|\
 		-o|--set-option|\
 		-s|--save-file|\
+		-co|--color|\
 		-gf|--gen-format|\
 		-rt|--reload-time|\
 		-sv|--syslog-verbose|\

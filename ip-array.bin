@@ -136,7 +136,8 @@ declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR 
 # command line options
 declare cmdline_def_file cmdline_conf_file cmdline_save_file \
 	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
-	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time cmdline_skip_scripts cmdline_gen_format
+	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time \
+	cmdline_skip_scripts cmdline_gen_format cmdline_color
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -541,13 +542,14 @@ Options:
 -e, --exe-dir directory    Executable directory to use.
 -l, --lib-dir directory    Library directory to use.
 -r, --run-dir directory    Locking directory to store the pid file (/var/run).
+-s, --save-file file       File to use, when saving or restoring a ruleset.
+-co, --color 0|1           Enable or disable coloured output.
 -o, --set-option assignment [...]
                            Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
                            Available types: \`cmd' (=default), \`ipt'.
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
                            This option is only valid with the \`test' parameter.
--s, --save-file file       File to use, when saving or restoring a ruleset.
 -sc, --show-config [type] [...]
                            Select type of information to show. Available types:
                            all, main (=default), defaults, targets, matches,
@@ -1113,6 +1115,7 @@ while (($#)); do
 			ARR_RTIME_OPTS[${#ARR_RTIME_OPTS[@]}]="$opt_arg"
 		;;
 		-s|--save-file) cmdline_save_file="$opt_arg" ;; # file to save/restore to/from
+		-co|--color) cmdline_color="$opt_arg" ;; # enable/disable coloured output
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
@@ -1226,6 +1229,7 @@ set_env
 [[ ${cmdline_reload_time} ]] && RELOAD_TIME="${cmdline_reload_time}"
 [[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
 [[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"
+[[ ${cmdline_color} ]] && ENABLE_COLORS="${cmdline_color}"
 [[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
@@ -1606,10 +1610,10 @@ case "$ENABLE_COLORS" in
 		fi
 	;;
 	*) # invalid user entry, disabling coloured output
+		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
+		declare -i ENABLE_COLORS=0
 		declare -r log_msg='no_color_msg'
 		let cfg_err_count+=1
-		declare -i ENABLE_COLORS=0
-		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
 esac
 
 # -------------------------------------------------------------------------
@@ -1636,7 +1640,7 @@ check_kern_ver || bail_out $?
 # -------------------------------------------------------------------------
 # mutual exclusion - lock
 # -------------------------------------------------------------------------
-verbose_msg "Creating lockfile"
+verbose_msg "Creating lockfile: \`$LOCKFILE'"
 if (set -C; >"$LOCKFILE") &>/dev/null; then
 	pr_str "$PID" >"$LOCKFILE"
 else
