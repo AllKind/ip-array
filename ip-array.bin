@@ -1003,7 +1003,10 @@ trap "trap_gen TERM" TERM
 # -------------------------------------------------------------------------
 case "$MAIN_ARG" in
 	"") usage ;;
-	'-?'|-h|help|--help) shift ;;
+	'-?'|-h|help|--help)
+		 shift
+		(($#)) || usage # if there isn't a second arg, show usage
+	 ;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
 	restore|save|save-known-good|save-commands| save-modprobe-commands|save-proc-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
