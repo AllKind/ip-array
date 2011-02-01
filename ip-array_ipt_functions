@@ -1954,155 +1954,6 @@ for ((idx=1; idx<=5; ++idx)); do # five stages of classification
 done
 } # -------------------------------------------------------------------------
 
-load_rule_file() {
-# - parse iptables xml rule file (if needed)
-# - transform the rules into a bash script
-# - source compiled file
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local rule_file="${RULE_DIR}/${1}" parsed_file="${RULE_DIR}/__parsed_${1%.xml}.bash"
-local -i parse_files=${PARSE_RULEFILES}
-[[ -r ${rule_file} ]] || {
-	log -x "${rule_file}"
-	return $ER_NOEX
-}
-if [[ -r ${parsed_file} ]]; then
-	if ((parse_files == 0)); then
-		log -N "Parsed rulefile \`${parsed_file}' already exists, using existing file."
-	fi
-else
-    parse_files=1
-fi
-if ((parse_files == 1)); then
-	log -N "Parsing XML rule file: \`${rule_file}'"
-	if [[ -e ${parsed_file} ]]; then
-		run_rm "${parsed_file}" || {
-			log -F "removing old parsed file \`${parsed_file}'."
-			return $ER_FAIL
-		}
-	fi
-	exec 7> "${parsed_file}"
-#	printf "%s\n\n" '#!/bin/bash' >&7
-	printf '#!%s\n\n' "$SHELL" >&7
-	xml_parser 'rules' < "${rule_file}" || {
-		exec 7>&-
-		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
-		log -E "Failed parsing rule file: \`${rule_file}'"
-		return ${ER_LOAD}
-	}
-	exec 7>&-
-	log -w "Saved parsed rule file to: \`${parsed_file}'"
-fi
-if [[ $MODE != PARSE-XML ]]; then
-	load_file rule "${parsed_file}" || return ${ER_LOAD}
-fi
-} # -------------------------------------------------------------------------
-
-load_filter_rules() { # Load the filter table rule files
-if ((ENABLE_FILTER)); then
-	for rvar in ${FILTER_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_security_rules() { # Load the security table rule files
-if ((ENABLE_SECURITY)); then
-	for rvar in ${SECURITY_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_nat_rules() { # Load the nat table rule files
-if ((ENABLE_NAT)); then
-	for rvar in ${NAT_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_mangle_rules() { # Load the mangle table rule files
-if ((ENABLE_MANGLE)); then
-	for rvar in ${MANGLE_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_raw_rules() { # Load the raw table rule files
-if ((ENABLE_RAW)); then
-	for rvar in ${RAW_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_rawpost_rules() { # Load the rawpost table rule files
-if ((ENABLE_RAWPOST)); then
-	for rvar in ${RAWPOST_RULES}; do
-		load_rule_file "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_all_ipt_rulefiles() { # load all rule files
-log -T "Loading rule files"
-load_raw_rules || return $?
-load_rawpost_rules || return $?
-load_mangle_rules || return $?
-load_nat_rules || return $?
-load_filter_rules || return $?
-load_security_rules || return $?
-} # -------------------------------------------------------------------------
-
-load_filter_ruleblocks() {
-if ((ENABLE_FILTER)); then
-	for rvar in ${FILTER_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_security_ruleblocks() {
-if ((ENABLE_SECURITY)); then
-	for rvar in ${SECURITY_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_mangle_ruleblocks() {
-if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
-	for rvar in ${MANGLE_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_nat_ruleblocks() {
-if ((ENABLE_NAT)); then
-	for rvar in ${NAT_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_raw_ruleblocks() {
-if ((ENABLE_RAW)); then
-	for rvar in ${RAW_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
-load_rawpost_ruleblocks() {
-if ((ENABLE_RAWPOST)); then
-	for rvar in ${RAWPOST_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
-	done
-fi
-} # -------------------------------------------------------------------------
-
 create_custom_chains() { # CREATE CUSTOM CHAINS
 local -i idx
 local str_tbl str_chn
@@ -2746,65 +2597,62 @@ load_ipt_templates() {
 local template_file="${TEMPLATE_DIR}/${1}" parsed_file="${TEMPLATE_DIR}/__parsed_${1%.xml}.bash"
 local -i parse_files=${PARSE_TEMPLATES}
 local -a TEMP_TEMPLATE_NAMES_ARRAY
-[[ -r ${template_file} ]] || {
-	log -x "${template_file}"
+[[ -r $template_file ]] || {
+	log -x "$template_file"
 	return $ER_NOEX
 }
-if [[ -r ${parsed_file} ]]; then
+if [[ -r $parsed_file ]]; then
 	if ((parse_files == 0)); then
-		log -N "Parsed template file \`${parsed_file}' already exists, using existing file."
+		log -N "Parsed template file \`$parsed_file' already exists, using existing file."
 	fi
 else
     parse_files=1
 fi
 if ((parse_files == 1)); then
-	log -N "Parsing XML template file: \`${template_file}'"
-	if [[ -e ${parsed_file} ]]; then
-		run_rm "${parsed_file}" || {
-			log -F "removing old parsed file \`${parsed_file}'."
+	log -N "Parsing XML template file: \`$template_file'"
+	if [[ -e $parsed_file ]]; then
+		run_rm "$parsed_file" || {
+			log -F "removing old parsed file \`$parsed_file'."
 			return $ER_FAIL
 		}
 	fi
-	exec 7> "${parsed_file}"
-	xml_parser 'templates' < "${template_file}" || {
+	exec 7> "$parsed_file"
+	xml_parser 'templates' < "$template_file" || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
-		log -E "Failed parsing templates file: \`${template_file}'"
-		return ${ER_LOAD}
+		[[ -e $parsed_file ]] && run_rm "$parsed_file"
+		log -E "Failed parsing templates file: \`$template_file'"
+		return $ER_LOAD
 	}
 	exec 7>&-
-	source "${parsed_file}"
-	run_rm "${parsed_file}"
-	exec 7> "${parsed_file}"
+	source "$parsed_file"
+	run_rm "$parsed_file"
+	exec 7> "$parsed_file"
 #	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
 	validate_generate_final_templates || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
-		log -E "Failed parsing templates file: \`${template_file}'"
-		return ${ER_LOAD}
+		[[ -e $parsed_file ]] && run_rm "$parsed_file"
+		log -E "Failed parsing templates file: \`$template_file'"
+		return $ER_LOAD
 	}
 	exec 7>&-
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_TEMPLATE_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_TEMPLATE_NAMES_ARRAY[@]} templates"
-	log -w "Saved parsed template file to: \`${parsed_file}'"
+	log -w "Saved parsed template file to: \`$parsed_file'"
 fi
-load_file config "${parsed_file}" || return ${ER_LOAD}
+load_file config "$parsed_file" || return $ER_LOAD
 if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdout
-	for rvar in ${cmdline_show_conf}; do
-		[[ $rvar = templates ]] && {
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of generated templates:" "${SEPSTR}"
-			for idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
-				printf "%s=(\n" "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"
-				for i in $(arr_indicies "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"); do
-					eval 'printf "['${i}']=\"%s\"\n" "${'"${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"'['${i}']}"'
-				done
-				printf ")\n"
+	lsearch templates ${cmdline_show_conf} && {
+		pr_banner "Starting dump of generated templates:"
+		for idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
+			printf "%s=(\n" "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"
+			for i in $(arr_indicies "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"); do
+				eval 'printf "['${i}']=\"%s\"\n" "${'"${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"'['${i}']}"'
 			done
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# End of template dump." "${SEPSTR}"
-			break
-		}
-	done
+			printf ")\n"
+		done
+		pr_banner "End of template dump."
+	}
 fi
 } # -------------------------------------------------------------------------
 
@@ -2878,59 +2726,104 @@ load_ipt_rawpost_templates || return $?
 
 load_ruleblock_conf() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local ruleblock_file="${RULEBLOCK_DIR}"/"$1" parsed_file="${RULEBLOCK_DIR}"/"__parsed_${1%.xml}.bash"
+local ruleblock_file="${RULEBLOCK_DIR}/$1" parsed_file="${RULEBLOCK_DIR}/__parsed_${1%.xml}.bash"
 local -i parse_files=${PARSE_RULEBLOCKS}
 local -a TEMP_RULEBLOCK_NAMES_ARRAY
-[[ -r ${ruleblock_file} ]] || {
-	log -x "${ruleblock_file}"
+[[ -r $ruleblock_file ]] || {
+	log -x "$ruleblock_file"
 	return $ER_NOEX
 }
-if [[ -r ${parsed_file} ]]; then
+if [[ -r $parsed_file ]]; then
 	if ((parse_files == 0)); then
-		log -N "Parsed ruleblock file \`${parsed_file}' already exists, using existing file."
+		log -N "Parsed ruleblock file \`$parsed_file' already exists, using existing file."
 	fi
 else
     parse_files=1
 fi
 if ((parse_files == 1)); then
-	log -N "Parsing XML ruleblock file: \`${ruleblock_file}'"
-	if [[ -e ${parsed_file} ]]; then
-		run_rm "${parsed_file}" || {
-			log -F "removing old parsed file \`${parsed_file}'."
+	log -N "Parsing XML ruleblock file: \`$ruleblock_file'"
+	if [[ -e $parsed_file ]]; then
+		run_rm "$parsed_file" || {
+			log -F "removing old parsed file \`$parsed_file'."
 			return $ER_FAIL
 		}
 	fi
-	exec 7> "${parsed_file}"
+	exec 7> "$parsed_file"
 #	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
-	xml_parser 'ruleblocks' < "${ruleblock_file}" || {
+	xml_parser 'ruleblocks' < "$ruleblock_file" || {
 		exec 7>&-
-		[[ -e ${parsed_file} ]] && run_rm "${parsed_file}"
-		log -E "Failed parsing ruleblock file: \`${ruleblock_file}'"
-		return ${ER_LOAD}
+		[[ -e $parsed_file ]] && run_rm "$parsed_file"
+		log -E "Failed parsing ruleblock file: \`$ruleblock_file'"
+		return $ER_LOAD
 	}
 	exec 7>&-
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_RULEBLOCK_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
-	log -w "Saved parsed ruleblock file to: \`${parsed_file}'"
+	log -w "Saved parsed ruleblock file to: \`$parsed_file'"
 fi
 
-load_file config "${parsed_file}" || return ${ER_LOAD}
+load_file config "$parsed_file" || return $ER_LOAD
 
 if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to stdout
-	for rvar in ${cmdline_show_conf}; do
-		[[ $rvar = ruleblocks ]] && {
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# Starting dump of generated ruleblocks:" "${SEPSTR}"
-			for idx in ${!TEMP_RULEBLOCK_NAMES_ARRAY[@]}; do
-				printf "%s=(\n" "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"
-				for i in $(arr_indicies "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"); do
-					eval 'printf "['${i}']=\"%s\"\n" "${'"${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"'['${i}']}"'
-				done
-				printf ")\n"
+	lsearch ruleblocks ${cmdline_show_conf} && {
+		pr_banner "Starting dump of generated ruleblocks:"
+		for idx in ${!TEMP_RULEBLOCK_NAMES_ARRAY[@]}; do
+			printf "%s=(\n" "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"
+			for i in $(arr_indicies "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"); do
+				eval 'printf "['${i}']=\"%s\"\n" "${'"${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"'['${i}']}"'
 			done
-			printf "%s\n%s\n%s\n" "${SEPSTR}" "# End of ruleblock dump." "${SEPSTR}"
-			break
-		}
+			printf ")\n"
+		done
+		pr_banner "End of ruleblock dump."
+	}
+fi
+} # -------------------------------------------------------------------------
+
+load_filter_ruleblocks() {
+if ((ENABLE_FILTER)); then
+	for rvar in ${FILTER_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_security_ruleblocks() {
+if ((ENABLE_SECURITY)); then
+	for rvar in ${SECURITY_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_mangle_ruleblocks() {
+if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
+	for rvar in ${MANGLE_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_nat_ruleblocks() {
+if ((ENABLE_NAT)); then
+	for rvar in ${NAT_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_raw_ruleblocks() {
+if ((ENABLE_RAW)); then
+	for rvar in ${RAW_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_rawpost_ruleblocks() {
+if ((ENABLE_RAWPOST)); then
+	for rvar in ${RAWPOST_RULEBLOCKS}; do
+		load_ruleblock_conf "$rvar" || return $?
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2943,6 +2836,111 @@ load_tc_ruleblocks || return $?
 load_tc_mangle_ruleblocks || return $?
 load_nat_ruleblocks || return $?
 load_filter_ruleblocks || return $?
+} # -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# RULE FILES
+# -------------------------------------------------------------------------
+
+load_rule_file() {
+# - parse iptables xml rule file (if needed)
+# - transform the rules into a bash script
+# - source compiled file
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local rule_file="${RULE_DIR}/${1}" parsed_file="${RULE_DIR}/__parsed_${1%.xml}.bash"
+local -i parse_files=${PARSE_RULEFILES}
+[[ -r ${rule_file} ]] || {
+	log -x "${rule_file}"
+	return $ER_NOEX
+}
+if [[ -r $parsed_file ]]; then
+	if ((parse_files == 0)); then
+		log -N "Parsed rulefile \`$parsed_file' already exists, using existing file."
+	fi
+else
+    parse_files=1
+fi
+if ((parse_files == 1)); then
+	log -N "Parsing XML rule file: \`${rule_file}'"
+	if [[ -e $parsed_file ]]; then
+		run_rm "$parsed_file" || {
+			log -F "removing old parsed file \`$parsed_file'."
+			return $ER_FAIL
+		}
+	fi
+	exec 7> "$parsed_file"
+#	printf "%s\n\n" '#!/bin/bash' >&7
+	printf '#!%s\n\n' "$SHELL" >&7
+	xml_parser 'rules' < "${rule_file}" || {
+		exec 7>&-
+		[[ -e $parsed_file ]] && run_rm "$parsed_file"
+		log -E "Failed parsing rule file: \`${rule_file}'"
+		return $ER_LOAD
+	}
+	exec 7>&-
+	log -w "Saved parsed rule file to: \`$parsed_file'"
+fi
+if [[ $MODE != PARSE-XML ]]; then
+	load_file rule "$parsed_file" || return $ER_LOAD
+fi
+} # -------------------------------------------------------------------------
+
+load_filter_rules() { # Load the filter table rule files
+if ((ENABLE_FILTER)); then
+	for rvar in ${FILTER_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_security_rules() { # Load the security table rule files
+if ((ENABLE_SECURITY)); then
+	for rvar in ${SECURITY_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_nat_rules() { # Load the nat table rule files
+if ((ENABLE_NAT)); then
+	for rvar in ${NAT_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_mangle_rules() { # Load the mangle table rule files
+if ((ENABLE_MANGLE)); then
+	for rvar in ${MANGLE_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_raw_rules() { # Load the raw table rule files
+if ((ENABLE_RAW)); then
+	for rvar in ${RAW_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_rawpost_rules() { # Load the rawpost table rule files
+if ((ENABLE_RAWPOST)); then
+	for rvar in ${RAWPOST_RULES}; do
+		load_rule_file "$rvar" || return $?
+	done
+fi
+} # -------------------------------------------------------------------------
+
+load_all_ipt_rulefiles() { # load all rule files
+log -T "Loading rule files"
+load_raw_rules || return $?
+load_rawpost_rules || return $?
+load_mangle_rules || return $?
+load_nat_rules || return $?
+load_filter_rules || return $?
+load_security_rules || return $?
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -7828,565 +7826,6 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 #for array_name in ${RULELIST_ARRAYS}; do
 #	unset ${array_name}[RULE_LIST_IDX]
 #done
-#}
-# -------------------------------------------------------------------------
-
-#parse_xml_rulefiles() { # parse xml rule files and transform them into bash scripts
-#local -a RESULT_ARR
-#local -i root_tag_open=tag_open=m_count=comment_mode=IDX=line_count=0
-#local root_tag="iptables_rules" syntax_version comment line line_content tag_name
-#
-#while read line; do
-#	let line_count+=1
-#	# skip empty, xml version and comment lines
-#	[[ -z ${line} || ${line} = +([[:blank:]]) || ${line} = @(*([[:blank:]])<[?]xml version=*[?]>*) ]] && continue
-#	if [[ ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
-#			comment="${line#*'<!--'}"
-#			comment="$(strip_blanks "${comment%'-->'}")"
-#			[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#			continue
-#	fi
-#	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
-#		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
-#			comment="${line#*'<!--'*([[:blank:]])}"
-#			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
-#				comment="${comment%'-->'*([[:blank:]])}"
-#				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
-#			else
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
-#				RESULT_ARR[IDX++]=""
-#				[[ ${comment}  ]] && RESULT_ARR[IDX++]="# ${comment}";
-#				let comment_mode+=1
-#				line="${line#'<!--'}"
-#			fi
-#		fi
-#		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
-#			if ((comment_mode > 0)); then
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ends with: '${line}' #${line_count}"
-#				comment="${line%'-->'*([[:blank:]])}"
-#				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#				let comment_mode-=1
-#				line="${line#*'-->'}"
-#			fi
-#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
-#		fi
-#		if ((comment_mode > 0)); then
-#			[[ ${line} && ${line} != +([[:space:]]) ]] && RESULT_ARR[IDX++]="# ${line}"
-#			continue 2 # if multiline comment tag is open - ignore line
-#		fi
-#		[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		if [[ ${line} = @(*([[:blank:]])<"${root_tag}"+([[:blank:]])syntax_version=[\"]@([[:digit:]]).@([[:digit:]])[\"]>*) ]]
-#		then
-#		# line starts with a root tag opening tag
-#			if ((root_tag_open == 1)); then # check if we already have an root tag open
-#				log -E "Root opening tag found on line \`${line_count}', but there is already an opened root tag."
-#				return 1
-#			fi
-#			syntax_version="${line#*"<${root_tag}"+([[:blank:]])syntax_version=\"}"
-#			syntax_version="${syntax_version%"\">"*}"
-#			# check for compatible syntax version
-#			if ! lsearch "${syntax_version}" "${RULEFILE_SYNTAX_VERSION_ARRAY[@]}"; then
-#				log -E "Incompatible rulefile syntax version."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened - syntax version = '${syntax_version}'"
-#			root_tag_open=1
-#			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])</"${root_tag}">*) ]]; then
-#		# line starts with a root tag closing tag
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Root closing tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			fi
-#			if ((tag_open == 1)); then # check if we already have an tag open
-#				log -E "Root closing tag found on line \`${line_count}', but there is an opened tag: \`${tag_name}'."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed on line \`${line_count}'."
-#			root_tag_open=0
-#			line="${line#*"</${root_tag}>"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:space:]])<+([[:word:]])>*) ]]; then
-#		# line contains a tag
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Opening tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((tag_open == 1)); then # error, there is already an opened tag
-#				log -E "Found another tag opening on line \`${line_count}', before closing tag of \`${tag_name}' was found."
-#				return 1
-#			fi
-#			tag_open=1 # open tag
-#			# find name of tag
-#			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag name: '${tag_name}'"
-#			line="${line#*"<${tag_name}>"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif ((tag_open == 1)) && [[ ${line} = @(*</"${tag_name}">*) ]]; then
-#		# line contains current tags closing tag
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
-#			line_content="${line%</"${tag_name}">*}" # remove closing tag string to retrieve line content
-#			line="${line#"${line_content}"}" # remove line content from line
-#			line="${line#</"${tag_name}">}" # remove closing tag string from line
-#			line_content="$(strip_blanks "${line_content}")"
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} content: '${line_content}'"
-#			if [[ ${line_content} ]]; then
-#				case "${tag_name}" in # save tags content
-#					rule)
-#						RESULT_ARR[IDX++]="process_ipt_ruleblock ${line_content}"
-#						RESULT_ARR[IDX++]=""
-#					;;
-#					quickrule)
-#						RESULT_ARR[IDX++]="process_ipt_quickrule ${line_content}"
-#						RESULT_ARR[IDX++]=""
-#					;;
-#					pub_func)
-#						RESULT_ARR[IDX++]=""
-#						RESULT_ARR[IDX++]="${line_content}"
-#						RESULT_ARR[IDX++]=""
-#					;;
-#					*) log -E "Illegal rulefile option \`${tag_name}' on line \`${line_count}'."
-#						return 1
-#					;;
-#				esac
-#			fi
-#			tag_open=0
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif ((tag_open == 1)) && [[ ${line} ]]; then
-#		# still some content in line and a tag is opened - add line content to template option
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
-#			line_content="${line%%<*([/])*([[:word:]])>*}" # remove any tags to retrieve line content
-#			line="${line#"${line_content}"}" # remove line content from line
-#			line_content="$(strip_blanks "${line_content}")"
-#			if [[ ${line_content} ]]; then
-#				case "${tag_name}" in
-#					rule)
-#						RESULT_ARR[IDX++]="process_ipt_ruleblock ${line_content}"
-#					;;
-#					quickrule)
-#						RESULT_ARR[IDX++]="process_ipt_quickrule ${line_content}"
-#						RESULT_ARR[IDX++]=""
-#					;;
-#					pub_func)
-#						RESULT_ARR[IDX++]=""
-#						RESULT_ARR[IDX++]="${line_content}"
-#					;;
-#					*) log -E "Illegal rulefile option \`${tag_name}' on line \`${line_count}'."
-#						return 1
-#					;;
-#				esac
-#			fi
-#		else
-#			if [[ ${line} && ${line} != +([[:space:]]) ]]; then
-#			# no matching handler for line found -> error condition
-#				if ((root_tag_open == 0)); then # check if we already have an root tag open
-#					log -E "Orphaned line found: \`${line}' - line number: \`${line_count}'. But there is no opened root tag."
-#					return 1
-#				fi
-#				log -E "Unable to match: '${line}' on line \`${line_count}'."
-#				return 1
-#			fi
-#		fi
-#	done
-#done
-#if ((root_tag_open == 1)); then # check if we have an root tag open
-#	log -E "There is no closing root tag."
-#	return 1
-#fi
-## print collected array assignments
-#if ((${#RESULT_ARR[@]})); then
-#	printf "%s\n" "${RESULT_ARR[@]}" >&7
-#else
-#	log -W "No rules found."
-#	return 0
-#fi
-#}
-# -------------------------------------------------------------------------
-
-#parse_xml_templates() { # parse xml templates and transform them into bash arrays
-#local -a tmp_arr RESULT_ARR
-#local -i root_tag_open=tag_open=template_open=m_count=tag_count=comment_mode=IDX=line_count=0
-#local template_tag="template" root_tag="ip_array_rule_templates"
-#local syntax_version template_name line line_content
-#
-#while read line; do
-#	let line_count+=1
-#	# skip empty, xml version and comment lines
-#	[[ -z ${line} || ${line} = +([[:blank:]]) ||\
-#	${line} = @(*([[:blank:]])<[?]xml version=*[?]>*) ||\
-#	${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]] && continue
-#	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
-#		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
-#			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
-#				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
-#			else
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
-#				let comment_mode+=1
-#				line="${line#'<!--'}"
-#			fi
-#		fi
-#		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ends with: '${line}'"
-#			line="${line#*'-->'}"
-#			let comment_mode-=1
-#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
-#		fi
-#		((comment_mode > 0)) && continue 2 # if multiline comment tag is open ignore line
-#		[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		if [[ ${line} = @(*([[:blank:]])<"${root_tag}"+([[:blank:]])syntax_version=[\"]@([[:digit:]]).@([[:digit:]])[\"]>*) ]]
-#		then
-#		# line starts with a root tag opening tag
-#			if ((root_tag_open == 1)); then # check if we already have an root tag open
-#				log -E "Root opening tag found on line \`${line_count}', but there is already an opened root tag."
-#				return 1
-#			fi
-#			syntax_version="${line#*"<${root_tag}"+([[:blank:]])syntax_version=\"}"
-#			syntax_version="${syntax_version%"\">"*}"
-#			# check for compatible syntax version
-#			if ! lsearch "${syntax_version}" "${TEMPLATE_SYNTAX_VERSION_ARRAY[@]}"; then
-#				log -E "Incompatible template syntax version \`${syntax_version}'."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
-#			root_tag_open=1
-#			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])</"${root_tag}">*) ]]; then
-#		# line starts with a root tag closing tag
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Root closing tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
-#			root_tag_open=0
-#			line="${line#*"</${root_tag}>"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])<"${template_tag}"+([[:blank:]])name=[\"]+([[:word:]])[\"]>*) ]]; then
-#		# line starts with a template opening tag
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Template opening tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((template_open == 1)); then # check if we already have an template open
-#				log -E "Template opening tag found on line \`${line_count}', but there is already an opened template."
-#				return 1
-#			fi
-#			tag_open=0 m_count=0 template_open=1
-#			# retrieve template name
-#			template_name="${line#*"<${template_tag}"+([[:blank:]])name=\"}"
-#			template_name="${template_name%"\">"*}"
-#			line="${line#*"<${template_tag}"*">"}" # remove tag string from line
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "NAME of template: '${template_name}'"
-#			for i in ${!TEMPLATE_NAMES_ARRAY[@]}; do # check for duplicate template names
-#				if [[ ${TEMPLATE_NAMES_ARRAY[i]} = ${template_name} ]]; then
-#					log -E "Duplicate template name \`${template_name}'."
-#					return 1
-#				fi
-#			done
-#			TEMPLATE_NAMES_ARRAY[${#TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
-#			TEMP_TEMPLATE_NAMES_ARRAY[${#TEMP_TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
-#			# array assignment begins
-#			RESULT_ARR[IDX++]="$(printf "%s\n" "${template_name}=(")"
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])</"${template_tag}">*) ]]; then
-#		# line begins with closing tag of current template
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Template closing tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((template_open == 0)); then
-#				log -E "Template closing tag found on line \`${line_count}', but no template is opened."
-#				return 1
-#			elif ((tag_count == 0)); then
-#				log -E "Empty template \`${template_name}', no tags were found."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Template '${template_name}' closed #${line_count}"
-#			tag_open=0 template_open=0 m_count=0 tag_count=0 tmp_arr=()
-#			# array assignment closing string
-#			RESULT_ARR[IDX++]="$(printf "%s\n" ")")"
-#			line="${line#*</"${template_tag}">}" # remove template closing tag from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:space:]])<+([[:word:]])>*) ]]; then
-#		# line contains a tag
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "line contains a tag: '${line}' #${line_count}"
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Opening tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((template_open == 0)); then # error, new tag but no template opened
-#				log -E "Opening tag found on line \`${line_count}', but no template is opened."
-#				return 1
-#			elif ((tag_open == 1)); then # error, there is already an opened tag
-#				log -E "Found another tag opening on line \`${line_count}', before closing tag of ${tag_name} was found."
-#				return 1
-#			fi
-#			tag_open=1 # open tag
-#			# find name of tag
-#			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag name: '${tag_name}'"
-#			line="${line#*"<${tag_name}>"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif ((tag_open == 1)) && [[ ${line} = @(*</"${tag_name}">*) ]]; then
-#		# line contains current tags closing tag
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "tag ${tag_name} closed on line: '${line}' #${line_count}"
-#			line_content="${line%</"${tag_name}">*}" # remove closing tag string to retrieve line content
-#			line="${line#"${line_content}"}" # remove line content from line
-#			line="${line#</"${tag_name}">}" # remove closing tag string from line
-#			line_content="$(strip_blanks "${line_content}")"
-#			case "${tag_name}" in # save tags content
-#				target|chain|load_template|option_list_0|option_list_1|always_use_0|always_use_1|state_match_arg|mandatory_vars)
-#				# options which build an array
-#					for n in ${line_content}; do
-#						tmp_arr[${#tmp_arr[@]}]="${n}"
-#					done
-#					if ((${#tmp_arr[@]})); then
-#						for i in ${!tmp_arr[@]}; do
-#							RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${tag_name}[$i]="${tmp_arr[i]}"\"")"
-##							RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${tag_name}[$i]="${tmp_arr[i]//\"/\\\"}"\"")"
-#							let m_count++
-#						done
-#					else
-#						log -E "Empty tag \`${tag_name}' on line \`${line_count}'."
-#						return 1
-#					fi
-#				;;
-#				table|reverse_mode|reverse_condition|template_msg)
-#				# string type options
-#					[[ ${line_content} ]] && tmp_arr[${#tmp_arr[@]}]="${line_content}"
-#					if ((${#tmp_arr[@]})); then
-#						RESULT_ARR[IDX++]="$(printf "%s " "[${m_count}]=\"${tag_name}=${tmp_arr[@]}\""; echo)"
-##						RESULT_ARR[IDX++]="$(printf "%s " "[${m_count}]=\"${tag_name}=${tmp_arr[@]//\"/\\\"}\""; echo)"
-#						let m_count++
-#					else
-#						log -E "Empty tag \`${tag_name}' on line \`${line_count}'"
-#						exit 1
-#					fi
-#				;;
-#				*) log -E "Illegal template option \`${tag_name}' on line \`${line_count}'."
-#					return 1
-#				;;
-#			esac
-#			[[ $DEBUG_INFO ]] && {
-#				printf "%s\n" "tag ${tag_name} content:"
-#				printf "%s\n" "${tmp_arr[@]}"
-#			}
-#			tmp_arr=() tag_open=0
-#			let tag_count++
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif ((tag_open == 1)) && [[ ${line} ]]; then
-#		# still some content in line and a tag is opened - add line content to template option
-#			if ((template_open == 0)); then
-#				log -E "Tag opened, but no template opened on line \`${line_count}'."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "opened_tag_line: '${line}' #${line_count}"
-#			line_content="${line%%<*([/])*([[:word:]])>*}" # remove any tags to retrieve line content
-#			line="${line#"${line_content}"}" # remove line content from line
-#			line_content="$(strip_blanks "${line_content}")"
-#			case "${tag_name}" in
-#				target|chain|load_template|option_list_0|option_list_1|always_use_0|always_use_1|state_match_arg|mandatory_vars)
-#				# tags build an array
-##					eval set -- "${line_content}"
-#					local n
-##					for n in "${@}"; do
-##						if [[ ${n} = *+([[:space:]])* ]]; then
-##							tmp_arr[${#tmp_arr[@]}]="${n/ /\\\" }\\\"" # buffer data while tag is opened
-##						else
-##							tmp_arr[${#tmp_arr[@]}]="${n}" # buffer data while tag is opened
-##						fi
-##					done
-#					for n in ${line_content}; do
-#						tmp_arr[${#tmp_arr[@]}]="${n}" # buffer data while tag is opened
-#					done
-#				;;
-#				# string type options
-#				table|reverse_mode|reverse_condition|template_msg)
-#					[[ ${line_content} ]] && tmp_arr[${#tmp_arr[@]}]="${line_content}"
-#				;;
-#				*) log -E "Illegal template option \`${tag_name}' on line \`${line_count}'."
-#					return 1
-#				;;
-#			esac
-#		else
-#			if [[ ${line} && ${line} != +([[:space:]]) ]]; then
-#			# no matching handler for line found -> error condition
-#				if ((root_tag_open == 0)); then # check if we already have an root tag open
-#					log -E "Orphaned line found: \`${line}' on line \`${line_count}'. But there is no opened root tag."
-#					return 1
-#				elif ((template_open == 0)); then # error condition: no template is opened
-#					log -E "Orphaned line found: \`${line}' on line \`${line_count}'. No template opened."
-#					return 1
-#				elif ((tag_open == 0 && template_open == 0)); then # error condition: not tag or template opened
-#					log -E "Orphaned line found: \`${line}' on line \`${line_count}'. No template and no tag opened."
-#					return 1
-#				elif ((tag_open == 0)); then # error condition: not tag opened
-#					log -E "Orphaned line found: \`${line}' on line \`${line_count}'. No tag opened."
-#					return 1
-#				fi
-#				# error condition: no match, not even for error conditions
-#				log -E "Unable to match: '${line}' on line \`${line_count}'."
-#				return 1
-#			fi
-#		fi
-#	done
-#done
-#if ((root_tag_open == 1)); then # check if we still have an root tag open
-#	log -E "There is no closing root tag."
-#	return 1
-#fi
-## print collected array assignments
-#if ((${#RESULT_ARR[@]})); then
-#	printf "%s\n" "${RESULT_ARR[@]}" >&7
-#else
-#	log -W "No templates found."
-#	return 0
-#fi
-#}
-# -------------------------------------------------------------------------
-
-#parse_xml_ruleblocks() { # parse xml ruleblocks and transform them into bash arrays
-#local -a tmp_arr RESULT_ARR
-#local -i root_tag_open=ruleblock_open=m_count=comment_mode=IDX=rule_count=0
-#local ruleblock_tag="ruleblock" root_tag="ip_array_ruleblocks"
-#local syntax_version comment line ruleblock_name
-#
-#while read line; do
-#	let line_count+=1
-#	# skip empty, xml version and comment lines
-#	[[ -z ${line} || ${line} = +([[:blank:]]) || ${line} = @(*([[:blank:]])<[?]xml version=*[?]>*) ]] && continue
-#	if [[ ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
-#			comment="${line#*'<!--'}"
-#			comment="$(strip_blanks "${comment%'-->'}")"
-#			[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#			continue
-#	fi
-#	while [[ ${line} && ${line} != +([[:space:]]) ]]; do # process line until it's empty
-#		if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Multiline comment starts in line: '${line}' #${line_count}"
-#			comment="${line#*'<!--'*([[:blank:]])}"
-#			if [[ ${line} = @(*<\!--*-->*) ]]; then # comment ends on same line
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ended in same line: '${line}'"
-#				comment="${comment%'-->'*([[:blank:]])}"
-#				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#				line="${line//*([[:blank:]])<\!--*-->/}" # remove any comments on that line
-#			else
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "Entering comment mode with: '${line}' #${line_count}"
-#				[[ ${comment}  ]] && RESULT_ARR[IDX++]="# ${comment}"
-#				let comment_mode+=1
-#				line="${line#'<!--'}"
-#			fi
-#		fi
-#		if [[ ${line} = @(*'-->'*) ]]; then # multiline comment ends
-#			if ((comment_mode > 0)); then
-#				[[ $DEBUG_INFO ]] && printf "%s\n" "comment ends with: '${line}' #${line_count}"
-#				comment="${line%'-->'*([[:blank:]])}"
-#				[[ ${comment} ]] && RESULT_ARR[IDX++]="# ${comment}"
-#				let comment_mode-=1
-#				line="${line#*'-->'}"
-#			fi
-#			((comment_mode == 0)) && [[ $DEBUG_INFO ]] && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
-#		fi
-#		if ((comment_mode > 0)); then
-#			[[ ${line} && ${line} != +([[:space:]]) ]] && RESULT_ARR[IDX++]="# ${line}"
-#			continue 2 # if multiline comment tag is open - ignore line
-#		fi
-#		[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		if [[ ${line} = @(*([[:blank:]])<"${root_tag}"+([[:blank:]])syntax_version=[\"]@([[:digit:]]).@([[:digit:]])[\"]>*) ]]
-#		then
-#		# line starts with a root tag opening tag
-#			if ((root_tag_open == 1)); then # check if we already have an root tag open
-#				log -E "Root opening tag found on line \`${line_count}', but there is already an opened root tag."
-#				return 1
-#			fi
-#			syntax_version="${line#*"<${root_tag}"+([[:blank:]])syntax_version=\"}"
-#			syntax_version="${syntax_version%"\">"*}"
-#			# check for compatible syntax version
-#			if ! lsearch "${syntax_version}" "${RULEBLOCK_SYNTAX_VERSION_ARRAY[@]}"; then
-#				log -E "Incompatible ruleblock syntax version \`${syntax_version}'."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' opened #${line_count} - syntax version = '${syntax_version}'"
-#			root_tag_open=1
-#			line="${line#*"<${root_tag}"*">"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])</"${root_tag}">*) ]]; then
-#		# line starts with a root tag closing tag
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Root closing tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Root tag ${root_tag}' closed #${line_count}"
-#			root_tag_open=0
-#			line="${line#*"</${root_tag}>"}" # remove tag string from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])<"${ruleblock_tag}"+([[:blank:]])name=[\"]+([[:word:]])[\"]>*) ]]; then
-#		# line starts with a ruleblock opening tag
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Ruleblock opening tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((ruleblock_open == 1)); then # check if we already have an ruleblock open
-#				log -E "Ruleblock opening tag found on line \`${line_count}', but there is already an opened ruleblock."
-#				return 1
-#			fi
-#			m_count=0 ruleblock_open=1
-#			# retrieve ruleblock name
-#			ruleblock_name="${line#*"<${ruleblock_tag}"+([[:blank:]])name=\"}"
-#			ruleblock_name="${ruleblock_name%"\">"*}"
-#			line="${line#*"<${ruleblock_tag}"*">"}" # remove tag string from line
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "NAME of ruleblock: '${ruleblock_name}'"
-#			for i in ${!RULEBLOCK_NAMES_ARRAY[@]}; do # check for duplicate ruleblock names
-#				if [[ ${RULEBLOCK_NAMES_ARRAY[i]} = ${ruleblock_name} ]]; then
-#					log -E "Duplicate ruleblock name \`${ruleblock_name}'."
-#					return 1
-#				fi
-#			done
-#			RULEBLOCK_NAMES_ARRAY[${#RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
-#			TEMP_RULEBLOCK_NAMES_ARRAY[${#TEMP_RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
-#			# array assignment begins
-#			RESULT_ARR[IDX++]="$(printf "%s\n" "${ruleblock_name}=(")"
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif [[ ${line} = @(*([[:blank:]])</"${ruleblock_tag}">*) ]]; then
-#		# line begins with closing tag of current ruleblock
-#			if ((root_tag_open == 0)); then # check if we already have an root tag open
-#				log -E "Ruleblock closing tag found on line \`${line_count}', but there is no opened root tag."
-#				return 1
-#			elif ((ruleblock_open == 0)); then
-#				log -E "Ruleblock closing tag found on line \`${line_count}', but no ruleblock is opened."
-#				return 1
-#			fi
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Ruleblock '${ruleblock_name}' closed"
-#			ruleblock_open=0 m_count=0 tmp_arr=()
-#			# array assignment closing string
-#			RESULT_ARR[IDX++]="$(printf "%s\n" ")")"
-#			RESULT_ARR[IDX++]=""
-#			line="${line#*</"${ruleblock_tag}">}" # remove ruleblock closing tag from line
-#			[[ ${line} ]] || continue 2 # line becomes empty, continue with next line
-#		elif ((ruleblock_open == 1)); then
-#			[[ $DEBUG_INFO ]] && printf "%s\n" "Adding rule: [${m_count}]=\"${line}\""
-#			RESULT_ARR[IDX++]="$(printf "%s\n" "[${m_count}]=\"${line//\"/\\\"}\"")"
-#			let m_count++
-#			continue 2
-#		else
-#			log -E "Unable to match: '${line}' on line \`${line_count}'"
-#			return 1
-#		fi
-#	done
-#done
-#if ((root_tag_open == 1)); then # check if we have an root tag open
-#	log -E "There is no closing root tag."
-#	return 1
-#fi
-## print collected array assignments
-#if ((${#RESULT_ARR[@]})); then
-#	printf "%s\n" "${RESULT_ARR[@]}" >&7
-#else
-#	log -W "No ruleblocks found."
-#	return 0
-#fi
 #}
 # -------------------------------------------------------------------------
 

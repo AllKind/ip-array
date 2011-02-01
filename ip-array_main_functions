@@ -4298,6 +4298,13 @@ case "$1" in
 		apply_rules || return $?
 		common_end
 	;;
+#	SHOW)
+#		start_msg
+#		load_configs || return $?
+#		load_all_templates || return $?
+#		load_all_ruleblocks || return $?
+#		common_end
+#	;;
 	STOP)
 	# Tables are flushed/deleted.
 	# Policy is set to accept.

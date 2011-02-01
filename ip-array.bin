@@ -942,7 +942,7 @@ fi
 
 cleanup_lock() { # remove temp lockfile
 if [[ -e $LOCKFILE ]]; then
-	run_rm -f "$LOCKFILE" || :
+	run_rm "$LOCKFILE" || :
 fi
 } # -------------------------------------------------------------------------
 
