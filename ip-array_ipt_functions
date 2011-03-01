@@ -2642,7 +2642,7 @@ if ((parse_files == 1)); then
 fi
 load_file config "$parsed_file" || return $ER_LOAD
 if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdout
-	lsearch templates ${cmdline_show_conf} && {
+	if lsearch templates ${cmdline_show_conf}; then
 		pr_banner "Starting dump of generated templates:"
 		for idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 			printf "%s=(\n" "${TEMP_TEMPLATE_NAMES_ARRAY[idx]}"
@@ -2652,7 +2652,7 @@ if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdo
 			printf ")\n"
 		done
 		pr_banner "End of template dump."
-	}
+	fi
 fi
 } # -------------------------------------------------------------------------
 
@@ -2766,7 +2766,7 @@ fi
 load_file config "$parsed_file" || return $ER_LOAD
 
 if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to stdout
-	lsearch ruleblocks ${cmdline_show_conf} && {
+	if lsearch ruleblocks ${cmdline_show_conf}; then
 		pr_banner "Starting dump of generated ruleblocks:"
 		for idx in ${!TEMP_RULEBLOCK_NAMES_ARRAY[@]}; do
 			printf "%s=(\n" "${TEMP_RULEBLOCK_NAMES_ARRAY[idx]}"
@@ -2776,7 +2776,7 @@ if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to st
 			printf ")\n"
 		done
 		pr_banner "End of ruleblock dump."
-	}
+	fi
 fi
 } # -------------------------------------------------------------------------
 
