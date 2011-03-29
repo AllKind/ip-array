@@ -3861,7 +3861,7 @@ _read_option_list() {
 # the rule string is set as positional parameters
 [[ $DEBUG_INFO ]] && {
 	printf "%s\n" "Parameters to ${FUNCNAME}(): ${*}"
-	echo "Referenced option list in ${FUNCNAME}(): ${!reference_command_array}"
+	printf "%s\n" "Referenced option list in ${FUNCNAME}(): ${!reference_command_array}"
 }
 local str_arr_var_name arr_element
 local -i reference_positional_param=1 tmp_opt_idx=0

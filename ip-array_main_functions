@@ -673,7 +673,8 @@ printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
 
 arr_members_sum() { # echo the amount of members an array ($1) contains
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-eval 'echo "${#'"$1"'[@]}"'
+#eval 'echo "${#'"$1"'[@]}"'
+eval 'printf "%d\n" "${#'"$1"'[@]}"'
 } # -------------------------------------------------------------------------
 
 last_arr_member() { # retrieve the last member of an array
@@ -1500,7 +1501,7 @@ local iface="$1" str_data
 check_iface "${iface}" || return $ER_FAIL # validate interface
 while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
 	set -- ${REPLY} # array format: interface | alias | IP | netmask | broadcast
-	[[ $(eval 'echo "${'$((${#} - 1))'}"') = secondary ]] && continue
+	[[ $(eval 'printf "%s\n" "${'$((${#} - 1))'}"') = secondary ]] && continue
 	str_data="${!#} ${2%/*} ${2#*/}"
 	case "$3" in
 		brd) # fill array: handle | ip-addr | netmask | broadcast-addr
@@ -1866,15 +1867,15 @@ classify_ip4_addr() { # classify IPv4 addresses
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$1" in
 	# IP string is global shortcut
-	(0/0 | 0.0.0.0/0) echo "IPNET" ;;
+	(0/0 | 0.0.0.0/0) printf "IPNET\n" ;;
 	# IP string is single IP
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) echo "IPADDR" ;;
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPADDR\n" ;;
 	# IP string is IP/Mask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]])) echo "IPNET" ;;
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) echo "IPNET" ;;
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]])) printf "IPNET\n" ;;
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPNET\n" ;;
 	# IP string is IP-range
 	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		echo "IPRANGE"
+		printf "IPRANGE\n"
 	;;
 	(*) log -E "Unknown error while processing \`$1'."; return 1 ;;
 esac

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+EXE_NAME="/etc/init.d/ip-array"
+PARAMS=(
+	--syslog-verbose 0
+	--verbose 2
+   	--no-autosave
+   	--no-compat-check
+   	--no-diff
+   	--no-iface-check
+   	--no-modprobe
+   	--no-proc
+   	--no-scripts
+)
+
+case "$1" in
+	start)
+		if [[ -x $EXE_NAME ]]; then
+	   		"$EXE_NAME" lockdown "${PARAMS[@]}"
+		else
+			printf "ERROR: \`%s' does not exist, or is not executable!\n" "$EXE_NAME" >&2
+			exit 1
+		fi
+	;;
+esac

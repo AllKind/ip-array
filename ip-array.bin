@@ -40,19 +40,19 @@ ME="IP-Array"	# NOMEN
 # bash version check
 # -------------------------------------------------------------------------
 if [ -z "$BASH" ]; then
-	echo "\`BASH' variable is not available. Not running bash?"
+	printf "\`BASH' variable is not available. Not running bash?\n"
 	exit 112
 fi
 if [ -z ${BASH_VERSINFO[0]} ]; then
-	echo "\`BASH_VERSINFO' variable is not available. Not running bash?"
+	printf "\`BASH_VERSINFO' variable is not available. Not running bash?\n"
 	exit 112
 fi
 if [ ${BASH_VERSINFO[0]} -lt 3 ]; then
-	echo "$ME requires bash version 3.1 or higher."
+	printf "$ME requires bash version 3.1 or higher.\n"
 	exit 113
 fi
 if ((BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] == 0)); then
-	echo "$ME requires bash version 3.1 or higher."
+	printf "$ME requires bash version 3.1 or higher.\n"
 	exit 113
 fi
 

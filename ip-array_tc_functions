@@ -401,33 +401,32 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_MARK_FWD_BULK RULEBLOCK_BUILTIN_MARK_FWD_
 } # -------------------------------------------------------------------------
 
 traffic_shaping_marks() { # TRAFFIC SHAPING MARKS
-if [[ ${ENABLE_TC_SHAPING} ]]; then
-	case "${ENABLE_TC_SHAPING}" in
-		0) log -w "Not enabling traffic shaping" ;;
-		1)
-			log -S "Setting Traffic Shaping packet marks"
-			check_prog "${TC}" || {
-				log -E "Traffic shaping marks will not be applied"
-				return 0
-			}
-			[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || create_chain mangle ${BIC_TC_OUTPUT}
-			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || create_chain mangle ${BIC_TC_FORWARD_EGRESS}
-			[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || create_chain mangle ${BIC_TC_POSTROUTING_EGRESS}
-			for rvar in ${TC_MARK_RULES}; do
-				load_rule_file "$rvar" || return $?
-			done
-			[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || add_rule mangle OUTPUT -j ${BIC_TC_OUTPUT}
-			[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || add_rule mangle FORWARD -j ${BIC_TC_FORWARD_EGRESS}
-			[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || add_rule mangle POSTROUTING -j ${BIC_TC_POSTROUTING_EGRESS}
-		;;
-		*) log -i "${ENABLE_TC_SHAPING}" 'ENABLE_TC_SHAPING'
-			raise_cfg_err_count
-	esac
-else
-	log -u 'ENABLE_TC_SHAPING'
-	ENABLE_TC_SHAPING=0
-	return 0
-fi
+case "${ENABLE_TC_SHAPING}" in
+	"") 
+		log -u 'ENABLE_TC_SHAPING'
+		ENABLE_TC_SHAPING=0
+		return 0
+	;;
+	0) log -w "Not enabling traffic shaping" ;;
+	1)
+		log -S "Setting Traffic Shaping packet marks"
+		check_prog "${TC}" || {
+			log -E "Traffic shaping marks will not be applied"
+			return 0
+		}
+		[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || create_chain mangle ${BIC_TC_OUTPUT}
+		[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || create_chain mangle ${BIC_TC_FORWARD_EGRESS}
+		[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || create_chain mangle ${BIC_TC_POSTROUTING_EGRESS}
+		for rvar in ${TC_MARK_RULES}; do
+			load_rule_file "$rvar" || return $?
+		done
+		[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || add_rule mangle OUTPUT -j ${BIC_TC_OUTPUT}
+		[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || add_rule mangle FORWARD -j ${BIC_TC_FORWARD_EGRESS}
+		[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || add_rule mangle POSTROUTING -j ${BIC_TC_POSTROUTING_EGRESS}
+	;;
+	*) log -i "${ENABLE_TC_SHAPING}" 'ENABLE_TC_SHAPING'
+		raise_cfg_err_count
+esac
 } # -------------------------------------------------------------------------
 
 rm_qdisc() { # remove existing qdiscs
