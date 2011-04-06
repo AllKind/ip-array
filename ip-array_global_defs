@@ -261,16 +261,16 @@ PORTSCAN_ARRRAY=(
 )
 
 # Message colour array for title, subtitle, info, warn, error, notice, etc.
-# Format: msg-name | colour (uppercase)
+# Format: msg-name | colour (lowercase)
 MSG_COLOR_ARRAY=(
-"COLOR_MSG_MAIN_TITLE MAGENTA"
-"COLOR_MSG_SUBTITLE BLUE"
-"COLOR_MSG_INFO_TITLE CYAN"
-"COLOR_MSG_ERROR RED"
-"COLOR_MSG_WARNING YELLOW"
-"COLOR_MSG_CONFIG_LOAD GREEN"
-"COLOR_MSG_RULE_LOAD YELLOW"
-"COLOR_MSG_NOTICE WHITE"
+"COLOR_MSG_MAIN_TITLE magenta"
+"COLOR_MSG_SUBTITLE blue"
+"COLOR_MSG_INFO_TITLE cyan"
+"COLOR_MSG_ERROR red"
+"COLOR_MSG_WARNING yellow"
+"COLOR_MSG_CONFIG_LOAD green"
+"COLOR_MSG_RULE_LOAD yellow"
+"COLOR_MSG_NOTICE white"
 )
 
 # Array to hold the global sysctl names and their values.

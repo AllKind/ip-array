@@ -34,47 +34,281 @@
 #
 # ------------------------------------------------------------------------- #
 
+pr_sep() {
+printf "%s\n" "--------------------------------------------------------"
+}
 
-color_msg() { # print a couloured message
-[[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
-local msg_redir="$1" msg_prefix="$2" msg_col="$3" msg_format="$4"
-shift 4
-case "${msg_prefix}" in # set if this message needs a bold prefix
-	(NOTICE|WARNING|ERROR) # these are the known prefixes
-		local msg_prefix="${msg_col}${FONT_BOLD}${msg_prefix}: ${COL_TERM}"
-	;;
-	(NOPREFIX) unset msg_prefix ;;
-	*) err_msg "Illegal parameter \`${msg_prefix}' for function: ${FUNCNAME}()"; return 1 ;;
-esac
-case "${msg_format}" in # set formatting
-	bold) local font_format="${FONT_BOLD}" ;;
-	normal) local font_format="m" ;;
-	*) err_msg "Illegal parameter \`${msg_format}' for function: ${FUNCNAME}()"; return 1 ;;
-esac
-case "${msg_redir}" in # print the coloured message
-	stdout) printf "%b\n" "${msg_prefix}${msg_col}${font_format}${*}${COL_TERM}" ;;
-	stderr) printf "%b\n" "${msg_prefix}${msg_col}${font_format}${*}${COL_TERM}" >&2 ;;
-	*) err_msg "Illegal parameter \`${msg_redir}' for function: ${FUNCNAME}()"; return 1 ;;
-esac
-} # -------------------------------------------------------------------------
+cl_get_variants() { # create unique variations of code names
+local -i i_lengl=${#1} i_lengs=${#2}
+while ((i_lengl >= i_lengs)); do
+	printf "%s\n" ${1:0:i_lengl--}
+done
+}
 
-no_color_msg() { # print a non couloured message
-[[ ${5} ]] || { err_msg "5 parameters required for function: ${FUNCNAME}()"; return 1; }
-local msg_redir="$1" msg_prefix="$2"
-shift 4
-case "${msg_prefix}" in
-	(NOTICE|WARNING|ERROR) # these are the known prefixes
-		msg_prefix="${msg_prefix}: "
-	;;
-	(NOPREFIX) unset msg_prefix ;;
-	*) err_msg "Illegal parameter \`${msg_prefix}' for function: ${FUNCNAME}()"; return 1 ;;
-esac
-case "${msg_redir}" in # echo uncoloured message
-	stdout) printf "%s\n" "${msg_prefix}${*}" ;;
-#	stderr) printf "%s\n" "${msg_prefix}${*}" >&2 ;;
-	stderr) pr_err "${msg_prefix}${*}" ;;
-	*) err_msg "Illegal parameter \`${msg_redir}' for function: ${FUNCNAME}()"; return 1 ;;
-esac
+if ((BASH_VERSINFO[0] < 4)); then
+# retrieve codes from names (bash prior to v4)
+	cl_get_fg_code() {
+		local -i i
+		for i in ${!ARR_FG_COLORS[@]}; do
+			[[ ${ARR_FG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
+		done
+	}
+	cl_get_bg_code() {
+		local -i i
+		for i in ${!ARR_BG_COLORS[@]}; do
+			[[ ${ARR_BG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
+		done
+	}
+	cl_get_ansi_code() {
+		local -i i
+		for i in ${!ARR_ANSI_MODES[@]}; do
+			[[ ${ARR_ANSI_MODES[i]} = $1 ]] && printf "%d\n" $i && return
+		done
+	}
+# retrieve codes from names (bash prior to v4) - incl. variants
+	cl_get_fg_code_all() {
+		local x
+		local -i i
+		for i in ${!ARR_FGNAMES_ALL[@]}; do
+			for x in ${ARR_FGNAMES_ALL[i]}; do
+				[[ $x = $1 ]] && printf "%d\n" $i && return
+			done
+		done
+	}
+	cl_get_bg_code_all() {
+		local x
+		local -i i
+		for i in ${!ARR_BGNAMES_ALL[@]}; do
+			for x in ${ARR_BGNAMES_ALL[i]}; do
+				[[ $x = $1 ]] && printf "%d\n" $i && return
+			done
+		done
+	}
+	cl_get_ansi_code_all() {
+		local x
+		local -i i
+		for i in ${!ARR_MODNAMES_ALL[@]}; do
+			for x in ${ARR_MODNAMES_ALL[i]}; do
+				[[ $x = $1 ]] && printf "%d\n" $i && return
+			done
+		done
+	}
+	cl_set_variants() { # set variations of code names
+		local name n_long n_short variant
+		local -i fg_code bg_code
+		for name in ${!ARR_COLNAMES_MAP[@]}; do
+			set -- ${ARR_COLNAMES_MAP[$name]}
+			n_long=$1 n_short=$2 fg_code=$(cl_get_fg_code $1) bg_code=$(cl_get_bg_code $1)
+			for variant in $(cl_get_variants $n_long $n_short); do
+				ARR_FGNAMES_ALL[fg_code]="${ARR_FGNAMES_ALL[fg_code]} $variant"
+				ARR_BGNAMES_ALL[bg_code]="${ARR_BGNAMES_ALL[bg_code]} $variant"
+			done
+		done
+		for name in ${!ARR_MODNAMES_MAP[@]}; do
+			set -- ${ARR_MODNAMES_MAP[$name]}
+			n_long=$1 n_short=$2 fg_code=$(cl_get_ansi_code $1)
+			for variant in $(cl_get_variants $n_long $n_short); do
+				ARR_MODNAMES_ALL[fg_code]="${ARR_MODNAMES_ALL[fg_code]} $variant"
+			done
+		done
+		readonly ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
+	}
+	cl_save_variants() { # print (for saving) the code name variation arrays
+		declare -p ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
+	}
+	cl_ismode() { # check if name is a known mode
+		local x
+		local -i i
+		for i in ${!ARR_MODNAMES_ALL[@]}; do
+			for x in ${ARR_MODNAMES_ALL[i]}; do
+				[[ $x = $1 ]] && return
+			done
+		done
+		return 1
+	}
+	cl_iscolor() { # check if name is a known color
+		local x
+		local -i i
+		for i in ${!ARR_FGNAMES_ALL[@]}; do
+			for x in ${ARR_FGNAMES_ALL[i]}; do
+				[[ $x = $1 ]] && return
+			done
+		done
+		return 1
+	}
+else
+	cl_set_variants() { # set variations of code names
+		local name n_long n_short variant
+		for name in ${!ARR_COLNAMES_MAP[@]}; do
+			set -- ${ARR_COLNAMES_MAP[$name]}
+			n_long=$1 n_short=$2
+			for variant in $(cl_get_variants $n_long $n_short); do
+				AAR_FGNAMES_ALL[$variant]=${AAR_FG_COLORS[$n_long]}
+				AAR_BGNAMES_ALL[$variant]=${AAR_BG_COLORS[$n_long]}
+			done
+		done
+		for name in ${!ARR_MODNAMES_MAP[@]}; do
+			set -- ${ARR_MODNAMES_MAP[$name]}
+			n_long=$1 n_short=$2
+			for variant in $(cl_get_variants $n_long $n_short); do
+				AAR_MODNAMES_ALL[$variant]=${AAR_ANSI_MODES[$n_long]}
+			done
+		done
+		readonly AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
+	}
+	cl_save_variants() { # print (for saving) the code name variation arrays
+		declare -p AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
+	}
+	cl_ismode() { # check if name is a known mode
+		[[ ${AAR_MODNAMES_ALL[$1]} ]]
+	}
+	cl_iscolor() { # check if name is a known color
+		[[ ${AAR_FGNAMES_ALL[$1]} ]]
+	}
+fi
+
+cl_list() { # List colors and modes
+local x fgc bgc
+local -i i
+if ((BASH_VERSINFO[0] >= 4)); then
+	local STR_FGNAMES=$(printf "%s\n" "${!AAR_FG_COLORS[@]}" | sort)
+	local STR_MODENAMES=$(printf "%s\n" "${!AAR_ANSI_MODES[@]}" | sort)
+else
+	local STR_FGNAMES=$(printf "%s\n" "${ARR_FG_COLORS[@]}" | sort)
+	local STR_MODENAMES=$(printf "%s\n" "${ARR_ANSI_MODES[@]}" | sort)
+fi
+pr_sep; printf "Colors: Long-form | Shortest-form - Fore- / Background\n"; pr_sep
+for x in $STR_FGNAMES; do
+	for i in ${!ARR_COLNAMES_MAP[@]}; do
+		set -- ${ARR_COLNAMES_MAP[i]}
+		if [[ $1 = $x ]]; then
+			if ((BASH_VERSINFO[0] >= 4)); then
+				fgc=${AAR_FG_COLORS[$x]} bgc=${AAR_BG_COLORS[$x]}
+			else
+				fgc=$(cl_get_fg_code $x) bgc=$(cl_get_bg_code $x)
+			fi
+			printf " %-9s | %-6s - %s / %s\n" $x $2 $fgc $bgc
+			break
+		fi
+	done
+done
+pr_sep; printf "Modes: Long-form | Shortest-form - Code\n"; pr_sep
+for x in $STR_MODENAMES; do
+	for i in ${!ARR_MODNAMES_MAP[@]}; do
+		set -- ${ARR_MODNAMES_MAP[i]}
+		if [[ $1 = $x ]]; then
+			if ((BASH_VERSINFO[0] >= 4)); then
+				fgc=${AAR_ANSI_MODES[$x]}
+			else
+				fgc=$(cl_get_ansi_code $x)
+			fi
+			printf " %-9s | %-6s - %s\n" $x $2 $fgc
+			break
+		fi
+	done
+done
+}
+
+cl_show() { # Print the color table
+local x
+local -i i_mode i_fg i_bg
+if ((BASH_VERSINFO[0] >= 4)); then
+	eval declare -ar ARR_ANSI_MODES=($(for x in ${!AAR_ANSI_MODES[@]};do printf "[%s]=%s\n" ${AAR_ANSI_MODES[$x]} $x;done))
+	eval declare -ar ARR_FG_COLORS=($(for x in ${!AAR_FG_COLORS[@]};do printf "[%s]=%s\n" ${AAR_FG_COLORS[$x]} $x;done))
+	eval declare -ar ARR_BG_COLORS=($(for x in ${!AAR_BG_COLORS[@]};do printf "[%s]=%s\n" ${AAR_BG_COLORS[$x]} $x;done))
+fi
+for i_mode in ${!ARR_ANSI_MODES[@]}; do
+	pr_sep
+	printf " Mode: %-12s Code: ESC[%s;Foreground;Background\n" ${ARR_ANSI_MODES[i_mode]} $i_mode
+	pr_sep
+	for i_fg in ${!ARR_FG_COLORS[@]}; do
+		for i_bg in ${!ARR_BG_COLORS[@]}; do
+			printf '\e[%s;%s;%sm %02s;%02s ' ${i_mode} $i_fg $i_bg $i_fg $i_bg
+		done
+		printf '\e[0m\n'
+	done
+done
+}
+
+_cl_add_code() { # add a code sequence to the ansi_code string
+	str_ansi_seq+="$1;"
+}
+
+cl() { # assemble the ansi code sequence
+local -i i_bg=i_fg=0
+local str_ansi_seq=""
+if [[ -z $1 || $1 = off ]]; then
+	str_ansi_seq=(0)
+	shift $#
+fi
+while (( $# )); do
+	if cl_ismode "$1"; then
+		if ((BASH_VERSINFO[0] >= 4)); then
+			_cl_add_code "${AAR_MODNAMES_ALL[$1]}"
+		else
+			_cl_add_code $(cl_get_ansi_code_all $1)
+		fi
+	elif cl_iscolor "$1"; then
+		if ! ((i_fg)); then
+			i_fg=1
+			if ((BASH_VERSINFO[0] >= 4)); then
+				_cl_add_code "${AAR_FGNAMES_ALL[$1]}"
+			else
+				_cl_add_code $(cl_get_fg_code_all $1)
+			fi
+		elif ! ((i_bg)); then
+			i_bg=1
+			if ((BASH_VERSINFO[0] >= 4)); then
+				_cl_add_code "${AAR_BGNAMES_ALL[$1]}"
+			else
+				_cl_add_code $(cl_get_bg_code_all $1)
+			fi
+		else
+			printf "Only 2 colors are allowed\n" >&2
+			return 1
+		fi
+	else
+		printf "\`%s' - unknown descriptor\n" "$1" >&2
+		return 1
+	fi
+	shift
+done
+printf $P_FORMAT "\e[${str_ansi_seq%;}m"
+}
+
+print_msg() { # print a couloured message
+local fd=stdout msg_prefix="" bg_col="" fg_col="" msg_format=""
+OPTIND=1
+while getopts b:f:m:oENW option; do
+	case "$option" in
+		b) bg_col="$OPTARG" ;;
+		f) fg_col="$OPTARG" ;;
+		o) fd=stderr ;;
+		m) msg_format="$OPTARG" ;;
+		E) msg_prefix="ERROR: " ;;
+		N) msg_prefix="NOTICE: " ;;
+		W) msg_prefix="WARNING: " ;;
+		*) err_msg "Illegal parameter \`${option}' for function: ${FUNCNAME}()"
+			return 1
+	esac
+done
+shift $(( OPTIND - 1 ))
+OPTIND=1
+if [[ $bg_col || $fg_col || $msg_format ]]; then
+	case "$fd" in
+		stdout)
+			printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)"
+		;;
+		stderr)
+			printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)" >&2
+		;;
+	esac
+else
+	case "$fd" in
+		stdout) printf "%s\n" "${msg_prefix}${*}" ;;
+		stderr) pr_err "${msg_prefix}${*}" ;;
+	esac
+fi
 } # -------------------------------------------------------------------------
 
 log() { # Logging FUNCTION
@@ -104,39 +338,39 @@ case "${log_param}" in
 	;;
 	-x) log -E "\`${log_message}' does not exist." ;;
 	-C) # Config file loading
-		((VERBOSE >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_CONFIG_LOAD}" normal ${log_message}
+		((VERBOSE >= 4)) && print_msg -f "${COLOR_MSG_CONFIG_LOAD}" ${log_message}
 		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-E) # Error message
-		((VERBOSE >= 1)) && ${log_msg} stderr ERROR "${COLOR_MSG_ERROR}" normal ${log_message}
+		((VERBOSE >= 1)) && print_msg -o -E -f "${COLOR_MSG_ERROR}" ${log_message}
 		syslog ${LOG_FACILITY} error "ERROR: ${log_message}"
 	;;
 	-F) log -E "Failed ${log_message}" ;;
 	-I) # Sub-Sub(title) message
-		((VERBOSE >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_INFO_TITLE}" normal ${log_message}
+		((VERBOSE >= 4)) && print_msg -f "${COLOR_MSG_INFO_TITLE}" ${log_message}
 		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-N) # Notice
-		((VERBOSE >= 5)) && ${log_msg} stdout NOTICE "${COLOR_MSG_NOTICE}" normal ${log_message}
+		((VERBOSE >= 5)) && print_msg -N -f "${COLOR_MSG_NOTICE}" ${log_message}
 		((SYSLOG_VERBOSE >= 4)) && syslog ${LOG_FACILITY} notice "NOTICE: ${log_message}"
 	;;
 	-R) # Rule file loading
-		((VERBOSE  >= 4)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_RULE_LOAD}" normal ${log_message}
+		((VERBOSE  >= 4)) && print_msg -f "${COLOR_MSG_RULE_LOAD}" ${log_message}
 		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-S) # Sub(title) message
-		((VERBOSE >= 3)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_SUBTITLE}" bold ${log_message}
+		((VERBOSE >= 3)) && print_msg -m bold -f "${COLOR_MSG_SUBTITLE}" ${log_message}
 		((SYSLOG_VERBOSE >= 2)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-T) # Main (header) message
-		((VERBOSE >= 2)) && ${log_msg} stdout NOPREFIX "${COLOR_MSG_MAIN_TITLE}" bold ${log_message}
+		((VERBOSE >= 2)) && print_msg -m bold -f "${COLOR_MSG_MAIN_TITLE}" ${log_message}
 		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} notice "${log_message}"
 	;;
 	-U) # Unknown error
 		log -E "Unknown error in function \`${1}()'."
 	;;
 	-W) # Warning message
-		((VERBOSE >= 2)) && ${log_msg} stderr WARNING "${COLOR_MSG_WARNING}" normal ${log_message}
+		((VERBOSE >= 2)) && print_msg -o -W -f "${COLOR_MSG_WARNING}" ${log_message}
 		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} warning "WARNING: ${log_message}"
 	;;
 	*) err_msg "unknow option \`${log_param}' for function: ${FUNCNAME}()"
@@ -991,7 +1225,7 @@ case "${err_category}" in
 		return 1
 esac
 eval let ${err_category}_err_count+=1
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="${log_msg} stderr NOPREFIX \"${COLOR_MSG_ERROR}\" normal \"Failed applying ${prog_msg} commmand: '$*'\""
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="print_msg -o -f \"${COLOR_MSG_ERROR}\" \"Failed applying ${prog_msg} commmand: '$*'\""
 if ((EXIT_ON_ERROR == 1)); then
 	exit_on_err_act $ER_FAIL
 fi
@@ -2143,8 +2377,7 @@ done
 } # -------------------------------------------------------------------------
 
 set_message_colors() { # set colours to be used for messages
-[[ ${ENABLE_COLORS} ]] || return 0
-((ENABLE_COLORS == 1)) || return 0
+((ENABLE_COLORS)) || return 0
 [[ ${MSG_COLOR_ARRAY} ]] || { err_msg "\'MSG_COLOR_ARRAY\' is unset"; return 1; }
 local -i c_idx
 local col_cat_name msg_color user_col_cat_name
@@ -2155,10 +2388,10 @@ for c_idx in ${!MSG_COLOR_ARRAY[@]}; do
 	user_col_cat_name="${!col_cat_name}"
 	# see if variable is defined by user
 	if [[ ${user_col_cat_name} ]]; then
-		user_col_cat_name="$(string_toupper "${user_col_cat_name}")"
+		user_col_cat_name="$(string_tolower "${user_col_cat_name}")"
 		# check for known color values, and continue if matching ok
 		case "${user_col_cat_name}" in
-			(BLACK|BLUE|CYAN|GREEN|MAGENTA|RED|YELLOW|WHITE)
+			(black|blue|cyan|green|magenta|red|yellow|white)
 				set_var "${col_cat_name}" "${!user_col_cat_name}"
 				log -w "${PF}${col_cat_name} is set to: \`${user_col_cat_name}'"
 				readonly "${col_cat_name}"
@@ -2240,11 +2473,9 @@ fi
 start_msg() { # Starting message
 ((VERBOSE < 1 )) && return
 if ((ENABLE_COLORS == 1)) ; then
-	echo -e "${WHITE}${FONT_BOLD}Initializing${COL_TERM}\
- ${RED}${FONT_BOLD}${ME}${COL_TERM}\
- ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
- ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
- ${WHITE}${FONT_BOLD}- MODE:${COL_TERM}${GREEN}${FONT_BOLD} ${MODE}${COL_TERM}"
+	printf "%b\n" "$(cl bold white black)Initializing $(cl bold red black)${ME}\
+ $(cl bold yellow black)Firewall $(cl normal red black)${STR_VERSION}\
+ $(cl bold white black)- MODE: $(cl bold green black)$MODE$(cl)"
 else
 	echo "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
 fi
@@ -2254,7 +2485,7 @@ fi
 }
 syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: $MODE - Parameters: ${PARAMS}"
 if ((EXEC_COMMANDS == 0)); then
-	log -T "Dry-run! Not executing generated commands"
+	log -T "Dry-run - Not executing generated commands!"
 fi
 } # -------------------------------------------------------------------------
 
@@ -3791,7 +4022,7 @@ local -a arr_err_idx=(
 "$misc_err_count Failed applying $misc_err_count miscellaneous commands"
 )
 if ((ENABLE_COLORS == 1)) ; then
-	echo -e "\n${RED}${FONT_BOLD}${ERRORS} errors${COL_TERM} occured while processing"
+	printf "%b\n" "$(cl bold red black)${ERRORS} errors $(cl)occured while processing"
 	log -l "${ERRORS} errors occured while processing"
 else
 	log -m "${ERRORS} errors occured while processing"
@@ -3800,7 +4031,7 @@ for idx in ${!arr_err_idx[@]}; do
 	set -- ${arr_err_idx[idx]}
 	local vname=$1
 	shift
-	((vname > 0)) && ${log_msg} stderr NOPREFIX "${COLOR_MSG_WARNING}" normal "$*"
+	((vname > 0)) && print_msg -o -f "${COLOR_MSG_WARNING}" "$*"
 done
 for idx in ${!ERRORS_MSG_ARRAY[@]}; do
 	eval "${ERRORS_MSG_ARRAY[idx]}"
@@ -3843,10 +4074,10 @@ esac
 if ((ERRORS)); then
 	if ((ENABLE_COLORS)); then
 		if ((VERBOSE)); then
-			echo -e "${RED}${FONT_BOLD}${ME}${COL_TERM}\
- ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
- ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
- ${RED}${FONT_BOLD}${mode_msg} with errors${COL_TERM}"
+			printf "%b\n" "$(cl bold red black)${ME}\
+ $(cl bold yellow black)Firewall\
+ $(cl normal red black)${STR_VERSION}\
+ $(cl bold red black)${mode_msg} with errors$(cl)"
  		fi
 	else
 		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
@@ -3855,11 +4086,11 @@ if ((ERRORS)); then
 else
 	if ((ENABLE_COLORS)); then
 		if ((VERBOSE)); then
-			echo -e "${RED}${FONT_BOLD}${ME}${COL_TERM}\
- ${YELLOW}${FONT_BOLD}Firewall${COL_TERM}\
- ${RED}${FONT_NORMAL}${STR_VERSION}${COL_TERM}\
- ${WHITE}${FONT_BOLD}${mode_msg}${COL_TERM}\
- ${GREEN}${FONT_BOLD}successfully${COL_TERM}"
+			printf "%b\n" "$(cl bold red black)${ME}\
+ $(cl bold yellow black)Firewall\
+ $(cl normal red black)${STR_VERSION}\
+ $(cl bold white black)${mode_msg}\
+ $(cl bold green black)successfully$(cl)"
  		fi
 	else
 		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"

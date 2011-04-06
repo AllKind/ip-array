@@ -78,7 +78,7 @@ declare -r VERSION=([0]=0 [1]=5 [2]=80 [3]=" bleeding-edge")	# Version
 declare -r STR_VERSION="v.${VERSION[0]}.$(printf "%.2d" ${VERSION[1]}).$(printf "%.2d" ${VERSION[2]})${VERSION[3]}"
 
 declare -r MAIN_ARG="$1"
-declare -r PARAMS="$@"
+declare -r PARAMS="$*"
 declare -ir PID=$$
 
 declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
@@ -87,19 +87,43 @@ declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/loc
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
 
 # Colour defines with ANSI codes
-declare -r COL_ESC='\033['	# Escape colored outupt
-declare -r COL_TERM="${COL_ESC}m"	# Terminate colored outupt
-declare -r FONT_BOLD=';1m'
-declare -r FONT_NORMAL='m'
+: ${CL_DIR_DATA:=$LIB_DIR}
+: ${CL_FILE_VARIANTS:=.${me}_cl_variants}
+declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
+declare P_FORMAT
 
-declare -r BLACK="${COL_ESC};30"
-declare -r BLUE="${COL_ESC};34"
-declare -r CYAN="${COL_ESC};36"
-declare -r GREEN="${COL_ESC};32"
-declare -r MAGENTA="${COL_ESC};35"
-declare -r RED="${COL_ESC};31"
-declare -r WHITE="${COL_ESC};37"
-declare -r YELLOW="${COL_ESC};33"
+if ((BASH_VERSINFO[0] >= 4)); then
+	declare -Ar AAR_FG_COLORS=([black]=30 [red]=31 [green]=32 [yellow]=33 [blue]=34 [magenta]=35 [cyan]=36 [white]=37)
+	declare -Ar AAR_BG_COLORS=([black]=40 [red]=41 [green]=42 [yellow]=43 [blue]=44 [magenta]=45 [cyan]=46 [white]=47)
+	declare -Ar AAR_ANSI_MODES=([normal]=0 [bold]=1 [faint]=2 [italic]=3 [underline]=4 [blink]=5 [fastblink]=6 [inverse]=7 [invisible]=8)
+	declare -A AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
+else
+	declare -ar ARR_ANSI_MODES=(normal bold faint italic underline blink fastblink inverse invisible)
+	declare -ar ARR_FG_COLORS=([30]=black [31]=red [32]=green [33]=yellow [34]=blue [35]=magenta [36]=cyan [37]=white)
+	declare -ar ARR_BG_COLORS=([40]=black [41]=red [42]=green [43]=yellow [44]=blue [45]=magenta [46]=cyan [47]=white)
+	declare -a ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
+fi
+declare -ar ARR_COLNAMES_MAP=(
+"black bla"
+"red r"
+"green g"
+"yellow y"
+"blue blu"
+"magenta m"
+"cyan c"
+"white w"
+)
+declare -ar ARR_MODNAMES_MAP=(
+"normal n"
+"bold bo"
+"faint fai"
+"italic it"
+"underline u"
+"blink bli"
+"fastblink fas"
+"inverse inve"
+"invisible invi"
+)
 
 # IP-Array function and definition files
 declare -r GLOBAL_DEFS="${me}_global_defs"
@@ -1595,19 +1619,20 @@ fi
 # -------------------------------------------------------------------------
 case "$ENABLE_COLORS" in
 	"") # undefined, do not use colours
-		declare -r log_msg='no_color_msg'
+#		declare -r log_msg='no_color_msg'
 		declare -i ENABLE_COLORS=0
 		notice_msg "\`ENABLE_COLORS' is unset, disabling coloured output"
 	;;
 	0) # coloured output is disabled
-		declare -r log_msg='no_color_msg'
+#		declare -r log_msg='no_color_msg'
+		:
 	;;
 	1) # coloured output is enabled
 		if [[ -t 1 ]]; then # check if output is a terminal
-			declare -r log_msg='color_msg'
+#			declare -r log_msg='color_msg'
 			notice_msg "Enabling coloured output"
 		else
-			declare -r log_msg='no_color_msg'
+#			declare -r log_msg='no_color_msg'
 			ENABLE_COLORS=0
 			notice_msg "Output is not a terminal, disabling coloured output"
 		fi
@@ -1615,10 +1640,9 @@ case "$ENABLE_COLORS" in
 	*) # invalid user entry, disabling coloured output
 		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
 		declare -i ENABLE_COLORS=0
-		declare -r log_msg='no_color_msg'
+#		declare -r log_msg='no_color_msg'
 		let cfg_err_count+=1
 esac
-
 # -------------------------------------------------------------------------
 # load IP-Array functions
 # -------------------------------------------------------------------------
@@ -1632,6 +1656,15 @@ done
 set_env # reset possibly messed up env
 # make functions read-only
 readonly -f $(get_function_list)
+
+if ((ENABLE_COLORS)); then
+	if [[ -r $CL_DIR_DATA/$CL_FILE_VARIANTS ]]; then
+		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+	else
+	   cl_set_variants
+	   cl_save_variants > "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+	fi
+fi
 
 # -------------------------------------------------------------------------
 # set runtime variables
