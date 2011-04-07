@@ -43,7 +43,7 @@ local -i i_lengl=${#1} i_lengs=${#2}
 while ((i_lengl >= i_lengs)); do
 	printf "%s\n" ${1:0:i_lengl--}
 done
-}
+} # -------------------------------------------------------------------------
 
 if ((BASH_VERSINFO[0] < 4)); then
 # retrieve codes from names (bash prior to v4)
@@ -207,7 +207,7 @@ for x in $STR_MODENAMES; do
 		fi
 	done
 done
-}
+} # -------------------------------------------------------------------------
 
 cl_show() { # Print the color table
 local x
@@ -228,11 +228,11 @@ for i_mode in ${!ARR_ANSI_MODES[@]}; do
 		printf '\e[0m\n'
 	done
 done
-}
+} # -------------------------------------------------------------------------
 
 _cl_add_code() { # add a code sequence to the ansi_code string
 	str_ansi_seq+="$1;"
-}
+} # -------------------------------------------------------------------------
 
 cl() { # assemble the ansi code sequence
 local -i i_bg=i_fg=0
@@ -274,7 +274,7 @@ while (( $# )); do
 	shift
 done
 printf $P_FORMAT "\e[${str_ansi_seq%;}m"
-}
+} # -------------------------------------------------------------------------
 
 print_msg() { # print a couloured message
 local fd=stdout msg_prefix="" bg_col="" fg_col="" msg_format=""
@@ -494,9 +494,9 @@ done
 string_tolower() { # convert upper case characters into lower case
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local to_low_string="$@"
-if ((BASH_VERSINFO[0] == 3)); then
-	case "${to_low_string}" in
-		+(*[[:upper:]]*))
+case "${to_low_string}" in
+	+(*[[:upper:]]*))
+		if ((BASH_VERSINFO[0] == 3)); then
 			to_low_string="${to_low_string//A/a}"
 			to_low_string="${to_low_string//B/b}"
 			to_low_string="${to_low_string//C/c}"
@@ -523,20 +523,20 @@ if ((BASH_VERSINFO[0] == 3)); then
 			to_low_string="${to_low_string//X/x}"
 			to_low_string="${to_low_string//Y/y}"
 			to_low_string="${to_low_string//Z/z}"
-		;;
-	esac
-elif ((BASH_VERSINFO[0] >= 4)); then
-	to_low_string="${to_low_string,,}"
-fi
+		elif ((BASH_VERSINFO[0] >= 4)); then
+			to_low_string="${to_low_string,,}"
+		fi
+	;;
+esac
 printf "%s\n" "${to_low_string}"
 } # -------------------------------------------------------------------------
 
 string_toupper() { # convert lower case characters into upper case
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local to_up_string="$@"
-if ((BASH_VERSINFO[0] == 3)); then
-	case "${to_up_string}" in
-		+(*[[:lower:]]*))
+case "${to_up_string}" in
+	+(*[[:lower:]]*))
+		if ((BASH_VERSINFO[0] == 3)); then
 			to_up_string="${to_up_string//a/A}"
 			to_up_string="${to_up_string//b/B}"
 			to_up_string="${to_up_string//c/C}"
@@ -563,11 +563,11 @@ if ((BASH_VERSINFO[0] == 3)); then
 			to_up_string="${to_up_string//x/X}"
 			to_up_string="${to_up_string//y/Y}"
 			to_up_string="${to_up_string//z/Z}"
-		;;
-	esac
-elif ((BASH_VERSINFO[0] >= 4)); then
-	to_up_string="${to_up_string^^}"
-fi
+		elif ((BASH_VERSINFO[0] >= 4)); then
+			to_up_string="${to_up_string^^}"
+		fi
+	;;
+esac
 printf "%s\n" "${to_up_string}"
 } # -------------------------------------------------------------------------
 
@@ -884,6 +884,12 @@ shift
 local str_list="$*"
 str_list="$(strip_blanks "${str_list}")"
 printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
+} # -------------------------------------------------------------------------
+
+construct_assignment() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local v_name="$1"
+printf '%s="%s"\n' "$v_name" "${!v_name}"
 } # -------------------------------------------------------------------------
 
 #show_first_line()
@@ -3733,12 +3739,6 @@ for str_tbl in rawpost security raw nat mangle filter; do
 	printf "%s\n" "COMMIT" >>"$RULESETFILE"
 	printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$RULESETFILE"
 done
-} # -------------------------------------------------------------------------
-
-construct_assignment() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local v_name="$1"
-printf '%s="%s"\n' "$v_name" "${!v_name}"
 } # -------------------------------------------------------------------------
 
 save_rulesets() { # save the rules from the command arrays into a file
