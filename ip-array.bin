@@ -87,9 +87,6 @@ declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/loc
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
 
 # Colour defines with ANSI codes
-: ${CL_DIR_DATA:=$LIB_DIR}
-: ${CL_FILE_VARIANTS:=.${me}_cl_variants}
-declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 declare P_FORMAT
 
 if ((BASH_VERSINFO[0] >= 4)); then
@@ -540,7 +537,7 @@ save-shaping-commands      Save tc and iptables mangle table (mark) commands to 
 parse-xml                  Parse (by default all) XML files.
                            Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
 compat-check               Check compatibility (kernel, supported targets, matches, tables).
-show                       Show configuration summary. Option \`-sc' selects type.
+show                       Show configuration or color settings. Option \`-sc' selects type.
 version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
 Options:
@@ -577,7 +574,7 @@ Options:
 -sc, --show-config [type] [...]
                            Select type of information to show. Available types:
                            all, main (=default), defaults, targets, matches,
-                           ruleblocks, templates, ipt_args.
+                           ruleblocks, templates, ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -1152,7 +1149,7 @@ while (($#)); do
 						cmdline_show_conf="defaults main targets matches ipt_args ruleblocks templates"
 					fi
 				;;
-				main|defaults|targets|matches|ruleblocks|templates|ipt_args)
+				main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//${opt_arg}/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
@@ -1291,6 +1288,10 @@ set_env
 : ${VERBOSE:=6}
 # file for locking
 declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
+# Colour defines with ANSI codes
+: ${CL_DIR_DATA:=$LIB_DIR}
+: ${CL_FILE_VARIANTS:=.${me}_cl_variants}
+declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 
 # check for numeric defaults
 [[ $VERBOSE = [0-9] ]] || {
@@ -1552,10 +1553,26 @@ for idx in ${!ARR_RTIME_OPTS[@]}; do
 done
 
 # -------------------------------------------------------------------------
+# load IP-Array functions
+# -------------------------------------------------------------------------
+verbose_msg "Loading functions"
+for rvar in $IPARRAY_FUNCTIONS; do
+	source "${LIB_DIR}/${rvar}" || {
+		err_msg "loading functions file: \`${LIB_DIR}/${rvar}'."
+		exit $ER_LOAD
+	}
+done
+set_env # reset possibly messed up env
+# make functions read-only
+readonly -f $(get_function_list)
+
+# -------------------------------------------------------------------------
 # show config summary
 # -------------------------------------------------------------------------
 for rvar in ${cmdline_show_conf}; do
 	case "$rvar" in
+		ansi_codes) cl_list ;;
+		colors) cl_show ;;
 		defaults)
 			pr_banner "Starting dump of defaults configuration:"
 			for i in ${!IPARRAY_PROGRAMS[@]}; do
@@ -1613,26 +1630,20 @@ if [[ $MODE = SHOW ]]; then
 fi
 
 # -------------------------------------------------------------------------
-# Set colour mode and log message alias
-# Set aliases according to user configuration of ENABLE_COLORS
-# if colours are enabled log_msg is color_msg, if not its no_color_msg
+# set colour mode
 # -------------------------------------------------------------------------
 case "$ENABLE_COLORS" in
 	"") # undefined, do not use colours
-#		declare -r log_msg='no_color_msg'
 		declare -i ENABLE_COLORS=0
 		notice_msg "\`ENABLE_COLORS' is unset, disabling coloured output"
 	;;
 	0) # coloured output is disabled
-#		declare -r log_msg='no_color_msg'
 		:
 	;;
 	1) # coloured output is enabled
 		if [[ -t 1 ]]; then # check if output is a terminal
-#			declare -r log_msg='color_msg'
 			notice_msg "Enabling coloured output"
 		else
-#			declare -r log_msg='no_color_msg'
 			ENABLE_COLORS=0
 			notice_msg "Output is not a terminal, disabling coloured output"
 		fi
@@ -1640,23 +1651,8 @@ case "$ENABLE_COLORS" in
 	*) # invalid user entry, disabling coloured output
 		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
 		declare -i ENABLE_COLORS=0
-#		declare -r log_msg='no_color_msg'
-		let cfg_err_count+=1
+		raise_cfg_err_count
 esac
-# -------------------------------------------------------------------------
-# load IP-Array functions
-# -------------------------------------------------------------------------
-verbose_msg "Loading functions"
-for rvar in $IPARRAY_FUNCTIONS; do
-	source "${LIB_DIR}/${rvar}" || {
-		err_msg "loading functions file: \`${LIB_DIR}/${rvar}'."
-		exit $ER_LOAD
-	}
-done
-set_env # reset possibly messed up env
-# make functions read-only
-readonly -f $(get_function_list)
-
 if ((ENABLE_COLORS)); then
 	if [[ -r $CL_DIR_DATA/$CL_FILE_VARIANTS ]]; then
 		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?

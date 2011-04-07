@@ -144,7 +144,7 @@ save-shaping-commands      Save tc and iptables mangle table (mark) commands to 
 parse-xml                  Parse (by default all) XML files.
                            Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
 compat-check               Check compatibility (kernel, supported targets, matches, tables).
-show                       Show configuration summary. Option \`-sc' selects type.
+show                       Show configuration or color settings. Option \`-sc' selects type.
 version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
 Options:
@@ -180,7 +180,7 @@ Options:
 -sc, --show-config [type] [...]
                            Select type of information to show. Available types:
                            all, main (=default), defaults, targets, matches,
-                           ruleblocks, templates, ipt_args.
+                           ruleblocks, templates, ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -259,7 +259,7 @@ while (($#)); do
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|ruleblocks|templates|ipt_args)
+				all|main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
