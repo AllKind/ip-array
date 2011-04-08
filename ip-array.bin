@@ -162,7 +162,7 @@ declare -a ARR_RTIME_OPTS
 # list of all builtins
 declare -r BUILTIN_LIST=$(enable -p|while read rvar x;do printf "%s " "$x";done;echo)
 
-declare -r SEPSTR="# -------------------------------------------------------------------------"
+declare -r SEPSTR="# ---------------------------------------------------------------"
 
 # reusable vars
 declare option opt_arg rvar rest
@@ -606,7 +606,7 @@ str_result=$("$SHELL" -n -O extglob -- "$1" 2>&1) || {
 } # -------------------------------------------------------------------------
 
 reset_ifs() { # reset a possibly messed up IFS
-[[ ${IFS} = $' \t\n' ]] || {
+[[ $IFS = $' \t\n' ]] || {
 	IFS=$' \t\n'
 	warn_msg "Invalid \`IFS' value found. Resetting it."
 }
@@ -1339,16 +1339,17 @@ readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
 # -------------------------------------------------------------------------
 # global variables
 # -------------------------------------------------------------------------
-verbose_msg "Loading global definitions: ${LIB_DIR}/${GLOBAL_DEFS}"
-if ! [[ -f ${LIB_DIR}/${GLOBAL_DEFS} ]]; then
-	err_msg "Global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}' does not exist."
+rvar="${LIB_DIR}/${GLOBAL_DEFS}"
+verbose_msg "Loading global definitions: $rvar"
+if ! [[ -f $rvar ]]; then
+	err_msg "Global definitions file \`$rvar' does not exist."
 	bail_out $ER_NOEX
 fi
 if ((SYNTAX_CHECK)); then
-	check_syntax "${LIB_DIR}/${GLOBAL_DEFS}" || bail_out $ER_LOAD
+	check_syntax "$rvar" || bail_out $ER_LOAD
 fi
-source "${LIB_DIR}/${GLOBAL_DEFS}" || {
-	err_msg "Failed loading global definitions file \`${LIB_DIR}/${GLOBAL_DEFS}'."
+source "$rvar" || {
+	err_msg "Failed loading global definitions file \`$rvar'."
 	bail_out $ER_LOAD
 }
 set_env # reset possibly messed up env
@@ -1520,7 +1521,7 @@ set_env # reset possibly messed up env
 for idx in ${!ARR_RTIME_OPTS[@]}; do
 	for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 		if [[ ${ARR_RTIME_OPTS[idx]%%=*} =	${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
-			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\"${ARR_RTIME_OPTS[idx]#*=}\" || {
+			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\""${ARR_RTIME_OPTS[idx]#*=}"\" || {
 				err_msg "Failed overriding main configuration variable. Failed command: \`${ARR_RTIME_OPTS[idx]}'."
 				bail_out $ER_FAIL
 			}
@@ -1565,16 +1566,17 @@ case "$ENABLE_COLORS" in
 		fi
 	;;
 	*) # invalid user entry, disabling coloured output
-		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
+		warn_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
 		declare -i ENABLE_COLORS=0
-		raise_cfg_err_count
 esac
 if ((ENABLE_COLORS)); then
 	if [[ -r $CL_DIR_DATA/$CL_FILE_VARIANTS ]]; then
-		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+		verbose_msg "Loading ansi code definitions: $CL_DIR_DATA/$CL_FILE_VARIANTS"
+		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || bail_out $?
 	else
-	   cl_set_variants
-	   cl_save_variants > "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+		cl_set_variants
+		verbose_msg "Creating ansi code definitions: $CL_DIR_DATA/$CL_FILE_VARIANTS"
+		cl_save_variants > "$CL_DIR_DATA/$CL_FILE_VARIANTS" || bail_out $?
 	fi
 fi
 
@@ -1648,10 +1650,11 @@ fi
 set_runtime_vars || bail_out $?
 check_kern_ver || bail_out $?
 
-# -------------------------------------------------------------------------
-# mutual exclusion - lock
-# -------------------------------------------------------------------------
+# only run if commands are going to be executed
 if ((EXEC_COMMANDS)); then
+	# -------------------------
+	# mutual exclusion - lock
+	# -------------------------
 	log -w "Creating lockfile: \`$LOCKFILE'"
 	if (set -C; create_file "$LOCKFILE") &>/dev/null; then
 		pr_str "$PID" >"$LOCKFILE"
@@ -1659,22 +1662,19 @@ if ((EXEC_COMMANDS)); then
 		log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
 		bad_use_quit
 	fi
-fi
-
-# -------------------------------------------------------------------------
-# if in a MODE that could make use of auto-backup, save ruleset
-# -------------------------------------------------------------------------
-if ((EXEC_COMMANDS)); then
-	case "$MAIN_ARG" in
-		start|restart|open|tc-start) autosave || bail_out $? ;;
-	esac
-fi
-
-# -------------------------------------------------------------------------
-# if in TEST_MODE, save ruleset & schedule restore
-# -------------------------------------------------------------------------
-if ((TEST_MODE && EXEC_COMMANDS)); then
-	sched_restore "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+	# --------------------------------------------------
+	# if in TEST_MODE, save ruleset & schedule restore
+	# --------------------------------------------------
+	if ((TEST_MODE)); then
+		sched_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+	else
+		# --------------------------------------------------------------
+		# if in a MODE that could make use of auto-backup, save ruleset
+		# --------------------------------------------------------------
+		case "$MAIN_ARG" in
+			start|restart|open|tc-start) autosave || bail_out $? ;;
+		esac
+	fi
 fi
 
 # -------------------------------------------------------------------------

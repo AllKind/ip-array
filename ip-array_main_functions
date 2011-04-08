@@ -174,7 +174,7 @@ else
 	local STR_FGNAMES=$(printf "%s\n" "${ARR_FG_COLORS[@]}" | sort)
 	local STR_MODENAMES=$(printf "%s\n" "${ARR_ANSI_MODES[@]}" | sort)
 fi
-pr_sepstr; printf "Colors: Long-form | Shortest-form - Fore- / Background\n"; pr_sepstr
+pr_banner "Colors: Long-form | Shortest-form - Fore- / Background"
 for x in $STR_FGNAMES; do
 	for i in ${!ARR_COLNAMES_MAP[@]}; do
 		set -- ${ARR_COLNAMES_MAP[i]}
@@ -189,7 +189,7 @@ for x in $STR_FGNAMES; do
 		fi
 	done
 done
-pr_sepstr; printf "Modes: Long-form | Shortest-form - Code\n"; pr_sepstr
+pr_banner "Modes: Long-form | Shortest-form - Code"
 for x in $STR_MODENAMES; do
 	for i in ${!ARR_MODNAMES_MAP[@]}; do
 		set -- ${ARR_MODNAMES_MAP[i]}
