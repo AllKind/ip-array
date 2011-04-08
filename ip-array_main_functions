@@ -1308,6 +1308,51 @@ set_env
 }
 } # -------------------------------------------------------------------------
 
+sched_restore() { # schedule ruleset restore job
+local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
+local str_tmp_deffile="${SAVE_DIR}/__tmp_defaults_${str_file}"
+local str_mybin="${BIN_DIR}/${0##*/}"
+check_dirs BIN_DIR || return $?
+if ! bin_ok "$str_mybin"; then # check if $0 is good
+	log -E "Cannot work with \`\$0' variable."
+	return $ER_FAIL
+fi
+ipt_save "$str_file" || return $? # save currently active ruleset
+if create_file "$str_tmp_deffile"; then
+	(
+	for i in ${!IPARRAY_PROGRAMS[@]}; do
+		rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
+		printf '%s="%s"\n' "$rvar" "${!rvar}"
+	done
+	for i in ${!DEFAULTS_LIST[@]}; do
+		rvar="${DEFAULTS_LIST[i]}"
+		printf '%s="%s"\n' "$rvar" "${!rvar}"
+	done
+	) >"$str_tmp_deffile"
+else
+	log -f "creating temporary defaults file: \`$str_tmp_deffile'."
+	return $ER_FAIL
+fi
+if rvar=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -v 2\n' "$SHELL" "$str_mybin" restore "$str_tmp_deffile" "$str_file" \
+	| "$AT" now + $RELOAD_TIME minutes 2>&1)
+then
+	str_job="${rvar#*$'\n'}"
+	log -N "Restoring saved ruleset using \`$AT' with: \`$str_job'."
+	str_job="${str_job#job }"
+	str_job="${str_job%% *}"
+	AT_JOB="$str_job"
+	[[ $DEBUG_INFO ]] && {
+		pr_banner "DEBUG: at job"
+		"$AT" -c $str_job
+		pr_banner "DEBUG: end"
+	}
+	return 0
+else
+	log -E "Failed scheduling the restore job."
+	return $ER_FAIL
+fi
+} # -------------------------------------------------------------------------
+
 # ------------------------------------------------------------------------- #
 # MODULES
 # ------------------------------------------------------------------------- #

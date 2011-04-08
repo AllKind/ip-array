@@ -909,51 +909,6 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-sched_restore() { # schedule ruleset restore job
-local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
-local str_tmp_deffile="${SAVE_DIR}/__tmp_defaults_${str_file}"
-local str_mybin="${BIN_DIR}/${0##*/}"
-check_dirs BIN_DIR || return $?
-if ! bin_ok "$str_mybin"; then # check if $0 is good
-	log -E "Cannot work with \`\$0' variable."
-	return $ER_FAIL
-fi
-ipt_save "$str_file" || return $? # save currently active ruleset
-if create_file "$str_tmp_deffile"; then
-	(
-	for i in ${!IPARRAY_PROGRAMS[@]}; do
-		rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
-		printf '%s="%s"\n' "$rvar" "${!rvar}"
-	done
-	for i in ${!DEFAULTS_LIST[@]}; do
-		rvar="${DEFAULTS_LIST[i]}"
-		printf '%s="%s"\n' "$rvar" "${!rvar}"
-	done
-	) >"$str_tmp_deffile"
-else
-	log -f "creating temporary defaults file: \`$str_tmp_deffile'."
-	return $ER_FAIL
-fi
-if rvar=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -v 2\n' "$SHELL" "$str_mybin" restore "$str_tmp_deffile" "$str_file" \
-	| "$AT" now + $RELOAD_TIME minutes 2>&1)
-then
-	str_job="${rvar#*$'\n'}"
-	log -N "Restoring saved ruleset using \`$AT' with: \`$str_job'."
-	str_job="${str_job#job }"
-	str_job="${str_job%% *}"
-	AT_JOB="$str_job"
-	[[ $DEBUG_INFO ]] && {
-		pr_banner "DEBUG: at job"
-		"$AT" -c $str_job
-		pr_banner "DEBUG: end"
-	}
-	return 0
-else
-	log -E "Failed scheduling the restore job."
-	return $ER_FAIL
-fi
-} # -------------------------------------------------------------------------
-
 autosave() { # automatically save a temporary ruleset, which will be restored on error
 if ((NO_AUTOSAVE == 0 && IPTSAVE_FAILS == 0)); then
 	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
@@ -1334,19 +1289,6 @@ for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK; do
 	}
 done
 
-# check for valid RELOAD_TIME specification
-if ((TEST_MODE)); then
-	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
-		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
-		bail_out $ER_CONF
-	}
-	((RELOAD_TIME > 1)) || {
-		err_msg "\`RELOAD_TIME' is lower than 1 minutes."
-		bail_out $ER_CONF
-	}
-	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
-fi
-
 # if IPTSAVE_FAILS is enabled ...
 if ((IPTSAVE_FAILS)); then
 	NO_AUTOSAVE=1 # ... we can't do auto-saving
@@ -1528,6 +1470,19 @@ case "$MAIN_ARG" in
 	;;
 esac
 
+# check for valid RELOAD_TIME specification
+if ((TEST_MODE)); then
+	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
+		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
+		bail_out $ER_CONF
+	}
+	((RELOAD_TIME > 1)) || {
+		err_msg "\`RELOAD_TIME' is lower than 1 minutes."
+		bail_out $ER_CONF
+	}
+	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
+fi
+
 # -------------------------------------------------------------------------
 # In any other mode then 'START' or 'STOP' set to:
 # Exit immediately if a simple command exits with a non-zero status
@@ -1670,13 +1625,13 @@ for rvar in ${cmdline_show_conf}; do
 		;;
 		ruleblocks)
 			if ((PARSE_RULEBLOCKS == 0)); then
-				log -E "Option \`$rvar' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
+				err_msg "Option \`$rvar' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
 				bad_use_quit
 			fi
 		;;
 		templates)
 			if ((PARSE_TEMPLATES == 0)); then
-				log -E "Option \`$rvar' is only available for parsing templates - i.e. with the \`parse-xml' argument."
+				err_msg "Option \`$rvar' is only available for parsing templates - i.e. with the \`parse-xml' argument."
 				bad_use_quit
 			fi
 		;;
@@ -1697,11 +1652,11 @@ check_kern_ver || bail_out $?
 # mutual exclusion - lock
 # -------------------------------------------------------------------------
 if ((EXEC_COMMANDS)); then
-	verbose_msg "Creating lockfile: \`$LOCKFILE'"
+	log -w "Creating lockfile: \`$LOCKFILE'"
 	if (set -C; create_file "$LOCKFILE") &>/dev/null; then
 		pr_str "$PID" >"$LOCKFILE"
 	else
-		pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
+		log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
 		bad_use_quit
 	fi
 fi
