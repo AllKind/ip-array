@@ -193,11 +193,11 @@ declare IPSEC_IFLIST		# List of all ipsec enabled interfaces
 declare NET_IFLIST_CHECK_STRING
 
 # Misc Variables
-declare NET_NAME_LIST		# List of all networks names
-declare NO_OUTPUT_MSG		# Stores the message to display, when no additional OUTPUT rules will be applied
-declare DEF_ROUTE_IF		# To hold the defaults route interface
+declare NET_NAME_LIST	# List of all networks names
+declare NO_OUTPUT_MSG	# Stores the message to display, when no additional OUTPUT rules will be applied
+declare DEF_ROUTE_IF	# To hold the defaults route interface
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
-declare GEN_FORMAT		# Save generated iptables commands as command list, or in iptables-save format
+declare AT_JOB			# id of the restore job
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
@@ -711,6 +711,11 @@ bin_ok() { # check for an executable file
 [[ -x $1 ]] || { err_msg "File \`$1' is not executable."; return $ER_FAIL; }
 } # -------------------------------------------------------------------------
 
+create_file() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+>"$1"
+} # -------------------------------------------------------------------------
+
 get_prog_paths() { # check for programs used by ip-array
 local prog_auto prog_var prog_name prog_mandatory prog_path
 if [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]]; then
@@ -907,36 +912,44 @@ fi
 sched_restore() { # schedule ruleset restore job
 local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
 local str_tmp_deffile="${SAVE_DIR}/__tmp_defaults_${str_file}"
+local str_mybin="${BIN_DIR}/${0##*/}"
 check_dirs BIN_DIR || return $?
-if ! bin_ok "${BIN_DIR}/${0##*/}"; then # check if $0 is good
-	err_msg "Cannot work with \`\$0' variable."
+if ! bin_ok "$str_mybin"; then # check if $0 is good
+	log -E "Cannot work with \`\$0' variable."
 	return $ER_FAIL
 fi
 ipt_save "$str_file" || return $? # save currently active ruleset
-[[ -e $str_tmp_deffile ]] && run_rm "$str_tmp_deffile"
-for i in ${!IPARRAY_PROGRAMS[@]}; do
-	rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
-	printf '%s="%s"\n' "$rvar" "${!rvar}" >>"$str_tmp_deffile"
-done
-for i in ${!DEFAULTS_LIST[@]}; do
-	rvar="${DEFAULTS_LIST[i]}"
-	printf '%s="%s"\n' "$rvar" "${!rvar}" >>"$str_tmp_deffile"
-done
-if rvar=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -v 2\n' "$SHELL" "${BIN_DIR}/${0##*/}" restore "$str_tmp_deffile" "$str_file" \
+if create_file "$str_tmp_deffile"; then
+	(
+	for i in ${!IPARRAY_PROGRAMS[@]}; do
+		rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
+		printf '%s="%s"\n' "$rvar" "${!rvar}"
+	done
+	for i in ${!DEFAULTS_LIST[@]}; do
+		rvar="${DEFAULTS_LIST[i]}"
+		printf '%s="%s"\n' "$rvar" "${!rvar}"
+	done
+	) >"$str_tmp_deffile"
+else
+	log -f "creating temporary defaults file: \`$str_tmp_deffile'."
+	return $ER_FAIL
+fi
+if rvar=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -v 2\n' "$SHELL" "$str_mybin" restore "$str_tmp_deffile" "$str_file" \
 	| "$AT" now + $RELOAD_TIME minutes 2>&1)
 then
 	str_job="${rvar#*$'\n'}"
-	notice_msg "Restoring saved ruleset using \`$AT' with: \`$str_job'."
+	log -N "Restoring saved ruleset using \`$AT' with: \`$str_job'."
+	str_job="${str_job#job }"
+	str_job="${str_job%% *}"
+	AT_JOB="$str_job"
 	[[ $DEBUG_INFO ]] && {
-		str_job="${str_job#job }"
-		str_job="${str_job%% *}"
 		pr_banner "DEBUG: at job"
 		"$AT" -c $str_job
 		pr_banner "DEBUG: end"
 	}
 	return 0
 else
-	err_msg "Failed scheduling the restore job."
+	log -E "Failed scheduling the restore job."
 	return $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
@@ -965,6 +978,13 @@ if [[ -e $LOCKFILE ]]; then
 fi
 } # -------------------------------------------------------------------------
 
+cleanup_at_job() { # remove scheduled restore job
+if [[ $AT_JOB ]]; then
+	verbose_msg "Removing scheduled restore job: \`$AT_JOB'."
+	"$AT" -d "$AT_JOB" || :
+fi
+} # -------------------------------------------------------------------------
+
 cleanup() { # final clearance
 cleanup_autosave
 cleanup_lock
@@ -972,6 +992,7 @@ cleanup_lock
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
 pr_err "${ME} exiting on error! Exit code: ${1:-${ER_LOAD}}"
+cleanup_at_job
 cleanup
 builtin enable exit
 exit ${1:-${ER_LOAD}}
@@ -992,6 +1013,7 @@ bail_out_restore $ER_FAIL
 
 trap_gen() {
 printf "\tReceived \`SIG%s' signal - exiting\n" "$1"
+cleanup_at_job
 cleanup
 builtin enable exit
 exit 0
@@ -1676,7 +1698,7 @@ check_kern_ver || bail_out $?
 # -------------------------------------------------------------------------
 if ((EXEC_COMMANDS)); then
 	verbose_msg "Creating lockfile: \`$LOCKFILE'"
-	if (set -C; >"$LOCKFILE") &>/dev/null; then
+	if (set -C; create_file "$LOCKFILE") &>/dev/null; then
 		pr_str "$PID" >"$LOCKFILE"
 	else
 		pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
