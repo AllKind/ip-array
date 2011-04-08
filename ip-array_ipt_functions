@@ -576,12 +576,10 @@ while read -t ${GLOBAL_READ_TIMEOUT} table; do
 	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
 		if [[ ${c} = Chain ]]; then
 			if [[ ${table} = filter ]]; then
-#				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD) ]]; then
 					dn run_ipt -t ${table} -P ${chain} 'DROP' || continue
 				fi
 			else
-#				if [[ ${chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
 					dn run_ipt -t ${table} -P ${chain} 'ACCEPT' || continue
 				fi

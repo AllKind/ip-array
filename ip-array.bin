@@ -1569,6 +1569,39 @@ set_env # reset possibly messed up env
 readonly -f $(get_function_list)
 
 # -------------------------------------------------------------------------
+# set colour mode
+# -------------------------------------------------------------------------
+case "$ENABLE_COLORS" in
+	"") # undefined, do not use colours
+		declare -i ENABLE_COLORS=0
+		notice_msg "\`ENABLE_COLORS' is unset, disabling coloured output"
+	;;
+	0) # coloured output is disabled
+		:
+	;;
+	1) # coloured output is enabled
+		if [[ -t 1 ]]; then # check if output is a terminal
+			notice_msg "Enabling coloured output"
+		else
+			ENABLE_COLORS=0
+			notice_msg "Output is not a terminal, disabling coloured output"
+		fi
+	;;
+	*) # invalid user entry, disabling coloured output
+		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
+		declare -i ENABLE_COLORS=0
+		raise_cfg_err_count
+esac
+if ((ENABLE_COLORS)); then
+	if [[ -r $CL_DIR_DATA/$CL_FILE_VARIANTS ]]; then
+		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+	else
+	   cl_set_variants
+	   cl_save_variants > "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
+	fi
+fi
+
+# -------------------------------------------------------------------------
 # show config summary
 # -------------------------------------------------------------------------
 for rvar in ${cmdline_show_conf}; do
@@ -1615,13 +1648,13 @@ for rvar in ${cmdline_show_conf}; do
 		;;
 		ruleblocks)
 			if ((PARSE_RULEBLOCKS == 0)); then
-				err_msg "Option \`$rvar' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
+				log -E "Option \`$rvar' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
 				bad_use_quit
 			fi
 		;;
 		templates)
 			if ((PARSE_TEMPLATES == 0)); then
-				err_msg "Option \`$rvar' is only available for parsing templates - i.e. with the \`parse-xml' argument."
+				log -E "Option \`$rvar' is only available for parsing templates - i.e. with the \`parse-xml' argument."
 				bad_use_quit
 			fi
 		;;
@@ -1629,39 +1662,6 @@ for rvar in ${cmdline_show_conf}; do
 done
 if [[ $MODE = SHOW ]]; then
 	quit_welldone
-fi
-
-# -------------------------------------------------------------------------
-# set colour mode
-# -------------------------------------------------------------------------
-case "$ENABLE_COLORS" in
-	"") # undefined, do not use colours
-		declare -i ENABLE_COLORS=0
-		notice_msg "\`ENABLE_COLORS' is unset, disabling coloured output"
-	;;
-	0) # coloured output is disabled
-		:
-	;;
-	1) # coloured output is enabled
-		if [[ -t 1 ]]; then # check if output is a terminal
-			notice_msg "Enabling coloured output"
-		else
-			ENABLE_COLORS=0
-			notice_msg "Output is not a terminal, disabling coloured output"
-		fi
-	;;
-	*) # invalid user entry, disabling coloured output
-		err_msg "Illegal value \`$ENABLE_COLORS' for \`ENABLE_COLORS', disabling coloured output."
-		declare -i ENABLE_COLORS=0
-		raise_cfg_err_count
-esac
-if ((ENABLE_COLORS)); then
-	if [[ -r $CL_DIR_DATA/$CL_FILE_VARIANTS ]]; then
-		. "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
-	else
-	   cl_set_variants
-	   cl_save_variants > "$CL_DIR_DATA/$CL_FILE_VARIANTS" || exit $?
-	fi
 fi
 
 # -------------------------------------------------------------------------
@@ -1687,14 +1687,16 @@ fi
 # -------------------------------------------------------------------------
 # if in a MODE that could make use of auto-backup, save ruleset
 # -------------------------------------------------------------------------
-case "$MAIN_ARG" in
-	start|restart|open|tc-start) autosave || bail_out $? ;;
-esac
+if ((EXEC_COMMANDS)); then
+	case "$MAIN_ARG" in
+		start|restart|open|tc-start) autosave || bail_out $? ;;
+	esac
+fi
 
 # -------------------------------------------------------------------------
 # if in TEST_MODE, save ruleset & schedule restore
 # -------------------------------------------------------------------------
-if ((TEST_MODE)); then
+if ((TEST_MODE && EXEC_COMMANDS)); then
 	sched_restore "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
 fi
 

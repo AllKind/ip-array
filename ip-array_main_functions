@@ -1172,12 +1172,14 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 # end of borrowed functions
 
 exit_on_err_act() {
-if ((ipt_err_count > 0)); then
-	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
-	fail_lockdown
+if ((EXEC_COMMANDS)); then
+	if ((ipt_err_count > 0)); then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
+		fail_lockdown
+	fi
+	restore_proc_state
+	restore_module_state
 fi
-restore_proc_state
-restore_module_state
 calc_err
 display_errors
 if ((ipt_err_count > 0)); then
@@ -4227,7 +4229,7 @@ case "$1" in
 		set_global_log_params || return $?
 		[[ $MODE = SAVE-COMMANDS ]] && set_rulesetfile
 		common_start || return $?
-		if [[ $MODE = START ]]; then
+		if [[ $MODE = START ]] && ((EXEC_COMMANDS)); then
 			set_default_policies_immediate || return $?
 			flushdel_tables_immediate || return $?
 			allow_loopback_immediate
@@ -4288,11 +4290,15 @@ case "$1" in
 		minimal_run || return $?
 		set_tc_mode
 		remove_qdiscs
-		set_default_policies_immediate || return $?
-		flushdel_tables_immediate || return $?
+		if ((EXEC_COMMANDS)); then
+			set_default_policies_immediate || return $?
+			flushdel_tables_immediate || return $?
+		fi
 		allow_loopback || return $?
 		apply_rules || return $?
-		allow_admin_connection || return $?
+		if ((EXEC_COMMANDS)); then
+			allow_admin_connection || return $?
+		fi
 		common_end
 	;;
 	OPEN)
