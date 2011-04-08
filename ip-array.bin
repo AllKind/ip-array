@@ -1674,12 +1674,14 @@ check_kern_ver || bail_out $?
 # -------------------------------------------------------------------------
 # mutual exclusion - lock
 # -------------------------------------------------------------------------
-verbose_msg "Creating lockfile: \`$LOCKFILE'"
-if (set -C; >"$LOCKFILE") &>/dev/null; then
-	pr_str "$PID" >"$LOCKFILE"
-else
-	pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("${CAT}" "$LOCKFILE")', is another instance of $ME running?"
-	bad_use_quit
+if ((EXEC_COMMANDS)); then
+	verbose_msg "Creating lockfile: \`$LOCKFILE'"
+	if (set -C; >"$LOCKFILE") &>/dev/null; then
+		pr_str "$PID" >"$LOCKFILE"
+	else
+		pr_err "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
+		bad_use_quit
+	fi
 fi
 
 # -------------------------------------------------------------------------
