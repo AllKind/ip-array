@@ -34,11 +34,7 @@
 #
 # ------------------------------------------------------------------------- #
 
-pr_sep() {
-printf "%s\n" "--------------------------------------------------------"
-}
-
-cl_get_variants() { # create unique variations of code names
+cl_get_variants() { # create unique variations of ansi-code names
 local -i i_lengl=${#1} i_lengs=${#2}
 while ((i_lengl >= i_lengs)); do
 	printf "%s\n" ${1:0:i_lengl--}
@@ -166,6 +162,7 @@ else
 		[[ ${AAR_FGNAMES_ALL[$1]} ]]
 	}
 fi
+# -------------------------------------------------------------------------
 
 cl_list() { # List colors and modes
 local x fgc bgc
@@ -177,7 +174,7 @@ else
 	local STR_FGNAMES=$(printf "%s\n" "${ARR_FG_COLORS[@]}" | sort)
 	local STR_MODENAMES=$(printf "%s\n" "${ARR_ANSI_MODES[@]}" | sort)
 fi
-pr_sep; printf "Colors: Long-form | Shortest-form - Fore- / Background\n"; pr_sep
+pr_sepstr; printf "Colors: Long-form | Shortest-form - Fore- / Background\n"; pr_sepstr
 for x in $STR_FGNAMES; do
 	for i in ${!ARR_COLNAMES_MAP[@]}; do
 		set -- ${ARR_COLNAMES_MAP[i]}
@@ -192,7 +189,7 @@ for x in $STR_FGNAMES; do
 		fi
 	done
 done
-pr_sep; printf "Modes: Long-form | Shortest-form - Code\n"; pr_sep
+pr_sepstr; printf "Modes: Long-form | Shortest-form - Code\n"; pr_sepstr
 for x in $STR_MODENAMES; do
 	for i in ${!ARR_MODNAMES_MAP[@]}; do
 		set -- ${ARR_MODNAMES_MAP[i]}
@@ -218,9 +215,9 @@ if ((BASH_VERSINFO[0] >= 4)); then
 	eval declare -ar ARR_BG_COLORS=($(for x in ${!AAR_BG_COLORS[@]};do printf "[%s]=%s\n" ${AAR_BG_COLORS[$x]} $x;done))
 fi
 for i_mode in ${!ARR_ANSI_MODES[@]}; do
-	pr_sep
+	pr_sepstr
 	printf " Mode: %-12s Code: ESC[%s;Foreground;Background\n" ${ARR_ANSI_MODES[i_mode]} $i_mode
-	pr_sep
+	pr_sepstr
 	for i_fg in ${!ARR_FG_COLORS[@]}; do
 		for i_bg in ${!ARR_BG_COLORS[@]}; do
 			printf '\e[%s;%s;%sm %02s;%02s ' ${i_mode} $i_fg $i_bg $i_fg $i_bg
@@ -273,7 +270,7 @@ while (( $# )); do
 	fi
 	shift
 done
-printf $P_FORMAT "\e[${str_ansi_seq%;}m"
+printf "\e[${str_ansi_seq%;}m"
 } # -------------------------------------------------------------------------
 
 print_msg() { # print a couloured message

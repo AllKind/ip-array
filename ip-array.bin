@@ -87,8 +87,6 @@ declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/loc
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
 
 # Colour defines with ANSI codes
-declare P_FORMAT
-
 if ((BASH_VERSINFO[0] >= 4)); then
 	declare -Ar AAR_FG_COLORS=([black]=30 [red]=31 [green]=32 [yellow]=33 [blue]=34 [magenta]=35 [cyan]=36 [white]=37)
 	declare -Ar AAR_BG_COLORS=([black]=40 [red]=41 [green]=42 [yellow]=43 [blue]=44 [magenta]=45 [cyan]=46 [white]=47)
@@ -1144,16 +1142,20 @@ while (($#)); do
 			case "$opt_arg" in
 				all)
 					if [[ $MAIN_ARG = show ]]; then
-						cmdline_show_conf="defaults main targets matches ipt_args"
+						cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args)/}"
+						cmdline_show_conf+=" defaults main targets matches ipt_args"
 					else
-						cmdline_show_conf="defaults main targets matches ipt_args ruleblocks templates"
+						cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|ruleblocks|templates)/}"
+						cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates"
 					fi
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
-					cmdline_show_conf="${cmdline_show_conf//${opt_arg}/}"
+					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
-				*) cmdline_show_conf="main"
+				*)
+					cmdline_show_conf="${cmdline_show_conf//main/}"
+					cmdline_show_conf+="main "
 					continue
 			esac
 		;;
