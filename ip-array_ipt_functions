@@ -126,28 +126,23 @@ return 0
 
 val_proto() { # validate protocol specifications
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local val_prot="$1"
-local -i p_idx return_code=0
-case "$(string_tolower "${val_prot}")" in
+local -i p_idx
+local val_prot="$(string_tolower "$1")"
+case "$val_prot" in
 	all|tcp|udp|icmp)
 		return 0
 	;;
 	+([[:digit:]]))
-		val_8bit "${val_prot}" || return_code=1
+		val_8bit "$val_prot" && return
 	;;
 	*+([[:alpha:]])*)
-		return_code=1
 		for p_idx in ${!PROTOCOLS_ARRAY[@]}; do
-			[[ ${PROTOCOLS_ARRAY[p_idx]} = ${val_prot} ]] && {
-				return_code=0
-				break
-			}
+			[[ ${PROTOCOLS_ARRAY[p_idx]} = $val_prot ]] && return
 		done
 	;;
-	*) return_code=1
 esac
-((return_code)) && log -E "Invalid protocol specification \`${val_prot}'."
-return ${return_code}
+log -E "Invalid protocol specification \`$val_prot'."
+return 1
 } # -------------------------------------------------------------------------
 
 val_loglevel() { # validate syslog loglevel values
@@ -188,11 +183,10 @@ esac
 validate_target() { # target name validation
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$1" in
-	# catch some known
-	ACCEPT|DROP|RETURN) return 0 ;;
+	ACCEPT|DROP|RETURN) return 0 ;; # catch some known
 	ECN|LOG|CLASSIFY|MARK|CONNMARK|CONNSECMARK|SECMARK|DSCP|MASQUERADE|NETMAP|\
 	REDIRECT|REJECT|SET|DNAT|SNAT|RAWDNAT|RAWSNAT|QUEUE|NFQUEUE|TCPOPTSTRIP|TOS|TTL|TCPMSS|\
-	ULOG|NFLOG|TPROXY)
+	ULOG|NFLOG|TPROXY) # these are registered
 		if ((${1}_TGT_EXIST)); then return 0
 		else
 			log -t "$1"
@@ -254,7 +248,6 @@ esac
 
 val_builtin_chain() { # validate iptables builtin chain names
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local err_msg="Illegal iptables chain name: \`$2'."
 case "$1" in
 	filter|security) [[ $2 != @(INPUT|OUTPUT|FORWARD) ]] || return 0 ;;
 	nat) [[ $2 != @(PREROUTING|OUTPUT|POSTROUTING) ]] || return 0 ;;
@@ -270,7 +263,7 @@ case "$1" in
 	raw) [[ $2 != @(OUTPUT|PREROUTING) ]] || return 0 ;;
 	rawpost) [[ $2 != POSTROUTING ]] || return 0 ;;
 esac
-log -E "${err_msg}"
+log -E "Illegal iptables chain name: \`$2'."
 return 1
 } # -------------------------------------------------------------------------
 
@@ -349,27 +342,26 @@ for nport in ${1//-/ }; do val_port ${nport} || return 1; done
 val_port() { # validate port specifications
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ $1 = ':' ]] && return 0
-if [[ $1 = @(+([[:digit:]]):*([[:digit:]])) ]]; then
-	local val_port="${1/:/ }"
-else
-	local val_port="$1"
-fi
-local pval
-local -i s_idx
-for pval in ${val_port}; do
-	case "${pval}" in
+local pval val_port="$1"
+case "$val_port" in
+	@(+([[:digit:]]):)) val_port="${1%:}" ;;
+	@(+([[:digit:]]):+([[:digit:]]))) val_port="${1/:/ }" ;;
+esac
+for pval in $val_port; do
+	case "$pval" in
 		+([[:digit:]]))
-			if ! val_16bit "${pval}"; then
-				log -E "Invalid port specification \`${pval}'."
+			if ! val_16bit "$pval"; then
+				log -E "Invalid port specification \`$pval'."
 				return 1
 			fi
 		;;
 		*+([[:alpha:]])*)
-			lsearch "${val_port}" "${SERVICES_ARRAY[@]}" && return 0
-			log -E "Invalid port specification \`${pval}'."
-			return 1
+			if ! lsearch "$val_port" "${SERVICES_ARRAY[@]}"; then
+				log -E "Invalid port specification \`$pval'."
+				return 1
+			fi
 		;;
-		*) log -E "Invalid port specification \`${pval}'."
+		*) log -E "Invalid port specification \`$pval'."
 			return 1
 	esac
 done
@@ -379,12 +371,12 @@ val_multi_ports() { # validate a multiport port definition string
 #local m_port str_m_ports="$(IFS=, split_val ${@})"
 local m_port str_m_ports="${@//,/ }"
 if ((multiport_MOD_EXIST)); then
-	check_multi_negation_first_allowed ${str_m_ports} || return 1
+	check_multi_negation_first_allowed $str_m_ports || return 1
 else
-	check_multi_negation ${str_m_ports} || return 1
+	check_multi_negation $str_m_ports || return 1
 fi
-for m_port in ${str_m_ports/!/}; do
-	val_port "${m_port}" || return 1
+for m_port in ${str_m_ports#!}; do
+	val_port "$m_port" || return 1
 done
 } # -------------------------------------------------------------------------
 
@@ -393,8 +385,8 @@ val_set_flags() {
 oIFS="$IFS"
 IFS=,
 set -- $1
-IFS="${oIFS}"
-if ((${#} > 6)); then
+IFS="$oIFS"
+if (($# > 6)); then
 	log -E "A maximum of 6 set flags can be specified."
 	return 1
 fi

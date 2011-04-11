@@ -315,7 +315,7 @@ done
 : ${BIN_DIR:=/usr/bin/ip-array}
 : ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf}
 : ${EXE_NAME:=ip-array}
-: ${MY_SHELL:=/bin/bash}
+: ${MY_SHELL:=$BASH}
 
 case "$MAIN_ARG" in
 	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
@@ -334,6 +334,4 @@ esac
 
 export SHELL="$MY_SHELL"
 "$MY_SHELL" -- "${BIN_DIR}/${EXE_NAME}" $MAIN_ARG -d "$DEFAULTS_FILE" -e "$BIN_DIR" $DEFAULT_OPTIONS "${ARR_PARAMS[@]}" || bail_out $?
-
-exit 0
 
