@@ -477,44 +477,42 @@ CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
 # -------------------------------------------------------------------------
 
 val_ipt_tgt() { # validate existence of iptables targets
-[[ $4 ]] || { reqparm ${FUNCNAME} 4; return 1; }
+[[ $4 ]] || { reqparm $FUNCNAME 4; return 1; }
 declare -i mandatory=$1
-local ttarget=$2 ttable=$3
+local ttarget="$2" ttable="$3"
 shift 3
-local tparam="$@"
-log -e "${PF}checking for ${ttarget} target"
-if dn run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam}; then
+log -e "${PF}checking for $ttarget target"
+if dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	set_var ${ttarget}_TGT_EXIST 1 # target exists, set according variable to 1
-	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
+	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
 else
+	set_var ${ttarget}_TGT_EXIST 0 # target does not exist, set according variable to 0
 	if ((mandatory == 1)); then
-		log -E "iptables target \`${ttarget}' does not exist."
+		log -E "iptables target \`$ttarget' does not exist."
 		return $ER_FAIL
 	else
-		set_var ${ttarget}_TGT_EXIST 0 # target does not exist, set according variable to 0
-		log -W "iptables target \`${ttarget}' does not exist."
+		log -W "iptables target \`$ttarget' does not exist."
 	fi
 fi
 readonly ${ttarget}_TGT_EXIST
 } # -------------------------------------------------------------------------
 
 val_ipt_mod() { # validate existence of iptables modules
-[[ $4 ]] || { reqparm ${FUNCNAME} 4; return 1; }
+[[ $4 ]] || { reqparm $FUNCNAME 4; return 1; }
 declare -i mandatory=$1
 local tmod=$2 ttable=$3
 shift 3
-local tparam="$@"
-log -e "${PF}checking for ${tmod} extension"
-if dn run_ipt -t ${ttable} -A ${BIC_TEST_CHAIN} ${tparam}; then
+log -e "${PF}checking for $tmod extension"
+if dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	set_var "${tmod}_MOD_EXIST" 1 # module exists, set according variable to 1
-	run_ipt -t ${ttable} -D ${BIC_TEST_CHAIN} ${tparam}
+	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
 else
+	set_var "${tmod}_MOD_EXIST" 0 # module does not exist, set according variable to 0
 	if ((mandatory == 1)); then
-		log -E "iptables module \`${tmod}' does not exist."
+		log -E "iptables module \`$tmod' does not exist."
 		return $ER_FAIL
 	else
-		set_var "${tmod}_MOD_EXIST" 0 # module does not exist, set according variable to 0
-		log -W "iptables module \`${tmod}' does not exist."
+		log -W "iptables module \`$tmod' does not exist."
 	fi
 fi
 readonly ${tmod}_MOD_EXIST
@@ -559,13 +557,13 @@ fi
 set_default_policies_immediate() { # set (IP-Array) default policies
 local table c chain rest
 log -I "Immediately applying default policies"
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded"
+if ! [[ -r $IP_TABLES_NAMES ]]; then
+	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded"
 	dn run_ipt -nL
 #	return 0
 fi
-while read -t ${GLOBAL_READ_TIMEOUT} table; do
-	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
+while read -t $GLOBAL_READ_TIMEOUT table; do
+	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 		if [[ ${c} = Chain ]]; then
 			if [[ ${table} = filter ]]; then
 				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD) ]]; then
@@ -578,7 +576,7 @@ while read -t ${GLOBAL_READ_TIMEOUT} table; do
 			fi
 		fi
 	done < <(run_ipt -t ${table} -nL)
-done < "${IP_TABLES_NAMES}"
+done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 flush_table() { # flush all chains in a specified table
@@ -587,7 +585,7 @@ local tgt_tbl="$1"
 val_table "${tgt_tbl}" || return $?
 local c chain rest
 log -S "Flushing chains in "${tgt_tbl}" table"
-while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
+while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 	if [[ ${c} = Chain ]]; then
 #		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${tgt_tbl} -F ${chain}"
 		IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${tgt_tbl} -F ${chain}"
@@ -600,56 +598,55 @@ IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t "${tgt_tbl}" -X"
 flushdel_tables_immediate() { # immediately flush and delete existing tables
 local table c chain rest
 log -I "Immediately flushing and deleting existing chains"
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
+if ! [[ -r $IP_TABLES_NAMES ]]; then
+	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded. Trying to initialize."
 	dn run_ipt -nL || {
 		log -E "Failed to initialize iptables"
 		return $ER_FAIL
 	}
 fi
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-	log -E "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded."
+if ! [[ -r $IP_TABLES_NAMES ]]; then
+	log -E "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded."
 	return $ER_FAIL
 fi
-while read -t ${GLOBAL_READ_TIMEOUT} table; do
-	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
+while read -t $GLOBAL_READ_TIMEOUT table; do
+	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 		if [[ ${c} = Chain ]]; then
 			run_ipt -t ${table} -F ${chain} || log -f "flushing ${chain} chain"
 		fi
 	done < <(run_ipt -t ${table} -nL 2>/dev/null)
 	run_ipt -t ${table} -X || log -f "deleting user defined chains in ${table} table"
-done < "${IP_TABLES_NAMES}"
+done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 flushdel_tables() { # flush and delete existing tables
 local table c chain rest
 log -S "Flushing and deleting existing chains"
-#if [[ $MODE = @(SAVE-IPT-COMMANDS|SAVE-COMMANDS) ]]; then
 if [[ $MODE = @(SAVE-?(IPT-)COMMANDS) ]]; then
 	return 0
 fi
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded?"
+if ! [[ -r $IP_TABLES_NAMES ]]; then
+	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded?"
 	return 0
-#	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded. Trying to initialize."
+#	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded. Trying to initialize."
 #	run_ipt -nL &>/dev/null || {
 #		log -E "Failed to initialize iptables"
 #		return $ER_FAIL
 #	}
 fi
-#if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-#	log -E "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded."
+#if ! [[ -r $IP_TABLES_NAMES ]]; then
+#	log -E "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded."
 #	return $ER_FAIL
 #fi
-while read -t ${GLOBAL_READ_TIMEOUT} table; do
-	while read -t ${GLOBAL_READ_TIMEOUT} c chain rest; do
+while read -t $GLOBAL_READ_TIMEOUT table; do
+	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 		if [[ ${c} = Chain ]]; then
 #			IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${table} -F ${chain}"
 			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -F ${chain}"
 		fi
 	done < <(run_ipt -t ${table} -nL 2>/dev/null)
 	IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -X"
-done < "${IP_TABLES_NAMES}"
+done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 flush_table_pub_save() { # flush all chains in a specified table
@@ -727,7 +724,7 @@ case "$1" in
 			run_ipt -t $rvar -X ${BIC_TEST_CHAIN} || log -f "deleting chain ${BIC_TEST_CHAIN} in $rvar table"
 		done
 	;;
-	*) log -o "$1" ${FUNCNAME}
+	*) log -o "$1" $FUNCNAME
 		return 1
 	;;
 esac
@@ -751,12 +748,12 @@ case "$1" in
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
 	;;
-	*) log -o "$1" ${FUNCNAME}; return 1
+	*) log -o "$1" $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
 #set_ipt_table_names() {
-#IP_TABLES_NAMES_CHECKSTRING=$("${CAT}" "${IP_TABLES_NAMES}")
+#IP_TABLES_NAMES_CHECKSTRING=$("${CAT}" "$IP_TABLES_NAMES")
 #IP_TABLES_NAMES_CHECKSTRING=${IP_TABLES_NAMES_CHECKSTRING//[[:space:]]/|}
 #}
 # -------------------------------------------------------------------------
@@ -853,7 +850,10 @@ fill_final_rule_map() { # fill FINAL_RULE_MAP array
 if [[ ${FINAL_RULE_MAP} ]]; then
 	log -w "Loading FINAL_RULE_MAP"
 	fill_array 'FINAL_RULE_MAP'
-	((${#FINAL_RULE_MAP[@]})) || return 0
+	((${#FINAL_RULE_MAP[@]})) || {
+	log -u 'FINAL_RULE_MAP'
+	return 0
+}
 	check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
 		log -E "Duplicate chain name in \`FINAL_RULE_MAP'."
 		raise_cfg_err_count
@@ -991,19 +991,19 @@ policy_all_en_disable() { # set all policies to accept or drop
 local pol=$1
 local ipt_table ipt_chain
 log -T "Setting policies to ${pol}"
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then
-	log -W "\`${IP_TABLES_NAMES}' does not exist, module ip_tables is not loaded?"
+if ! [[ -r $IP_TABLES_NAMES ]]; then
+	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded?"
 	return 0
 fi
-while read -t ${GLOBAL_READ_TIMEOUT} ipt_table; do
-	while read -t ${GLOBAL_READ_TIMEOUT} ipt_chain; do
+while read -t $GLOBAL_READ_TIMEOUT ipt_table; do
+	while read -t $GLOBAL_READ_TIMEOUT ipt_chain; do
 		if [[ ${ipt_chain} = Chain@([[:space:]])+([[:upper:]])@([[:space:]])\(policy@([[:space:]])+([[:upper:]])\) ]]
 		then
 			set -- ${ipt_chain}
 			set_policy ${ipt_table} $2 ${pol} || return $?
 		fi
 	done < <(run_ipt -t ${ipt_table} -nL)
-done < "${IP_TABLES_NAMES}"
+done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 set_global_policies() { # set global policies
@@ -1157,7 +1157,7 @@ esac
 #			ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
 #		done
 #	;;
-#	*) log -o "$1" ${FUNCNAME}
+#	*) log -o "$1" $FUNCNAME
 #		return 1
 #esac
 #for str_chn in "${ARR_CLIST[@]}"; do
@@ -1211,7 +1211,7 @@ for iface in ${NET_IFLIST}; do
 		rawpost)
 			ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
 		;;
-		*) log -o "$1" ${FUNCNAME}
+		*) log -o "$1" $FUNCNAME
 			return 1
 	esac
 done
@@ -1288,7 +1288,7 @@ done
 #			arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
 #		done
 #	;;
-#	*) log -o "$1" ${FUNCNAME}
+#	*) log -o "$1" $FUNCNAME
 #		return 1
 #esac
 #for idx in ${!arr_jcmd[@]}; do # create log messages and add_rule commands
@@ -1362,7 +1362,7 @@ for iface in ${NET_IFLIST}; do
 		rawpost)
 			arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
 		;;
-		*) log -o "$1" ${FUNCNAME}
+		*) log -o "$1" $FUNCNAME
 			return 1
 	esac
 done
@@ -1462,7 +1462,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - 
 				done
 			fi
 		;;
-		*) log -o "$1" ${FUNCNAME}
+		*) log -o "$1" $FUNCNAME
 			return 1
 	esac
 done
@@ -1551,7 +1551,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 				fi
 			fi
 		;;
-		*) log -o "$1" ${FUNCNAME}
+		*) log -o "$1" $FUNCNAME
 			return 1
 	esac
 done
@@ -1648,7 +1648,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 				arr_stage5[${#arr_stage5[@]}]="FORWARD -o ${str_net_iface} -j ${str_net}_FWD_OUT"
 			fi
 		;;
-		*) log -o "${str_tbl}" ${FUNCNAME}
+		*) log -o "${str_tbl}" $FUNCNAME
 			return 1
 	esac
 	for str in ${str_clist}; do
@@ -1896,7 +1896,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 		case "${str_param}" in
 			src) str_p="-s" str_i="-o" ;;
 			dst) str_p="-d" str_i="-i" ;;
-			*) log -o "${str_param}" ${FUNCNAME}; continue ;;
+			*) log -o "${str_param}" $FUNCNAME; continue ;;
 		esac
 		if ((JUMP_TREE[3] == 1)); then
 			arr_stage2[${#arr_stage2[@]}]="${str_chn} ${str_p} ${str_netaddr} -j ${str_net}_${str_tgt}"
@@ -1910,7 +1910,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 		case "${str_param}" in
 			src) str_i="-o" ;;
 			dst) str_i="-i" ;;
-			*) log -o "${str_param}" ${FUNCNAME}; continue ;;
+			*) log -o "${str_param}" $FUNCNAME; continue ;;
 		esac
 		arr_stage1[${#arr_stage1[@]}]="${str_chn} ${str_i} ${str_net_iface} -j ${str_tgt}"
 	done
@@ -2037,11 +2037,11 @@ case "${str_ctbl}" in
 	filter)
 		((ENABLE_FILTER)) || return 0
 	;;
-	*) log -o "${str_ctbl}" ${FUNCNAME}
+	*) log -o "${str_ctbl}" $FUNCNAME
 		return 1
 esac
 [[ ${str_act} = @(chains|jumps) ]] || {
-	log -o "${str_act}" ${FUNCNAME}
+	log -o "${str_act}" $FUNCNAME
 	raise_gen_err_count
 	return 1
 }
@@ -2066,7 +2066,7 @@ case "${JUMP_TREE[1]}" in
 			jumps) create_netname_jumps ${str_ctbl} || return 1 ;;
 		esac
 	;;
-	*) log -o "${JUMP_TREE}" ${FUNCNAME}
+	*) log -o "${JUMP_TREE}" $FUNCNAME
 		return 1
 esac
 } # -------------------------------------------------------------------------
@@ -2075,7 +2075,7 @@ create_jump_tree() { # create all jump tree chains or jumps
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$1" in
 	chains|jumps) : ;;
-	*) log -o "$1" ${FUNCNAME} || return 1
+	*) log -o "$1" $FUNCNAME || return 1
 esac
 for rvar in raw rawpost mangle nat filter security ; do
 	classification_chains $1 $rvar || return $?
@@ -2140,7 +2140,7 @@ while read rnum str_target rest; do
 		continue
 	fi
 	[[ ${rnum} != +([[:digit:]]) ]] && continue
-	[[ ${str_Ochain} ]] || { log -U ${FUNCNAME}; return 1; }
+	[[ ${str_Ochain} ]] || { log -U $FUNCNAME; return 1; }
 	for idx in ${!empty_chains[@]}; do
 		if [[ ${empty_chains[idx]} = ${str_target} ]]; then
 			log -e "${PF}deleting table=${str_tbl} chain=${str_Ochain} rule-number=${rnum} target=${str_target}"
@@ -3259,7 +3259,7 @@ case "${arg_list_connlimit[ARG_LIST_IDX]/!/}" in
 		local str_clim="${arg_list_connlimit[ARG_LIST_IDX]%/*}"
 		RULELIST_CONNLIMIT[RULE_LIST_IDX]="-m connlimit ${str_neg}--connlimit-above $(remove_negation "${str_clim}") --connlimit-mask ${arg_list_connlimit[ARG_LIST_IDX]#*/} "
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 MSG_LIST_CONNLIMIT[RULE_LIST_IDX]="connlimit=${arg_list_connlimit[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
@@ -3275,7 +3275,7 @@ case "${str_val}" in
 	BE|EF|AF+([[:digit:]])|CS@([[:digit:]]))
 		RULELIST_M_DSCP[RULE_LIST_IDX]="-m dscp ${str_neg}--dscp-class ${str_val} "
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 MSG_LIST_M_DSCP[RULE_LIST_IDX]="dscp=${arg_list_m_dscp[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
@@ -3356,7 +3356,7 @@ while (($#)); do
 			RULELIST_OWNER[RULE_LIST_IDX]+="${str_neg}--socket-exists "
 			shift
 		;;
-		*) log -U ${FUNCNAME}; return 1
+		*) log -U $FUNCNAME; return 1
 	esac
 done
 } # -------------------------------------------------------------------------
@@ -3381,7 +3381,7 @@ case "${ttl_val}" in
 		ttl_msg="ttl<${ttl_val/-/}"
 		str_ttl="--ttl-lt ${ttl_val/-/}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl ${str_ttl} "
 MSG_LIST_M_TTL[RULE_LIST_IDX]="${ttl_msg} "
@@ -3416,7 +3416,7 @@ case "${arg_list_t_dscp[ARG_LIST_IDX]}" in
 	BE|EF|AF+([[:digit:]])|CS@([[:digit:]]))
 		RULELIST_SET_DSCP[RULE_LIST_IDX]="--set-dscp-class ${arg_list_t_dscp[ARG_LIST_IDX]}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 MSG_LIST_SET_DSCP[RULE_LIST_IDX]="set-dscp=${arg_list_t_dscp[ARG_LIST_IDX]}"
 } # -------------------------------------------------------------------------
@@ -3458,7 +3458,7 @@ case "${arg_list_t_mark[ARG_LIST_IDX]}" in
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--xor-mark ${str_mrk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="xor-mark=${str_mrk}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3511,7 +3511,7 @@ case "${arg_list_t_connmark[ARG_LIST_IDX]}" in
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--xor-mark ${str_mrk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="xor-mark=${str_mrk}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3530,7 +3530,7 @@ case "${arg_list_t_connsecmark[ARG_LIST_IDX]}" in
 		RULELIST_SET_CONNSECMARK[RULE_LIST_IDX]="--restore"
 		MSG_LIST_SET_CONNSECMARK[RULE_LIST_IDX]="restore-connsecmark"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3581,7 +3581,7 @@ case "${arg_list_nat_option[ARG_LIST_IDX]}" in
 		RULELIST_NAT_OPTION[RULE_LIST_IDX]="--${arg_list_nat_option[ARG_LIST_IDX]}"
 		MSG_LIST_NAT_OPTION[RULE_LIST_IDX]="NAToption=${arg_list_nat_option[ARG_LIST_IDX]}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3630,7 +3630,7 @@ for str_lopt in ${arg_list_log_options[ARG_LIST_IDX]//,/ }; do
 			RULELIST_LOG_UID[RULE_LIST_IDX]="--log-uid "
 			MSG_LIST_LOG_UID[RULE_LIST_IDX]="uid "
 		;;
-		*) log -U ${FUNCNAME}; return 1
+		*) log -U $FUNCNAME; return 1
 	esac
 done
 RULELIST_LOG_OPTIONS[RULE_LIST_IDX]="${arr_logcmd[*]} "
@@ -3687,7 +3687,7 @@ case "${arg_list_nfqueue[ARG_LIST_IDX]}" in
 		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-balance ${arg_list_nfqueue[ARG_LIST_IDX]} "
 		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue-balance=${arg_list_nfqueue[ARG_LIST_IDX]} "
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3707,7 +3707,7 @@ case "${arg_list_t_tos[ARG_LIST_IDX]}" in
 		RULELIST_SET_TOS[RULE_LIST_IDX]="--${str_act}-tos ${arg_list_t_tos[ARG_LIST_IDX]#${str_act}:} "
 		MSG_LIST_SET_TOS[RULE_LIST_IDX]="${str_act}-tos=${arg_list_t_tos[ARG_LIST_IDX]#${str_act}:} "
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3726,7 +3726,7 @@ case "${ttl_val}" in
 		ttl_msg="decreasing TTL by ${ttl_val/-/}"
 		str_ttl="--ttl-dec ${ttl_val/-/}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 RULELIST_SET_TTL[RULE_LIST_IDX]="${str_ttl} "
 MSG_LIST_SET_TTL[RULE_LIST_IDX]="${ttl_msg} "
@@ -3742,7 +3742,7 @@ case "${arg_list_t_tcpmss[ARG_LIST_IDX]}" in
 		RULELIST_SET_TCPMSS[RULE_LIST_IDX]="--set-mss ${arg_list_t_tcpmss[ARG_LIST_IDX]}"
 		MSG_LIST_SET_TCPMSS[RULE_LIST_IDX]="mss=${arg_list_t_tcpmss[ARG_LIST_IDX]}"
 	;;
-	*) log -U ${FUNCNAME}; return 1
+	*) log -U $FUNCNAME; return 1
 esac
 } # -------------------------------------------------------------------------
 
@@ -3763,7 +3763,7 @@ while (($#)); do
 			str_cmd+="--tproxy-mark $2 "
 			str_msg+="tproxy-mark=$2 "
 		;;
-		*) log -U ${FUNCNAME}; return 1
+		*) log -U $FUNCNAME; return 1
 	esac
 	shift 2
 done
@@ -3811,7 +3811,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 		if [[ ${str_var_name} = $(eval 'printf "%s\n" "${option_list_'${OPTION_LIST_IDX}'[tmp_opt_idx]%%=*}"') ]]; then
 			# if it is already defined in the template as default value (option_name=X), there is nothing more to do
 			if [[ ${!str_var_name} ]]; then
-				[[ ${!str_var_name} = ${RULE_SEP} ]] && {
+				[[ ${!str_var_name} = $RULE_SEP ]] && {
 					log -E "Mandatory configuration entry \`${str_var_name}' missing, placeholder not allowed at position \`${reference_positional_param}'."
 					return $ER_NODEF
 				}
@@ -3822,7 +3822,7 @@ for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
 			if [[ ${!reference_positional_param} ]]; then
 				# ok, the positional parameter reference to the option variable name tells us, that the option is set.
 				# now check if the mandatory variable is a rule separator, which is not allowed
-				[[ ${!reference_positional_param} = ${RULE_SEP} ]] && {
+				[[ ${!reference_positional_param} = $RULE_SEP ]] && {
 					log -E "Mandatory configuration entry \`${str_var_name}' missing, placeholder not allowed at position \`${reference_positional_param}'."
 					return $ER_NODEF
 				}
@@ -3871,7 +3871,7 @@ for arr_element in ${!reference_command_array}; do
 	_validate_ipt_option_name "${str_arr_var_name}" || return $ER_CONF
 	# if users has defined a default value for the option in the template
 	# AND the according rule entry is the rule separator value, use the default value from the template
-	if [[ ${!str_arr_var_name} &&  ${!reference_positional_param} = ${RULE_SEP} ]]; then
+	if [[ ${!str_arr_var_name} &&  ${!reference_positional_param} = $RULE_SEP ]]; then
 		if [[ -z ${tmp_pos_par_val_array[reference_positional_param -1]} ]]; then
 			tmp_pos_par_val_array[reference_positional_param -1]="${str_arr_var_name} ${!str_arr_var_name}"
 		fi
@@ -3881,7 +3881,7 @@ for arr_element in ${!reference_command_array}; do
 	else
 		# option has no default value.
 		# if the option is NOT the rule separator character, it's ok to process
-		if [[ ${!reference_positional_param} != ${RULE_SEP} ]]; then
+		if [[ ${!reference_positional_param} != $RULE_SEP ]]; then
 			if [[ -z ${tmp_pos_par_val_array[reference_positional_param -1]} ]]; then
 				tmp_pos_par_val_array[reference_positional_param -1]="${str_arr_var_name} ${!reference_positional_param}"
 			fi
@@ -4782,7 +4782,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				return 1
 			fi
 		;;
-		*) log -o "${tmp_opt_var}" ${FUNCNAME} || return 1 ;;
+		*) log -o "${tmp_opt_var}" $FUNCNAME || return 1 ;;
 	esac
 done
 } # -------------------------------------------------------------------------
@@ -5186,7 +5186,7 @@ case "$1" in
 			return 0
 		fi
 	;;
-	*) log -U ${FUNCNAME}
+	*) log -U $FUNCNAME
 		raise_gen_err_count
 esac
 return 1
@@ -6073,7 +6073,7 @@ if [[ ${reverse_mode} ]]; then
 		mirror) # option is mirror, use values of option_list_0 for option_list_1
 			$(${copy_array} option_list_0 option_list_1) || {
 				raise_gen_err_count
-				log -U ${FUNCNAME}
+				log -U $FUNCNAME
 				return 0
 			}
 			# now we know we have a second option list, but we're not in reverse mode
@@ -6118,7 +6118,7 @@ fi
 if ((${#target[@]})); then
 	$(${copy_array} target arr_tmp_targets) || {
 		raise_gen_err_count
-		log -U ${FUNCNAME}
+		log -U $FUNCNAME
 		return 0
 	}
 	target_in_template=1
@@ -6189,7 +6189,7 @@ fi
 # copy it to a temporary array, so we don't need to use 'eval' all the time
 $(${copy_array} "${target_ruleblock}" arr_tmp_ruleblock) || {
 	raise_gen_err_count
-	log -U ${FUNCNAME}
+	log -U $FUNCNAME
 	return 0
 }
 #unset arr_tmp_ruleblock[0]
@@ -6462,7 +6462,7 @@ for idx in ${!PORTSCAN_ARRRAY[@]}; do
 		else
 			str_lpfix="${LOG_PREFIX}"
 		fi
-		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} LOG ${stcpf} ${str_lpfix}${sname/Stealth/}_SCAN: ${RULE_SEP} ${RULE_SEP} ${RULE_SEP}"
+		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} LOG ${stcpf} ${str_lpfix}${sname/Stealth/}_SCAN: $RULE_SEP $RULE_SEP ${RULE_SEP}"
 	fi
 	if ((dropscan == 1)); then # DROP scan
 		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} DROP ${stcpf}"
@@ -6620,9 +6620,9 @@ local TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP=(
 )
 local -a RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 # first syn ack
-RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="SYN,ACK:SYN,ACK ${RULE_SEP} ${str_lpfix}SYNACK:"
+RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="SYN,ACK:SYN,ACK $RULE_SEP ${str_lpfix}SYNACK:"
 # then state new !syn
-RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="${RULE_SEP} !syn ${str_lpfix}NEW-not-SYN:"
+RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="$RULE_SEP !syn ${str_lpfix}NEW-not-SYN:"
 ((jt_mode == 1)) && jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 ((jt_mode == 0)) || jump_tree_on
@@ -6649,9 +6649,9 @@ local TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP=(
 local -a RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
 # first syn ack
 #  TO DO: use drop or reject?
-RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="REJECT SYN,ACK:SYN,ACK ${RULE_SEP} tcp-reset"
+RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="REJECT SYN,ACK:SYN,ACK $RULE_SEP tcp-reset"
 # then state new !syn
-RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="DROP ${RULE_SEP} !syn"
+RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="DROP $RULE_SEP !syn"
 ((jt_mode == 1)) && jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
 ((jt_mode == 0)) || jump_tree_on
@@ -6768,7 +6768,7 @@ for str in ${str_iflist}; do
 			raise_gen_err_count
 			continue
 		fi
-		RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="${str} $(ip_network "${iface_ip}/${iface_mask}")/${iface_mask} ${iface_brd}"
+		RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str $(ip_network "${iface_ip}/${iface_mask}")/${iface_mask} ${iface_brd}"
 	done < <(get_if_ipv4_data "${str}" -i -m -b)
 done
 for str in ${str_netlist}; do
@@ -6977,7 +6977,7 @@ local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 "always_use_1[1]=dport=${UNPRIV_PORTS}"
 "always_use_1[2]=sport=53"
 )
-local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]="${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ESTABLISHED"
+local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 for idx in ${!LOCAL_NS[@]}; do
 	set -- ${LOCAL_NS[idx]}
 #	nslist=$(IFS=, split_val $1) ext_net=$2
@@ -7057,7 +7057,7 @@ local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS=(
 "always_use_1[1]=dport=123"
 "always_use_1[2]=sport=123"
 )
-local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[0]="${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ESTABLISHED"
+local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 for idx in ${!TIME_SERVERS[@]}; do
 	set -- ${TIME_SERVERS[idx]}
 #	NTP_SERVERS=$(IFS=, split_val $1) ext_net=$2
@@ -7219,7 +7219,7 @@ local TEMPLATE_BUILTIN_LAN_USE_SMTP_JUMPS=(
 "always_use_1[1]=dport=${UNPRIV_PORTS}"
 "always_use_1[2]=sport=25"
 )
-local RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[0]="${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ESTABLISHED"
+local RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 for idx in ${!ISP_SMTP[@]}; do
 	set -- ${ISP_SMTP[idx]}
 	strERR="ISP_SMTP ${idx} ${ISP_SMTP[idx]}"
@@ -7317,7 +7317,7 @@ local TEMPLATE_BUILTIN_LAN_DNS_SERVERS_JUMPS=(
 "always_use_1[1]=dport=${UNPRIV_PORTS}"
 "always_use_1[2]=sport=53"
 )
-local RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[0]="${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ESTABLISHED"
+local RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 # for every entry in the LAN_NS array do...
 for ns_idx in ${!LAN_NS[@]}; do
 	set -- ${LAN_NS[ns_idx]}
@@ -7430,11 +7430,9 @@ for rvar in ${LAN_FTP}; do
 		fi
 	fi
 	if lsearch "${str_in}" ${NET_IFLIST}; then
-		str_iface="${str_in}"
-		str_net_addr="${RULE_SEP}"
+		str_iface="${str_in}" str_net_addr="${RULE_SEP}"
 	elif lsearch "${str_in}" ${NET_NAME_LIST}; then
-		str_iface=$(get_net_iface "${str_in}")
-		str_net_addr=$(get_net_addr "${str_in}")
+		str_iface=$(get_net_iface "${str_in}") str_net_addr=$(get_net_addr "${str_in}")
 		[[ ${str_iface} && ${str_net_addr} ]] || {
 			log -E "Unable to retrieve data for network \`${str_in}'"
 			raise_gen_err_count
@@ -7459,27 +7457,27 @@ for rvar in ${LAN_FTP}; do
 	idx=0
 	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW=()
 	log -I "Allowing FTP from ${str_in} over ${str_out:-${str_odev}}"
-	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} ${RULE_SEP} tcp ${UNPRIV_PORTS} 21 ${stNE}"
+	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS 21 ${stNE}"
 	if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-		RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} ${RULE_SEP} ${str_net_addr} tcp 21 ${UNPRIV_PORTS} ${stE}"
+		RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp 21 $UNPRIV_PORTS ${stE}"
 	fi
 	case "${str_ftpmode}" in
 		all) log -N "Allowing active and passive mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ftp"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} ${RULE_SEP} ${str_net_addr} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ${RULE_SEP} ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
 			fi
 		;;
 		active) log -N "Allowing active mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} ${RULE_SEP} ${str_net_addr} tcp 20 ${UNPRIV_PORTS} ${stER} ftp"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp 20 $UNPRIV_PORTS ${stER} ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} ${RULE_SEP} tcp ${UNPRIV_PORTS} 20 ${stE} ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS 20 ${stE} ftp"
 			fi
 		;;
 		passive) log -N "Allowing passive mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} ${RULE_SEP} tcp ${UNPRIV_PORTS} ${UNPRIV_PORTS} ${stER} ftp"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS $UNPRIV_PORTS ${stER} ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} ${RULE_SEP} ${str_net_addr} tcp ${UNPRIV_PORTS} ${UNPRIV_PORTS} ${stE} ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp $UNPRIV_PORTS $UNPRIV_PORTS ${stE} ftp"
 			fi
 		;;
 	esac
@@ -7531,7 +7529,7 @@ check_str_unique $(show_array_column 'VPN_MAP') || {
 }
 for idx in ${!VPN_MAP[@]}; do # find local branch
 	set -- ${VPN_MAP[idx]}
-	((${#} < 4)) && {
+	(($# < 4)) && {
 		log -E "Entry missing in \`VPN_MAP'."
 		cfg_err VPN_MAP ${idx} ${VPN_MAP[idx]}
 		return 0
@@ -7550,10 +7548,10 @@ for idx in ${!VPN_MAP[@]}; do # local to remote branches
 	branch=$1 extIP=$2 subnet=$3 intIP=$4
 	[[ ${branch} = ${local_vpn_branch} ]] && continue # not apply to itself
 	remote_branches+=" ${branch}" # collect remote branch names
-	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${local_vpn_extIP} ${extIP}"
-	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${local_vpn_extIP} ${subnet}"
-	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${local_vpn_subnet} ${extIP}"
-	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${local_vpn_subnet} ${subnet}"
+	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$local_vpn_extIP $extIP"
+	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$local_vpn_extIP $subnet"
+	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$local_vpn_subnet $extIP"
+	RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$local_vpn_subnet $subnet"
 done
 for rbranch in ${remote_branches}; do # remote to remote branches
 	for idx in ${!VPN_MAP[@]}; do # collect data about current branch
@@ -7571,9 +7569,9 @@ for rbranch in ${remote_branches}; do # remote to remote branches
 			branch=$1 rb_extIP=$2 rb_subnet=$3 rb_intIP=$4
 			break # this is the right remote branch
 		done
-		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${src_extIP} ${rb_extIP}"
-		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${src_subnet} ${rb_subnet}"
-		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="${src_extIP} ${rb_subnet}"
+		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$src_extIP $rb_extIP"
+		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$src_subnet $rb_subnet"
+		RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[${#RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH[@]}]="$src_extIP $rb_subnet"
 	done
 done
 process_ipt_ruleblock TEMPLATE_BUILTIN_VPN_ALLOW_ALL_BRANCH RULEBLOCK_BUILTIN_VPN_ALLOW_ALL_BRANCH
@@ -7625,8 +7623,8 @@ vpn_all_branch_allow
 # Seed out all the ipsec related packets and push them into the ipsec chain
 for rvar in ${IPSEC_IFLIST}; do
 	while read str_iface_ip; do
-		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT ${RULE_SEP} $rvar ${str_iface_ip} ${RULE_SEP} udp 500 500"
-		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT ${RULE_SEP} $rvar ${str_iface_ip} ${RULE_SEP} 50"
+		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT $RULE_SEP $rvar $str_iface_ip $RULE_SEP udp 500 500"
+		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT $RULE_SEP $rvar $str_iface_ip $RULE_SEP 50"
 	done < <(get_if_ipv4_data "$rvar" -i)
 done
 for rvar in ${IPSEC_INTERFACES}; do
@@ -7651,7 +7649,7 @@ log -I "Allowing established/related traffic in certain chains"
 for idx in ${!KNOWN_TRAFFIC_MAP[@]}; do
 	set -- ${KNOWN_TRAFFIC_MAP[idx]}
 	local str_chain="$1" str_state="$2" str_place="$3"
-	if [[ ${str_state} && ${str_state} != ${RULE_SEP} ]]; then
+	if [[ ${str_state} && ${str_state} != $RULE_SEP ]]; then
 		case "${str_state}" in
 			e|E) local str_state_cmd="${stateE}" str_state=${stE} ;;
 			r|R) local str_state_cmd="${stateR}" str_state=${stR} ;;
@@ -7663,7 +7661,7 @@ for idx in ${!KNOWN_TRAFFIC_MAP[@]}; do
 	else
 		local str_state="${stER}" str_state_cmd="${stateER}"
 	fi
-	if [[ ${str_place} && ${str_place} != ${RULE_SEP} ]]; then
+	if [[ ${str_place} && ${str_place} != $RULE_SEP ]]; then
 		local str_place=$(string_tolower "${str_place}")
 		[[ ${str_place} = @(top|bottom) ]] || {
 			log -E "Invalid value \`${str_place}' for rule placement descriptor in variable \`KNOWN_TRAFFIC_MAP'."
@@ -7688,8 +7686,7 @@ apply_final_rule() {
 	log -w "Not applying final rules"
 	return 0
 }
-local -i idx
-local -i jt_mode=${JUMP_TREE[0]}
+local -i idx jt_mode=${JUMP_TREE[0]}
 local str_tmp_act
 local TEMPLATE_BUILTIN_FINAL_RULE=(
 "table=filter"
@@ -7741,7 +7738,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
 # as comma separated input in the rule.
 #_multiply_rules()
 #{
-#[[ ${5} ]] || { reqparm ${FUNCNAME} 5; return 1; }
+#[[ ${5} ]] || { reqparm $FUNCNAME 5; return 1; }
 #local rule_array
 #local -a tmp_multi_type_array
 #local -i multi_type_idx=0
