@@ -2527,7 +2527,7 @@ if ((ENABLE_COLORS == 1)) ; then
  $(cl bold yellow black)Firewall $(cl normal red black)${STR_VERSION}\
  $(cl bold white black)- MODE: $(cl bold green black)$MODE$(cl)"
 else
-	echo "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
+	pr_str "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
 fi
 ((VERBOSE >= 7)) && {
 	printf "PID: %d\n" ${PID}
@@ -4124,7 +4124,7 @@ if ((ERRORS)); then
  $(cl bold red black)${mode_msg} with errors$(cl)"
  		fi
 	else
-		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
+		((VERBOSE)) && pr_str "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
 	fi
 	syslog ${LOG_FACILITY} warning "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
 else
@@ -4137,7 +4137,7 @@ else
  $(cl bold green black)successfully$(cl)"
  		fi
 	else
-		((VERBOSE)) && echo "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
+		((VERBOSE)) && pr_str "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
 	fi
 	log -l "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
 fi
