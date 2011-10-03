@@ -154,43 +154,33 @@ while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
 			local qceil="ceil ${OPTARG}" m_ceil="ceil=${OPTARG} "
 		;;
 		b)	# burst
-			if [[ ${OPTARG} ]]; then
-				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
-					val_tc_bw_val ${OPTARG} || return 1
-					local qburst="burst ${OPTARG}" m_burst="burst=${OPTARG} "
-				fi
+			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
+				val_tc_bw_val ${OPTARG} || return 1
+				local qburst="burst ${OPTARG}" m_burst="burst=${OPTARG} "
 			fi
 		;;
 		u)	# cburst
-			if [[ ${OPTARG} ]]; then
-				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
-					val_tc_bw_val ${OPTARG} || return 1
-					local qcburst="cburst ${OPTARG}" m_cburst="cburst=${OPTARG} "
-				fi
+			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
+				val_tc_bw_val ${OPTARG} || return 1
+				local qcburst="cburst ${OPTARG}" m_cburst="cburst=${OPTARG} "
 			fi
 		;;
 		q) 	# quantum
-			if [[ ${OPTARG} ]]; then
-				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
-					val_numeric "${OPTARG}" || return 1
-					local qquantum="quantum ${OPTARG}" m_quantum="quantum=${OPTARG} "
-				fi
+			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
+				val_numeric "${OPTARG}" || return 1
+				local qquantum="quantum ${OPTARG}" m_quantum="quantum=${OPTARG} "
 			fi
 		;;
 		m) 	# mtu
-			if [[ ${OPTARG} ]]; then
-				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
-					val_numeric "${OPTARG}" || return 1
-					local qmtu="mtu ${OPTARG}" m_mtu="mtu=${OPTARG} "
-				fi
+			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
+				val_numeric "${OPTARG}" || return 1
+				local qmtu="mtu ${OPTARG}" m_mtu="mtu=${OPTARG} "
 			fi
 		;;
 		o) 	# priority
-			if [[ ${OPTARG} ]]; then
-				if [[ ${OPTARG} != ${RULE_SEP} ]]; then
-					val_numeric "${OPTARG}" || return 1
-					local qprio="prio ${OPTARG}" m_prio="prio=${OPTARG}"
-				fi
+			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
+				val_numeric "${OPTARG}" || return 1
+				local qprio="prio ${OPTARG}" m_prio="prio=${OPTARG}"
 			fi
 		;;
 		*) log -o "$option" $FUNCNAME; return 1 ;;
