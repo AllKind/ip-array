@@ -1510,7 +1510,7 @@ set_env # reset possibly messed up env
 # -------------------------------------------------------------------------
 for idx in ${!ARR_RTIME_OPTS[@]}; do
 	for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
-		if [[ ${ARR_RTIME_OPTS[idx]%%=*} =	${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
+		if [[ ${ARR_RTIME_OPTS[idx]%%=*} = ${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
 			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\""${ARR_RTIME_OPTS[idx]#*=}"\" || {
 				err_msg "Failed overriding main configuration variable. Failed command: \`${ARR_RTIME_OPTS[idx]}'."
 				bail_out $ER_FAIL
@@ -1529,7 +1529,7 @@ verbose_msg "Loading functions"
 for rvar in $IPARRAY_FUNCTIONS; do
 	source "${LIB_DIR}/${rvar}" || {
 		err_msg "loading functions file: \`${LIB_DIR}/${rvar}'."
-		exit $ER_LOAD
+		bail_out $ER_LOAD
 	}
 done
 set_env # reset possibly messed up env
