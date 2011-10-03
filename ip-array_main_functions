@@ -4309,7 +4309,9 @@ case "$1" in
 		done
 		if ((NO_PROC == 0)); then
 			PROC_COMPAT_CHECK=1
+			pr_banner "Dumping /proc settings:"
 			proc_conf_global || return $?
+			pr_banner "End of /proc dump"
 		fi
 		common_end
 	;;
