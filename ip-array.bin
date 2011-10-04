@@ -542,6 +542,8 @@ Options:
 -ct, --ipt-counters        Save/restore counters, when using \`save', or \`restore'.
 -dg, --debug               Enable additional debugging output.
 -dr, --dry-run             Commands are not applied.
+-ex, --err-exit            Set bash to exit on simple command failure (set -e) and
+                           to inherit the ERR trap to functions, etc.
 -na, --no-autosave         Do not autosave and restore, using iptables-save/restore.
 -nc, --no-compat-check     Do not perform checks for iptables targets, extensions and tables.
 -nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
@@ -1031,6 +1033,12 @@ while (($#)); do
 			EXEC_COMMANDS=0
 			continue
 		;;
+		-ex|--err-exit) # exit on simple commands failure (set -e)
+			verbose_msg "Enabling shell error exit (set -e -E)."
+			set -o errexit
+			set -E
+			continue
+		;;
 		-na|--no-autosave) # do not auto-save
 			NO_AUTOSAVE=1
 			continue
@@ -1472,20 +1480,6 @@ if ((TEST_MODE)); then
 	}
 	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
 fi
-
-# -------------------------------------------------------------------------
-# In any other mode then 'START' or 'STOP' set to:
-# Exit immediately if a simple command exits with a non-zero status
-# -------------------------------------------------------------------------
-case "$MODE" in
-	(START|STOP)
-		set +o errexit
-		trap - ERR
-	;;
-	(*)
-		set -o errexit
-		set -E
-esac
 
 # -------------------------------------------------------------------------
 # load main config file

@@ -151,6 +151,8 @@ Options:
 -ct, --ipt-counters        Save/restore counters, when using \`save', or \`restore'.
 -dg, --debug               Enable additional debugging output.
 -dr, --dry-run             Commands are not applied.
+-ex, --err-exit            Set bash to exit on simple command failure (set -e) and
+                           to inherit the ERR trap to functions, etc.
 -na, --no-autosave         Do not autosave and restore, using iptables-save/restore.
 -nc, --no-compat-check     Do not perform checks for iptables targets, extensions and tables.
 -nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
@@ -222,6 +224,7 @@ while (($#)); do
 		#options without an argument
 		-ct|--ipt-counters|\
 		-dr|--dry-run|\
+		-ex|--err-exit|\
 		-na|--no-autosave|\
 		-nd|--no-diff|\
 		-nc|--no-compat-check|\

@@ -4448,17 +4448,6 @@ case "$1" in
 	RESTORE_ON_START)
 	# quick-start - load previously saved known-good scripts
 		MODE='START'
-		# disable errreturn and err trap, as if a command fails in the
-		# known-good scripts, we already have a bad situation.
-		# as we cant tell how serious the error is, better try to
-		# continue and get a somehow working system state.
-		# if the error was minor, the chance of an accessable and quite
-		# configured system is better.
-		# if the error was major, we might still have a chance, as worst
-		# case may be a drop policy on all chains applied immediately before
-		# exiting on a simple command error.
-		set +e
-		trap - ERR
 		start_msg
 		load_pro_epilog_scripts 'prolog'
 		if ((NO_MODPROBE == 0)); then
