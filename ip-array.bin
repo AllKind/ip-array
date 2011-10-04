@@ -1245,6 +1245,7 @@ set_env
 : ${IPTSAVE_FAILS:=0}
 : ${SYNTAX_CHECK:=1}
 : ${RELOAD_TIME:=7}
+: ${RESTORE_ON_START:=0}
 : ${ENABLE_SYSLOG:=0}
 : ${SYSLOG_VERBOSE:=1}
 : ${VERBOSE:=6}
@@ -1265,7 +1266,7 @@ declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 	bail_out $ER_CONF
 }
 # check for boolean defaults
-for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK; do
+for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK RESTORE_ON_START; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`$rvar' is not in range of 0-1."
 		bail_out $ER_CONF
@@ -1436,15 +1437,13 @@ case "$MAIN_ARG" in
 			# apply commands after reading all rules
 			# if RESTORE_ON_START is enabled, do iptables-restore,
 			# and load previously saved known good scripts
-		case "$RESTORE_ON_START" in
-			0|"")
+		case "${RESTORE_ON_START:=0}" in
+			0)
 				MODE='START'
 			;;
 			1) # RESTORE_ON_START is enabled - do quick-start
 				MODE='RESTORE_ON_START'
 			;;
-			*) err_msg "Invalid value for \`RESTORE_ON_START'. Starting regulary."
-				MODE='START'
 		esac
 	;;
 	stop) # stop firewalling/tc
@@ -1657,14 +1656,19 @@ if ((EXEC_COMMANDS)); then
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
 		sched_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
-	else
-		# --------------------------------------------------------------
-		# if in a MODE that could make use of auto-backup, save ruleset
-		# --------------------------------------------------------------
-		case "$MAIN_ARG" in
-			start|restart|open|tc-start) autosave || bail_out $? ;;
-		esac
 	fi
+	# --------------------------------------------------------------
+	# if in a MODE that could make use of auto-backup, save ruleset
+	# --------------------------------------------------------------
+	case "$MAIN_ARG" in
+		start)
+			case "$RESTORE_ON_START" in
+				0) autosave || bail_out $? ;;
+				1) log -N "RESTORE_ON_START is enabled, not performing autosaving." ;;
+			esac
+		;;
+		restart|open|tc-start) autosave || bail_out $? ;;
+	esac
 fi
 
 # -------------------------------------------------------------------------
