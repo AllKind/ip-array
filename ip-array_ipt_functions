@@ -4275,15 +4275,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
 			val_ipv4_addr_no_range "${tmp_opt_var_value_neg_ok}" || return 1
 		;;
-#		(ctorigdst)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
-#		(ctreplsrc)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
-#		(ctrepldst)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
 		(ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
 			case "${tmp_opt_var_value_neg_ok}" in
@@ -4305,15 +4296,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				*) val_port "${tmp_opt_var_value_neg_ok}" || return 1
 			esac
 		;;
-#		(ctorigdstport)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
-#		(ctreplsrcport)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
-#		(ctrepldstport)
-#			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-#		;;
 		(ctstatus)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
 			case "$(string_toupper "${tmp_opt_var_value_neg_ok}")" in

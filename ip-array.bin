@@ -459,31 +459,16 @@ PUBLIC_FUNCTION_LIST=(
 )
 
 # -------------------------------------------------------------------------
-# turn on debugging
+# STARTUP FUNCTIONS
 # -------------------------------------------------------------------------
 
-pr_banner() {
+pr_banner() { # print a banner message
 printf "%s\n%s\n%s\n" "$SEPSTR" "# $*" "$SEPSTR"
 } # -------------------------------------------------------------------------
 
-pr_sbanner() {
+pr_sbanner() { # print a short banner message
 printf "%s\n%s\n" "$SEPSTR" "# $*"
 } # -------------------------------------------------------------------------
-
-[[ $DEBUG_INFO ]] && {
-	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
-	pr_banner "DEBUG: ENVIRONMENT"
-	set
-	pr_banner "DEBUG: SHELL OPTIONS"
-	shopt
-	pr_banner "DEBUG: TRAPS"
-	trap -p
-	pr_banner "DEBUG: end"
-}
-
-# -------------------------------------------------------------------------
-# STARTUP FUNCTIONS
-# -------------------------------------------------------------------------
 
 pr_str() { # print messages to stdout
 printf "%s\n" "$*"
@@ -595,7 +580,7 @@ dn2() { # send stderr to /dev/null
 "$@" 2>/dev/null
 } # -------------------------------------------------------------------------
 
-pr_sepstr() {
+pr_sepstr() { # print a separator string
 pr_str "$SEPSTR"
 } # -------------------------------------------------------------------------
 
@@ -970,6 +955,21 @@ exit 0
 # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
+# turn on debugging
+# -------------------------------------------------------------------------
+
+[[ $DEBUG_INFO ]] && {
+	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
+	pr_banner "DEBUG: ENVIRONMENT"
+	set
+	pr_banner "DEBUG: SHELL OPTIONS"
+	shopt
+	pr_banner "DEBUG: TRAPS"
+	trap -p
+	pr_banner "DEBUG: end"
+}
+
+# -------------------------------------------------------------------------
 # Traps
 # -------------------------------------------------------------------------
 trap "trap_err" ERR
@@ -1029,11 +1029,11 @@ while (($#)); do
 			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			continue
 		;;
-		-dr|--dry-run) # use counters for iptables-save/restore
+		-dr|--dry-run) # No acting mode, commands are generated, but not executed
 			EXEC_COMMANDS=0
 			continue
 		;;
-		-ex|--err-exit) # exit on simple commands failure (set -e)
+		-ex|--err-exit) # exit on simple commands failure (set -e), and inherit ERR trap
 			verbose_msg "Enabling shell error exit (set -e -E)."
 			set -o errexit
 			set -E
@@ -1051,7 +1051,7 @@ while (($#)); do
 			NO_DIFF_SAVE=1
 			continue
 		;;
-		-ni|--no-iface-check) # do not perform compatibility checks
+		-ni|--no-iface-check) # do not perform checks for existence of interfaces
 			NO_IFACE_CHECK=1
 			continue
 		;;
@@ -1127,14 +1127,14 @@ while (($#)); do
 					continue
 			esac
 		;;
-		-sh|--shell)
+		-sh|--shell) # shell to use. $SHELL variable is set to.
 			[[ -x $opt_arg ]] || {
 				pr_err "Shell binary \`$opt_arg' does not exist, or is not executable."
 				bail_out $ER_NOEX
 			}
 			export SHELL="$opt_arg"
 		;;
-		-t|--test)
+		-t|--test) # save active ruleset and schedule a restore
 			case "$MAIN_ARG" in
 				start|stop|restart|tc-start|tc-stop|lockdown)
 					TEST_MODE=1
@@ -1468,7 +1468,9 @@ case "$MAIN_ARG" in
 	;;
 esac
 
+# -------------------------------------------------------------------------
 # check for valid RELOAD_TIME specification
+# -------------------------------------------------------------------------
 if ((TEST_MODE)); then
 	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
 		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
@@ -1633,7 +1635,9 @@ fi
 set_runtime_vars || bail_out $?
 check_kern_ver || bail_out $?
 
+# -------------------------------------------------------------------------
 # only run if commands are going to be executed
+# -------------------------------------------------------------------------
 if ((EXEC_COMMANDS)); then
 	# -------------------------
 	# mutual exclusion - lock
