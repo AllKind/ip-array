@@ -2529,12 +2529,9 @@ if ((ENABLE_COLORS == 1)) ; then
 else
 	pr_str "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
 fi
-((VERBOSE >= 7)) && {
-	printf "PID: %d\n" ${PID}
-	printf "Parameters: %s\n" "${PARAMS}"
-}
+((VERBOSE >= 7)) && printf "PID: %d\nParameters: %s\n" ${PID} "${PARAMS}"
 syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: $MODE - Parameters: ${PARAMS}"
-if ((EXEC_COMMANDS == 0)); then
+if ((EXEC_COMMANDS == 0)) && [[ $MODE != RESTORE_ON_START ]]; then
 	log -T "Dry-run - Not executing generated commands!"
 fi
 } # -------------------------------------------------------------------------
@@ -4447,13 +4444,19 @@ case "$1" in
 	;;
 	RESTORE_ON_START)
 	# quick-start - load previously saved known-good scripts
-		MODE='START'
 		start_msg
+		MODE='START'
+		((EXEC_COMMANDS)) || log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
 		load_pro_epilog_scripts 'prolog'
 		if ((NO_MODPROBE == 0)); then
-			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES} ]]; then
+			rvar="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+			if [[ -r $rvar ]]; then
 				log -N "Loading known good modprobe commands."
-				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
+				if "$SHELL" -- "$rvar"; then
+					log -e "Sucessfully restored module settings from: $rvar."
+				else
+					cmd_err_count 'misc' "$SHELL -- $rvar"
+				fi
 			else
 				log -N "No modprobe script found."
 			fi
@@ -4462,26 +4465,38 @@ case "$1" in
 		fi
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
-				log -E "Failed restoring saved script. Starting regulary."
-				run_main "START" || bail_out $?
-				return 0
+				log -E "Failed restoring saved script."
+				cmd_err_count 'misc' "ipt_restore ${KNOWN_GOOD_RULES}"
+#				log -E "Failed restoring saved script. Starting regulary."
+#				run_main "START" || bail_out $?
+#				return 0
 			}
 		else
-			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_RULES} ]]; then
+			rvar="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
+			if [[ -r $rvar ]]; then
 				log -N "Loading known good iptables commands."
-				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_RULES}" || {
-					log -E "Failed restoring saved script. Starting regulary."
-					run_main "START" || bail_out $?
-					return 0
-				}
+				if "$SHELL" -- "$rvar"; then
+					log -e "Sucessfully restored iptables rules from: $rvar."
+				else
+					log -E "Failed restoring saved script."
+					cmd_err_count 'misc' "$SHELL -- $rvar"
+#					log -E "Failed restoring saved script. Starting regulary."
+#					run_main "START" || bail_out $?
+#					return 0
+				fi
 			else
 				log -N "No iptables script found."
 			fi
 		fi
 		if ((ENABLE_TC_SHAPING)); then
-			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL} ]]; then
+			rvar="${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+			if [[ -r $rvar ]]; then
 				log -N "Loading known good traffic shaping commands."
-				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
+				if "$SHELL" -- "$rvar"; then
+					log -e "Sucessfully restored traffic control rules from: $rvar."
+				else
+					cmd_err_count 'misc' "$SHELL -- $rvar"
+				fi
 			else
 				log -N "No traffic shaping script found."
 			fi
@@ -4490,9 +4505,14 @@ case "$1" in
 		fi
 		# /proc settings at last, as filesystem may not be fully populated before
 		if ((NO_PROC == 0)); then
-			if [[ -r ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET} ]]; then
+			rvar="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+			if [[ -r $rvar ]]; then
 				log -N "Loading known good /proc settings."
-				"$SHELL" -- "${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}" || cmd_err_count 'misc' "$SHELL -- ${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
+				if "$SHELL" -- "$rvar"; then
+					log -e "Sucessfully restored /proc settings from: $rvar."
+				else
+					cmd_err_count 'misc' "$SHELL -- $rvar"
+				fi
 			else
 				log -N "No /proc settings script found."
 			fi
@@ -4636,7 +4656,7 @@ case "$1" in
 		apply_rules || return $?
 		common_end
 	;;
-	*) log -i "$MODE" 'MODE'
+	*) log -o "$1" $FUNCNAME
 		return $ER_FAIL
 esac
 } # -------------------------------------------------------------------------
