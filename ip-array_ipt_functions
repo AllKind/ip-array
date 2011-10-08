@@ -831,6 +831,7 @@ dn run_ipt -t security -nL || SECURITY_TABLE_PRESENT=0
 } # -------------------------------------------------------------------------
 
 load_known_traffic_map() {
+((ENABLE_FILTER)) || return 0
 [[ ${KNOWN_TRAFFIC_MAP} ]] || return 0
 log -w "Loading KNOWN_TRAFFIC_MAP"
 fill_array 'KNOWN_TRAFFIC_MAP'
@@ -838,6 +839,7 @@ fill_array 'KNOWN_TRAFFIC_MAP'
 	log -u 'KNOWN_TRAFFIC_MAP'
 	return 0
 }
+[[ $DEBUG_INFO ]] && dbg_arr 'KNOWN_TRAFFIC_MAP' || :
 check_array_unique 'KNOWN_TRAFFIC_MAP' || {
 	raise_cfg_err_count
 	return 0
@@ -847,32 +849,32 @@ readonly KNOWN_TRAFFIC_MAP
 
 fill_final_rule_map() { # fill FINAL_RULE_MAP array
 ((ENABLE_FILTER)) || return 0
-if [[ ${FINAL_RULE_MAP} ]]; then
-	log -w "Loading FINAL_RULE_MAP"
-	fill_array 'FINAL_RULE_MAP'
-	((${#FINAL_RULE_MAP[@]})) || {
-	log -u 'FINAL_RULE_MAP'
+[[ ${FINAL_RULE_MAP} ]] || return 0
+log -w "Loading FINAL_RULE_MAP"
+fill_array 'FINAL_RULE_MAP'
+((${#FINAL_RULE_MAP[@]})) || {
+log -u 'FINAL_RULE_MAP'
+return 0
+}
+[[ $DEBUG_INFO ]] && dbg_arr 'FINAL_RULE_MAP' || :
+check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
+	log -E "Duplicate chain name in \`FINAL_RULE_MAP'."
+	raise_cfg_err_count
 	return 0
 }
-	check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
-		log -E "Duplicate chain name in \`FINAL_RULE_MAP'."
-		raise_cfg_err_count
-		return 0
-	}
-	readonly FINAL_RULE_MAP
-fi
+readonly FINAL_RULE_MAP
 } # -------------------------------------------------------------------------
 
 set_chain_classification() {
 local str_mode str_tables str_tbl
 JUMP_TREE=$(string_tolower "${JUMP_TREE:-none}")
-set -- ${JUMP_TREE}
+set -- $JUMP_TREE
 str_mode="$1"
 shift
 str_tables="$@"
-if [[ ${str_tables} ]]; then
-	check_str_unique "${str_tables}" || {
-		log -i "${JUMP_TREE}" 'JUMP_TREE'
+if [[ $str_tables ]]; then
+	check_str_unique "$str_tables" || {
+		log -i "$JUMP_TREE" 'JUMP_TREE'
 		raise_cfg_err_count
 		return $ER_CONF
 	}
@@ -884,7 +886,7 @@ fi
 #[3]=netname only?
 #)
 JUMP_TREE=()
-case "${str_mode}" in
+case "$str_mode" in
 	none)
 		log -w "Not applying chain classification"
 		JUMP_TREE[0]=0
@@ -898,12 +900,12 @@ case "${str_mode}" in
 		JUMP_TREE[0]=1
 		JUMP_TREE[3]=0
 	;;
-	*) log -i "${str_mode}" 'JUMP_TREE'
+	*) log -i "$str_mode" 'JUMP_TREE'
 		raise_cfg_err_count
 		return $ER_CONF
 esac
-JUMP_TREE[1]="${str_mode}"
-case "${str_tables}" in
+JUMP_TREE[1]="$str_mode"
+case "$str_tables" in
 	none)
 		log -N "Jump tree tables are set to \`none', disabling jump tree creation."
 		JUMP_TREE[0]=0
@@ -917,13 +919,13 @@ case "${str_tables}" in
 		((ENABLE_SECURITY)) && JUMP_TREE[2]+=" security"
 	;;
 	*)
-		for str_tbl in ${str_tables}; do
-			val_table "${str_tbl}" || {
-				log -i "${str_tables}" 'JUMP_TREE'
+		for str_tbl in $str_tables; do
+			val_table "$str_tbl" || {
+				log -i "$str_tables" 'JUMP_TREE'
 				raise_cfg_err_count
 				return $ER_CONF
 			}
-			JUMP_TREE[2]+="${str_tbl} "
+			JUMP_TREE[2]+="$str_tbl "
 		done
 esac
 if [[ $DEBUG_INFO ]]; then dbg_arr JUMP_TREE; fi
@@ -953,6 +955,7 @@ if [[ ${POLICY_MAP} ]]; then
 		raise_cfg_err_count
 		return $ER_NODEF
 	}
+	[[ $DEBUG_INFO ]] && dbg_arr 'POLICY_MAP'
 	check_array_unique 'POLICY_MAP' || {
 		raise_cfg_err_count
 		return $ER_FAIL

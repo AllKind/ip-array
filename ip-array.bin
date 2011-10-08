@@ -916,11 +916,11 @@ cleanup_lock
 } # -------------------------------------------------------------------------
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
-pr_err "${ME} exiting on error! Exit code: ${1:-${ER_LOAD}}"
+pr_err "${ME} exiting on error! Exit code: ${1:-$ER_LOAD}"
 cleanup_at_job
 cleanup
 builtin enable exit
-exit ${1:-${ER_LOAD}}
+exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
@@ -928,7 +928,7 @@ if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)) && [[ $AUTOSAVE_FILE ]]; then
 	pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
 	ipt_restore "$AUTOSAVE_FILE" || :
 fi
-bail_out ${1:-${ER_LOAD}}
+bail_out ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 trap_err() {
@@ -997,7 +997,7 @@ case "$MAIN_ARG" in
 			bail_out $ER_FAIL
 		fi
 	;;
-	version) printf "%s %s\n" "$ME" "$STR_VERSION"
+	version) pr_str "$ME $STR_VERSION"
 		quit_welldone
 	;;
 	*) pr_err "Unknown parameter: \`$MAIN_ARG'"

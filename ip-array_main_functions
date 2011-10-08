@@ -273,7 +273,7 @@ done
 printf "\e[${str_ansi_seq%;}m"
 } # -------------------------------------------------------------------------
 
-print_msg() { # print a couloured message
+print_msg() { # print a [coloured] message
 local fd=stdout msg_prefix="" bg_col="" fg_col="" msg_format=""
 OPTIND=1
 while getopts b:f:m:oENW option; do
@@ -291,18 +291,20 @@ while getopts b:f:m:oENW option; do
 done
 shift $(( OPTIND - 1 ))
 OPTIND=1
-if [[ $bg_col || $fg_col || $msg_format ]]; then
-	case "$fd" in
-		stdout)
-			printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)"
-		;;
-		stderr)
-			printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)" >&2
-		;;
-	esac
+if ((ENABLE_COLORS)); then
+	if [[ $bg_col || $fg_col || $msg_format ]]; then
+		case "$fd" in
+			stdout)
+				printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)"
+			;;
+			stderr)
+				printf "%b\n" "$(cl $fg_col $bg_col $msg_format)${msg_prefix}${*}$(cl)" >&2
+			;;
+		esac
+	fi
 else
 	case "$fd" in
-		stdout) printf "%s\n" "${msg_prefix}${*}" ;;
+		stdout) pr_str "${msg_prefix}${*}" ;;
 		stderr) pr_err "${msg_prefix}${*}" ;;
 	esac
 fi
@@ -2556,6 +2558,7 @@ if [[ ${MODULES_TO_LOAD} ]]; then
 	log -w "Reading MODULES_TO_LOAD"
 	fill_array 'MODULES_TO_LOAD'
 	((${#MODULES_TO_LOAD[@]})) || return 0
+	[[ $DEBUG_INFO ]] && dbg_arr 'MODULES_TO_LOAD' || :
 	check_array_unique 'MODULES_TO_LOAD' || {
 			raise_cfg_err_count
 	}
@@ -2568,6 +2571,7 @@ if [[ ${MODS_TO_RM} ]]; then
 	log -w "Reading MODS_TO_RM"
 	fill_array 'MODS_TO_RM'
 	((${#MODS_TO_RM[@]})) || return 0
+	[[ $DEBUG_INFO ]] && dbg_arr 'MODS_TO_RM' || :
 	check_array_unique 'MODS_TO_RM' || {
 		raise_cfg_err_count
 	}
@@ -2577,8 +2581,9 @@ fi
 
 fill_proto_svc_arrays() {
 # load protocols and services file (1st column, no comments) into an array
-fill_array_from_file 'PROTOCOLS_ARRAY' "${PROTOCOLS}"
-fill_array_from_file 'SERVICES_ARRAY' "${SERVICES}"
+fill_array_from_file 'PROTOCOLS_ARRAY' "$PROTOCOLS"
+fill_array_from_file 'SERVICES_ARRAY' "$SERVICES"
+[[ $DEBUG_INFO ]] && dbg_arr PROTOCOLS_ARRAY && dbg_arr SERVICES_ARRAY || :
 readonly PROTOCOLS_ARRAY SERVICES_ARRAY
 } # -------------------------------------------------------------------------
 
@@ -2589,11 +2594,12 @@ readonly NET_INTERFACES
 if ! ((${#NET_INTERFACES[@]})); then
 	log -E "NET_INTERFACES array is empty."
 	return $ER_NODEF
+else
+	[[ $DEBUG_INFO ]] && dbg_arr 'NET_INTERFACES' || :
 fi
 } # -------------------------------------------------------------------------
 
-fill_net_arrays() # FILL LOCAL NETWORK DATA ARRAYS
-{
+fill_net_arrays() { # FILL LOCAL NETWORK DATA ARRAYS
 local -i net_idx
 log -w "Loading local network data arrays"
 for net_idx in ${!LOCAL_NET_ARRAY[@]}; do
@@ -2603,14 +2609,20 @@ for net_idx in ${!LOCAL_NET_ARRAY[@]}; do
 		return $ER_FAIL
 	}
 	readonly ${LOCAL_NET_ARRAY[net_idx]}
+	[[ $DEBUG_INFO ]] && dbg_arr ${LOCAL_NET_ARRAY[net_idx]} || :
 done
 } # -------------------------------------------------------------------------
 
 fill_script_map() { # fill SCRIPT_MAP array
+if [[ $cmdline_skip_scripts = all ]]; then
+	log -w "Not loading SCRIPT_MAP - disabled by configuration."
+	return 0
+fi
 if [[ ${SCRIPT_MAP} ]]; then
 	log -w "Loading SCRIPT_MAP"
 	fill_array 'SCRIPT_MAP'
 	((${#SCRIPT_MAP[@]})) || return 0
+	[[ $DEBUG_INFO ]] && dbg_arr 'SCRIPT_MAP'
 	check_array_unique 'SCRIPT_MAP' || {
 		raise_cfg_err_count
 		return 0
@@ -3397,7 +3409,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					opt|opts|option|options|optlist) let --opt_count ;;
 					cr|combined_rule)
 						if [[ ${reverse_mode} ]]; then
-							(($(($((opt_list_count / 2)) * 2)) == opt_list_count)) || {
+							(( $(( $((opt_list_count / 2)) * 2)) == opt_list_count)) || {
 								log -E "\`reverse_mode' requires 2 option lists."
 								return 1
 							}
@@ -4155,8 +4167,7 @@ if ((ENABLE_TC_SHAPING == 0)); then
 	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 		log -W "Traffic shaping is disabled by configuration."
 	fi
-fi
-if ((ENABLE_TC_SHAPING)); then
+else
 	check_tc || {
 		log -E "Traffic Control commands will not be applied."
 		ENABLE_TC_SHAPING=0
