@@ -2343,8 +2343,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	local -a target=() chain=() state_match_arg=() mandatory_vars=() option_list_0=() option_list_1=() always_use_0=() always_use_1=() load_template=()
 
 	# check for valid template name
-#	[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(@(T_|BT_|GT_|TEMPLATE_|BASE_TEMPLATE_|GLOBAL_TEMPLATE_)+([[:word:]])) ]] && {
-	[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} = @(@(?(B|G)T_|?(BASE_|GLOBAL_)TEMPLATE_)+([[:word:]])) ]] || {
+	[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} = @(@(?(B|G)T|?(BASE|GLOBAL)_TEMPLATE_)+([[:word:]])) ]] || {
 		log -E "Invalid template name \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'. \
 			Template names must contain any of the following prefixes: \`T_ | BT_ | GT_ | TEMPLATE_ | BASE_TEMPLATE_ | GLOBAL_TEMPLATE_'"
 		raise_cfg_err_count
@@ -2379,7 +2378,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 			continue
 		}
 	else
-		[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT_|BASE_TEMPLATE_)* ]] && {
+		[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT|BASE_TEMPLATE)_* ]] && {
 			log -W "No option_list_0 specified in template \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'."
 #			raise_cfg_err_count
 #			return 1
@@ -2391,7 +2390,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 			continue
 		}
 	fi
-	if ((${#option_list_0[@]} > 0 && ${#option_list_1[@]} > 0)) ; then
+	if ((${#option_list_0[@]} && ${#option_list_1[@]})) ; then
 		((${#option_list_0[@]} == ${#option_list_1[@]})) || {
 			log -W "Mismatch in amount of option list members in template \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'. \
 				option_list_0: ${#option_list_0[@]} option_list_1: ${#option_list_1[@]}"
@@ -2492,7 +2491,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 						continue
 					}
 				else
-					[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT_|BASE_TEMPLATE_)* ]] && {
+					[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT|BASE_TEMPLATE)_* ]] && {
 						log -E "\`reverse_mode' is \`reverse', but \`option_list_1' is emtpy."
 						raise_cfg_err_count
 						continue
@@ -2508,7 +2507,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 	if [[ ${reverse_condition} ]]; then
 		if [[ -z ${reverse_mode} ]]; then
-			[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT_|BASE_TEMPLATE_)* ]] && {
+			[[ ${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]} != @(BT|BASE_TEMPLATE)_* ]] && {
 				log -E "\`reverse_condition' is set, but \`reverse_mode' is not."
 				raise_cfg_err_count
 				continue
@@ -2539,7 +2538,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 			continue
 		}
 	fi
-	if ((${#always_use_0[@]} > 0 && ${#always_use_1[@]} > 0)) ; then
+	if ((${#always_use_0[@]} && ${#always_use_1[@]})) ; then
 		((${#always_use_0[@]} == ${#always_use_1[@]})) || {
 			log -W "Mismatch in amount of always_use list members in template \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'. \
 				always_use_0: ${#always_use_0[@]} always_use_1: ${#always_use_1[@]}"
@@ -2620,7 +2619,6 @@ if ((parse_files == 1)); then
 	source "$parsed_file"
 	run_rm "$parsed_file"
 	exec 7> "$parsed_file"
-#	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
 	validate_generate_final_templates || {
 		exec 7>&-
@@ -2742,7 +2740,6 @@ if ((parse_files == 1)); then
 		}
 	fi
 	exec 7> "$parsed_file"
-#	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
 	xml_parser 'ruleblocks' < "$ruleblock_file" || {
 		exec 7>&-
@@ -5962,8 +5959,7 @@ set_env
 local target_template="$1" target_ruleblock="$2"
 
 # check for valid template name
-#[[ ${target_template} != @(@(T_|BT_|GT_|TEMPLATE_|BASE_TEMPLATE_|GLOBAL_TEMPLATE_)+([[:word:]])) ]] && {
-[[ ${target_template} = @(@(?(B|G)T_|?(BASE_|GLOBAL_)TEMPLATE_)+([[:word:]])) ]] || {
+[[ ${target_template} = @(@(?(B|G)T|?(BASE|GLOBAL)_TEMPLATE_)+([[:word:]])) ]] || {
 	log -E "Invalid Template name \`${target_template}'. \
 		Template names must contain any of the following prefixes: \`T_ | BT_ | GT_ | TEMPLATE_ | BASE_TEMPLATE_ | GLOBAL_TEMPLATE_'"
 	raise_cfg_err_count

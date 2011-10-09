@@ -278,10 +278,10 @@ local fd=stdout msg_prefix="" bg_col="" fg_col="" msg_format=""
 OPTIND=1
 while getopts b:f:m:oENW option; do
 	case "$option" in
-		b) bg_col="$OPTARG" ;;
-		f) fg_col="$OPTARG" ;;
-		o) fd=stderr ;;
-		m) msg_format="$OPTARG" ;;
+		b) bg_col="$OPTARG" ;; # foreground colour
+		f) fg_col="$OPTARG" ;; # background colour
+		o) fd=stderr ;; # send to stdout or stderr
+		m) msg_format="$OPTARG" ;; # formatting
 		E) msg_prefix="ERROR: " ;;
 		N) msg_prefix="NOTICE: " ;;
 		W) msg_prefix="WARNING: " ;;
@@ -464,7 +464,7 @@ done
 
 my_cut() {
 # show only specified columns of input, separated by an optionaly supplied IFS
-local OldIFS="$IFS" NewIFS colums_to_show str_line str_output col_idx
+local OldIFS="$IFS" colums_to_show=1 NewIFS str_line str_output col_idx
 OPTIND=1
 while getopts :d:c: option; do
 	case "$option" in
@@ -474,9 +474,6 @@ while getopts :d:c: option; do
 	esac
 done
 OPTIND=1
-
-# set default value if not evaluated via 'getopts'
-colums_to_show="${colums_to_show:-"1"}"
 while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
 	[[ ${str_line} ]] || continue
 	local IFS="${NewIFS:-${OldIFS}}"
