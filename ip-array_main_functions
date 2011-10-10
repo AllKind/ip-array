@@ -4434,7 +4434,7 @@ case "$1" in
 
 		log -T "Preparing known-good iptables ruleset"
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
-			ipt_save "${KNOWN_GOOD_RULES}" || bail_out $?
+			ipt_save "${KNOWN_GOOD_RULES}" || return $?
 		else
 			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
 			MODE='SAVE-IPT-COMMANDS'
@@ -4457,6 +4457,7 @@ case "$1" in
 		start_msg
 		MODE='START'
 		((EXEC_COMMANDS)) || log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
+		EXEC_COMMANDS=1
 		load_pro_epilog_scripts 'prolog'
 		if ((NO_MODPROBE == 0)); then
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
@@ -4473,10 +4474,11 @@ case "$1" in
 		else
 			log -N "Modprobing is disabled by configuration."
 		fi
+		log -N "Loading known good iptables commands."
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
 				log -E "Failed restoring saved script."
-				cmd_err_count 'misc' "ipt_restore ${KNOWN_GOOD_RULES}"
+				cmd_err_count 'ipt' "ipt_restore ${KNOWN_GOOD_RULES}"
 #				log -E "Failed restoring saved script. Starting regulary."
 #				run_main "START" || bail_out $?
 #				return 0
@@ -4484,12 +4486,11 @@ case "$1" in
 		else
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
 			if [[ -r $rvar ]]; then
-				log -N "Loading known good iptables commands."
 				if "$SHELL" -- "$rvar"; then
 					log -e "Sucessfully restored iptables rules from: $rvar."
 				else
 					log -E "Failed restoring saved script."
-					cmd_err_count 'misc' "$SHELL -- $rvar"
+					cmd_err_count 'ipt' "$SHELL -- $rvar"
 #					log -E "Failed restoring saved script. Starting regulary."
 #					run_main "START" || bail_out $?
 #					return 0
