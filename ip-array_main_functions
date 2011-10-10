@@ -4201,6 +4201,7 @@ check_ipt_targets || return $?
 check_ipt_modules || return $?
 test_chain delete
 test_ipset delete
+check_ipt_rule_list_param
 } # -------------------------------------------------------------------------
 
 module_handling() { # removing and loading of modules
@@ -4327,6 +4328,7 @@ case "$1" in
 		check_raw_table
 		check_rawpost_table
 		check_security_table
+		check_ipt_rule_list_param
 		((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && diff_ruleset 'raw'
 		((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && diff_ruleset 'rawpost'
 		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && diff_ruleset 'mangle'

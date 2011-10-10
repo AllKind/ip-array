@@ -2192,11 +2192,15 @@ done < <(run_ipt -t ${str_tbl} -nL 2>/dev/null)
 return 0
 } # -------------------------------------------------------------------------
 
+check_ipt_rule_list_param() { # check if '-S' switch is available within iptables
+dn run_ipt -S || IPT_RULE_LIST_PARAM="-nL"
+} # -------------------------------------------------------------------------
+
 save_for_diff() { # save output of iptables -nL, to be compared to the currently active ruleset
 local str_tbl="${1:-filter}"
-log -w "${PF}saving ${str_tbl}"
-run_ipt -t ${str_tbl} -nL >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
-	cmd_err_count 'ipt' "${IPT} -t ${str_tbl} -nL >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
+log -w "${PF}saving $str_tbl"
+run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
+	cmd_err_count 'ipt' "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
 	return 0
 }
 } # -------------------------------------------------------------------------
@@ -2204,25 +2208,25 @@ run_ipt -t ${str_tbl} -nL >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
 diff_ruleset() {
 local str_tbl="${1:-filter}"
 local str_dfile="${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" tmp_dfile="${SAVE_DIR}/tmp_diff_${RANDOM}${RANDOM}"
-[[ -r ${str_dfile} ]] || {
+[[ -r $str_dfile ]] || {
 	log -E "\`${str_dfile}' does not exist, or is not readable."
 	return 0
 }
-run_ipt -t ${str_tbl} -nL >"${tmp_dfile}" || {
-	log -F "saving ${str_tbl} table ruleset to: \`${tmp_dfile}'"
-	cmd_err_count 'ipt' "${IPT} -t ${str_tbl} -nL >${tmp_dfile}"
+run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"$tmp_dfile" || {
+	log -F "saving $str_tbl table ruleset to: \`${tmp_dfile}'"
+	cmd_err_count 'ipt' "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >$tmp_dfile"
 	return 0
 }
-if dn "${DIFF}" "${tmp_dfile}" "${str_dfile}"; then
-	printf "%s\n %s\n" "Active iptables ruleset of ${str_tbl} table is the same as the one saved to:" "\`${str_dfile}'"
-	log -l "Active iptables ruleset of ${str_tbl} table is the same as the one saved to: \`${str_dfile}'"
+if dn "$DIFF" "$tmp_dfile" "$str_dfile"; then
+	printf "%s\n %s\n" "Active iptables ruleset of $str_tbl table is the same as the one saved to:" "\`${str_dfile}'"
+	log -l "Active iptables ruleset of $str_tbl table is the same as the one saved to: \`${str_dfile}'"
 else
-	printf "%s\n %s\n" "WARNING: Active iptables ruleset of ${str_tbl} table differs from the one saved to:" "\`${str_dfile}'"
-	log -l "WARNING: Active iptables ruleset of ${str_tbl} table differs from the one saved to: \`${str_dfile}'"
+	printf "%s\n %s\n" "WARNING: Active iptables ruleset of $str_tbl table differs from the one saved to:" "\`${str_dfile}'"
+	log -l "WARNING: Active iptables ruleset of $str_tbl table differs from the one saved to: \`${str_dfile}'"
 fi
-run_rm "${tmp_dfile}" || {
+run_rm "$tmp_dfile" || {
 	log -F "removing \`${tmp_dfile}'"
-	cmd_err_count 'misc' "${RM}" -f "${tmp_dfile}"
+	cmd_err_count 'misc' "$RM" -f "$tmp_dfile"
 	return 0
 }
 } # -------------------------------------------------------------------------

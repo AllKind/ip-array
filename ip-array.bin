@@ -201,6 +201,7 @@ declare AT_JOB			# id of the restore job
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
+declare IPT_RULE_LIST_PARAM="-S"	# Switch to use for iptables rule diff
 
 # Function used to copy an array
 declare copy_array					# Function "Pointer"
