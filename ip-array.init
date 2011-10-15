@@ -178,6 +178,7 @@ Options:
                            Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
                            Available types: \`cmd' (=default), \`ipt'.
+-rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
 -sc, --show-config [type] [...]
                            Select type of information to show. Available types:
@@ -289,6 +290,7 @@ while (($#)); do
 		-s|--save-file|\
 		-co|--color|\
 		-gf|--gen-format|\
+		-rs|--restore-on-start|\
 		-rt|--reload-time|\
 		-sv|--syslog-verbose|\
 		-v|--verbose)

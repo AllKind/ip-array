@@ -155,8 +155,8 @@ declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR 
 # command line options
 declare cmdline_def_file cmdline_conf_file cmdline_save_file \
 	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
-	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_reload_time \
-	cmdline_skip_scripts cmdline_gen_format cmdline_color
+	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_quickstart \
+	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -398,16 +398,16 @@ LOCAL_NET_ARRAY=( LAN_NS ISP_NS LOCAL_NS ISP_SMTP TIME_SERVERS VPN_MAP )
 # Format: array-name | category | message
 CMD_NAMES_ARRAY=(
 "MODULE_CMD_ARRAY mod modprobe commands"
-"IPT_POL_ARRAY ipt Iptables policy commands"
-"IPT_FLUSH_ARRAY ipt Iptables chain flushing/deletion commands"
-"IPT_CCHAIN_ARRAY ipt Iptables chain creation commands"
-"IPT_RAW_CMD_ARRAY ipt Iptables raw table commands"
-"IPT_MANGLE_CMD_ARRAY ipt Iptables mangle table commands"
-"IPT_NAT_CMD_ARRAY ipt Iptables nat table commands"
-"IPT_FILTER_CMD_ARRAY ipt Iptables filter table commands"
-"IPT_SECURITY_CMD_ARRAY ipt Iptables security table commands"
-"IPT_RAWPOST_CMD_ARRAY ipt Iptables rawpost table commands"
-"TC_CMD_ARRAY tc Traffic Control commands"
+"IPT_POL_ARRAY ipt iptables policy commands"
+"IPT_FLUSH_ARRAY ipt iptables chain flushing/deletion commands"
+"IPT_CCHAIN_ARRAY ipt iptables chain creation commands"
+"IPT_RAW_CMD_ARRAY ipt iptables raw table commands"
+"IPT_MANGLE_CMD_ARRAY ipt iptables mangle table commands"
+"IPT_NAT_CMD_ARRAY ipt iptables nat table commands"
+"IPT_FILTER_CMD_ARRAY ipt iptables filter table commands"
+"IPT_SECURITY_CMD_ARRAY ipt iptables security table commands"
+"IPT_RAWPOST_CMD_ARRAY ipt iptables rawpost table commands"
+"TC_CMD_ARRAY tc traffic control commands"
 "PROC_CMD_ARRAY proc /proc settings"
 )
 
@@ -555,6 +555,7 @@ Options:
                            Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
                            Available types: \`cmd' (=default), \`ipt'.
+-rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
                            This option is only valid with the \`test' parameter.
 -sc, --show-config [type] [...]
@@ -1152,6 +1153,7 @@ while (($#)); do
 					bad_use_quit
 			esac
 		;;
+		-rs|--restore-on-start) cmdline_quickstart="$opt_arg" ;; # en/disable quickstart
 		-rt|--reload-time) cmdline_reload_time="$opt_arg" ;; # time span in minutes until restoring ruleset (test parameter)
 		-sv|--syslog-verbose) cmdline_syslog_verbosity="$opt_arg" ;; # syslog logging verbosity level
 		-v|--verbose) # stdout/err verbosity level
@@ -1221,6 +1223,7 @@ set_env
 [[ ${cmdline_lib_dir} ]] && LIB_DIR="${cmdline_lib_dir}"
 [[ ${cmdline_run_dir} ]] && LOCK_DIR="${cmdline_run_dir}"
 [[ ${cmdline_conf_file} ]] && CONFIG="${cmdline_conf_file}"
+[[ ${cmdline_quickstart} ]] && RESTORE_ON_START="${cmdline_quickstart}"
 [[ ${cmdline_reload_time} ]] && RELOAD_TIME="${cmdline_reload_time}"
 [[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
 [[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"

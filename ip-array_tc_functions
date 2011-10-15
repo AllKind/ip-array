@@ -187,7 +187,7 @@ while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
 	esac
 done
 OPTIND=1 # reset options index variable
-log -e "${PF}creating CLASS: ${m_dev}${m_parent}${m_classid}${m_rate}${m_ceil}${m_burst}${m_cburst}${m_quantum}${m_mtu}${m_prio}"
+log -e "${PF}creating class: ${m_dev}${m_parent}${m_classid}${m_rate}${m_ceil}${m_burst}${m_cburst}${m_quantum}${m_mtu}${m_prio}"
 add_tc_cmd "class add ${qdev} ${qparent} ${qclassid} htb ${qrate} ${qceil} ${qburst} ${qcburst} ${qquantum} ${qmtu} ${qprio}"
 } # -------------------------------------------------------------------------
 
@@ -223,13 +223,13 @@ add_tc_cmd "filter add ${qdev} ${qparent} ${qproto} ${qprio} ${qhandle} ${qdomai
 tc_create_htb_qdisc() { # create htb qdiscs
 local -i htb_idx
 if ((${#HTB_QDISC[@]})); then
-	log -I "Creating HTB QDISCs"
+	log -I "Creating HTB qdiscs"
 	for htb_idx in ${!HTB_QDISC[@]}; do
 		set -- ${HTB_QDISC[htb_idx]}
 		local strERR="HTB_QDISC ${htb_idx} ${HTB_QDISC[htb_idx]}"
 		local dev=${1} user=${2} handle=${3} defclass=${4} r2q=${5}
 		check_vars_no_sep dev user handle defclass r2q || { cfg_err ${strERR}; continue; }
-		log -e "${PF}creating QDISC: dev=${dev} user=${user} handle=${handle} defclass=${defclass} r2q=${r2q}"
+		log -e "${PF}creating qdisc: dev=${dev} user=${user} handle=${handle} defclass=${defclass} r2q=${r2q}"
 		tc_add_htbqd -d ${dev} -u ${user} -h ${handle} -f ${defclass} -r ${r2q} || cfg_err ${strERR}
 	done
 else
@@ -240,7 +240,7 @@ fi
 tc_create_class() { # create TC classes
 local -i tcc_idx
 if ((${#TC_CLASS[@]})); then
-	log -I "Creating TC CLASSES"
+	log -I "Creating TC classes"
 	for tcc_idx in ${!TC_CLASS[@]}; do
 		set -- ${TC_CLASS[tcc_idx]}
 		local strERR="TC_CLASS ${tcc_idx} ${TC_CLASS[tcc_idx]}"
@@ -258,13 +258,13 @@ fi
 tc_create_sfq_qdisc() { # create sfq qdiscs
 local -i sfq_idx
 if ((${#SFQ_QDISC[@]})); then
-	log -I "Creating SFQ QDISCs"
+	log -I "Creating SFQ qdiscs"
 	for sfq_idx in ${!SFQ_QDISC[@]}; do
 		set -- ${SFQ_QDISC[sfq_idx]}
 		local strERR="SFQ_QDISC ${sfq_idx} ${SFQ_QDISC[sfq_idx]}"
 		local dev=${1} parent=${2} handle=${3} perturb=${4}
 		check_vars_no_sep dev parent handle perturb || { cfg_err ${strERR}; continue; }
-		log -e "${PF}creating QDISC: dev=${dev} parent=${parent} handle=${handle} perturb=${perturb}"
+		log -e "${PF}creating qdisc: dev=${dev} parent=${parent} handle=${handle} perturb=${perturb}"
 		tc_add_sfqd -d ${dev} -p ${parent} -h ${handle} -t ${perturb} || cfg_err ${strERR}
 	done
 else
@@ -275,13 +275,13 @@ fi
 tc_create_filter() { # create TC filters
 local -i f_idx
 if ((${#TC_FILTER[@]})); then
-	log -I "Creating TC FILTERS"
+	log -I "Creating TC filters"
 	for f_idx in ${!TC_FILTER[@]}; do
 		set -- ${TC_FILTER[f_idx]}
 		local strERR="TC_FILTER ${f_idx} ${TC_FILTER[f_idx]}"
 		local dev=${1} parent=${2} proto=${3} prio=${4} handle=${5} dom=${6} classid=${7}
 		check_vars_no_sep dev parent proto prio handle dom classid || { cfg_err ${strERR}; continue; }
-		log -e "${PF}creating Filter: dev=${dev} parent=${parent} proto=${proto} prio=${prio} handle=${handle} dom=${dom} classid=${classid}"
+		log -e "${PF}creating filter: dev=${dev} parent=${parent} proto=${proto} prio=${prio} handle=${handle} dom=${dom} classid=${classid}"
 		tc_add_filter -d ${dev} -p ${parent} -o ${proto} -r ${prio} -h ${handle} -m ${dom} -i ${classid} || cfg_err ${strERR}
 	done
 else

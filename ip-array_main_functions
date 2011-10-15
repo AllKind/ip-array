@@ -4268,10 +4268,8 @@ fi
 
 run_main() {
 case "$1" in
-#	DRY-RUN|RESTART|SAVE-COMMANDS|START)
 	RESTART|SAVE-COMMANDS|START)
 	# All of these modes use all IP-Array features
-	# DRY-RUN: no acting mode, commands are not applied
 	# RESTART: config is read and generated commands are applied at the end
 	# SAVE-COMMANDS: modprobe, proc, iptables and tc commands are saved to a file
 	# START: lockdown mode (except (if configured) admin connection + locahost traffic)
@@ -4309,7 +4307,7 @@ case "$1" in
 		module_handling || return $?
 		compatibility_check || return $?
 		for rvar in raw rawpost security; do
-			if (($(subst_var "$(string_toupper "$rvar")_TABLE_PRESENT") == 0)); then
+			if (($(subst_var $(string_toupper "$rvar")_TABLE_PRESENT) == 0)); then
 				log -W "\`$rvar' table is not present on the local system."
 			fi
 		done
@@ -4479,9 +4477,6 @@ case "$1" in
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
 				log -E "Failed restoring saved script."
 				cmd_err_count 'ipt' "ipt_restore ${KNOWN_GOOD_RULES}"
-#				log -E "Failed restoring saved script. Starting regulary."
-#				run_main "START" || bail_out $?
-#				return 0
 			}
 		else
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
@@ -4491,9 +4486,6 @@ case "$1" in
 				else
 					log -E "Failed restoring saved script."
 					cmd_err_count 'ipt' "$SHELL -- $rvar"
-#					log -E "Failed restoring saved script. Starting regulary."
-#					run_main "START" || bail_out $?
-#					return 0
 				fi
 			else
 				log -N "No iptables script found."
