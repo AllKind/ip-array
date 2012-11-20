@@ -1604,8 +1604,8 @@ case "$PROC_CONNTRACK_MAX" in
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
 #		PROC_CONNTRACK_MAX=$(( $((ramsize / 16384 / hw)) * factor))
 #		PROC_CONNTRACK_HASHSIZE=$((PROC_CONNTRACK_MAX / 8))
-		PROC_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" |bc -l)
-		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" |bc -l)
+		PROC_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
+		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
 		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
 		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
 	;;
@@ -1636,8 +1636,8 @@ case "$PROC_CONNTRACK_HASHSIZE" in
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
 #		PROC_CONNTRACK_HASHSIZE=$(( $((ramsize / 131072 / hw)) * factor))
 #		PROC_CONNTRACK_MAX=$((PROC_CONNTRACK_HASHSIZE * 8))
-		PROC_CONNTRACK_HASHSIZE=$(echo "$ramsize / 131072 / $hw" * $factor |bc -l)
-		PROC_CONNTRACK_MAX=$(echo "$PROC_CONNTRACK_HASHSIZE * 8" |bc -l)
+		PROC_CONNTRACK_HASHSIZE=$(echo "$ramsize / 131072 / $hw" * $factor | run_bc)
+		PROC_CONNTRACK_MAX=$(echo "$PROC_CONNTRACK_HASHSIZE * 8" | run_bc)
 		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
 		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
 	;;

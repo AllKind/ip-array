@@ -415,6 +415,7 @@ CMD_NAMES_ARRAY=(
 # Format: variable-name | program-name | mandatory 0/1
 IPARRAY_PROGRAMS=(
 "AT at 1"
+"BC bc 1"
 "CAT cat 1"
 "DATE date 1"
 "DIFF diff 1"
@@ -429,6 +430,7 @@ IPARRAY_PROGRAMS=(
 "LSMOD lsmod 1"
 "MODPROBE modprobe 1"
 "RM rm 1"
+"SORT sort 1"
 "TC tc 0"
 "UNAME uname 1"
 )
@@ -764,12 +766,20 @@ run_rm() {
 "${RM:-/bin/rm}" -f -- "$@"
 } # -------------------------------------------------------------------------
 
+run_bc() {
+"${BC:-/usr/bin/bc}" -l "$@"
+} # -------------------------------------------------------------------------
+
 run_date() {
 "${DATE:-/bin/date}" "$@"
 } # -------------------------------------------------------------------------
 
 run_find() {
 "${FIND:-/usr/bin/find}" "$@"
+} # -------------------------------------------------------------------------
+
+run_sort() {
+"${SORT:-/usr/bin/sort}" "$@"
 } # -------------------------------------------------------------------------
 
 run_modprobe() {
@@ -1601,23 +1611,17 @@ for rvar in ${cmdline_show_conf}; do
 		;;
 		targets)
 			pr_banner "Starting dump of supported targets:"
-			for idx in ${!IPARRAY_TARGETS[@]}; do
-				set -- ${IPARRAY_TARGETS[idx]}
-				pr_str "$2"
-			done
+			printf "%s\n" "${IPARRAY_TARGETS[@]}" | my_cut -c2 | run_sort
 			pr_banner "End of supported targets summary."
 		;;
 		matches)
 			pr_banner "Starting dump of supported iptables matches:"
-			for idx in ${!IPARRAY_MODULES[@]}; do
-				set -- ${IPARRAY_MODULES[idx]}
-				pr_str "$2"
-			done
+			printf "%s\n" "${IPARRAY_MODULES[@]}" | my_cut -c2 | run_sort
 			pr_banner "End of supported iptables matches summary."
 		;;
 		ipt_args)
 			pr_banner "Starting dump of iptables arguments list:"
-			printf "%s\n" "${ARG_NAMES_LIST[@]}"
+			printf "%s\n" "${ARG_NAMES_LIST[@]}" | run_sort
 			pr_banner "End of iptables arguments list."
 		;;
 		ruleblocks)
