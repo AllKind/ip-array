@@ -676,7 +676,7 @@ val_bool_bin() { # check if a value is either '0' or '1'
 
 prog_in_path() { # check wether a program exists in path
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-dn command -v "$1" &>/dev/null
+dn command -v "$1"
 } # -------------------------------------------------------------------------
 
 which_prog() { # find a program in $PATH
@@ -778,6 +778,10 @@ run_modprobe() {
 
 run_ipt() {
 "${IPT:-/sbin/iptables}" "$@"
+} # -------------------------------------------------------------------------
+
+run_ipset() {
+"${IPSET:-/usr/sbin/ipset}" "$@"
 } # -------------------------------------------------------------------------
 
 run_iproute() {
@@ -1389,6 +1393,7 @@ case "$MAIN_ARG" in
 	;;
 	lockdown) # lockdown network connections
 		MODE='LOCKDOWN'
+		REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 	;;
 	open) # leave only nat rules active
 		MODE='OPEN'
@@ -1460,6 +1465,7 @@ case "$MAIN_ARG" in
 	;;
 	stop) # stop firewalling/tc
 		MODE='STOP'
+		REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 	;;
 	test) # restart in test mode, with scheduled restore of stable ruleset
 		MODE='RESTART' TEST_MODE=1
@@ -1481,7 +1487,7 @@ if ((TEST_MODE)); then
 		bail_out $ER_CONF
 	}
 	((RELOAD_TIME > 1)) || {
-		err_msg "\`RELOAD_TIME' is lower than 1 minutes."
+		err_msg "\`RELOAD_TIME' is lower than 1 minute."
 		bail_out $ER_CONF
 	}
 	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."

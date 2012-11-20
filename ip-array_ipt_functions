@@ -735,16 +735,16 @@ test_ipset() {
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
 case "$1" in
 	create)
-		log -w "creating test ipset"
-		dn "${IPSET}" -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+		log -w "creating ipset test set"
+		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
 	;;
 	delete)
-		log -w "deleting test ipset"
-		dn "${IPSET}" -X "${ME}_TEST_SET" || {
-			log -f "deleting testing set: \`${ME}_TEST_SET'"
+		log -w "deleting ipset test set"
+		dn run_ipset -X "${ME}_TEST_SET" || {
+			log -f "deleting test set: \`${ME}_TEST_SET'"
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
 	;;

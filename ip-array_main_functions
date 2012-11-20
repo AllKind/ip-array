@@ -878,8 +878,8 @@ build_list() {
 local str_sep="$1"
 shift
 local str_list="$*"
-str_list="$(strip_blanks "${str_list}")"
-printf "%s\n" "${str_list//+([[:blank:]])/${str_sep}}"
+str_list="$(strip_blanks "$str_list")"
+printf "%s\n" "${str_list//+([[:blank:]])/$str_sep}"
 } # -------------------------------------------------------------------------
 
 construct_assignment() {
@@ -916,7 +916,7 @@ eval 'printf "%d\n" "${#'"$1"'[@]}"'
 last_arr_member() { # retrieve the last member of an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 eval 'set -- -1 ${!'"$1"'[@]}'
-printf "%s\n" "${!#}"
+printf "%d\n" "${!#}"
 } # -------------------------------------------------------------------------
 
 arr_indicies() {
@@ -1242,49 +1242,45 @@ local IFS='.'
 set -- $("${UNAME}" -r)
 local IFS="${Oifs}"
 
-((${#} < 2)) && {
+(($# < 2)) && {
 	log -E "Error while retrieving kernel version!"
 	return 1
 }
-local -i k_major=$1 k_minor=$2 p_level=${3:0:2}
-
 # Save kernel version, so we can check version depending matters (TO DO!)
-KERN_VER=("${k_major}" "${k_minor}" "${p_level:-0}")
+KERN_VER=("$1" "$2" "${3:0:2}")
 
-if ((k_major < 2)); then
-	log -E "Kernel version lower than 2."
+if ((${KERN_VER[0]} < 2)); then
+	log -E "Kernel version $(IFS=.; printf "%s" "${KERN_VER[*]}") is lower than 2."
 	return $ER_FAIL
-elif ((k_major == 2 && k_minor < 4)); then
+elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} < 4)); then
 	ALL_MANGLE_CHAINS_PRESENT=0
 	log -W "Kernel version is below 2.4, it probably doesn't support iptables, unless a patch is compiled into it."
-elif ((k_major == 2 && k_minor == 4 && p_level < 18)); then
+elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} == 4 && ${KERN_VER[2]:-0} < 18)); then
 	ALL_MANGLE_CHAINS_PRESENT=0
-elif ((k_major == 2 && k_minor > 6)); then
+elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} > 6)); then
 	log -W "Kernel version greater than 2.6. UNTESTED!"
-elif ((k_major > 2)); then
+elif ((${KERN_VER[0]} > 2)); then
 	log -W "Kernel version 3.0 or higher. UNTESTED!"
 fi
 
 readonly KERN_VER ALL_MANGLE_CHAINS_PRESENT
-log -N "Kernel version OK."
+log -N "Kernel version $(IFS=.; printf "%s" "${KERN_VER[*]}") - OK."
 return 0
 } # -------------------------------------------------------------------------
 
 load_file() { # source other files with custom message
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local s_category=$1
-shift
-local s_file=$*
 local -i ret_code=0
-case "${s_category}" in
-	script)	log -e "${PF}loading script: ${s_file}" ;;
-	rule)	log -R "Loading rule file: ${s_file}" ;;
-	config)	log -C "Loading config file: ${s_file}" ;;
-	*)	log -o "${s_category}" $FUNCNAME; return 1 ;;
+local s_category=$1 s_file="$2"
+case "$s_category" in
+	script)	log -e "${PF}loading script: $s_file" ;;
+	rule)	log -R "Loading rule file: $s_file" ;;
+	config)	log -C "Loading config file: $s_file" ;;
+	*)	log -o "$s_category" $FUNCNAME
+	   	return 1
 esac
-[[ -r ${s_file} ]] || {
-	log -x "${s_file}"
-#	raise_gen_err_count
+[[ -r $s_file ]] || {
+	log -x "$s_file"
 	return $ER_NOEX
 }
 # disable builtins, which could mess up things
@@ -1294,16 +1290,16 @@ enable -n kill
 enable -n umask
 
 if ((SYNTAX_CHECK == 1)); then
-	check_syntax "${s_file}" || return $?
+	check_syntax "$s_file" || return $?
 fi
-source "${s_file}" || ret_code=$?
+source "$s_file" || ret_code=$?
 
 # reset environment
 set_env
 
 ((ret_code == 0)) || {
-	log -F "sourcing ${s_file}"
-	return ${ER_LOAD}
+	log -F "sourcing $s_file"
+	return $ER_LOAD
 }
 } # -------------------------------------------------------------------------
 
