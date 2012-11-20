@@ -353,7 +353,8 @@ SYSCTL_ARRAY=(
 "PROC_INET_PEER_THRESHOLD int ${PROC_IPV4}/inet_peer_threshold inet peer threshold"
 # netfilter
 "PROC_QUEUELEN int ${PROC_NF_OLD}/ip_queue_maxlen default queuelenght"
-"PROC_CONNTRACK_MAX int ${PROC_IPV4}/ip_conntrack_max|${PROC_NF_OLD}/ip_conntrack_max|${PROC_SNET}/nf_conntrack_max|${PROC_NF}/nf_conntrack_max maximum conntrack entries"
+"PROC_CONNTRACK_MAX words ${PROC_IPV4}/ip_conntrack_max|${PROC_NF_OLD}/ip_conntrack_max|${PROC_SNET}/nf_conntrack_max|${PROC_NF}/nf_conntrack_max maximum conntrack entries"
+"PROC_CONNTRACK_HASHSIZE words /sys/module/nf_conntrack/parameters/hashsize|/sys/module/ip_conntrack/parameters/hashsize conntrack hashsize"
 "PROC_CT_ACCT bool ${PROC_NF}/nf_conntrack_acct conntrack accounting"
 "PROC_CT_EVENTS bool ${PROC_NF}/nf_conntrack_events conntrack events"
 "PROC_CT_EVENTS_RETRY_TIMEOUT int ${PROC_NF}/nf_conntrack_events_retry_timeout conntrack events retry timeout"
@@ -560,7 +561,8 @@ CONFIG_ENTRY_ARRAY=(
 "PROC_ICMP_ECHO_IGNORE_ALL bool 0"
 # netfilter
 "PROC_QUEUELEN digit 0"
-"PROC_CONNTRACK_MAX digit 0"
+"PROC_CONNTRACK_MAX print 0"
+"PROC_CONNTRACK_HASHSIZE print 0"
 "PROC_CT_ACCT bool 0"
 "PROC_CT_EVENTS digit 0"
 "PROC_CT_EVENTS_RETRY_TIMEOUT digit 0"
