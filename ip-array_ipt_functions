@@ -6656,6 +6656,43 @@ if ((BLOCK_ILLEGAL || LOG_ILLEGAL)); then
 fi
 } # -------------------------------------------------------------------------
 
+anti_spoof_rules() { # Anti-Spoofing rules in raw table
+((ENABLE_RAW && RAW_TABLE_PRESENT)) || return
+[[ $PROC_RP_FILTER = 1 ]] && {
+	log -E "\`PROC_RP_FILTER' is set to \`1', does not make sense to create Anti-Spoofing rules."
+	raise_cfg_err_count
+	return
+}
+[[ $EXT_NETNAME_LIST && $LOC_NETNAME_LIST ]] || {
+	log -E "Anti-Spoofing rules need external and local networks to be defined."
+	raise_cfg_err_count
+	return
+}
+
+local -i idx=0
+local str_xnet str_lnet str_xnet_if
+local -a RULEBLOCK_BUILTIN_ANTI_SPOOF
+local TEMPLATE_BUILTIN_ANTI_SPOOF=(
+"table=raw"
+"template_msg='Creating Anti-Spoofing rules'"
+"option_list_0[0]=chain"
+"option_list_0[1]=target"
+"option_list_0[2]=idev"
+"option_list_0[3]=src"
+)
+
+create_chain raw ANTI_SPOOF || return $?
+
+for str_xnet in $EXT_NETNAME_LIST; do
+	str_xnet_if=$(get_net_iface $str_xnet)
+	for str_lnet in $LOC_NETNAME_LIST; do
+		RULEBLOCK_BUILTIN_ANTI_SPOOF[idx++]="ANTI_SPOOF DROP $str_xnet_if $(get_net_addr $str_lnet)"
+	done
+done
+RULEBLOCK_BUILTIN_ANTI_SPOOF[idx]="PREROUTING ANTI_SPOOF"
+process_ipt_ruleblock TEMPLATE_BUILTIN_ANTI_SPOOF RULEBLOCK_BUILTIN_ANTI_SPOOF
+} # -------------------------------------------------------------------------
+
 # ------------------------------------------------------------------------- #
 # INPUT
 # ------------------------------------------------------------------------- #

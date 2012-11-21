@@ -1836,32 +1836,33 @@ run_iproute route list | lsearch_regex '^default' | my_cut -c '5'
 
 get_if_data() { # load interface data into an array
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local iface="$1" str_data
-[[ ${iface} = +([[:word:]]) ]] || {
-	log -E "Interface name \`${iface}' contains characters not of type [:word:]. Cannot work with that."
+local str_if="$1"
+local -i idx=0
+[[ $str_if = +([[:word:]]) ]] || {
+	log -E "Interface name \`$str_if' contains characters not of type [:word:]. Cannot work with that."
 	raise_gen_err_count
 	return $ER_FAIL
 }
-check_iface "${iface}" || return $ER_FAIL # validate interface
-while read -r -t ${GLOBAL_READ_TIMEOUT}; do # collect items
-	set -- ${REPLY} # array format: interface | alias | IP | netmask | broadcast
-	[[ $(eval 'printf "%s\n" "${'$((${#} - 1))'}"') = secondary ]] && continue
-	str_data="${!#} ${2%/*} ${2#*/}"
-	case "$3" in
-		brd) # fill array: handle | ip-addr | netmask | broadcast-addr
-			str_data+=" ${4}"
-#			INTERFACE_ARRAY[${#INTERFACE_ARRAY[@]}]="${iface} ${str_data}"
-#			eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
-		;;
-#		*) # fill array: handle | ip-addr | netmask
-#			INTERFACE_ARRAY[${#INTERFACE_ARRAY[@]}]="${iface} ${str_data}"
-#			eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
-#		;;
-	esac
-	eval 'IFDATA_ARRAY_'"${iface}"'[${#IFDATA_ARRAY_'"${iface}"'[@]}]="'"${str_data}"'"'
-done < <(dn2 run_iproute -4 addr show "${iface}" | lsearch_echo_multiline inet) # show interface data
-[[ $DEBUG_INFO ]] && dbg_arr IFDATA_ARRAY_"${iface}"
-readonly IFDATA_ARRAY_"${iface}"
+check_iface "$str_if" || return $ER_FAIL
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	local str_addr="" str_mask="" str_brd="" str_lbl=""
+	set -- $REPLY
+	while (($#)); do
+		case "$1" in
+			inet) str_addr="${2%/*}" str_mask="${2#*/}"
+				shift 2 ;;
+			brd) str_brd="$2"
+				shift 2 ;;
+			"${str_if}":*) str_lbl="$1"
+				shift ;;
+			*) shift
+		esac
+	done
+	# array format: handle | ip | netmask | [broadcast]
+	eval 'IFDATA_ARRAY_'"$str_if"'[idx++]="'${str_lbl:-$str_if} $str_addr ${str_mask:-32} $str_brd'"'
+done < <(dn2 run_iproute -4 -o addr show "$str_if" scope global primary) # show interface data
+[[ $DEBUG_INFO ]] && dbg_arr IFDATA_ARRAY_"$str_if"
+readonly IFDATA_ARRAY_"$str_if"
 } # -------------------------------------------------------------------------
 
 get_if_ipv4_data() { # query an interfaces IPv4 data and put that into an array
@@ -1906,7 +1907,7 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 	strERR="NET_INTERFACES ${net_idx} ${NET_INTERFACES[net_idx]}"
 	nif="$1" nalias="$2" loc="$3" netname="$4"
 	[[ ${4} ]] || {
-		cfg_err ${strERR}
+		cfg_err $strERR
 		continue
 	}
 	if [[ ${netname} != +([[:word:]]) ]]; then
@@ -1914,29 +1915,29 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 		raise_cfg_err_count
 		return $ER_CONF
 	fi
-	if lsearch "${netname}" ${NET_NAME_LIST}; then
+	if lsearch "$netname" $NET_NAME_LIST; then
 		raise_cfg_err_count
-		log -E "Duplicate netname \`${netname}' in \`NET_INTERFACES'."
+		log -E "Duplicate netname \`$netname' in \`NET_INTERFACES'."
 		return $ER_CONF
 	fi
 	# classify by physical interfaces
-	if lsearch "${nif}" ${NET_IFLIST}; then # interface registered?
+	if lsearch "$nif" $NET_IFLIST; then # interface registered?
 		if_regged=1
 	else
-		get_if_data "${nif}" || continue # get interface data
-		arr_populated "IFDATA_ARRAY_${nif}" || {
-			log -W "Unable to retrieve data for interface: \`${nif}'."
+		get_if_data "$nif" || continue # get interface data
+		arr_populated "IFDATA_ARRAY_$nif" || {
+			log -W "Unable to retrieve data for interface: \`$nif'."
 			continue
 		}
-		if (($(IFS=: members_in_string ${loc}) > 1)); then # retrieve additional interface options
+		if (($(IFS=: members_in_string $loc) > 1)); then # retrieve additional interface options
 			loc_options="${loc#*:}"
 			for iface_option in ${loc_options//:/ }; do
-				case "${iface_option}" in
+				case "$iface_option" in
 					ipsec)
 						if_is_ipsec=1
 					;;
-					*) log -E "Unknown interface option \`${iface_option}'. Option will be ignored."
-						cfg_err ${strERR}
+					*) log -E "Unknown interface option \`$iface_option'. Option will be ignored."
+						cfg_err $strERR
 						continue
 				esac
 			done
@@ -1944,41 +1945,40 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 	fi
 	case "${loc%%:*}" in # classify by location descriptor
 		ext) # create external interface list
-			((if_regged)) || EXT_IFLIST+=" ${nif}"
-			EXT_NETNAME_LIST+=" ${netname}"
+			((if_regged)) || EXT_IFLIST+=" $nif"
+			EXT_NETNAME_LIST+=" $netname"
 		;;
 		local) # create local interface list
-			((if_regged)) || LOCAL_IFLIST+=" ${nif}"
-			LOC_NETNAME_LIST+=" ${netname}"
+			((if_regged)) || LOCAL_IFLIST+=" $nif"
+			LOC_NETNAME_LIST+=" $netname"
 		;;
 		ipsec) # create ipsec interface list
 			((ENABLE_IPSEC)) || continue
-			((if_regged)) || IPSEC_INTERFACES+=" ${nif}"
-			LOC_NETNAME_LIST+=" ${netname}"
+			((if_regged)) || IPSEC_INTERFACES+=" $nif"
+			LOC_NETNAME_LIST+=" $netname"
 		;;
 		*) log -E "Unknown location descriptor \`${loc%%:*}'. Allowed values: ext/local/ipsec."
-			cfg_err ${strERR}
+			cfg_err $strERR
 			continue
 	esac
-	NET_NAME_LIST+=" ${netname}"
-	((if_regged)) || NET_IFLIST+=" ${nif}" # add to net interfaces
-	((if_is_ipsec)) && IPSEC_IFLIST+=" ${nif}"
 	while read -r _nalias ipaddr netm brd; do
-		# fill array if interface aliases match
-		[[ ${_nalias} = ${nalias} ]] && {
+		[[ $_nalias = $nalias ]] && { # fill array if interface aliases match
+			[[ $ipaddr && $netm ]] || {
+				log -E "Error while retrieving data of interface \`$nif'."
+				raise_gen_err_count
+				continue 2 # to avoid registering on error
+			}
 			# format: netname | iface-name | iface-alias | ip-address | netmask | network-address | [broadcast-address]
-			eval 'NETDATA_ARRAY_'${netname}'=('${nif} ${_nalias} ${ipaddr} ${netm} $(ip_network "${ipaddr}/${netm}") ${brd}')'
-			readonly NETDATA_ARRAY_"${netname}"
-			[[ $DEBUG_INFO ]] && dbg_arr NETDATA_ARRAY_"${netname}"
+			eval 'NETDATA_ARRAY_'${netname}'=('$nif $_nalias $ipaddr $netm $(ip_network "${ipaddr}/${netm}") $brd')'
+			readonly NETDATA_ARRAY_"$netname"
+			[[ $DEBUG_INFO ]] && dbg_arr NETDATA_ARRAY_"$netname"
 			break
 		}	
-	done < <(get_if_ipv4_data "${nif}")
+	done < <(get_if_ipv4_data "$nif")
+	NET_NAME_LIST+=" $netname"
+	((if_regged)) || NET_IFLIST+=" $nif"
+	((if_is_ipsec)) && IPSEC_IFLIST+=" $nif"
 done
-# check if any interface data has been collected
-#((${#INTERFACE_ARRAY[@]})) || {
-#	log -E "No interface data found!"
-#	return $ER_FAIL
-#}
 if [[ $DEBUG_INFO ]]; then pr_sbanner "DEBUG: NETWORK DATA"; fi
 for rvar in NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
 do

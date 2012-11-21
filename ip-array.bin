@@ -447,6 +447,7 @@ PUBLIC_FUNCTION_LIST=(
 "log_drop_scans Log and/or drop scans"
 "log_drop_invalid_state Log and/or drop packets in invalid state"
 "log_drop_illegal_tcp Log and/or drop non legal tcp packets"
+"anti_spoof_rules Create Anti-Spoofing rules"
 "drop_dhcp Drop dhcp broadcasts on certain interfaces"
 "drop_netbios Drop netbios broadcasts on certain interfaces"
 "drop_upnp Drop UPNP broadcasts on certain interfaces"
@@ -1611,12 +1612,12 @@ for rvar in ${cmdline_show_conf}; do
 		;;
 		targets)
 			pr_banner "Starting dump of supported targets:"
-			printf "%s\n" "${IPARRAY_TARGETS[@]}" | my_cut -c2 | run_sort
+			show_array_column IPARRAY_TARGETS 2 | run_sort
 			pr_banner "End of supported targets summary."
 		;;
 		matches)
 			pr_banner "Starting dump of supported iptables matches:"
-			printf "%s\n" "${IPARRAY_MODULES[@]}" | my_cut -c2 | run_sort
+			show_array_column IPARRAY_MODULES 2 | run_sort
 			pr_banner "End of supported iptables matches summary."
 		;;
 		ipt_args)
