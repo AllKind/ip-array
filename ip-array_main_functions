@@ -1690,15 +1690,15 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 	set -- ${SYSCTL_ARRAY[idx]}
 	vname="$1" vtype="$2" ppath="$3"
 	shift 3
-	if [[ ${vtype} = iface_bool ]]; then
+	if [[ $vtype = iface_bool ]]; then
 		epath="$1"
 		shift
 	fi
 	path_found=0
 	procmsg=$* # message to display
 	vresult="${!vname}" # substitue sysctl variable names
-	[[ ${vresult} ]] || {
-		log -w "\`${vname}' is not defined."
+	[[ $vresult ]] || {
+		log -w "\`$vname' is not defined."
 		continue
 	}
 	IFS="|"
@@ -1711,38 +1711,38 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 	done
 	IFS="${oIFS}"
 	((path_found)) || {
-		log -E "\`${vname}' could not be found in \`${ppath}'."
+		log -E "\`$vname' could not be found in \`${ppath}'."
 		raise_cfg_err_count
 		continue
 	}
-	case "${vtype}" in
+	case "$vtype" in
 		iface_bool) # interface depending
-			case "${vresult}" in
+			case "$vresult" in
 				(0|1) # enable / disable for all interfaces
 					if ((PROC_COMPAT_CHECK == 0)); then
-						set_proc "${vresult}" "${ppath}/all/${epath}" "${procmsg} on all interfaces"
+						set_proc "$vresult" "${ppath}/all/${epath}" "$procmsg on all interfaces"
 					else
-						pr_str "'${vresult}' '${ppath}/all/${epath}' ${procmsg} on all interfaces"
+						pr_str "'$vresult' '${ppath}/all/${epath}' $procmsg on all interfaces"
 					fi
 				;;
 				(+(*([[:space:]])+([[:graph:]])[:][0-1]*([[:space:]]))) # valid config string
-					for vsingle in ${vresult}; do # for every interface entry
+					for vsingle in $vresult; do # for every interface entry
 						set -- ${vsingle//:/ }
 						proc_dev="$1" proc_set="$2"
 						check_iface "${proc_dev}" || {
-							log -i "${vresult}" "${vname}"
+							log -i "$vresult" "$vname"
 							raise_cfg_err_count
 							continue
 						}
 						# set (queue) the proc command for the specific interface
 						if ((PROC_COMPAT_CHECK == 0)); then
-							set_proc "${proc_set}" "${ppath}/${proc_dev}/${epath}" "${procmsg} on ${proc_dev}"
+							set_proc "$proc_set" "${ppath}/${proc_dev}/${epath}" "$procmsg on $proc_dev"
 						else
-							pr_str "'${proc_set}' '${ppath}/${proc_dev}/${epath}' ${procmsg} on ${proc_dev}"
+							pr_str "'$proc_set' '${ppath}/${proc_dev}/${epath}' $procmsg on $proc_dev"
 						fi
 					done
 				;;
-				*) log -i "${vresult}" ${vname}
+				*) log -i "$vresult" $vname
 					raise_cfg_err_count
 					continue
 			esac
@@ -1750,48 +1750,48 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 		;;
 		# GLOBAL SETTINGS
 		bool)
-			val_bool_bin "${vresult}" || {
-				log -i "${vresult}" "${vname}"
+			val_bool_bin "$vresult" || {
+				log -i "$vresult" "$vname"
 				raise_cfg_err_count
 				continue
 			}
 		;;
 		int)
-			val_numeric "${vresult}" || {
-				log -i "${vresult}" "${vname}"
+			val_numeric "$vresult" || {
+				log -i "$vresult" "$vname"
 				raise_cfg_err_count
 				continue
 			}
 		;;
 		multi_int)
-			[[ ${vresult} = @(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])) ]] || {
-				log -i "${vresult}" "${vname}"
+			[[ $vresult = @(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])) ]] || {
+				log -i "$vresult" "$vname"
 				raise_cfg_err_count
 				continue
 			}
 		;;
 		(range:+([[:digit:]])-+([[:digit:]]))
-			[[ ${vresult} = [${vtype#range:}] ]] || {
-				log -E "${vname} is not in range of: \`${vtype#range:}'"
+			[[ $vresult = [${vtype#range:}] ]] || {
+				log -E "$vname is not in range of: \`${vtype#range:}'"
 				raise_cfg_err_count
 				continue
 			}
 		;;
 		words)
-			[[ ${vresult} = +(*([[:space:]])+([[:word:]])*([[:space:]])) ]] || {
-				log -i "${vresult}" "${vname}"
+			[[ $vresult = +(*([[:space:]])+([[:word:]])*([[:space:]])) ]] || {
+				log -i "$vresult" "$vname"
 				raise_cfg_err_count
 				continue
 			}
 		;;
-		*) log -o "${vtype}" $FUNCNAME
+		*) log -o "$vtype" $FUNCNAME
 			return 1
 	esac
 	# all checks are done, ready to set (queue) the proc command
 	if ((PROC_COMPAT_CHECK == 0)); then
-		set_proc "${vresult}" "${ppath}" "${procmsg}"
+		set_proc "$vresult" "$ppath" "$procmsg"
 	else
-		pr_str "'${vresult}' '${ppath}' ${procmsg}"
+		pr_str "'$vresult' '$ppath' $procmsg"
 	fi
 done
 } # -------------------------------------------------------------------------
