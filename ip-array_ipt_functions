@@ -34,6 +34,316 @@
 #
 # ------------------------------------------------------------------------- #
 
+# ------------------------------------------------------------------------- #
+# IPSET
+# ------------------------------------------------------------------------- #
+
+val_setname() { # validate name of an ipset set
+[[ ${1:0:1} != : ]] || {
+	log -E "Invalid setname \`$1' - must not begin with a colon."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+ipset_create() { # create an ipset set
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_set="$1" str_type="$2"
+shift 2
+local option opt_arg
+local strERR="Failed creating set \`$str_set'."
+local -a arr_opts
+val_setname "$str_set" || return $?
+case "$str_type" in
+	ipmap)
+		local str_from="" str_to="" str_netmask=""
+		while (($#)); do
+			option="$1" opt_arg="$2"
+			if [[ -z $opt_arg ]]; then
+				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				return $ERR_CONF
+			fi
+			case "$option" in
+				--from)
+					val_ip4_addr "$opt_arg" || return $?
+					str_from="$option $opt_arg"
+					shift 2
+				;;
+				--to)
+					val_ip4_addr "$opt_arg" || return $?
+					str_to="$option $opt_arg"
+					shift 2
+				;;
+				--network)
+					val_ip4_addr "$opt_arg" || return $?
+					str_network="$option $opt_arg"
+					shift 2
+				;;
+				--netmask)
+					((opt_arg >= 1 && <= 31)) || {
+						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
+						return $ERR_CONF
+					}
+					str_netmask="$option $opt_arg"
+					shift 2
+				;;
+				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					return $ERR_CONF
+			esac
+		done
+		if [[ $str_network ]]; then 
+			if [[ $str_netmask ]]; then arr_opts=($str_network $str_netmask)
+			else arr_opts=($str_network)
+			fi
+		fi
+		if [[ $str_from ]]; then
+			if [[ $str_to ]]; then
+				if [[ $str_netmask ]]; then arr_opts=($str_from $str_to $str_netmask)
+				else arr_opts=($str_from $str_to)
+				fi
+			else
+				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+				return $ERR_CONF
+			fi
+		fi
+		if [[ $str_netmask ]] && [[ -z $str_from || -z $str_to ]]; then
+			log -E "$strErr \`$str_type' option \`--netmask' needs \`--from value --to value' options."
+			return $ERR_CONF
+		fi
+	;;
+	macipmap)
+		local str_from="" str_to=""
+		while (($#)); do
+			option="$1" opt_arg="$2"
+			case "$option" in
+				--from|--to|--network)
+					if [[ -z $opt_arg ]]; then
+						log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+						return $ERR_CONF
+					fi
+				;;
+			esac
+			case "$option" in
+				--from)
+					val_ip4_addr "$opt_arg" || return $?
+					str_from="$option $opt_arg"
+					shift 2
+				;;
+				--to)
+					val_ip4_addr "$opt_arg" || return $?
+					str_to="$option $opt_arg"
+					shift 2
+				;;
+				--network)
+					val_ip4_addr "$opt_arg" || return $?
+					arr_opts=($option $opt_arg)
+					shift 2
+				;;
+				--matchunset)
+					arr_opts[${#arr_opts[@]}]=$option
+					shift
+				;;
+				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					return $ERR_CONF
+			esac
+		done
+		if [[ $str_from && $str_to ]]; then
+			arr_opts=($str_from $str_to)
+		elif [[ $str_from && -z $str_to ]]; then
+			log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+			return $ERR_CONF
+		fi
+	;;
+	portmap)
+		if (($# == 4)); then
+			if [[ $1 = --from && $2 = +([[:digit:]]) && $3 = --to && $4 = +([[:digit:]]) ]]; then
+				for rvar in $2 $4; do
+					val_port $rvar || {
+						log -E "$strERR"
+						return $ERR_CONF
+					}
+				done
+				arr_opts=("$@")
+			else
+				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+				return $ER_CONF
+			fi
+		else
+			log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+			return $ER_CONF
+		fi
+	;;
+	iphash)
+		while (($#)); do
+			option="$1" opt_arg="$2"
+			case "$option" in
+				--hashsize|--probes)
+					val_numeric "$opt_arg" || return $?
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				--resize)
+					val_numeric "$opt_arg" || return $?
+					# CHECK IF GREATER THAN 100% IS ALLOWED
+#					((opt_arg >= 1 && <= 100)) || {
+#						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-100."
+#						return $ERR_CONF
+#					}
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				--netmask)
+					((opt_arg >= 1 && <= 31)) || {
+						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
+						return $ERR_CONF
+					}
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					return $ERR_CONF
+			esac
+		done
+	;;
+	nethash)
+		while (($#)); do
+			option="$1" opt_arg="$2"
+			case "$option" in
+				--hashsize|--probes)
+					val_numeric "$opt_arg" || return $?
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				--resize)
+					val_numeric "$opt_arg" || return $?
+					# CHECK IF GREATER THAN 100% IS ALLOWED
+#					((opt_arg >= 1 && <= 100)) || {
+#						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-100."
+#						return $ERR_CONF
+#					}
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					return $ERR_CONF
+			esac
+		done
+	;;
+	ipporthash)
+		:
+	;;
+	ipportiphash)
+		:
+	;;
+	ipportnethash)
+		:
+	;;
+	iptree|iptreemap|setlist)
+		local i_tmp=0
+		if [[ $1 ]]; then
+			case "$str_type" in
+				iptree) [[ $1 = --timeout ]] && i_tmp=1 ;;
+				iptreemap) [[ $1 = --gc ]] && i_tmp=1 ;;
+				setlist) [[ $1 = --size ]] && i_tmp=1 ;;
+			esac
+#			if [[ $1 = --timeout ]]; then
+			if ((i_tmp)); then
+				if [[ $2 ]]; then
+					if [[ $2 = +([[:digit:]]) ]]; then
+						arr_opts=($1 $2)
+					else
+						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
+						return $ER_CONF
+					fi
+				else
+					log -E "$strERR Missing value to option \`$1' for \`$str_type' set."
+					return $ER_CONF
+				fi
+			else
+				log -E "$strERR Invalid option \`$1' for \`$str_type' set."
+				return $ER_CONF
+			fi
+		fi
+	;;
+#	iptreemap)
+#		if [[ $1 ]]; then
+#			if [[ $1 = --gc ]]; then
+#				if [[ $2 ]]; then
+#					if [[ $2 = +([[:digit:]]) ]]; then
+#						arr_opts=($1 $2)
+#					else
+#						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
+#						return $ER_CONF
+#					fi
+#				else
+#					log -E "$str_ERR Missing timeout value for \`$str_type' set."
+#					return $ER_CONF
+#				fi
+#			else
+#				log -E "$str_ERR Invalid option \`$1' for \`$str_type' set."
+#				return $ER_CONF
+#			fi
+#		fi
+#	;;
+#	setlist)
+#		if [[ $1 ]]; then
+#			if [[ $1 = --size ]]; then
+#				if [[ $2 ]]; then
+#					if [[ $2 = +([[:digit:]]) ]]; then
+#						arr_opts=($1 $2)
+#					else
+#						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
+#						return $ER_CONF
+#					fi
+#				else
+#					log -E "$str_ERR Missing timeout value for \`$str_type' set."
+#					return $ER_CONF
+#				fi
+#			else
+#				log -E "$str_ERR Invalid option \`$1' for \`$str_type' set."
+#				return $ER_CONF
+#			fi
+#		fi
+#	;;
+	*) log -E "Unknown set type \`$str_type'."
+		return $ER_CONF
+esac
+run_ipset -N "$str_set" "$str_type" "${arr_opts[@]}"
+} # -------------------------------------------------------------------------
+
+ipset_list() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
+ipset_flush() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
+ipset_save() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
+ipset_restore() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
+ipset_add() {
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
+ipset_test() {
+local str_set="$1"
+val_setname "$str_set" || return $?
+} # -------------------------------------------------------------------------
+
 val_state() { # validate state specifications
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str
@@ -733,12 +1043,23 @@ esac
 test_ipset() {
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
+set -x
 case "$1" in
 	create)
 		log -w "creating ipset test set"
-		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+#		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
+		}
+		ipset_create "${ME}_TEST_SET1" iptree --timeout 360 || {
+			log -f "creating test set: ${ME}_TEST_SET1"
+		}
+		ipset_create "${ME}_TEST_SET2" iptreemap --gc 480 || {
+			log -f "creating test set: ${ME}_TEST_SET2"
+		}
+		ipset_create "${ME}_TEST_SET3" setlist --size 16 || {
+			log -f "creating test set: ${ME}_TEST_SET2"
 		}
 	;;
 	delete)
@@ -747,9 +1068,13 @@ case "$1" in
 			log -f "deleting test set: \`${ME}_TEST_SET'"
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
+		run_ipset -X "${ME}_TEST_SET1"
+		run_ipset -X "${ME}_TEST_SET2"
+		run_ipset -X "${ME}_TEST_SET3"
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
+set +x
 } # -------------------------------------------------------------------------
 
 #set_ipt_table_names() {
