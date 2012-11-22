@@ -1583,9 +1583,9 @@ fi
 # PROC SETTINGS
 # ------------------------------------------------------------------------- #
 
-calc_conntrack_max() { # calculate nf_conntrack_max
+calc_conntrack_max() { # calculate nf_conntrack_max & conntrack hashsize
 local -i hw=1 factor=1 ramsize
-if [[ $($UNAME -m) = *64 ]]; then
+if [[ $("$UNAME" -m) = *64 ]]; then
 	hw=2
 fi
 case "$PROC_CONNTRACK_MAX" in
@@ -1597,13 +1597,11 @@ case "$PROC_CONNTRACK_MAX" in
 		ramsize=$(( $(read foo rvar bar </proc/meminfo && printf "%d\n" "$rvar") * 1024 )) || ramsize=""
 		[[ -n $ramsize ]] || {
 			log -F "retrieving RAM size from /proc/meminfo."
-			cmd_err_count misc "read foo rvar bar </proc/meminfo"
+			raise_gen_err_count
 			return 0
 		}
 		factor=${PROC_CONNTRACK_MAX#[xX]}
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
-#		PROC_CONNTRACK_MAX=$(( $((ramsize / 16384 / hw)) * factor))
-#		PROC_CONNTRACK_HASHSIZE=$((PROC_CONNTRACK_MAX / 8))
 		PROC_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
 		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
 		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
@@ -1615,9 +1613,9 @@ esac
 return 0
 } # -------------------------------------------------------------------------
 
-calc_conntrack_hashsize() { # calculate nf_conntrack hashsize
+calc_conntrack_hashsize() { # calculate nf_conntrack hashsize & nf_conntrack_max
 local -i hw=1 factor=1 ramsize
-if [[ $($UNAME -m) = *64 ]]; then
+if [[ $("$UNAME" -m) = *64 ]]; then
 	hw=2
 fi
 case "$PROC_CONNTRACK_HASHSIZE" in
@@ -1629,13 +1627,11 @@ case "$PROC_CONNTRACK_HASHSIZE" in
 		ramsize=$(( $(read foo rvar bar </proc/meminfo && printf "%d\n" "$rvar") * 1024 )) || ramsize=""
 		[[ -n $ramsize ]] || {
 			log -F "retrieving RAM size from /proc/meminfo."
-			cmd_err_count misc "read foo rvar bar </proc/meminfo"
+			raise_gen_err_count
 			return 0
 		}
 		factor=${PROC_CONNTRACK_HASHSIZE#[xX]}
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
-#		PROC_CONNTRACK_HASHSIZE=$(( $((ramsize / 131072 / hw)) * factor))
-#		PROC_CONNTRACK_MAX=$((PROC_CONNTRACK_HASHSIZE * 8))
 		PROC_CONNTRACK_HASHSIZE=$(echo "$ramsize / 131072 / $hw" * $factor | run_bc)
 		PROC_CONNTRACK_MAX=$(echo "$PROC_CONNTRACK_HASHSIZE * 8" | run_bc)
 		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
@@ -1865,7 +1861,7 @@ done < <(dn2 run_iproute -4 -o addr show "$str_if" scope global primary) # show 
 readonly IFDATA_ARRAY_"$str_if"
 } # -------------------------------------------------------------------------
 
-get_if_ipv4_data() { # query an interfaces IPv4 data and put that into an array
+get_if_ipv4_data() { # query an interfaces IPv4 data
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_wanted_iface="$1"
 if ! arr_populated "IFDATA_ARRAY_${str_wanted_iface}"; then
@@ -1874,7 +1870,7 @@ if ! arr_populated "IFDATA_ARRAY_${str_wanted_iface}"; then
 fi
 shift
 local columns_to_show option
-OPTIND=1 # reset options index variable
+OPTIND=1
 while getopts :himb option; do
 	case "$option" in
 		h) columns_to_show+=" 1" ;; # iface handle
@@ -1886,12 +1882,12 @@ while getopts :himb option; do
 		;;
 	esac
 done
-OPTIND=1 # reset options index variable
+OPTIND=1
 show_array_column "IFDATA_ARRAY_${str_wanted_iface}" ${columns_to_show:-1 2 3 4}
 } # -------------------------------------------------------------------------
 
 enumerate_if_data() { # Enumerate net interface (ipv4) data
-local -i net_idx if_idx if_regged if_is_ipsec
+local -i net_idx if_idx if_regged if_is_ipsec net_found
 local strERR nif nalias loc netname loc_options iface_option _nalias ipaddr netm brd
 log -I "Enumerating NET interface data"
 ((${#NET_INTERFACES[@]})) || {
@@ -1904,14 +1900,14 @@ readonly DEF_ROUTE_IF="$(get_default_route_iface)"
 for net_idx in ${!NET_INTERFACES[@]}; do
 	if_regged=0 if_is_ipsec=0
 	set -- ${NET_INTERFACES[net_idx]}
-	strERR="NET_INTERFACES ${net_idx} ${NET_INTERFACES[net_idx]}"
+	strERR="NET_INTERFACES $net_idx ${NET_INTERFACES[net_idx]}"
 	nif="$1" nalias="$2" loc="$3" netname="$4"
-	[[ ${4} ]] || {
+	[[ $4 ]] || {
 		cfg_err $strERR
 		continue
 	}
-	if [[ ${netname} != +([[:word:]]) ]]; then
-		log -E "Invalid network name \`${netname}'. Network names must only contain characters of type [:word:]."
+	if [[ $netname != +([[:word:]]) ]]; then
+		log -E "Invalid network name \`$netname'. Network names must only contain characters of type [:word:]."
 		raise_cfg_err_count
 		return $ER_CONF
 	fi
@@ -1944,6 +1940,40 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 		fi
 	fi
 	case "${loc%%:*}" in # classify by location descriptor
+		ext|local|ipsec) : # create external interface list
+		;;
+		*) log -E "Unknown location descriptor \`${loc%%:*}'. Allowed values: ext/local/ipsec."
+			cfg_err $strERR
+			continue
+	esac
+	net_found=0
+	while read -r _nalias ipaddr netm brd; do
+		[[ $_nalias = $nalias ]] && { # fill array if interface aliases match
+			[[ $ipaddr && $netm ]] || {
+				log -E "Error while retrieving data of interface \`$nif'."
+				raise_gen_err_count
+				continue 2 # to avoid registering on error
+			}
+			# format: netname | iface-name | iface-alias | ip-address | netmask | network-address | [broadcast-address]
+			eval 'NETDATA_ARRAY_'${netname}'=('$nif $_nalias $ipaddr $netm $(ip_network "${ipaddr}/${netm}") $brd')'
+			readonly NETDATA_ARRAY_"$netname"
+			net_found=1
+			[[ $DEBUG_INFO ]] && dbg_arr NETDATA_ARRAY_"$netname"
+			break
+		}	
+	done < <(get_if_ipv4_data "$nif")
+
+	if ((net_found == 0)); then
+		log -E "Cannot find matching interface data for network \`$netname' with interface label \`$nalias'"
+		raise_cfg_err_count
+		continue
+	fi
+
+	NET_NAME_LIST+=" $netname"
+	((if_regged)) || NET_IFLIST+=" $nif"
+	((if_is_ipsec)) && IPSEC_IFLIST+=" $nif"
+
+	case "${loc%%:*}" in # classify by location descriptor
 		ext) # create external interface list
 			((if_regged)) || EXT_IFLIST+=" $nif"
 			EXT_NETNAME_LIST+=" $netname"
@@ -1961,23 +1991,6 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 			cfg_err $strERR
 			continue
 	esac
-	while read -r _nalias ipaddr netm brd; do
-		[[ $_nalias = $nalias ]] && { # fill array if interface aliases match
-			[[ $ipaddr && $netm ]] || {
-				log -E "Error while retrieving data of interface \`$nif'."
-				raise_gen_err_count
-				continue 2 # to avoid registering on error
-			}
-			# format: netname | iface-name | iface-alias | ip-address | netmask | network-address | [broadcast-address]
-			eval 'NETDATA_ARRAY_'${netname}'=('$nif $_nalias $ipaddr $netm $(ip_network "${ipaddr}/${netm}") $brd')'
-			readonly NETDATA_ARRAY_"$netname"
-			[[ $DEBUG_INFO ]] && dbg_arr NETDATA_ARRAY_"$netname"
-			break
-		}	
-	done < <(get_if_ipv4_data "$nif")
-	NET_NAME_LIST+=" $netname"
-	((if_regged)) || NET_IFLIST+=" $nif"
-	((if_is_ipsec)) && IPSEC_IFLIST+=" $nif"
 done
 if [[ $DEBUG_INFO ]]; then pr_sbanner "DEBUG: NETWORK DATA"; fi
 for rvar in NET_NAME_LIST EXT_NETNAME_LIST LOC_NETNAME_LIST EXT_IFLIST LOCAL_IFLIST IPSEC_INTERFACES IPSEC_IFLIST
@@ -4240,13 +4253,13 @@ fi
 # MAIN PROCESSING FUNCTIONS
 # ------------------------------------------------------------------------- #
 
-set_runtime_vars() {
-# Set IP-Array runtime configuration variables, which are needed in all runtime modes
-set_syslog_mode
-set_message_colors || return $ER_FAIL
-precheck_config || return $?
-fill_script_map
-} # -------------------------------------------------------------------------
+#set_runtime_vars() {
+## Set IP-Array runtime configuration variables, which are needed in all runtime modes
+#set_syslog_mode
+#set_message_colors || return $ER_FAIL
+#precheck_config || return $?
+#fill_script_map
+#} # -------------------------------------------------------------------------
 
 handle_network_data() { # enumerate and validate local networking data
 fill_netif_array || return $?

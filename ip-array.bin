@@ -1278,6 +1278,7 @@ set_env
 : ${VERBOSE:=6}
 # file for locking
 declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
+
 # Colour defines with ANSI codes
 : ${CL_DIR_DATA:=$LIB_DIR}
 : ${CL_FILE_VARIANTS:=.${me}_cl_variants}
@@ -1292,6 +1293,7 @@ declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 	err_msg "\`SYSLOG_VERBOSE' is not in range of 0-6."
 	bail_out $ER_CONF
 }
+
 # check for boolean defaults
 for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK RESTORE_ON_START; do
 	val_bool_bin ${!rvar} || {
@@ -1404,7 +1406,6 @@ case "$MAIN_ARG" in
 	;;
 	lockdown) # lockdown network connections
 		MODE='LOCKDOWN'
-		REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 	;;
 	open) # leave only nat rules active
 		MODE='OPEN'
@@ -1476,7 +1477,6 @@ case "$MAIN_ARG" in
 	;;
 	stop) # stop firewalling/tc
 		MODE='STOP'
-		REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 	;;
 	test) # restart in test mode, with scheduled restore of stable ruleset
 		MODE='RESTART' TEST_MODE=1
@@ -1641,13 +1641,18 @@ for rvar in ${cmdline_show_conf}; do
 done
 if [[ $MODE = SHOW ]]; then
 	quit_welldone
-fi
-
 # -------------------------------------------------------------------------
 # set runtime variables
 # check kernel version
 # -------------------------------------------------------------------------
-set_runtime_vars || bail_out $?
+elif [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
+	readonly REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
+fi
+#set_runtime_vars || bail_out $?
+set_syslog_mode
+set_message_colors || bail_out $?
+precheck_config || bail_out $?
+fill_script_map
 check_kern_ver || bail_out $?
 
 # -------------------------------------------------------------------------

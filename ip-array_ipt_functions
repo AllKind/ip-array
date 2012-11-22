@@ -1565,17 +1565,14 @@ done
 
 create_netname_jumps() { # create netname or netname+interface dependant traffic classification jumps
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_tbl="$1" str str_net_data str_net str_net_iface str_netaddr str_clist str_chn str_onet str_onetaddr str_onetiface
+local str_tbl="$1" str str_net str_net_iface str_netaddr str_clist str_chn str_onet str_onetaddr str_onetiface
 local str_param str_chn str_tgt str_i str_p str_jmsg str_if_done_list
 local -i i idx ridx multi_bound
 local -a arr_stage1 arr_stage2 arr_stage3 arr_stage4 arr_stage5
 log -I "Creating ${JUMP_TREE[1]} jump tree in ${str_tbl} table"
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 	multi_bound=0
-	str_net_data=$(get_net_data ${str_net}) || continue
-	set -- ${str_net_data}
-#	str_net_iface="$1" str_netaddr="$3"
-	str_net_iface="$1" str_netaddr="${5}/${4}"
+	str_net_iface=$(get_net_iface $str_net) str_netaddr=$(get_net_addr $str_net)
 #	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && multi_bound=1
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && {
 		log -E "Jump tree creation in \`${JUMP_TREE[1]}' does not support virtual interfaces on external networks."
@@ -1682,9 +1679,7 @@ str_if_done_list=""
 for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 	str_clist="" str_cilist=""
 	multi_bound=0
-	str_net_data=$(get_net_data ${str_net}) || continue
-	set -- ${str_net_data}
-	str_net_iface="$1" str_netaddr="${5}/${4}"
+	str_net_iface=$(get_net_iface $str_net) str_netaddr=$(get_net_addr $str_net)
 	(($(members_in_string $(show_array_column IFDATA_ARRAY_${str_net_iface})) > 1)) && multi_bound=1
 	case "${str_tbl}" in
 		raw)
@@ -5180,9 +5175,9 @@ return 1
 
 get_netname_by_iface() {
 local str_iface="$1" str_net
-for str_net in ${NET_NAME_LIST}; do
-	if [[ $(get_net_iface "${str_net}") = ${str_iface} ]]; then
-		printf "%s\n" "${str_net}"
+for str_net in $NET_NAME_LIST; do
+	if [[ $(get_net_iface $str_net) = $str_iface ]]; then
+		printf "%s\n" "$str_net"
 		break
 	fi
 done
@@ -7207,7 +7202,7 @@ if ! ((${#ISP_SMTP[@]})); then
 	log -u 'ISP_SMTP'
 	return 0
 fi
-local loc_net smtp_ips ext_net ext_netif loc_netdata loc_netif netaddr smtp_host
+local loc_net smtp_ips ext_net ext_netif loc_netif netaddr smtp_host
 local -i idx
 local -a SMTP_IF_LIST RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW
 
@@ -7259,9 +7254,7 @@ for idx in ${!ISP_SMTP[@]}; do
 			continue
 		}
 	fi
-	loc_netdata=$(get_net_data "${loc_net}") || continue
-	set -- ${loc_netdata}
-	loc_netif="$1" netaddr="${5}/${4}"
+	loc_netif=$(get_net_iface $loc_net) netaddr=$(get_net_addr $loc_net)
 	for smtp_host in ${smtp_ips}; do
 		[[ ${ext_net} ]] || {
 			ext_netif=$(get_route_iface "${smtp_host}")
