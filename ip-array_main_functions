@@ -1305,15 +1305,15 @@ set_env
 
 sched_restore() { # schedule ruleset restore job
 local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
-local str_tmp_deffile="${SAVE_DIR}/__tmp_defaults_${str_file}"
+local str_ips_f="${2:-${cmdline_ipset_save_file:-${IPSET_SAVE_FILE}}}"
+local str_tmp_def_f="${SAVE_DIR}/__tmp_restore_defaults_$$"
 local str_mybin="${BIN_DIR}/${0##*/}"
 check_dirs BIN_DIR || return $?
 if ! bin_ok "$str_mybin"; then # check if $0 is good
 	log -E "Cannot work with \`\$0' variable."
 	return $ER_FAIL
 fi
-ipt_save "$str_file" || return $? # save currently active ruleset
-if create_file "$str_tmp_deffile"; then
+if create_file "$str_tmp_def_f"; then
 	(
 	for i in ${!IPARRAY_PROGRAMS[@]}; do
 		rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
@@ -1323,19 +1323,27 @@ if create_file "$str_tmp_deffile"; then
 		rvar="${DEFAULTS_LIST[i]}"
 		printf '%s="%s"\n' "$rvar" "${!rvar}"
 	done
-	) >"$str_tmp_deffile"
+	) >"$str_tmp_def_f"
+	[[ $DEBUG_INFO ]] && {
+		pr_banner "DEBUG: Temporary defaults file"
+		"$CAT" "$str_tmp_def_f"
+		pr_banner "DEBUG: end"
+	}
 else
-	log -f "creating temporary defaults file: \`$str_tmp_deffile'."
+	log -F "creating temporary defaults file: \`$str_tmp_def_f'."
 	return $ER_FAIL
 fi
-if rvar=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -v 2\n' "$SHELL" "$str_mybin" restore "$str_tmp_deffile" "$str_file" \
+ipt_save "$str_file" || return $? # save currently active iptables ruleset
+ips_save "$str_ips_f" || return $? # save currently active ipset ruleset
+if str_job=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -si "%s" -v 2 && "%s" -f "%s" || "%s" -f "%s"\n'\
+	"$SHELL" "$str_mybin" restore "$str_tmp_def_f" "$str_file" "$str_ips_f" "$RM" "$str_tmp_def_f" "$RM" "$str_tmp_def_f"\
 	| "$AT" now + $RELOAD_TIME minutes 2>&1)
 then
-	str_job="${rvar#*$'\n'}"
-	log -N "Restoring saved ruleset using \`$AT' with: \`$str_job'."
+	str_job="${str_job#*$'\n'}"
+	log -N "Scheduled restoring of saved rulesets using \`$AT' with: \`$str_job'."
 	str_job="${str_job#job }"
 	str_job="${str_job%% *}"
-	AT_JOB="$str_job"
+	readonly AT_JOB="$str_job"
 	[[ $DEBUG_INFO ]] && {
 		pr_banner "DEBUG: at job"
 		"$AT" -c $str_job
@@ -4423,6 +4431,9 @@ case "$1" in
 		if ((EXEC_COMMANDS)); then
 			set_default_policies_immediate || return $?
 			flushdel_tables_immediate || return $?
+			if ((USE_IPSET)); then
+				ipset_destroy || return $?
+			fi
 		fi
 		allow_loopback || return $?
 		apply_rules || return $?
@@ -4510,7 +4521,7 @@ case "$1" in
 
 		log -T "Preparing known-good iptables ruleset"
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
-			ipt_save "${KNOWN_GOOD_RULES}" || return $?
+			ipt_save "$KNOWN_GOOD_RULES" || return $?
 		else
 			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
 			MODE='SAVE-IPT-COMMANDS'
@@ -4524,6 +4535,7 @@ case "$1" in
 			apply_final_rule || return $?
 			apply_rules || return $?
 		fi
+		ips_save "$KNOWN_GOOD_IPSET_RULES" || return $?
 
 		MODE='PREPARE_QUICKSTART'
 		end_msg
@@ -4550,10 +4562,17 @@ case "$1" in
 		else
 			log -N "Modprobing is disabled by configuration."
 		fi
+		if ((USE_IPSET)); then
+			log -N "Loading known good ipset commands."
+			ips_restore "$KNOWN_GOOD_IPSET_RULES" || {
+				log -E "Failed restoring saved ipset script."
+				cmd_err_count 'ipt' "ips_restore ${$KNOWN_GOOD_IPSET_RULES}"
+			}
+		fi
 		log -N "Loading known good iptables commands."
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
-				log -E "Failed restoring saved script."
+				log -E "Failed restoring saved iptables script."
 				cmd_err_count 'ipt' "ipt_restore ${KNOWN_GOOD_RULES}"
 			}
 		else
@@ -4689,6 +4708,7 @@ case "$1" in
 		flushdel_tables || return $?
 		policy_all_en_disable 'ACCEPT' || return $?
 		apply_rules || return $?
+		((USE_IPSET)) && ipset_destroy
 		((NO_MODPROBE == 0)) && ((${#MODULES_TO_LOAD[@]})) && load_modules 'unload'
 		common_end
 	;;

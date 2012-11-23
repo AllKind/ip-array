@@ -336,9 +336,13 @@ fi
 } # -------------------------------------------------------------------------
 
 ipset_save() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_set="$1"
-val_setname "$str_set" || return $?
+if [[ $str_set ]]; then
+	val_setname "$str_set" || return $?
+	run_ipset -S "$str_set"
+else
+	run_ipset -S
+fi
 } # -------------------------------------------------------------------------
 
 ipset_restore() {
@@ -1058,6 +1062,7 @@ esac
 } # -------------------------------------------------------------------------
 
 test_ipset() {
+#((USE_IPSET)) || return 0
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
 local -i idx
@@ -1070,14 +1075,16 @@ case "$1" in
 			set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
 			str_typename=$1
 			shift
-			log -w "${PF}checking $str_typename set"
-			if dn run_ipset -N "${ME}_TEST_SET" $str_typename -q $@; then
+			log -e "${PF}checking $str_typename set"
+			if run_ipset -N "${ME}_TEST_SET" $str_typename -q $@; then
+#			if run_ipset -N "${ME}_TEST_SET_$idx" $str_typename $@; then
 				dn run_ipset -X "${ME}_TEST_SET" -q
 			else
 				UNSUPPORTED_SETLIST+=" $str_typename"
 				log -f "creating set of type \`$str_typename'"
 			fi
 		done
+		readonly UNSUPPORTED_SETLIST
 #		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
@@ -1105,9 +1112,10 @@ case "$1" in
 #		ipset_add "${ME}_TEST_SET1" 192.168.0.2
 #		ipset_add "${ME}_TEST_SET2" 192.168.0.3
 #		ipset_add "${ME}_TEST_SET4" 192.168.0.3,22
-##		ipset_add "${ME}_TEST_SET5" 192.168.1.3,22,10.1.1.1
-##		ipset_add "${ME}_TEST_SET6" 192.168.2.3,22,10.1.1.1/24
+#		ipset_add "${ME}_TEST_SET5" 192.168.1.3,22,10.1.1.1
+#		ipset_add "${ME}_TEST_SET6" 192.168.2.3,22,10.1.1.1/24
 #		ipset_test "${ME}_TEST_SET" 192.168.0.1
+#		ipset_save
 #		ipset_list
 #		ipset_flush
 	;;
@@ -7031,16 +7039,16 @@ fi
 } # -------------------------------------------------------------------------
 
 anti_spoof_rules() { # Anti-Spoofing rules in raw table
-((ENABLE_RAW && RAW_TABLE_PRESENT)) || return
+((ENABLE_RAW && RAW_TABLE_PRESENT)) || return 0
 [[ $PROC_RP_FILTER = 1 ]] && {
 	log -E "\`PROC_RP_FILTER' is set to \`1', does not make sense to create Anti-Spoofing rules."
 	raise_cfg_err_count
-	return
+	return 0
 }
 [[ $EXT_NETNAME_LIST && $LOC_NETNAME_LIST ]] || {
 	log -E "Anti-Spoofing rules need external and local networks to be defined."
 	raise_cfg_err_count
-	return
+	return 0
 }
 
 local -i idx=0

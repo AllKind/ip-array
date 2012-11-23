@@ -153,10 +153,10 @@ declare STR_PUBFUNC_NAME
 declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
-declare cmdline_def_file cmdline_conf_file cmdline_save_file \
+declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_file \
 	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
 	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_quickstart \
-	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color
+	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color cmdline_use_ipset
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -215,12 +215,12 @@ COLOR_MSG_CONFIG_LOAD COLOR_MSG_RULE_LOAD
 ENABLE_COLORS
 ENABLE_SYSLOG LOG_FACILITY
 VERBOSE SYSLOG_VERBOSE
-AUTO_GET_PROGS
+AUTO_GET_PROGS USE_IPSET
 SERVICES PROTOCOLS
 BASE_DIR CONF_DIR LIB_DIR LOCK_DIR SHARE_DIR
-CONFIG SAVE_FILE RULESETFILE DIFF_FILE
+CONFIG SAVE_FILE IPSET_SAVE_FILE RULESETFILE DIFF_FILE
 RESTORE_ON_START
-KNOWN_GOOD_RULES KNOWN_GOOD_MODPROBES KNOWN_GOOD_PROC_SET KNOWN_GOOD_TRAFFIC_CONTROL
+KNOWN_GOOD_RULES KNOWN_GOOD_IPSET_RULES KNOWN_GOOD_MODPROBES KNOWN_GOOD_PROC_SET KNOWN_GOOD_TRAFFIC_CONTROL
 GEN_FORMAT
 IPTSAVE_FAILS
 SYNTAX_CHECK
@@ -554,7 +554,9 @@ Options:
 -l, --lib-dir directory    Library directory to use.
 -r, --run-dir directory    Locking directory to store the pid file (/var/run).
 -s, --save-file file       File to use, when saving or restoring a ruleset.
+-si, --save-ips-file file  File to use, when saving or restoring an ipset ruleset.
 -co, --color 0|1           Enable or disable coloured output.
+-ui, --use-ipset 0|1       Enable or disable builtin usage of ipset.
 -o, --set-option assignment [...]
                            Override variables of the main config file (i.e. -o ENABLE_NAT=0).
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
@@ -862,7 +864,7 @@ if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
 fi
 if [[ -r ${IP_TABLES_NAMES} ]]; then
 	if "${IPT_SAVE}" ${str_c}>"${SAVE_DIR}/${str_file}"; then
-		notice_msg "Iptables rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
+		notice_msg "iptables rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
 	else
 		err_msg "Failed saving iptables rules."
 		return $ER_FAIL
@@ -871,6 +873,35 @@ else
 	err_msg "\`${IP_TABLES_NAMES}' does not exist!
  Load at least the ip_tables module and one of the table\
  (iptable_filter, iptable_nat, iptable_mangle or iptable_raw) modules."
+	return $ER_NOEX
+fi
+} # -------------------------------------------------------------------------
+
+ips_save() {
+((USE_IPSET)) || return 0
+local str_file="${1:-${IPSET_SAVE_FILE}}"
+if run_ipset -S >"${SAVE_DIR}/${str_file}"; then
+	notice_msg "ipset rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
+else
+	err_msg "Failed saving ipset rules from: \`${SAVE_DIR}/${str_file}'."
+	return $ER_FAIL
+fi
+} # -------------------------------------------------------------------------
+
+ips_restore() {
+((USE_IPSET)) || return 0
+local str_file="${1:-${IPSET_SAVE_FILE}}"
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	verbose_msg "Destroying existing sets"
+	run_ipset -X -q
+	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
+		notice_msg "ipset rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+	else
+		err_msg "Failed restoring ipset rules from: \`${SAVE_DIR}/${str_file}'."
+		return $ER_FAIL
+	fi
+else
+	err_msg "\`${SAVE_DIR}/${str_file}' does not exist."
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
@@ -886,7 +917,7 @@ if ((USE_COUNTERS)); then
 fi
 if [[ -r ${SAVE_DIR}/${str_file} ]]; then
 	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
-		notice_msg "Iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+		notice_msg "iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
 	else
 		err_msg "Failed restoring iptables rules."
 		return $ER_FAIL
@@ -1123,7 +1154,9 @@ while (($#)); do
 			ARR_RTIME_OPTS[${#ARR_RTIME_OPTS[@]}]="$opt_arg"
 		;;
 		-s|--save-file) cmdline_save_file="$opt_arg" ;; # file to save/restore to/from
+		-si|--save-ips-file) cmdline_ipset_save_file="$opt_arg" ;; # file to save/restore ipset rules to/from
 		-co|--color) cmdline_color="$opt_arg" ;; # enable/disable coloured output
+		-ui|--use_ipset) cmdline_use_ipset="$opt_arg" ;; # enable/disable builtin ipset usage
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
@@ -1244,6 +1277,7 @@ set_env
 [[ ${cmdline_verbosity} ]] && VERBOSE="${cmdline_verbosity}"
 [[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"
 [[ ${cmdline_color} ]] && ENABLE_COLORS="${cmdline_color}"
+[[ ${cmdline_use_ipset} ]] && USE_IPSET="${cmdline_use_ipset}"
 [[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
@@ -1262,12 +1296,15 @@ set_env
 : ${CONFIG:=${me}.conf}
 : ${DIFF_FILE:=iptables_ruleset_saved_for_diff}
 : ${KNOWN_GOOD_RULES:=KNOWN_GOOD_IPT_RULES.save}
+: ${KNOWN_GOOD_IPSET_RULES:=KNOWN_GOOD_IPSET_RULES.save}
 : ${KNOWN_GOOD_MODPROBES:=KNOWN_GOOD_MODPROBES.bash}
 : ${KNOWN_GOOD_PROC_SET:=KNOWN_GOOD_SYSCTL.bash}
 : ${KNOWN_GOOD_TRAFFIC_CONTROL:=KNOWN_GOOD_TC.bash}
 : ${PROTOCOLS:=/etc/protocols}
 : ${SERVICES:=/etc/services}
 : ${SAVE_FILE:=iptables_ruleset.save}
+: ${IPSET_SAVE_FILE:=ipset_ruleset.save}
+: ${USE_IPSET:=0}
 : ${GEN_FORMAT:=cmd}
 : ${RULESETFILE:=${me}_commands.bash}
 : ${IPTSAVE_FAILS:=0}
@@ -1296,7 +1333,7 @@ declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 }
 
 # check for boolean defaults
-for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK RESTORE_ON_START; do
+for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK RESTORE_ON_START USE_IPSET; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`$rvar' is not in range of 0-1."
 		bail_out $ER_CONF
@@ -1309,7 +1346,7 @@ if ((IPTSAVE_FAILS)); then
 	if [[ $GEN_FORMAT = ipt ]]; then # ... if we save in iptables-save format
 		case "$MAIN_ARG" in
 			start|stop|open|restart|test|tc-start|tc-stop) # if we apply commands (in lockdown we hope it'll work, as just very basic rules)
-				err_msg "Iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
+				err_msg "iptables command generation is set to be done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 				bail_out $ER_CONF
 			;;
 			*) warn_msg "Saving is done in iptables-save format, but \`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
@@ -1334,6 +1371,16 @@ while read rvar rest; do
 done < <(printf "%s\n" "${IPARRAY_PROGRAMS[@]}")
 
 # -------------------------------------------------------------------------
+# check for ipset
+# -------------------------------------------------------------------------
+if ((USE_IPSET)); then
+	if ! [[ $IPSET && -x $IPSET ]]; then
+		err_msg "ipset binary is unknown or not executable"
+		bail_out $ER_FAIL
+	fi
+fi
+
+# -------------------------------------------------------------------------
 # set skeleton variables
 # -------------------------------------------------------------------------
 if [[ $MAIN_ARG = 'test' ]]; then
@@ -1354,8 +1401,8 @@ check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR \
 
 # make important variables readonly
 readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
-	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR LOCK_DIR \
-	SERVICES PROTOCOLS BASE_DIR CONFIG GEN_FORMAT IPTSAVE_FAILS RELOAD_TIME
+	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR LOCK_DIR SERVICES PROTOCOLS \
+	BASE_DIR CONFIG GEN_FORMAT IPTSAVE_FAILS RELOAD_TIME USE_IPSET
 
 # -------------------------------------------------------------------------
 # global variables
@@ -1424,15 +1471,18 @@ case "$MAIN_ARG" in
 		MODE='RESTART'
 	;;
 	restore) # restore iptables-save saved ruleset
-		ipt_restore "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+		ips_restore "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
 		quit_welldone
 	;;
 	save) # save ruleset with iptables-save
-		ipt_save "${cmdline_save_file:-${SAVE_FILE}}" || bail_out $?
+		ipt_save "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+		ips_save "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
 		quit_welldone
 	;;
 	save-known-good) # save known good ruleset with iptables-save
 		ipt_save "$KNOWN_GOOD_RULES" || bail_out $?
+		ips_save "$KNOWN_GOOD_IPSET_RULES" || bail_out $?
 		quit_welldone
 	;;
 	save-commands) # save all commands to file
@@ -1460,7 +1510,7 @@ case "$MAIN_ARG" in
 		MODE='SAVE-SHAPING-COMMANDS'
 	;;
 	show)
-		[[ ${cmdline_show_conf} ]] || cmdline_show_conf='main'
+		[[ $cmdline_show_conf ]] || cmdline_show_conf='main'
 		MODE='SHOW'
 	;;
 	start) # start mode, enforce lockdown mode with admin allow,
@@ -1468,12 +1518,9 @@ case "$MAIN_ARG" in
 			# if RESTORE_ON_START is enabled, do iptables-restore,
 			# and load previously saved known good scripts
 		case "${RESTORE_ON_START:=0}" in
-			0)
-				MODE='START'
-			;;
+			0) MODE='START' ;;
 			1) # RESTORE_ON_START is enabled - do quick-start
 				MODE='RESTORE_ON_START'
-			;;
 		esac
 	;;
 	stop) # stop firewalling/tc
@@ -1674,7 +1721,7 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
-		sched_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+		sched_restore "${cmdline_save_file:-$SAVE_FILE}" "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
 	fi
 	# --------------------------------------------------------------
 	# if in a MODE that could make use of auto-backup, save ruleset
