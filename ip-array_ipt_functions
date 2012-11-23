@@ -49,10 +49,14 @@ ipset_create() { # create an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_set="$1" str_type="$2"
 shift 2
+local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
-local -a arr_opts
 val_setname "$str_set" || return $?
+lsearch "$str_type" $UNSUPPORTED_SETLIST && {
+	log -E "ipset set type \`$str_type' is not supported."
+	return $ER_FAIL
+}
 case "$str_type" in
 	ipmap)
 		local str_from="" str_to="" str_netmask=""
@@ -183,11 +187,6 @@ case "$str_type" in
 				;;
 				--resize)
 					val_numeric "$opt_arg" || return $?
-					# CHECK IF GREATER THAN 100% IS ALLOWED
-#					((opt_arg >= 1 && <= 100)) || {
-#						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-100."
-#						return $ERR_CONF
-#					}
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
@@ -207,6 +206,10 @@ case "$str_type" in
 	nethash)
 		while (($#)); do
 			option="$1" opt_arg="$2"
+			if [[ -z $opt_arg ]]; then
+				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				return $ERR_CONF
+			fi
 			case "$option" in
 				--hashsize|--probes)
 					val_numeric "$opt_arg" || return $?
@@ -215,11 +218,6 @@ case "$str_type" in
 				;;
 				--resize)
 					val_numeric "$opt_arg" || return $?
-					# CHECK IF GREATER THAN 100% IS ALLOWED
-#					((opt_arg >= 1 && <= 100)) || {
-#						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-100."
-#						return $ERR_CONF
-#					}
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
@@ -228,14 +226,52 @@ case "$str_type" in
 			esac
 		done
 	;;
-	ipporthash)
-		:
-	;;
-	ipportiphash)
-		:
-	;;
-	ipportnethash)
-		:
+	ipporthash|ipportiphash|ipportnethash)
+		local str_from="" str_to=""
+		while (($#)); do
+			option="$1" opt_arg="$2"
+			if [[ -z $opt_arg ]]; then
+				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				return $ERR_CONF
+			fi
+			case "$option" in
+				--from)
+					val_ip4_addr "$opt_arg" || return $?
+					str_from="$option $opt_arg"
+					shift 2
+				;;
+				--to)
+					val_ip4_addr "$opt_arg" || return $?
+					str_to="$option $opt_arg"
+					shift 2
+				;;
+				--network)
+					val_ip4_addr "$opt_arg" || return $?
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				--hashsize|--probes)
+					val_numeric "$opt_arg" || return $?
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				--resize)
+					val_numeric "$opt_arg" || return $?
+					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
+					shift 2
+				;;
+				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					return $ERR_CONF
+			esac
+		done
+		if [[ $str_from && $str_to ]]; then
+			arr_opts[${#arr_opts[@]}]="$str_from $str_to"
+		else
+			if [[ $str_from && -z $str_to ]] || [[ -z $str_from && $str_to ]]; then
+				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+				return $ERR_CONF
+			fi
+		fi
 	;;
 	iptree|iptreemap|setlist)
 		local i_tmp=0
@@ -245,7 +281,6 @@ case "$str_type" in
 				iptreemap) [[ $1 = --gc ]] && i_tmp=1 ;;
 				setlist) [[ $1 = --size ]] && i_tmp=1 ;;
 			esac
-#			if [[ $1 = --timeout ]]; then
 			if ((i_tmp)); then
 				if [[ $2 ]]; then
 					if [[ $2 = +([[:digit:]]) ]]; then
@@ -264,62 +299,40 @@ case "$str_type" in
 			fi
 		fi
 	;;
-#	iptreemap)
-#		if [[ $1 ]]; then
-#			if [[ $1 = --gc ]]; then
-#				if [[ $2 ]]; then
-#					if [[ $2 = +([[:digit:]]) ]]; then
-#						arr_opts=($1 $2)
-#					else
-#						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
-#						return $ER_CONF
-#					fi
-#				else
-#					log -E "$str_ERR Missing timeout value for \`$str_type' set."
-#					return $ER_CONF
-#				fi
-#			else
-#				log -E "$str_ERR Invalid option \`$1' for \`$str_type' set."
-#				return $ER_CONF
-#			fi
-#		fi
-#	;;
-#	setlist)
-#		if [[ $1 ]]; then
-#			if [[ $1 = --size ]]; then
-#				if [[ $2 ]]; then
-#					if [[ $2 = +([[:digit:]]) ]]; then
-#						arr_opts=($1 $2)
-#					else
-#						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
-#						return $ER_CONF
-#					fi
-#				else
-#					log -E "$str_ERR Missing timeout value for \`$str_type' set."
-#					return $ER_CONF
-#				fi
-#			else
-#				log -E "$str_ERR Invalid option \`$1' for \`$str_type' set."
-#				return $ER_CONF
-#			fi
-#		fi
-#	;;
 	*) log -E "Unknown set type \`$str_type'."
 		return $ER_CONF
 esac
-run_ipset -N "$str_set" "$str_type" "${arr_opts[@]}"
+run_ipset -N "$str_set" "$str_type" ${arr_opts[@]}
+} # -------------------------------------------------------------------------
+
+ipset_destroy() {
+local str_set="$1"
+if [[ $str_set ]]; then
+	val_setname "$str_set" || return $?
+	run_ipset -X "$str_set"
+else
+	run_ipset -X
+fi
 } # -------------------------------------------------------------------------
 
 ipset_list() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_set="$1"
-val_setname "$str_set" || return $?
+if [[ $str_set ]]; then
+	val_setname "$str_set" || return $?
+	run_ipset -L "$str_set"
+else
+	run_ipset -L
+fi
 } # -------------------------------------------------------------------------
 
 ipset_flush() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_set="$1"
-val_setname "$str_set" || return $?
+if [[ $str_set ]]; then
+	val_setname "$str_set" || return $?
+	run_ipset -F "$str_set"
+else
+	run_ipset -F
+fi
 } # -------------------------------------------------------------------------
 
 ipset_save() {
@@ -335,13 +348,17 @@ val_setname "$str_set" || return $?
 } # -------------------------------------------------------------------------
 
 ipset_add() {
-local str_set="$1"
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_set="$1" str_entry="$2"
 val_setname "$str_set" || return $?
+run_ipset -A "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
 ipset_test() {
-local str_set="$1"
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_set="$1" str_entry="$2"
 val_setname "$str_set" || return $?
+run_ipset -T "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
 val_state() { # validate state specifications
@@ -1043,38 +1060,75 @@ esac
 test_ipset() {
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
-set -x
+local -i idx
+local str_typename
+#set -x
 case "$1" in
 	create)
-		log -w "creating ipset test set"
+		log -I "Checking for ipset set types"
+		for idx in ${!IPARRAY_IPSET_SETTYPE_LIST[@]}; do
+			set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
+			str_typename=$1
+			shift
+			log -w "${PF}checking $str_typename set"
+			if dn run_ipset -N "${ME}_TEST_SET" $str_typename -q $@; then
+				dn run_ipset -X "${ME}_TEST_SET" -q
+			else
+				UNSUPPORTED_SETLIST+=" $str_typename"
+				log -f "creating set of type \`$str_typename'"
+			fi
+		done
 #		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
-		ipset_create "${ME}_TEST_SET1" iptree --timeout 360 || {
-			log -f "creating test set: ${ME}_TEST_SET1"
-		}
-		ipset_create "${ME}_TEST_SET2" iptreemap --gc 480 || {
-			log -f "creating test set: ${ME}_TEST_SET2"
-		}
-		ipset_create "${ME}_TEST_SET3" setlist --size 16 || {
-			log -f "creating test set: ${ME}_TEST_SET2"
-		}
+#		ipset_create "${ME}_TEST_SET1" iptree --timeout 360 || {
+#			log -f "creating test set: ${ME}_TEST_SET1"
+#		}
+#		ipset_create "${ME}_TEST_SET2" iptreemap --gc 480 || {
+#			log -f "creating test set: ${ME}_TEST_SET2"
+#		}
+#		ipset_create "${ME}_TEST_SET3" setlist --size 16 || {
+#			log -f "creating test set: ${ME}_TEST_SET3"
+#		}
+#		ipset_create "${ME}_TEST_SET4" ipporthash --from 192.168.0.0 --to 192.168.0.23 --hashsize 2048 --probes 10 --resize 60 || {
+#			log -f "creating test set: ${ME}_TEST_SET4"
+#		}
+#		ipset_create "${ME}_TEST_SET5" ipportiphash --from 192.168.1.0 --to 192.168.1.23 --hashsize 1024 --probes 9 --resize 65 || {
+#			log -f "creating test set: ${ME}_TEST_SET5"
+#		}
+#		ipset_create "${ME}_TEST_SET6" ipportnethash --from 192.168.2.0 --to 192.168.2.23 --hashsize 2660 --probes 11 --resize 55 || {
+#			log -f "creating test set: ${ME}_TEST_SET6"
+#		}
+#		ipset_add "${ME}_TEST_SET" 192.168.0.1
+#		ipset_add "${ME}_TEST_SET1" 192.168.0.2
+#		ipset_add "${ME}_TEST_SET2" 192.168.0.3
+#		ipset_add "${ME}_TEST_SET4" 192.168.0.3,22
+##		ipset_add "${ME}_TEST_SET5" 192.168.1.3,22,10.1.1.1
+##		ipset_add "${ME}_TEST_SET6" 192.168.2.3,22,10.1.1.1/24
+#		ipset_test "${ME}_TEST_SET" 192.168.0.1
+#		ipset_list
+#		ipset_flush
 	;;
 	delete)
 		log -w "deleting ipset test set"
-		dn run_ipset -X "${ME}_TEST_SET" || {
+##		dn run_ipset -X "${ME}_TEST_SET" || {
+		ipset_destroy "${ME}_TEST_SET" || {
 			log -f "deleting test set: \`${ME}_TEST_SET'"
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
-		run_ipset -X "${ME}_TEST_SET1"
-		run_ipset -X "${ME}_TEST_SET2"
-		run_ipset -X "${ME}_TEST_SET3"
+#		ipset_destroy
+#		ipset_destroy "${ME}_TEST_SET1"
+#		ipset_destroy "${ME}_TEST_SET2"
+#		ipset_destroy "${ME}_TEST_SET3"
+#		ipset_destroy "${ME}_TEST_SET4"
+##		ipset_destroy "${ME}_TEST_SET5"
+##		ipset_destroy "${ME}_TEST_SET6"
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
-set +x
+#set +x
 } # -------------------------------------------------------------------------
 
 #set_ipt_table_names() {

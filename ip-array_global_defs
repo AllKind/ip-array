@@ -193,6 +193,21 @@ IPARRAY_MODULES=(
 "0 ttl filter -m ttl --ttl-eq 123 -j ACCEPT"
 )
 
+# Array to hold the supported ipset set types
+IPARRAY_IPSET_SETTYPE_LIST=(
+"ipmap --network 10.0.0.0/24"
+"macipmap --network 10.0.0.0/24"
+"portmap --from 1 --to 7"
+"iphash"
+"nethash"
+"ipporthash --network 10.0.0.0/24"
+"ipportiphash --network 10.0.0.0/24"
+"ipportnethash --network 10.0.0.0/24"
+"iptree"
+"iptreemap"
+"setlist"
+)
+
 # Array with match extensions, which are available in all tables
 GLOBAL_MATCH_LIST=(
 FRAGMENT

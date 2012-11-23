@@ -198,6 +198,7 @@ declare NO_OUTPUT_MSG	# Stores the message to display, when no additional OUTPUT
 declare DEF_ROUTE_IF	# To hold the defaults route interface
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
+declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
@@ -1374,8 +1375,8 @@ source "$rvar" || {
 }
 set_env # reset possibly messed up env
 # set those arrays as read-only
-readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES PORTSCAN_ARRRAY\
-	LOCAL_NET_ARRAY CMD_NAMES_ARRAY MSG_COLOR_ARRAY CONFIG_ENTRY_ARRAY\
+readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES IPARRAY_IPSET_SETTYPE_LIST\
+   	PORTSCAN_ARRRAY LOCAL_NET_ARRAY CMD_NAMES_ARRAY MSG_COLOR_ARRAY CONFIG_ENTRY_ARRAY\
 	GLOBAL_MATCH_LIST GLOBAL_TARGET_LIST TABLE_DEPEND_MATCH_LIST TABLE_DEPEND_TARGET_LIST
 
 # -------------------------------------------------------------------------
