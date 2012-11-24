@@ -877,7 +877,7 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-ips_save() {
+ips_save() { # save ipset data
 ((USE_IPSET)) || return 0
 local str_file="${1:-${IPSET_SAVE_FILE}}"
 if run_ipset -S >"${SAVE_DIR}/${str_file}"; then
@@ -888,7 +888,7 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-ips_restore() {
+ips_restore() { # restore ipset data
 ((USE_IPSET)) || return 0
 local str_file="${1:-${IPSET_SAVE_FILE}}"
 if [[ -r ${SAVE_DIR}/${str_file} ]]; then
@@ -929,20 +929,29 @@ fi
 } # -------------------------------------------------------------------------
 
 autosave() { # automatically save a temporary ruleset, which will be restored on error
-if ((NO_AUTOSAVE == 0 && IPTSAVE_FAILS == 0)); then
+((NO_AUTOSAVE == 0)) || return 0
+if ((IPTSAVE_FAILS == 0)); then
 	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
 	ipt_save "$AUTOSAVE_FILE" || return $?
 	readonly AUTOSAVE_FILE
 fi
+if ((USE_IPSET)); then
+	AUTOSAVE_FILE_IPSET="_autosave-generated_ipset-save_$(run_date +%F_%T)_rnd${RANDOM}_${IPSET_SAVE_FILE}"
+	ips_save "$AUTOSAVE_FILE_IPSET" || return $?
+	readonly AUTOSAVE_FILE_IPSET
+fi
 } # -------------------------------------------------------------------------
 
 cleanup_autosave() { # remove automatically saved temporary ruleset
-if [[ $AUTOSAVE_FILE ]]; then
-	if [[ -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
-		run_rm "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
-			err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
-		}
-	fi
+if [[ $AUTOSAVE_FILE && -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
+	run_rm "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
+		err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
+	}
+fi
+if [[ $AUTOSAVE_FILE_IPSET && -e ${SAVE_DIR}/${AUTOSAVE_FILE_IPSET} ]]; then
+	run_rm "${SAVE_DIR}/${AUTOSAVE_FILE_IPSET}" || {
+		err_msg "Failed removing automatically saved ipset ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE_IPSET}'"
+	}
 fi
 } # -------------------------------------------------------------------------
 
@@ -973,9 +982,15 @@ exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
-if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)) && [[ $AUTOSAVE_FILE ]]; then
-	pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
-	ipt_restore "$AUTOSAVE_FILE" || :
+if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)); then
+	if [[ $AUTOSAVE_FILE ]]; then
+		pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
+		ipt_restore "$AUTOSAVE_FILE" || :
+	fi
+	if [[ $AUTOSAVE_FILE_IPSET ]]; then
+		pr_str "Restoring automatically saved ipset ruleset from: \`$AUTOSAVE_FILE_IPSET'"
+		ips_restore "$AUTOSAVE_FILE_IPSET" || :
+	fi
 fi
 bail_out ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
@@ -1038,7 +1053,7 @@ case "$MAIN_ARG" in
 		(($#)) || usage # if there isn't a second arg, show usage
 	 ;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
-	restore|save|save-known-good|save-commands| save-modprobe-commands|save-proc-commands|\
+	restore|save|save-known-good|save-commands|save-modprobe-commands|save-proc-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
 		shift
 		if ((UID > 0)); then
@@ -1187,7 +1202,7 @@ while (($#)); do
 		;;
 		-t|--test) # save active ruleset and schedule a restore
 			case "$MAIN_ARG" in
-				start|stop|restart|tc-start|tc-stop|lockdown)
+				start|stop|restart|tc-start|tc-stop|open|lockdown)
 					TEST_MODE=1
 					continue
 				;;
@@ -1733,7 +1748,7 @@ if ((EXEC_COMMANDS)); then
 				1) log -N "RESTORE_ON_START is enabled, not performing autosaving." ;;
 			esac
 		;;
-		restart|open|tc-start) autosave || bail_out $? ;;
+		restart|open|tc-start|tc-stop) autosave || bail_out $? ;;
 	esac
 fi
 
@@ -1744,6 +1759,7 @@ if run_main "$MODE"; then
 	cleanup
 	quit_welldone
 else
-	bail_out_restore $?
+#	bail_out_restore $?
+	exit_on_err_act $?
 fi
 exit $?

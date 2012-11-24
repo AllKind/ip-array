@@ -1070,7 +1070,8 @@ case "${arr_var_content}" in
 		return 0
 	;;
 	*) while read -r -t ${GLOBAL_READ_TIMEOUT} rline; do
-			((line_cnt++)) # raise line counter
+#			((line_cnt++)) # raise line counter
+			let line_cnt+=1 # raise line counter
 			# maybe line contains a comment, remove everything after the '#'.
 			# if line becomes empty, whole line gets ignored,
 			# raise ignore counter and continue with next line.
@@ -1078,7 +1079,8 @@ case "${arr_var_content}" in
 			# raise ignore counter and continue with next line
 			rline="${rline%%#*}"
 			[[ -z ${rline} || ${rline} = +([[:space:]]) ]] && {
-				((ignore_cnt++))
+#				((ignore_cnt++))
+				let ignore_cnt+=1
 				continue
 			}
 			# if all test are passed, add line to array
@@ -2714,7 +2716,7 @@ load_configs() { # LOAD CONFIG FILES
 log -S "Loading config files"
 for rvar in ${CONFIG_FILES}; do
 	load_file config "${CONFIG_DIR}"/"$rvar" || {
-		log -E "Failed loading config file ${CONFIG_DIR}/${rvar}."
+		log -F "loading config file ${CONFIG_DIR}/${rvar}."
 		return $ER_FAIL
 	}
 done
