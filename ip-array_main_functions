@@ -1178,8 +1178,10 @@ if ((EXEC_COMMANDS)); then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
 		fail_lockdown
 	fi
-	restore_proc_state
-	restore_module_state
+	if ((RESTORE_ON_START == 0)); then
+		restore_proc_state
+		restore_module_state
+	fi
 fi
 calc_err
 display_errors
@@ -1221,17 +1223,17 @@ cmd_err_count() {
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local prog_msg err_category="$1"
 shift
-case "${err_category}" in
+case "$err_category" in
 	ipt) prog_msg="iptables" ;;
 	proc) prog_msg="sysctl" ;;
 	tc) prog_msg="tc" ;;
 	inline) prog_msg="inline" ;;
 	misc) prog_msg="this" ;;
-	*) log -o "${err_category}" $FUNCNAME
+	*) log -o "$err_category" $FUNCNAME
 		return 1
 esac
 eval let ${err_category}_err_count+=1
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="print_msg -o -f \"${COLOR_MSG_ERROR}\" \"Failed applying ${prog_msg} commmand: '$*'\""
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="print_msg -o -f \"$COLOR_MSG_ERROR\" \"Failed applying $prog_msg commmand: '$*'\""
 if ((EXIT_ON_ERROR == 1)); then
 	exit_on_err_act $ER_FAIL
 fi
@@ -1549,7 +1551,6 @@ esac
 } # -------------------------------------------------------------------------
 
 restore_module_state() { # try to restore initial (remembered) module state
-[[ $MODE = @(OPEN|RESTART|TC-START) ]] || return 0
 ((${#MOD_STATE_ARRAY[@]})) || {
 	log -v 'MOD_STATE_ARRAY'
 	return 0
@@ -1803,7 +1804,6 @@ done
 } # -------------------------------------------------------------------------
 
 restore_proc_state() { # try to restore initial (remembered) /proc settings
-[[ $MODE = @(OPEN|RESTART|TC-START) ]] || return 0
 ((${#PROC_STATE_ARRAY[@]})) || {
 	log -v 'PROC_STATE_ARRAY'
 	return 0
@@ -4568,14 +4568,14 @@ case "$1" in
 			log -N "Loading known good ipset commands."
 			ips_restore "$KNOWN_GOOD_IPSET_RULES" || {
 				log -E "Failed restoring saved ipset script."
-				cmd_err_count 'ipt' "ips_restore ${$KNOWN_GOOD_IPSET_RULES}"
+				raise_gen_err_count
 			}
 		fi
 		log -N "Loading known good iptables commands."
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
 			ipt_restore "${KNOWN_GOOD_RULES}" || {
-				log -E "Failed restoring saved iptables script."
-				cmd_err_count 'ipt' "ipt_restore ${KNOWN_GOOD_RULES}"
+				log -E "Failed restoring saved iptables rules from script."
+				raise_gen_err_count
 			}
 		else
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
@@ -4583,8 +4583,8 @@ case "$1" in
 				if "$SHELL" -- "$rvar"; then
 					log -e "Sucessfully restored iptables rules from: $rvar."
 				else
-					log -E "Failed restoring saved script."
-					cmd_err_count 'ipt' "$SHELL -- $rvar"
+					log -E "Failed restoring saved iptables rules from script."
+					cmd_err_count 'misc' "$SHELL -- $rvar"
 				fi
 			else
 				log -N "No iptables script found."
@@ -4597,6 +4597,7 @@ case "$1" in
 				if "$SHELL" -- "$rvar"; then
 					log -e "Sucessfully restored traffic control rules from: $rvar."
 				else
+					log -E "Failed restoring saved tc rules from script."
 					cmd_err_count 'misc' "$SHELL -- $rvar"
 				fi
 			else
@@ -4613,6 +4614,7 @@ case "$1" in
 				if "$SHELL" -- "$rvar"; then
 					log -e "Sucessfully restored /proc settings from: $rvar."
 				else
+					log -E "Failed restoring saved /proc rules from script."
 					cmd_err_count 'misc' "$SHELL -- $rvar"
 				fi
 			else
