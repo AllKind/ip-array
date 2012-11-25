@@ -378,6 +378,7 @@ declare -a TC_CMD_ARRAY		# Array to cache the tc commands
 declare -a PROC_CMD_ARRAY	# Array to cache the sysctl commands
 # arrays for each iptables table
 declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ipset commands
 
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
 declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error
@@ -410,6 +411,8 @@ CMD_NAMES_ARRAY=(
 "IPT_RAWPOST_CMD_ARRAY ipt iptables rawpost table commands"
 "TC_CMD_ARRAY tc traffic control commands"
 "PROC_CMD_ARRAY proc /proc settings"
+"IPSET_SETS_ARRAY ipset ipset sets"
+"IPSET_ENTRIES_ARRAY ipset ipset entries"
 )
 
 # Array to hold the program definitions that are mandatory for IP-Array
