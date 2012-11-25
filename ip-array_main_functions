@@ -1174,7 +1174,7 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 
 exit_on_err_act() {
 if ((EXEC_COMMANDS)); then
-	if ((ipt_err_count > 0)); then
+	if ((ipt_err_count > 0 || ips_err_count > 0)); then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
 		fail_lockdown
 	fi
@@ -1185,7 +1185,7 @@ if ((EXEC_COMMANDS)); then
 fi
 calc_err
 display_errors
-if ((ipt_err_count > 0)); then
+if ((ipt_err_count > 0 || ips_err_count > 0)); then
 	bail_out_restore ${1:-${ER_FAIL}}
 fi
 bail_out ${1:-${ER_FAIL}}
@@ -4216,7 +4216,7 @@ esac
 } # -------------------------------------------------------------------------
 
 calc_err() { # calculate and display error summary
-ERRORS=$((gen_err_count + inline_err_count + misc_err_count + ipt_err_count + cfg_err_count + tc_err_count + proc_err_count))
+ERRORS=$((gen_err_count + inline_err_count + misc_err_count + ipt_err_count + ips_err_count + cfg_err_count + tc_err_count + proc_err_count))
 } # -------------------------------------------------------------------------
 
 display_errors() { # display error sum
@@ -4228,6 +4228,7 @@ local -a arr_err_idx=(
 "$cfg_err_count Found $cfg_err_count bad config entries"
 "$proc_err_count Failed applying $proc_err_count proc commands"
 "$ipt_err_count Failed applying $ipt_err_count iptables commands"
+"$ips_err_count Failed applying $ips_err_count ipset commands"
 "$inline_err_count Failed applying $inline_err_count inline iptables commands"
 "$tc_err_count Failed applying $tc_err_count traffic shaping commands"
 "$misc_err_count Failed applying $misc_err_count miscellaneous commands"

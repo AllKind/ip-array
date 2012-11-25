@@ -177,9 +177,10 @@ declare -i ERRORS=0		# We had errors?
 declare -i gen_err_count=0	# Count unclassiefied errors
 declare -i cfg_err_count=0	# Count config errors
 declare -i ipt_err_count=0	# Count iptables commands apply errors
-declare -i tc_err_count=0	# Count tc apply errors
+declare -i ips_err_count=0	# Count ipset commands apply errors
+declare -i tc_err_count=0	# Count tc errors
 declare -i proc_err_count=0	# Count proc apply errors
-declare -i misc_err_count=0	# Count misc commands apply errors
+declare -i misc_err_count=0	# Count misc errors
 declare -i inline_err_count=0	# Count inline iptables commands apply errors
 
 # Rule count
