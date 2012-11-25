@@ -411,6 +411,7 @@ CMD_NAMES_ARRAY=(
 "IPT_RAWPOST_CMD_ARRAY ipt iptables rawpost table commands"
 "TC_CMD_ARRAY tc traffic control commands"
 "PROC_CMD_ARRAY proc /proc settings"
+"IPSET_CMD_ARRAY ipset ipset commands"
 "IPSET_SETS_ARRAY ipset ipset sets"
 "IPSET_ENTRIES_ARRAY ipset ipset entries"
 )
@@ -896,6 +897,7 @@ ips_restore() { # restore ipset data
 local str_file="${1:-${IPSET_SAVE_FILE}}"
 if [[ -r ${SAVE_DIR}/${str_file} ]]; then
 	verbose_msg "Destroying existing sets"
+	run_ipset -F -q
 	run_ipset -X -q
 	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
 		notice_msg "ipset rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
@@ -1296,6 +1298,7 @@ set_env
 [[ ${cmdline_syslog_verbosity} ]] && SYSLOG_VERBOSE="${cmdline_syslog_verbosity}"
 [[ ${cmdline_color} ]] && ENABLE_COLORS="${cmdline_color}"
 [[ ${cmdline_use_ipset} ]] && USE_IPSET="${cmdline_use_ipset}"
+[[ ${cmdline_ipset_save_file} ]] && IPSET_SAVE_FILE="${cmdline_ipset_save_file}"
 [[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
@@ -1490,12 +1493,12 @@ case "$MAIN_ARG" in
 	;;
 	restore) # restore iptables-save saved ruleset
 		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
-		ips_restore "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
+		ips_restore "$IPSET_SAVE_FILE" || bail_out $?
 		quit_welldone
 	;;
 	save) # save ruleset with iptables-save
 		ipt_save "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
-		ips_save "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
+		ips_save "$IPSET_SAVE_FILE" || bail_out $?
 		quit_welldone
 	;;
 	save-known-good) # save known good ruleset with iptables-save
@@ -1739,7 +1742,7 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
-		sched_restore "${cmdline_save_file:-$SAVE_FILE}" "${cmdline_ipset_save_file:-$IPSET_SAVE_FILE}" || bail_out $?
+		sched_restore "${cmdline_save_file:-$SAVE_FILE}" "$IPSET_SAVE_FILE" || bail_out $?
 	fi
 	# --------------------------------------------------------------
 	# if in a MODE that could make use of auto-backup, save ruleset

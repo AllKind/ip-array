@@ -302,7 +302,16 @@ case "$str_type" in
 	*) log -E "Unknown set type \`$str_type'."
 		return $ER_CONF
 esac
-run_ipset -N "$str_set" "$str_type" ${arr_opts[@]}
+#run_ipset -N "$str_set" "$str_type" ${arr_opts[@]}
+IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="-N $str_set $str_type ${arr_opts[@]}"
+} # -------------------------------------------------------------------------
+
+ipset_add() {
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_set="$1"
+val_setname "$str_set" || return $?
+#run_ipset -A "$str_set" "$str_entry"
+IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="-A $str_set $@"
 } # -------------------------------------------------------------------------
 
 ipset_destroy() {
@@ -346,16 +355,7 @@ fi
 } # -------------------------------------------------------------------------
 
 ipset_restore() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_set="$1"
-val_setname "$str_set" || return $?
-} # -------------------------------------------------------------------------
-
-ipset_add() {
-[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_set="$1" str_entry="$2"
-val_setname "$str_set" || return $?
-run_ipset -A "$str_set" "$str_entry"
+run_ipset -R
 } # -------------------------------------------------------------------------
 
 ipset_test() {
@@ -1085,8 +1085,8 @@ case "$1" in
 			fi
 		done
 		readonly UNSUPPORTED_SETLIST
-#		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
-		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+#		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
@@ -1121,8 +1121,8 @@ case "$1" in
 	;;
 	delete)
 		log -w "deleting ipset test set"
-##		dn run_ipset -X "${ME}_TEST_SET" || {
-		ipset_destroy "${ME}_TEST_SET" || {
+		dn run_ipset -X "${ME}_TEST_SET" || {
+#		ipset_destroy "${ME}_TEST_SET" || {
 			log -f "deleting test set: \`${ME}_TEST_SET'"
 #			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
@@ -6165,7 +6165,6 @@ for target_idx in ${!arg_list_target[@]}; do
 	for ((multi_idx=0; multi_idx<=RULE_MULTIPLICATOR; ++multi_idx)); do
 		opt_idx=0
 		# for every chain in the list, do...
-#		for ((chain_idx=0; chain_idx<${#arg_list_chain[@]} && chain_idx<=second_optionlist; chain_idx++))
 		for ((chain_idx=0; chain_idx<${#arg_list_chain[@]} && chain_idx<=chain_max; chain_idx++)); do
 			ARG_LIST_IDX=$((ARG_LIST_IDX < $(($((second_optionlist + 1)) * $((multi_idx + 1)))) ? ARG_LIST_IDX : 0))
 			str_target_chain="${arg_list_chain[chain_idx]}"
@@ -6183,7 +6182,6 @@ for target_idx in ${!arg_list_target[@]}; do
 				str_target="${str_target#goto:}"
 			fi
 			# copy the option list array to a temp array, so 'eval' is not needed
-#			$(${copy_array} arr_tmp_rule_opt_${chain_idx} tmp_opt_array)
 			$(${copy_array} arr_tmp_rule_opt_${opt_idx} tmp_opt_array) || return 1
 
 			# fill RULELIST and MSG_LIST arrays
@@ -6224,10 +6222,8 @@ done
 for xidx in ${!TABLE_DEPEND_MATCH_LIST[@]}; do # options/matches usable only in specific tables
 	set -- ${TABLE_DEPEND_MATCH_LIST[xidx]}
 	for str_t in ${1//,/ }; do
-#	for str_t in $(IFS=, split_val $1); do
 		if [[ ${str_t} = ${table} ]]; then
 			for str_m in ${2//,/ }; do
-#			for str_m in $(IFS=, split_val $2); do
 				eval 'str_log+="${MSG_LIST_'${str_m}'[ridx]}" str_cmd+="${RULELIST_'${str_m}'[ridx]}"'
 			done
 		fi
@@ -6247,7 +6243,6 @@ for xidx in ${!GLOBAL_TARGET_LIST[@]}; do # targets usable in all tables
 done
 for xidx in ${!TABLE_DEPEND_TARGET_LIST[@]}; do # targets usable only in specific tables
 	set -- ${TABLE_DEPEND_TARGET_LIST[xidx]}
-#	str_tables="$(IFS=, split_val $1)"
 	str_tables="${1//,/ }"
 	shift
 	str_tlist="$@"
@@ -6258,7 +6253,6 @@ for xidx in ${!TABLE_DEPEND_TARGET_LIST[@]}; do # targets usable only in specifi
 					str_cmd+="-j ${str_target} "
 					str_opt="${str_opt#*:}"
 					set -- ${str_opt//,/ }
-#					set -- $(IFS=, split_val ${str_opt})
 					for str_opt in "$@"; do
 						eval 'str_log+="${MSG_LIST_'${str_opt}'[ridx]}" str_cmd+="${RULELIST_'${str_opt}'[ridx]}"'
 					done
@@ -6289,8 +6283,7 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 	fi
 	str_log="${PF}${MSG_LIST_TARGET[ridx]} ${MSG_LIST_TABLE[ridx]}${MSG_LIST_CHAIN[ridx]}"
 	str_cmd=""
-#	str_cmd="${RULELIST_CHAIN[ridx]}"
-	#
+	
 	__compose_ipt_cmdstring
 
 	# log the generated message
@@ -6409,18 +6402,12 @@ eval local "${!reference_catalog_data}" &>/dev/null || {
 	pr_sepstr
 }
 
-#for x in ${!ARG_NAMES_LIST[@]}; do
-#	printf "%s\n" "${ARG_NAMES_LIST[x]}: ${!ARG_NAMES_LIST[x]}"
-#done
-
 # display message defined in template
 [[ ${template_msg} ]] && log -I "${template_msg}"
 
 # run the commands given as parameters
 for cmd_to_run in ${commands_to_run}; do
-#	log -w "Running template invocation command: $(IFS=, split_val ${cmd_to_run})"
 	log -w "Running template invocation command: ${cmd_to_run//,/ }"
-#	$(IFS=, split_val ${cmd_to_run}) || {
 	${cmd_to_run//,/ } || {
 		log -E "Failed running template invocation command \`${cmd_to_run}'."
 		cmd_err_count 'misc' "${cmd_to_run}"
@@ -6496,7 +6483,6 @@ fi
 # a maximum of two chains are allowed with reverse_mode.
 if ((${#chain[@]})); then
 	chain_max=$((chain_max == -1 ? ${#chain[@]} - 1 : chain_max))
-#	for ((opt_idx=0; opt_idx<${#chain[@]} && opt_idx<=second_optionlist; opt_idx++)); do
 	for ((opt_idx=0; opt_idx<${#chain[@]} && opt_idx<=chain_max; opt_idx++)); do
 		arr_tmp_chains[opt_idx]="${chain[opt_idx]}"
 	done
