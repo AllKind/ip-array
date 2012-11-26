@@ -1,0 +1,12 @@
+
+Name:
+	ipset_add
+
+Description:
+	Add an entry to an ipset set.
+
+Usage:
+	ipset_add set-name entry
+
+Example:
+	ipset_add foo 10.0.1.1

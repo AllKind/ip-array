@@ -413,8 +413,8 @@ CMD_NAMES_ARRAY=(
 "TC_CMD_ARRAY tc traffic control commands"
 "PROC_CMD_ARRAY proc /proc settings"
 "IPSET_CMD_ARRAY ipset ipset commands"
-"IPSET_SETS_ARRAY ipset ipset sets"
-"IPSET_ENTRIES_ARRAY ipset ipset entries"
+"IPSET_SETS_ARRAY ipset ipset set creation commands"
+"IPSET_ENTRIES_ARRAY ipset ipset entries commands"
 )
 
 # Array to hold the program definitions that are mandatory for IP-Array
@@ -446,6 +446,8 @@ PUBLIC_FUNCTION_LIST=(
 "add_rule Add an iptables rule"
 "create_chain Create an iptables chain"
 "delete_chain Delete an iptables chain"
+"ipset_create Create an ipset set"
+"ipset_add Add an entry to an ipset set"
 "jump_tree_on Enable classification into jump tree chains"
 "jump_tree_off Disable classification into jump tree chains"
 "set_var Set a variables value"
@@ -660,19 +662,19 @@ umask 077
 } # -------------------------------------------------------------------------
 
 verbose_msg() { # print high verbosity message to stdout
-if ((VERBOSE >= 7)); then pr_str "$*"; fi
+if ((${VERBOSE:-6} >= 7)); then pr_str "$*"; fi
 } # -------------------------------------------------------------------------
 
 notice_msg() { # print notice prefixed message to stdout
-if ((VERBOSE >= 5)); then pr_str "NOTICE: $*"; fi
+if ((${VERBOSE:-6} >= 5)); then pr_str "NOTICE: $*"; fi
 } # -------------------------------------------------------------------------
 
 warn_msg() { # print warning prefixed message to stderr
-if ((VERBOSE >= 2)); then pr_err "WARNING: $*"; fi
+if ((${VERBOSE:-6} >= 2)); then pr_err "WARNING: $*"; fi
 } # -------------------------------------------------------------------------
 
 err_msg() { # print error prefixed message to stderr
-if ((VERBOSE >= 1)); then pr_err "ERROR: $*"; fi
+if ((${VERBOSE:-6} >= 1)); then pr_err "ERROR: $*"; fi
 } # -------------------------------------------------------------------------
 
 reqparm() { # announce parameters missing in functions
@@ -963,14 +965,30 @@ fi
 
 cleanup_lock() { # remove temp lockfile
 if [[ -e $LOCKFILE ]]; then
+	verbose_msg "Removing lock file: \`$LOCKFILE'."
 	run_rm "$LOCKFILE" || :
 fi
 } # -------------------------------------------------------------------------
 
 cleanup_at_job() { # remove scheduled restore job
-if [[ $AT_JOB ]]; then
-	verbose_msg "Removing scheduled restore job: \`$AT_JOB'."
-	"$AT" -d "$AT_JOB" || :
+if ((TEST_MODE)); then
+	if [[ $AT_JOB ]]; then
+		verbose_msg "Removing scheduled restore job: \`$AT_JOB'."
+		"$AT" -d "$AT_JOB" || :
+	fi
+	# remove files saved for restore
+	if [[ -e ${SAVE_DIR}/__tmp_restore_defaults_$$ ]]; then
+		verbose_msg "Removing temporary defaults file \`${SAVE_DIR}/__tmp_restore_defaults_$$"
+		run_rm "${SAVE_DIR}/__tmp_restore_defaults_$$" || :
+	fi
+	if [[ -e ${SAVE_DIR}/$SAVE_FILE ]]; then
+		verbose_msg "Removing saved iptables-save file \`${SAVE_DIR}/$SAVE_FILE"
+		run_rm "${SAVE_DIR}/$SAVE_FILE" || :
+	fi
+	if [[ -e ${SAVE_DIR}/$IPSET_SAVE_FILE ]]; then
+		verbose_msg "Removing saved ipset file \`${SAVE_DIR}/$IPSET_SAVE_FILE"
+		run_rm "${SAVE_DIR}/$IPSET_SAVE_FILE" || :
+	fi
 fi
 } # -------------------------------------------------------------------------
 
@@ -980,7 +998,9 @@ cleanup_lock
 } # -------------------------------------------------------------------------
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
-pr_err "${ME} exiting on error! Exit code: ${1:-$ER_LOAD}"
+if ((${VERBOSE:-6} > 0)); then
+	pr_err "${ME} exiting on error! Exit code: ${1:-$ER_LOAD}"
+fi
 cleanup_at_job
 cleanup
 builtin enable exit
@@ -988,7 +1008,7 @@ exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
-if ((NO_AUTOSAVE == 0 && ipt_err_count > 0)); then
+if ((NO_AUTOSAVE == 0)) && ((ipt_err_count || ips_err_count)); then
 	if [[ $AUTOSAVE_FILE ]]; then
 		pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
 		ipt_restore "$AUTOSAVE_FILE" || :
@@ -1002,15 +1022,19 @@ bail_out ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 trap_err() {
-pr_str "ERROR trap activated - exiting"
+if ((${VERBOSE:-6} > 0)); then
+	pr_err "ERROR trap activated - exiting"
+fi
 bail_out_restore $ER_FAIL
 } # -------------------------------------------------------------------------
 
 trap_gen() {
-printf "\tReceived \`SIG%s' signal - exiting\n" "$1"
+if ((${VERBOSE:-6} > 0)); then
+	printf "\tReceived \`SIG%s' signal - exiting\n" "$1"
+fi
 cleanup_at_job
 cleanup
-builtin enable exit
+builtin enable exit || :
 exit 0
 } # -------------------------------------------------------------------------
 
@@ -1743,7 +1767,8 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
-		sched_restore "${cmdline_save_file:-$SAVE_FILE}" "$IPSET_SAVE_FILE" || bail_out $?
+		[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
+		sched_restore "$SAVE_FILE" "$IPSET_SAVE_FILE" || bail_out $?
 	fi
 	# --------------------------------------------------------------
 	# if in a MODE that could make use of auto-backup, save ruleset

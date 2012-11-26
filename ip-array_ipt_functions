@@ -311,7 +311,7 @@ ipset_add() {
 local str_set="$1"
 val_setname "$str_set" || return $?
 #run_ipset -A "$str_set" "$str_entry"
-IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="-A $str_set $@"
+IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="-A $@"
 } # -------------------------------------------------------------------------
 
 ipset_destroy() {

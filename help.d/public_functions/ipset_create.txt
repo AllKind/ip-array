@@ -1,0 +1,12 @@
+
+Name:
+	ipset_create
+
+Description:
+	Add an ipset set.
+
+Usage:
+	ipset_create set-name type rest-of-options-string
+
+Example:
+	ipset_create foo ipmap --network 10.0.0.0/16

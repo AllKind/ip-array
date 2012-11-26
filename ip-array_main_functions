@@ -1309,8 +1309,7 @@ set_env
 } # -------------------------------------------------------------------------
 
 sched_restore() { # schedule ruleset restore job
-local str_file="${1:-${cmdline_save_file:-${SAVE_FILE}}}" str_job
-local str_ips_f="${2:-$IPSET_SAVE_FILE}"
+local str_file="$1" str_ips_f="$2" str_job
 local str_tmp_def_f="${SAVE_DIR}/__tmp_restore_defaults_$$"
 local str_mybin="${BIN_DIR}/${0##*/}"
 check_dirs BIN_DIR || return $?
@@ -1320,13 +1319,11 @@ if ! bin_ok "$str_mybin"; then # check if $0 is good
 fi
 if create_file "$str_tmp_def_f"; then
 	(
-	for i in ${!IPARRAY_PROGRAMS[@]}; do
-		rvar="${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}"
-		printf '%s="%s"\n' "$rvar" "${!rvar}"
+	for rvar in $(show_array_column IPARRAY_PROGRAMS); do
+		construct_assignment "$rvar" "${!rvar}"
 	done
 	for i in ${!DEFAULTS_LIST[@]}; do
-		rvar="${DEFAULTS_LIST[i]}"
-		printf '%s="%s"\n' "$rvar" "${!rvar}"
+		construct_assignment "${DEFAULTS_LIST[i]}" "${!DEFAULTS_LIST[i]}"
 	done
 	) >"$str_tmp_def_f"
 	[[ $DEBUG_INFO ]] && {
