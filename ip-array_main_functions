@@ -1346,9 +1346,13 @@ then
 	str_job="${str_job#job }"
 	str_job="${str_job%% *}"
 	readonly AT_JOB="$str_job"
+	val_numeric "$AT_JOB" || {
+		log -E "Unknown error. \´AT_JOB' variable does not contain the expected data."
+		return $ER_FAIL
+	}
 	[[ $DEBUG_INFO ]] && {
 		pr_banner "DEBUG: at job"
-		"$AT" -c $str_job
+		"$AT" -c $AT_JOB
 		pr_banner "DEBUG: end"
 	}
 	return 0
@@ -4335,14 +4339,6 @@ fi
 # ------------------------------------------------------------------------- #
 # MAIN PROCESSING FUNCTIONS
 # ------------------------------------------------------------------------- #
-
-#set_runtime_vars() {
-## Set IP-Array runtime configuration variables, which are needed in all runtime modes
-#set_syslog_mode
-#set_message_colors || return $ER_FAIL
-#precheck_config || return $?
-#fill_script_map
-#} # -------------------------------------------------------------------------
 
 handle_network_data() { # enumerate and validate local networking data
 fill_netif_array || return $?

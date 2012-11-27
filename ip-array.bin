@@ -1053,16 +1053,7 @@ exit 0
 # turn on debugging
 # -------------------------------------------------------------------------
 
-[[ $DEBUG_INFO ]] && {
-	export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
-	pr_banner "DEBUG: ENVIRONMENT"
-	set
-	pr_banner "DEBUG: SHELL OPTIONS"
-	shopt
-	pr_banner "DEBUG: TRAPS"
-	trap -p
-	pr_banner "DEBUG: end"
-}
+[[ $DEBUG_INFO ]] && export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 
 # -------------------------------------------------------------------------
 # Traps
@@ -1111,15 +1102,6 @@ while (($#)); do
 			continue
 		;;
 		-dg|--debug) # enable additional debugging info
-			[[ $DEBUG_INFO ]] || {
-				pr_banner "DEBUG: ENVIRONMENT"
-				set
-				pr_banner "DEBUG: SHELL OPTIONS"
-				shopt
-				pr_banner "DEBUG: TRAPS"
-				trap -p
-				pr_banner "DEBUG: end"
-			}
 			export DEBUG_INFO=YES
 			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
 			continue
@@ -1368,6 +1350,10 @@ declare -r LOCKFILE="${LOCK_DIR}/${me}.pid"
 : ${CL_DIR_DATA:=$LIB_DIR}
 : ${CL_FILE_VARIANTS:=.${me}_cl_variants}
 declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
+
+# -------------------------------------------------------------------------
+# configuration checks
+# -------------------------------------------------------------------------
 
 # check for numeric defaults
 [[ $VERBOSE = [0-9] ]] || {
@@ -1743,7 +1729,6 @@ if [[ $MODE = SHOW ]]; then
 elif [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
 	readonly REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 fi
-#set_runtime_vars || bail_out $?
 set_syslog_mode
 set_message_colors || bail_out $?
 precheck_config || bail_out $?
@@ -1784,6 +1769,20 @@ if ((EXEC_COMMANDS)); then
 		restart|test|open|tc-start|tc-stop) autosave || bail_out $? ;;
 	esac
 fi
+
+# -------------------------------------------------------------------------
+# show debugging info
+# -------------------------------------------------------------------------
+
+[[ $DEBUG_INFO ]] && {
+	pr_banner "DEBUG: ENVIRONMENT"
+	declare -p
+	pr_banner "DEBUG: SHELL OPTIONS"
+	shopt
+	pr_banner "DEBUG: TRAPS"
+	trap -p
+	pr_banner "DEBUG: end"
+}
 
 # -------------------------------------------------------------------------
 # preparation done - run main function
