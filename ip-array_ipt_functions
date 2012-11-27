@@ -53,6 +53,10 @@ local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
 val_setname "$str_set" || return $?
+lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} && {
+	log -W "ipset set \`$str_set' has already been created."
+	return 0
+}
 lsearch "$str_type" $UNSUPPORTED_SETLIST && {
 	log -E "ipset set type \`$str_type' is not supported."
 	return $ER_FAIL
@@ -302,15 +306,14 @@ case "$str_type" in
 	*) log -E "Unknown set type \`$str_type'."
 		return $ER_CONF
 esac
-#run_ipset -N "$str_set" "$str_type" ${arr_opts[@]}
 IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="-N $str_set $str_type ${arr_opts[@]}"
+CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set"
 } # -------------------------------------------------------------------------
 
 ipset_add() {
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_set="$1"
 val_setname "$str_set" || return $?
-#run_ipset -A "$str_set" "$str_entry"
 IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="-A $@"
 } # -------------------------------------------------------------------------
 

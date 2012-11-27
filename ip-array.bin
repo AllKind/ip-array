@@ -369,6 +369,7 @@ declare -a PROTOCOLS_ARRAY	# Array to hold the data enumerated from /etc/protoco
 declare -a SERVICES_ARRAY	# Array to hold the data enumerated from /etc/services
 declare -a KERN_VER			# Holds the kernel version data
 declare -a CREATED_CHAINS_ARRAY		# List of created chains
+declare -a CREATED_SETS_ARRAY		# List of created ipset sets
 
 declare -a MODULE_CMD_ARRAY	# Array to cache the modprobe commands
 declare -a IPT_CMD_ARRAY	# Array to cache the iptables commands
