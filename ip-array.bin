@@ -81,7 +81,7 @@ declare -r MAIN_ARG="$1"
 declare -r PARAMS="$*"
 declare -ir PID=$$
 
-declare -rx PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+declare -rx PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # error exit codes
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
@@ -697,7 +697,7 @@ which_prog() { # find a program in $PATH
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local s_prog="$1" oIFS="$IFS"
 IFS=":"
-for rvar in ${PATH}; do
+for rvar in $PATH; do
 	[[ -x ${rvar}/${s_prog} ]] && {
 		IFS="$oIFS"
 		pr_str "${rvar}/${s_prog}"

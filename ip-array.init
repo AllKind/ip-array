@@ -84,7 +84,7 @@ shopt -s extglob
 # Variables
 # -------------------------------------------------------------------------
 declare -x LC_ALL='C'
-declare -x PATH="${PATH}:/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+declare -x PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # parameters
 declare -r MAIN_ARG="$1"
@@ -106,7 +106,7 @@ exit $ER_USE
 } # -------------------------------------------------------------------------
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
-exit ${1:-${ER_LOAD}}
+exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
 short_usage() { # help hint
@@ -327,8 +327,8 @@ done
 : ${MY_SHELL:=$BASH}
 
 case "$MAIN_ARG" in
-	start) DEFAULT_OPTIONS+="${DEFAULT_START_OPTIONS} " ;;
-	stop) DEFAULT_OPTIONS+="${DEFAULT_STOP_OPTIONS} " ;;
+	start) DEFAULT_OPTIONS+="$DEFAULT_START_OPTIONS " ;;
+	stop) DEFAULT_OPTIONS+="$DEFAULT_STOP_OPTIONS " ;;
 esac
 
 # run main executable

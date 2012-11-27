@@ -52,7 +52,7 @@ shift 2
 local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
-val_setname "$str_set" || return $?
+val_setname "$str_set" || return $ER_CONF
 lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} && {
 	log -W "ipset set \`$str_set' has already been created."
 	return 0
@@ -68,34 +68,34 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				return $ERR_CONF
+				return $ER_CONF
 			fi
 			case "$option" in
-				--from)
+				from)
 					val_ip4_addr "$opt_arg" || return $?
 					str_from="$option $opt_arg"
 					shift 2
 				;;
-				--to)
+				to)
 					val_ip4_addr "$opt_arg" || return $?
 					str_to="$option $opt_arg"
 					shift 2
 				;;
-				--network)
+				network)
 					val_ip4_addr "$opt_arg" || return $?
 					str_network="$option $opt_arg"
 					shift 2
 				;;
-				--netmask)
+				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
-						return $ERR_CONF
+						return $ER_CONF
 					}
 					str_netmask="$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					return $ERR_CONF
+					return $ER_CONF
 			esac
 		done
 		if [[ $str_network ]]; then 
@@ -109,13 +109,13 @@ case "$str_type" in
 				else arr_opts=($str_from $str_to)
 				fi
 			else
-				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
-				return $ERR_CONF
+				log -E "$strErr \`$str_type' needs \`from value to value' options."
+				return $ER_CONF
 			fi
 		fi
 		if [[ $str_netmask ]] && [[ -z $str_from || -z $str_to ]]; then
-			log -E "$strErr \`$str_type' option \`--netmask' needs \`--from value --to value' options."
-			return $ERR_CONF
+			log -E "$strErr \`$str_type' option \`netmask' needs \`from value to value' options."
+			return $ER_CONF
 		fi
 	;;
 	macipmap)
@@ -123,60 +123,60 @@ case "$str_type" in
 		while (($#)); do
 			option="$1" opt_arg="$2"
 			case "$option" in
-				--from|--to|--network)
+				from|to|network)
 					if [[ -z $opt_arg ]]; then
 						log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-						return $ERR_CONF
+						return $ER_CONF
 					fi
 				;;
 			esac
 			case "$option" in
-				--from)
+				from)
 					val_ip4_addr "$opt_arg" || return $?
 					str_from="$option $opt_arg"
 					shift 2
 				;;
-				--to)
+				to)
 					val_ip4_addr "$opt_arg" || return $?
 					str_to="$option $opt_arg"
 					shift 2
 				;;
-				--network)
+				network)
 					val_ip4_addr "$opt_arg" || return $?
 					arr_opts=($option $opt_arg)
 					shift 2
 				;;
-				--matchunset)
+				matchunset)
 					arr_opts[${#arr_opts[@]}]=$option
 					shift
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					return $ERR_CONF
+					return $ER_CONF
 			esac
 		done
 		if [[ $str_from && $str_to ]]; then
 			arr_opts=($str_from $str_to)
 		elif [[ $str_from && -z $str_to ]]; then
-			log -E "$strErr \`$str_type' needs \`--from value --to value' options."
-			return $ERR_CONF
+			log -E "$strErr \`$str_type' needs \`from value to value' options."
+			return $ER_CONF
 		fi
 	;;
 	portmap)
 		if (($# == 4)); then
-			if [[ $1 = --from && $2 = +([[:digit:]]) && $3 = --to && $4 = +([[:digit:]]) ]]; then
+			if [[ $1 = from && $2 = +([[:digit:]]) && $3 = to && $4 = +([[:digit:]]) ]]; then
 				for rvar in $2 $4; do
 					val_port $rvar || {
 						log -E "$strERR"
-						return $ERR_CONF
+						return $ER_CONF
 					}
 				done
 				arr_opts=("$@")
 			else
-				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+				log -E "$strErr \`$str_type' needs \`from value to value' options."
 				return $ER_CONF
 			fi
 		else
-			log -E "$strErr \`$str_type' needs \`--from value --to value' options."
+			log -E "$strErr \`$str_type' needs \`from value to value' options."
 			return $ER_CONF
 		fi
 	;;
@@ -184,26 +184,26 @@ case "$str_type" in
 		while (($#)); do
 			option="$1" opt_arg="$2"
 			case "$option" in
-				--hashsize|--probes)
+				hashsize|probes)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
-				--resize)
+				resize)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
-				--netmask)
+				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
-						return $ERR_CONF
+						return $ER_CONF
 					}
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					return $ERR_CONF
+					return $ER_CONF
 			esac
 		done
 	;;
@@ -212,21 +212,21 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				return $ERR_CONF
+				return $ER_CONF
 			fi
 			case "$option" in
-				--hashsize|--probes)
+				hashsize|probes)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
-				--resize)
+				resize)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					return $ERR_CONF
+					return $ER_CONF
 			esac
 		done
 	;;
@@ -236,44 +236,44 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				return $ERR_CONF
+				return $ER_CONF
 			fi
 			case "$option" in
-				--from)
+				from)
 					val_ip4_addr "$opt_arg" || return $?
 					str_from="$option $opt_arg"
 					shift 2
 				;;
-				--to)
+				to)
 					val_ip4_addr "$opt_arg" || return $?
 					str_to="$option $opt_arg"
 					shift 2
 				;;
-				--network)
+				network)
 					val_ip4_addr "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
-				--hashsize|--probes)
+				hashsize|probes)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
-				--resize)
+				resize)
 					val_numeric "$opt_arg" || return $?
 					arr_opts[${#arr_opts[@]}]="$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					return $ERR_CONF
+					return $ER_CONF
 			esac
 		done
 		if [[ $str_from && $str_to ]]; then
 			arr_opts[${#arr_opts[@]}]="$str_from $str_to"
 		else
 			if [[ $str_from && -z $str_to ]] || [[ -z $str_from && $str_to ]]; then
-				log -E "$strErr \`$str_type' needs \`--from value --to value' options."
-				return $ERR_CONF
+				log -E "$strErr \`$str_type' needs \`from value to value' options."
+				return $ER_CONF
 			fi
 		fi
 	;;
@@ -281,9 +281,9 @@ case "$str_type" in
 		local i_tmp=0
 		if [[ $1 ]]; then
 			case "$str_type" in
-				iptree) [[ $1 = --timeout ]] && i_tmp=1 ;;
-				iptreemap) [[ $1 = --gc ]] && i_tmp=1 ;;
-				setlist) [[ $1 = --size ]] && i_tmp=1 ;;
+				iptree) [[ $1 = timeout ]] && i_tmp=1 ;;
+				iptreemap) [[ $1 = gc ]] && i_tmp=1 ;;
+				setlist) [[ $1 = size ]] && i_tmp=1 ;;
 			esac
 			if ((i_tmp)); then
 				if [[ $2 ]]; then
@@ -1089,7 +1089,7 @@ case "$1" in
 		done
 		readonly UNSUPPORTED_SETLIST
 		dn run_ipset -N "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
-#		ipset_create "${ME}_TEST_SET" ipmap --network 192.168.0.0/24 || {
+#		ipset_create "${ME}_TEST_SET" ipmap network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 #			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
@@ -1102,13 +1102,13 @@ case "$1" in
 #		ipset_create "${ME}_TEST_SET3" setlist --size 16 || {
 #			log -f "creating test set: ${ME}_TEST_SET3"
 #		}
-#		ipset_create "${ME}_TEST_SET4" ipporthash --from 192.168.0.0 --to 192.168.0.23 --hashsize 2048 --probes 10 --resize 60 || {
+#		ipset_create "${ME}_TEST_SET4" ipporthash from 192.168.0.0 to 192.168.0.23 hashsize 2048 probes 10 resize 60 || {
 #			log -f "creating test set: ${ME}_TEST_SET4"
 #		}
-#		ipset_create "${ME}_TEST_SET5" ipportiphash --from 192.168.1.0 --to 192.168.1.23 --hashsize 1024 --probes 9 --resize 65 || {
+#		ipset_create "${ME}_TEST_SET5" ipportiphash from 192.168.1.0 to 192.168.1.23 hashsize 1024 probes 9 resize 65 || {
 #			log -f "creating test set: ${ME}_TEST_SET5"
 #		}
-#		ipset_create "${ME}_TEST_SET6" ipportnethash --from 192.168.2.0 --to 192.168.2.23 --hashsize 2660 --probes 11 --resize 55 || {
+#		ipset_create "${ME}_TEST_SET6" ipportnethash from 192.168.2.0 to 192.168.2.23 hashsize 2660 probes 11 resize 55 || {
 #			log -f "creating test set: ${ME}_TEST_SET6"
 #		}
 #		ipset_add "${ME}_TEST_SET" 192.168.0.1
