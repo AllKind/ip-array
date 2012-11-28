@@ -3717,10 +3717,11 @@ save_command_array() { # save a selected command array to a file
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local appl_msg
 local cmd_arr=$1 # name of the array
+local str_rs_file="$2" # name of the target file
 local -i work_arr_sum idx
 if ! ((${#CMD_NAMES_ARRAY[@]})); then
 	log -u 'CMD_NAMES_ARRAY'
-	return 1
+	return $ER_FAIL
 fi
 for idx in ${!CMD_NAMES_ARRAY[@]}; do
 	set -- ${CMD_NAMES_ARRAY[idx]}
@@ -3735,72 +3736,72 @@ if ! ((work_arr_sum)); then # if it has members
 	return 0
 fi
 log -S "Saving $work_arr_sum $appl_msg"
-printf "\n# %s\n" "$appl_msg" >>"$RULESETFILE"
+printf "\n# %s\n" "$appl_msg" >>"$str_rs_file"
 case "$cmd_arr" in
 	(PROC_CMD_ARRAY)
 		for idx in ${!PROC_CMD_ARRAY[@]}; do
 			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
-			printf 'echo "%s" > "%s"\n' "$1" "$2" >>"$RULESETFILE"
+			printf 'echo "%s" > "%s"\n' "$1" "$2" >>"$str_rs_file"
 		done
 	;;
 	(IPSET_CMD_ARRAY)
 		for idx in ${!IPSET_CMD_ARRAY[@]}; do
-			printf '"$IPSET" %s\n' "${IPSET_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPSET" %s\n' "${IPSET_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_POL_ARRAY)
 		for idx in ${!IPT_POL_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_POL_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_POL_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_FLUSH_ARRAY)
 		for idx in ${!IPT_FLUSH_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_FLUSH_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_FLUSH_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_CCHAIN_ARRAY)
 		for idx in ${!IPT_CCHAIN_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_CCHAIN_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_CCHAIN_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_RAW_CMD_ARRAY)
 		for idx in ${!IPT_RAW_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_RAW_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_RAW_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_MANGLE_CMD_ARRAY)
 		for idx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_MANGLE_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_MANGLE_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_NAT_CMD_ARRAY)
 		for idx in ${!IPT_NAT_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_NAT_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_NAT_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_FILTER_CMD_ARRAY)
 		for idx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_FILTER_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_FILTER_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_SECURITY_CMD_ARRAY)
 		for idx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_SECURITY_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_SECURITY_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(IPT_RAWPOST_CMD_ARRAY)
 		for idx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
-			printf '"$IPT" %s\n' "${IPT_RAWPOST_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$IPT" %s\n' "${IPT_RAWPOST_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(TC_CMD_ARRAY)
 		for idx in ${!TC_CMD_ARRAY[@]}; do
-			printf '"$TC" %s\n' "${TC_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$TC" %s\n' "${TC_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 	(MODULE_CMD_ARRAY)
 		for idx in ${!MODULE_CMD_ARRAY[@]}; do
-			printf '"$MODPROBE" %s\n' "${MODULE_CMD_ARRAY[idx]}" >>"$RULESETFILE"
+			printf '"$MODPROBE" %s\n' "${MODULE_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
 esac
@@ -3824,11 +3825,12 @@ done
 } # -------------------------------------------------------------------------
 
 save_ipset_command_array() { # save the ipset commands (-gf = cmd)
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((USE_IPSET)) || return 0
-printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$RULESETFILE"
+printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$1"
 ipset_merge_arrays
 if arr_populated IPSET_CMD_ARRAY; then
-	save_command_array IPSET_CMD_ARRAY || return $?
+	save_command_array IPSET_CMD_ARRAY "$1" || return $?
 fi
 } # -------------------------------------------------------------------------
 
@@ -3849,213 +3851,215 @@ printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$str_rfile"
 } # -------------------------------------------------------------------------
 
 iptsave_rulesets() { # save generated iptables commands in iptables-save format
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i tidx
-local str_tbl str_ton
-if [[ -f $RULESETFILE ]]; then
-	if [[ -w $RULESETFILE ]]; then
-		log -w "$RULESETFILE already exists. Deleting it."
-		run_rm "$RULESETFILE"
+local str_tbl str_ton str_rsfile="$1"
+if [[ -f $str_rsfile ]]; then
+	if [[ -w $str_rsfile ]]; then
+		log -w "$str_rsfile already exists. Deleting it."
+		run_rm "$str_rsfile"
 	else
-		log -E "\`$RULESETFILE' is not writable"
+		log -E "\`$str_rsfile' is not writable"
 		return $ER_FAIL
 	fi
 fi
 for str_tbl in rawpost security raw nat mangle filter; do
 	str_ton=$(subst_var ENABLE_$(string_toupper $str_tbl) )
 	((${str_ton:-0} == 1)) || continue
-	printf "# Generated by %s %s at %s\n" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >>"$RULESETFILE"
-	printf '*%s\n' "$str_tbl" >>"$RULESETFILE"
+	printf "# Generated by %s %s at %s\n" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >>"$str_rsfile"
+	printf '*%s\n' "$str_tbl" >>"$str_rsfile"
 	for tidx in ${!IPT_POL_ARRAY[@]}; do
-		eval 'set -- '"${IPT_POL_ARRAY[tidx]}"
+		eval set -- "${IPT_POL_ARRAY[tidx]}"
 		if [[ $2 = $str_tbl ]]; then
-			printf ':%s %s [0:0]\n' "$4" "$5" >>"$RULESETFILE"
+			printf ':%s %s [0:0]\n' "$4" "$5" >>"$str_rsfile"
 		fi
 	done
 	for tidx in ${!IPT_CCHAIN_ARRAY[@]}; do
-		eval 'set -- '"${IPT_CCHAIN_ARRAY[tidx]}"
+		eval set -- "${IPT_CCHAIN_ARRAY[tidx]}"
 		if [[ $2 = $str_tbl ]]; then
-			printf ':%s - [0:0]\n' "$4" >>"$RULESETFILE"
+			printf ':%s - [0:0]\n' "$4" >>"$str_rsfile"
 		fi
 	done
 	case "$str_tbl" in
 		rawpost)
 			for tidx in ${!IPT_RAWPOST_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_RAWPOST_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_RAWPOST_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 		security)
 			for tidx in ${!IPT_SECURITY_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_SECURITY_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_SECURITY_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 		raw)
 			for tidx in ${!IPT_RAW_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_RAW_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_RAW_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 		nat)
 			for tidx in ${!IPT_NAT_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_NAT_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_NAT_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 		mangle)
 			for tidx in ${!IPT_MANGLE_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_MANGLE_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_MANGLE_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 		filter)
 			for tidx in ${!IPT_FILTER_CMD_ARRAY[@]}; do
-				printf "%s\n" "${IPT_FILTER_CMD_ARRAY[tidx]#*$str_tbl }" >>"$RULESETFILE"
+				printf "%s\n" "${IPT_FILTER_CMD_ARRAY[tidx]#*$str_tbl }" >>"$str_rsfile"
 			done
 		;;
 	esac
-	printf "%s\n" "COMMIT" >>"$RULESETFILE"
-	printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$RULESETFILE"
+	printf "COMMIT\n" >>"$str_rsfile"
+	printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$str_rsfile"
 done
 } # -------------------------------------------------------------------------
 
 save_rulesets() { # save the rules from the command arrays into a file
-local cmd_array tmp_rfile="$RULESETFILE" ips_rfile="${SAVE_DIR}/${IPSET_SAVE_FILE}"
+local cmd_array str_rfile="$1" tmp_rfile="$1" ips_rfile="$2"
 # create the file to save commands to
-if [[ -f $RULESETFILE ]]; then
-	if [[ -w $RULESETFILE ]]; then
-		log -w "$RULESETFILE already exists. Deleting it."
+if [[ -f $str_rfile ]]; then
+	if [[ -w $str_rfile ]]; then
+		log -w "$str_rfile already exists. Deleting it."
 	else
-		log -E "\`$RULESETFILE' is not writable"
+		log -E "\`$str_rfile' is not writable"
 		return $ER_FAIL
 	fi
 fi
-printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >"$RULESETFILE" || {
-	log -F "creating \`$RULESETFILE'"
+printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >"$str_rfile" || {
+	log -F "creating \`$str_rfile'"
 	return $ER_FAIL
 }
 # add vars
-arr_populated 'MODULE_CMD_ARRAY' && construct_assignment MODPROBE >>"$RULESETFILE"
-arr_populated 'IPSET_SETS_ARRAY' && construct_assignment IPSET >>"$RULESETFILE"
-if [[ $GEN_FORMAT != ipt ]]; then
-	for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
-		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
-	do
-		if arr_populated $cmd_array; then
-			[[ $MODE = SAVE-SHAPING-COMMANDS ]] || construct_assignment IP_TABLES_NAMES >>"$RULESETFILE"
-			construct_assignment IPT >>"$RULESETFILE"
-			break
+if [[ $MODE = @(SAVE-COMMANDS|SAVE-MODPROBE-COMMANDS) ]]; then
+	arr_populated 'MODULE_CMD_ARRAY' && construct_assignment MODPROBE >>"$str_rfile"
+fi
+if [[ $MODE = @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+	if [[ $GEN_FORMAT != ipt ]]; then
+		for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+		do
+			if arr_populated $cmd_array; then
+				[[ $MODE = SAVE-SHAPING-COMMANDS ]] || construct_assignment IP_TABLES_NAMES >>"$str_rfile"
+				construct_assignment IPT >>"$str_rfile"
+				break
+			fi
+		done
+	else
+		if [[ $MODE = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+			construct_assignment IPT_RESTORE >>"$str_rfile"
 		fi
-	done
-else
-	if [[ $MODE = @(SAVE-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
-		construct_assignment IPT_RESTORE >>"$RULESETFILE"
+	fi
+	if ((USE_IPSET)); then
+		arr_populated 'IPSET_SETS_ARRAY' && construct_assignment IPSET >>"$str_rfile"
 	fi
 fi
-arr_populated 'TC_CMD_ARRAY' && {
-	for rvar in GREP TC NET_IFLIST; do
-		construct_assignment $rvar >>"$RULESETFILE"
-	done
-}
+if [[ $MODE = @(SAVE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+	arr_populated 'TC_CMD_ARRAY' && {
+		for rvar in GREP TC NET_IFLIST; do
+			construct_assignment $rvar >>"$str_rfile"
+		done
+	}
+fi
 # act according to runtime mode
 case "$MODE" in
 	(SAVE-COMMANDS) # save all commands
 		if [[ $GEN_FORMAT = ipt ]]; then
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
-			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY || return $?; }
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
+			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?; }
+			printf '\n# iptables ruleset\n' >>"$str_rfile"
+			printf '"$%s" < "%s"\n' "IPT_RESTORE" "${str_rfile%.bash}.iptsave" >>"$str_rfile"
 			if ((USE_IPSET)); then
-				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$RULESETFILE"
-				printf '\n"$%s" -R < "%s"\n' "IPSET" "$ips_rfile" >>"$RULESETFILE"
-			fi
-			printf '\n# iptables ruleset\n' >>"$RULESETFILE"
-			printf '"$%s" < "%s"\n' "IPT_RESTORE" "${RULESETFILE%.bash}.iptsave" >>"$RULESETFILE"
-			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
-				if arr_populated $cmd_array; then
-					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
-					save_command_array $cmd_array || return $?
-				fi
-			done
-			if ((USE_IPSET)); then
-				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$RULESETFILE"
+				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$str_rfile"
+				printf '\n"$%s" -R < "%s"\n' "IPSET" "$ips_rfile" >>"$str_rfile"
 				ipset_save_ruleset "$ips_rfile" || return $?
 			fi
-			RULESETFILE="${tmp_rfile%.bash}.iptsave"
-			log -I "Saving generated iptables-save formatted script to: $RULESETFILE"
-			iptsave_rulesets || return $?
-			RULESETFILE="$tmp_rfile"
+			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
+				if arr_populated $cmd_array; then
+					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
+					save_command_array $cmd_array "$str_rfile" || return $?
+				fi
+			done
+			tmp_rfile="${str_rfile%.bash}.iptsave"
+			log -I "Saving generated iptables-save formatted script to: $tmp_rfile"
+			iptsave_rulesets "$tmp_rfile" || return $?
 		elif [[ $GEN_FORMAT = cmd ]]; then
-			show_flush_del_pub_save >>"$RULESETFILE"
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
-			save_command_array MODULE_CMD_ARRAY || return $?
-			save_ipset_command_array || return
-			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$RULESETFILE"
+			show_flush_del_pub_save >>"$str_rfile"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
+			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?
+			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
 			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
 			do
 				if arr_populated $cmd_array; then
-					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
-					save_command_array $cmd_array || return $?
+					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
+					save_command_array $cmd_array "$str_rfile" || return $?
 				fi
 			done
+			save_ipset_command_array "$str_rfile" || return
 		fi
 	;;
 	(SAVE-IPT-COMMANDS) # save iptables commands only
-		show_flush_del_pub_save >>"$RULESETFILE"
-		save_ipset_command_array || return
-		printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$RULESETFILE"
+		show_flush_del_pub_save >>"$str_rfile"
+		printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
 		for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 			IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 		do
 			if arr_populated $cmd_array; then
-				save_command_array $cmd_array || return $?
+				save_command_array $cmd_array "$str_rfile" || return $?
 			fi
 		done
+		save_ipset_command_array "$str_rfile" || return
 	;;
 	(SAVE-MODPROBE-COMMANDS) # save modprobe commands only
-		save_command_array MODULE_CMD_ARRAY || return $?
+		save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?
 	;;
 	(SAVE-PROC-COMMANDS) # save proc commands only
-		save_command_array PROC_CMD_ARRAY || return $?
+		save_command_array PROC_CMD_ARRAY "$str_rfile" || return $?
 	;;
 	(SAVE-TC-COMMANDS) # save tc commands only
-		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
-		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
-		save_command_array TC_CMD_ARRAY || return $?
+		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
+		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
+		save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
 	;;
 	(SAVE-SHAPING-COMMANDS) # save tc and iptables mangle table commands
 		if [[ $GEN_FORMAT = ipt ]]; then
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
+			printf '\n# iptables ruleset\n' >>"$str_rfile"
+			printf '"$%s" < "%s"\n' "IPT_RESTORE" "${str_rfile%.bash}.iptsave" >>"$str_rfile"
 			if ((USE_IPSET)); then
-				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$RULESETFILE"
-				printf '\n"$%s" -R < "%s"\n' "IPSET" "${RULESETFILE%.bash}.ipset_save" >>"$RULESETFILE"
-			fi
-			printf '\n# iptables ruleset\n' >>"$RULESETFILE"
-			printf '"$%s" < "%s"\n' "IPT_RESTORE" "${RULESETFILE%.bash}.iptsave" >>"$RULESETFILE"
-			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
-			save_command_array TC_CMD_ARRAY || return $?
-			if ((USE_IPSET)); then
+				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$str_rfile"
+				printf '\n"$%s" -R < "%s"\n' "IPSET" "$ips_rfile" >>"$str_rfile"
 				ipset_save_ruleset "$ips_rfile" || return $?
 			fi
-			RULESETFILE="${tmp_rfile%.bash}.iptsave"
-			log -I "Saving generated iptables-save formatted script to: $RULESETFILE"
-			iptsave_rulesets || return $?
-			RULESETFILE="$tmp_rfile"
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
+			save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
+			tmp_rfile="${str_rfile%.bash}.iptsave"
+			log -I "Saving generated iptables-save formatted script to: $tmp_rfile"
+			iptsave_rulesets "$tmp_rfile" || return $?
 		elif [[ $GEN_FORMAT = cmd ]]; then
-			flush_table_pub_save >>"$RULESETFILE"
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$RULESETFILE"
-			save_ipset_command_array || return
+			flush_table_pub_save >>"$str_rfile"
+			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
 			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_MANGLE_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
-					[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"$RULESETFILE"
-					save_command_array $cmd_array || return $?
+					[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"$str_rfile"
+					save_command_array $cmd_array "$str_rfile" || return $?
 				fi
 			done
-			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$RULESETFILE"
-			save_command_array TC_CMD_ARRAY || return $?
+			save_ipset_command_array "$str_rfile" || return
+			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
+			save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
 		fi
 	;;
 esac
 # write a signature to the saved command file
-if [[ -w $RULESETFILE ]]; then
-	printf "\n# END of script generated by %s %s at %s\n\n" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >>"$RULESETFILE"
-	log -e "Successfully saved script to: $RULESETFILE"
+if [[ -w $str_rfile ]]; then
+	printf "\n# END of script generated by %s %s at %s\n\n" "$ME" "$STR_VERSION" "$(run_date --rfc-2822)" >>"$str_rfile"
+	log -e "Successfully saved script to: $str_rfile"
 else
-	log -E "\`$RULESETFILE' is not writable"
+	log -E "\`$str_rfile' is not writable"
 	return $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
@@ -4094,9 +4098,9 @@ case "$MODE" in # act according to runtime mode
 			if ((USE_IPSET)); then
 				ipset_save_ruleset "${SAVE_DIR}/${IPSET_SAVE_FILE}" || return
 			fi
-			iptsave_rulesets || return
+			iptsave_rulesets "$RULESETFILE" || return
 		else
-			save_rulesets || return
+			save_rulesets "$RULESETFILE" "${SAVE_DIR}/${IPSET_SAVE_FILE}" || return
 		fi
 	;;
 	(*)
@@ -4118,7 +4122,7 @@ case "$MODE" in # act according to runtime mode
 				log -S "Applying $work_arr_sum $*"
 			fi
 		done
-		# merge iptables command arrays
+		# merge iptables and ipset command arrays
 		for str_arr_name in IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
 			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 		do
@@ -4135,20 +4139,10 @@ case "$MODE" in # act according to runtime mode
 		if ! ((EXEC_COMMANDS)); then # do not apply rules in dry-run mode
 			return 0
 		fi
-		if ((USE_IPSET)); then
-			if ((${#IPSET_CMD_ARRAY[@]})); then # iptset commands
-				dn ipset_flush || cmd_err_count ips "$IPSET -F"
-				dn ipset_destroy || cmd_err_count ips "$IPSET -X"
-				for i in ${!IPSET_CMD_ARRAY[@]}; do
-					eval set -- "${IPSET_CMD_ARRAY[i]}"
-					run_ipset "$@" -q || cmd_err_count ips "$IPSET $*"
-				done
-			fi
-		fi
 		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 			if [[ $GEN_FORMAT = ipt ]]; then
 				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
-				iptsave_rulesets || {
+				iptsave_rulesets "$RULESETFILE" || {
 					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
 					cmd_err_count misc 'saving ruleset in iptables-save format'
 					return $ER_FAIL
@@ -4163,7 +4157,6 @@ case "$MODE" in # act according to runtime mode
 			elif [[ $GEN_FORMAT = cmd ]]; then
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval set -- "${IPT_CMD_ARRAY[i]}"
-#					dn "$IPT" "$@" || cmd_err_count ipt "$IPT $*"
 					"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
 				done
 			else
@@ -4199,6 +4192,16 @@ case "$MODE" in # act according to runtime mode
 				fi
 			fi
 		fi
+		if ((USE_IPSET)); then # iptset commands
+			if ((${#IPSET_CMD_ARRAY[@]})); then
+				dn ipset_flush || cmd_err_count ips "$IPSET -F"
+				dn ipset_destroy || cmd_err_count ips "$IPSET -X"
+				for i in ${!IPSET_CMD_ARRAY[@]}; do
+					eval set -- "${IPSET_CMD_ARRAY[i]}"
+					run_ipset "$@" &>/dev/null || cmd_err_count ips "$IPSET $*"
+				done
+			fi
+		fi
 		if ((${#TC_CMD_ARRAY[@]})); then # traffic control commands
 			for i in ${!TC_CMD_ARRAY[@]}; do
 				eval set -- "${TC_CMD_ARRAY[i]}"
@@ -4214,6 +4217,7 @@ case "$MODE" in # act according to runtime mode
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
 		fi
+		# save the memorized module and/or /proc settings to be restored if we are in test mode
 		if ((TEST_MODE)) && ((${#PROC_STATE_ARRAY[@]} || ${#MOD_STATE_ARRAY[@]})); then
 			if ((${#PROC_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$PROC_RESTORE_FILE"
@@ -4224,6 +4228,7 @@ case "$MODE" in # act according to runtime mode
 			fi
 			if ((${#MOD_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$MODULE_RESTORE_FILE"
+				local unload_arr=()
 				for idx in ${!MOD_STATE_ARRAY[@]}; do
 					set -- ${MOD_STATE_ARRAY[idx]}
 					local module_state="$1" module_name="$2"
@@ -4236,7 +4241,7 @@ case "$MODE" in # act according to runtime mode
 						unload)
 							local unload_arr[${#unload_arr[@]}]="$module_name"
 						;;
-						*) log -o "${module_state}" $FUNCNAME
+						*) log -o "$module_state" $FUNCNAME
 							return 1
 						;;
 					esac

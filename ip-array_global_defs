@@ -206,6 +206,16 @@ IPARRAY_IPSET_SETTYPE_LIST=(
 "iptree"
 "iptreemap"
 "setlist"
+"bitmap:ip range 10.0.0.0/24"
+"bitmap:ip,mac range 10.0.0.0/24"
+"bitmap:port range 0-7"
+"hash:ip"
+"hash:net"
+"hash:ip,port"
+"hash:net,port"
+"hash:ip,port,ip"
+"hash:ip,port,net"
+"list:set"
 )
 
 # Array with match extensions, which are available in all tables
