@@ -156,7 +156,8 @@ declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR 
 declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_file \
 	cmdline_base_dir cmdline_bin_dir cmdline_conf_dir cmdline_lib_dir cmdline_run_dir \
 	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_quickstart \
-	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color cmdline_use_ipset
+	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color cmdline_use_ipset \
+	cmdline_mod_file cmdline_proc_file
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -200,6 +201,8 @@ declare DEF_ROUTE_IF	# To hold the defaults route interface
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
 declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types
+declare MODULE_RESTORE_FILE="${me}_modprobe_commands_$$"
+declare PROC_RESTORE_FILE="${me}_proc_commands_$$"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
@@ -937,6 +940,34 @@ else
 fi
 } # -------------------------------------------------------------------------
 
+modules_restore() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
+	if source "$str_file"; then
+		notice_msg "Module state successfully restored from: \`$str_file'"
+		run_rm "$str_file"
+	else
+		err_msg "Failed restoring module state."
+		return $ER_FAIL
+	fi
+fi
+} # -------------------------------------------------------------------------
+
+proc_restore() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
+	if source "$str_file"; then
+		notice_msg "/proc state successfully restored from: \`$str_file'"
+		run_rm "$str_file"
+	else
+		err_msg "Failed restoring /proc state."
+		return $ER_FAIL
+	fi
+fi
+} # -------------------------------------------------------------------------
+
 autosave() { # automatically save a temporary ruleset, which will be restored on error
 ((NO_AUTOSAVE == 0)) || return 0
 if ((IPTSAVE_FAILS == 0)); then
@@ -1183,6 +1214,8 @@ while (($#)); do
 		;;
 		-s|--save-file) cmdline_save_file="$opt_arg" ;; # file to save/restore to/from
 		-si|--save-ips-file) cmdline_ipset_save_file="$opt_arg" ;; # file to save/restore ipset rules to/from
+		-sm|--save-mod-file) cmdline_mod_file="$opt_arg" ;; # file to save/restore modprobe commands to/from
+		-sp|--save-proc-file) cmdline_proc_file="$opt_arg" ;; # file to save/restore /proc commands to/from
 		-co|--color) cmdline_color="$opt_arg" ;; # enable/disable coloured output
 		-ui|--use_ipset) cmdline_use_ipset="$opt_arg" ;; # enable/disable builtin ipset usage
 		-sc|--show-config) # show config summary
@@ -1504,8 +1537,14 @@ case "$MAIN_ARG" in
 		MODE='RESTART'
 	;;
 	restore) # restore iptables-save saved ruleset
-		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+		if [[ $cmdline_mod_file ]]; then
+			modules_restore "$cmdline_mod_file" || bail_out $?
+		fi
 		ips_restore "$IPSET_SAVE_FILE" || bail_out $?
+		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
+		if [[ $cmdline_proc_file ]]; then
+			proc_restore "${cmdline_proc_file}" || bail_out $?
+		fi
 		quit_welldone
 	;;
 	save) # save ruleset with iptables-save
@@ -1753,8 +1792,8 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
-		[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
-		sched_restore "$SAVE_FILE" "$IPSET_SAVE_FILE" || bail_out $?
+#		[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
+		sched_restore ${me}_iptables-save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM ${me}_ipset_save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM || bail_out $?
 	fi
 	# --------------------------------------------------------------
 	# if in a MODE that could make use of auto-backup, save ruleset

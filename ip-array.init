@@ -291,6 +291,8 @@ while (($#)); do
 		-o|--set-option|\
 		-s|--save-file|\
 		-si|--save-ips-file|\
+		-sm|--save-mod-file|\
+		-sp|--save-proc-file|\
 		-co|--color|\
 		-ui|--use-ipset|\
 		-gf|--gen-format|\

@@ -732,14 +732,14 @@ add_rule() { # add iptables commands to the command array
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_tbl="$1" str_chn="$2"
 shift 2
-local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
-if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
-	eval ${str_arr}[$(arr_members_sum ${str_arr})]='"-t ${str_tbl} -A ${str_chn} ${@//$'\t'/}"'
+local str_arr="IPT_$(string_toupper "$str_tbl")_CMD_ARRAY"
+if [[ $str_tbl = @(filter|nat|mangle|raw|rawpost|security) ]]; then
+	eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $str_chn ${@//$'\t'/}"'
+#eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $(escape_varname str_chn) $(printf "%q " "${@}";printf "\n")"'
 else
-	log -E "Illegal iptables table name: \`${str_tbl}'."
+	log -E "Illegal iptables table name: \`$str_tbl'."
 	return $ER_CONF
 fi
-#IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -A ${str_chn} "${@//$'\t'/}""
 } # -------------------------------------------------------------------------
 
 insert_ipt_rule() {
@@ -749,13 +749,10 @@ shift 2
 local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
 if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
 	eval ${str_arr}[$(arr_members_sum ${str_arr})]='"-t ${str_tbl} -I ${str_chn} ${@//$'\t'/}"'
-#	${str_arr}[$(arr_members_sum "${str_arr}")]="\"${IPT}\" -t ${str_tbl} -I ${str_chn} "${@//$'\t'/}""
 else
 	log -E "Illegal iptables table name: \`${str_tbl}'."
 	return $ER_CONF
 fi
-#val_table "${str_tbl}" || return $ER_CONF
-#IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -I ${str_chn} "${@//$'\t'/}""
 } # -------------------------------------------------------------------------
 
 create_chain() { # create an iptables chain
