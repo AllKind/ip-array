@@ -119,6 +119,10 @@ case "$str_type" in
 					if [[ $opt_arg = inet6 ]]; then
 						log -E "Option argument \`$opt_arg' is not supported."
 						return $ER_CONF
+					elif [[ $opt_arg = inet ]]; then :
+					else
+						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid values: inet|inet6."
+						return $ER_CONF
 					fi	
 					shift 2
 				;;

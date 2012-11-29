@@ -2323,17 +2323,17 @@ esac
 
 val_6bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && ${1} <= 0x3F))
+(($1 >= 0 && $1 <= 0x3F))
 } # -------------------------------------------------------------------------
 
 val_8bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && ${1} <= 0xFF))
+(($1 >= 0 && $1 <= 0xFF))
 } # -------------------------------------------------------------------------
 
 val_16bit() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && ${1} <= 0xFFFF))
+(($1 >= 0 && $1 <= 0xFFFF))
 } # -------------------------------------------------------------------------
 
 val_32bit() {
@@ -2343,7 +2343,7 @@ val_32bit() {
 
 val_32bit_off1() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 1 && ${1} <= 0xFFFFFFFF))
+(($1 >= 1 && $1 <= 0xFFFFFFFF))
 } # -------------------------------------------------------------------------
 
 val_nf_mark() { # validate netfilter mark and mark-mask values
@@ -2371,9 +2371,9 @@ val_spi() {
 local str_spi
 set -- ${1/:/ }
 for str_spi in "$@"; do
-	val_numeric "${str_spi}" || return 1
-	val_32bit "${str_spi}" || {
-		log -E "SPI value is out of range."
+	val_numeric "$str_spi" || return 1
+	val_32bit "$str_spi" || {
+		log -E "SPI value \`$str_spi' is out of range."
 		return 1
 	}
 done
@@ -2576,18 +2576,18 @@ esac
 } # -------------------------------------------------------------------------
 
 set_placeholder() { # set placeholder character used to fill unused values in ruleblocks
-if [[ ${RULE_PLACEHOLDER} ]]; then
-	if [[ ${RULE_PLACEHOLDER} = @(_|-|.|;|,|\|) ]]; then
-		RULE_SEP="${RULE_PLACEHOLDER}"
-		log -N "Setting rule placeholder to: \`${RULE_PLACEHOLDER}'"
+if [[ $RULE_PLACEHOLDER ]]; then
+	if [[ $RULE_PLACEHOLDER = @(_|-|.|;|,|\|) ]]; then
+		RULE_SEP="$RULE_PLACEHOLDER"
+		log -N "Setting rule placeholder to: \`$RULE_PLACEHOLDER'"
 	else
 		log -E "Invalid rule placeholder value. Valid characters are: \`_' \`-' \`.' \`;' \`,' \`|'"
 		raise_cfg_err_count
 		return $ER_CONF
 	fi
 else
-	RULE_SEP="${DEFAULT_RULE_SEP}"
-	log -W "No rule placeholder specified, setting it to the default value: \`${DEFAULT_RULE_SEP}'"
+	RULE_SEP="$DEFAULT_RULE_SEP"
+	log -W "No rule placeholder specified, setting it to the default value: \`$DEFAULT_RULE_SEP'"
 fi
 readonly RULE_SEP
 }
@@ -2595,10 +2595,10 @@ readonly RULE_SEP
 
 set_rulesetfile() { # set default ruleset file to save rules to
 if [[ -z $RULESETFILE ]]; then
-	RULESETFILE="${SAVE_DIR}"/"${DEFAULT_RULESETFILE}"
-	log -W "\`RULESETFILE' is unset, setting it to the default value: \`${SAVE_DIR}/${DEFAULT_RULESETFILE}'"
+	RULESETFILE="${SAVE_DIR}/$DEFAULT_RULESETFILE"
+	log -W "\`RULESETFILE' is unset, setting it to the default value: \`${SAVE_DIR}/$DEFAULT_RULESETFILE'"
 else
-	RULESETFILE="${SAVE_DIR}/${RULESETFILE}"
+	RULESETFILE="${SAVE_DIR}/$RULESETFILE"
 fi
 #readonly RULESETFILE
 } # -------------------------------------------------------------------------
@@ -2610,10 +2610,10 @@ if ((ENABLE_COLORS == 1)) ; then
  $(cl bold yellow black)Firewall $(cl normal red black)${STR_VERSION}\
  $(cl bold white black)- MODE: $(cl bold green black)$MODE$(cl)"
 else
-	pr_str "Initializing ${ME} Firewall ${STR_VERSION} - MODE: $MODE"
+	pr_str "Initializing ${ME} Firewall $STR_VERSION - MODE: $MODE"
 fi
-((VERBOSE >= 7)) && printf "PID: %d\nParameters: %s\n" ${PID} "${PARAMS}"
-syslog ${LOG_FACILITY} notice "Initializing ${ME} ${STR_VERSION} - MODE: $MODE - Parameters: ${PARAMS}"
+((VERBOSE >= 7)) && printf "PID: %d\nParameters: %s\n" $PID "$PARAMS"
+syslog $LOG_FACILITY notice "Initializing $ME $STR_VERSION - MODE: $MODE - Parameters: $PARAMS"
 if ((EXEC_COMMANDS == 0)) && [[ $MODE != RESTORE_ON_START ]]; then
 	log -T "Dry-run - Not executing generated commands!"
 fi
@@ -2621,12 +2621,12 @@ fi
 
 check_main_vars() { # CHECK MAIN VARIABLES
 log -w "Checking for mandatory variables"
-check_vars ${MANDATORY_VARIABLES} || return $ER_NODEF
+check_vars $MANDATORY_VARIABLES || return $ER_NODEF
 } # -------------------------------------------------------------------------
 
 check_sys_files() { # CHECK SYSTEM STANDARD FILES
 log -w "Checking for mandatory system files"
-for rvar in "${PROTOCOLS}" "${SERVICES}"; do
+for rvar in "$PROTOCOLS" "$SERVICES"; do
 	if [[ ! -f $rvar ]]; then
 		log -x "$rvar"
 		return $ER_NOEX
@@ -2635,7 +2635,7 @@ done
 } # -------------------------------------------------------------------------
 
 fill_loadmod_list_array() {
-if [[ ${MODULES_TO_LOAD} ]]; then
+if [[ $MODULES_TO_LOAD ]]; then
 	log -w "Reading MODULES_TO_LOAD"
 	fill_array 'MODULES_TO_LOAD'
 	((${#MODULES_TO_LOAD[@]})) || return 0
@@ -2648,7 +2648,7 @@ fi
 } # -------------------------------------------------------------------------
 
 fill_rmmod_list_array() {
-if [[ ${MODS_TO_RM} ]]; then
+if [[ $MODS_TO_RM ]]; then
 	log -w "Reading MODS_TO_RM"
 	fill_array 'MODS_TO_RM'
 	((${#MODS_TO_RM[@]})) || return 0
@@ -2763,6 +2763,28 @@ for scr_idx in ${!SCRIPT_MAP[@]}; do
 		fi
 	done
 done
+} # -------------------------------------------------------------------------
+
+check_tc() {
+[[ ${TC} ]] || {
+	log -E "\`TC' variable is not defined."
+	return $ER_NODEF
+}
+check_prog "${TC}"
+} # -------------------------------------------------------------------------
+
+set_tc_mode() { # if requested by startup parameter, enable traffic shaping
+if ((ENABLE_TC_SHAPING == 0)); then
+	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
+		log -W "Traffic shaping is disabled by configuration."
+	fi
+else
+	check_tc || {
+		log -E "Traffic Control commands will not be applied."
+		ENABLE_TC_SHAPING=0
+		raise_cfg_err_count
+	}
+fi
 } # -------------------------------------------------------------------------
 
 set_sysctl() { # Set proc stuff
@@ -3712,7 +3734,8 @@ esac
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
-
+# RULE SAVING - APPLYING
+# -------------------------------------------------------------------------
 save_command_array() { # save a selected command array to a file
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local appl_msg
@@ -4257,6 +4280,10 @@ case "$MODE" in # act according to runtime mode
 esac
 } # -------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------- #
+# END STAGE
+# ------------------------------------------------------------------------- #
+
 calc_err() { # calculate and display error summary
 ERRORS=$((gen_err_count + inline_err_count + misc_err_count + ipt_err_count + ips_err_count + cfg_err_count + tc_err_count + proc_err_count))
 } # -------------------------------------------------------------------------
@@ -4353,28 +4380,6 @@ else
 fi
 rvar=$SECONDS
 log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 60)))) seconds of execution time"
-} # -------------------------------------------------------------------------
-
-check_tc() {
-[[ ${TC} ]] || {
-	log -E "\`TC' variable is not defined."
-	return $ER_NODEF
-}
-check_prog "${TC}"
-} # -------------------------------------------------------------------------
-
-set_tc_mode() { # if requested by startup parameter, enable traffic shaping
-if ((ENABLE_TC_SHAPING == 0)); then
-	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
-		log -W "Traffic shaping is disabled by configuration."
-	fi
-else
-	check_tc || {
-		log -E "Traffic Control commands will not be applied."
-		ENABLE_TC_SHAPING=0
-		raise_cfg_err_count
-	}
-fi
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
