@@ -76,7 +76,7 @@ case "$str_type" in
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						val_port "$opt_arg" || { log -E "$strERR"; return $?; }
+						val_port_range "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					else
 						val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					fi
@@ -84,6 +84,7 @@ case "$str_type" in
 				;;
 				netmask)
 					if [[ $str_type = bitmap:ip ]]; then
+						val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 						((opt_arg >= 1 && <= 32)) || {
 							log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
 							return $ER_CONF
@@ -105,7 +106,7 @@ case "$str_type" in
 			esac
 		done
 	;;
-	hash:ip|hash:net|hash:ip,port|hash:net,port|hash:ip,port,ip|hash:ip,port,net)
+	hash:ip|hash:net|hash:ip,port|hash:net,port|hash:ip,port,ip|hash:ip,port,net|hash:net,iface)
 		local -a arr_opts=("$@")
 		while (($#)); do
 			option="$1" opt_arg="$2"
@@ -515,13 +516,13 @@ done
 } # -------------------------------------------------------------------------
 
 test_ipset() {
-#((USE_IPSET)) || return 0
+((USE_IPSET)) || return 0
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
 local -i idx
-local str_typename str_create="-N" str_destroy="-X"
-#set -x
-if dn rn_ipset list; then
+local str_typename str_create="-N" str_destroy="-X" str_dn="dn"
+[[ $DEBUG_INFO ]] && str_dn=""
+if dn run_ipset list; then
 	IPSET_SYNTAX=new
 	str_create="create" str_destroy="destroy"
 fi
@@ -533,72 +534,27 @@ case "$1" in
 			str_typename=$1
 			shift
 			log -e "${PF}checking $str_typename set"
-			if dn run_ipset $str_create "${ME}_TEST_SET" $str_typename $@; then
-#			if dn run_ipset -N "${ME}_TEST_SET" $str_typename $@; then
-#			if run_ipset -N "${ME}_TEST_SET" $str_typename -q $@; then
-#			if run_ipset -N "${ME}_TEST_SET_$idx" $str_typename $@; then
-#				dn run_ipset -X "${ME}_TEST_SET" -q
-				dn run_ipset $str_destroy "${ME}_TEST_SET"
+			if $str_dn run_ipset $str_create ${ME}_TEST_SET $str_typename $@; then
+				$str_dn run_ipset $str_destroy ${ME}_TEST_SET
 			else
 				UNSUPPORTED_SETLIST+=" $str_typename"
-				log -f "creating set of type \`$str_typename'"
+				log -f "creating set: \`${ME}_TEST_SET $str_typename $@'"
 			fi
 		done
 		readonly UNSUPPORTED_SETLIST
-#		dn run_ipset -N "${ME}_TEST_SET" iptree || {
-		dn run_ipset $str_create "${ME}_TEST_SET" iptree || {
-#		ipset_create "${ME}_TEST_SET" ipmap network 192.168.0.0/24 || {
-			log -f "creating test set: ${ME}_TEST_SET iptree"
-#			cmd_err_count 'misc' "${IPSET} -N ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
+		log -w "creating ipset test set"
+		$str_dn run_ipset $str_create ${ME}_TEST_SET ipmap --network 192.168.0.0/24 || {
+			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
 		}
-#		ipset_create "${ME}_TEST_SET1" iptree --timeout 360 || {
-#			log -f "creating test set: ${ME}_TEST_SET1"
-#		}
-#		ipset_create "${ME}_TEST_SET2" iptreemap --gc 480 || {
-#			log -f "creating test set: ${ME}_TEST_SET2"
-#		}
-#		ipset_create "${ME}_TEST_SET3" setlist --size 16 || {
-#			log -f "creating test set: ${ME}_TEST_SET3"
-#		}
-#		ipset_create "${ME}_TEST_SET4" ipporthash from 192.168.0.0 to 192.168.0.23 hashsize 2048 probes 10 resize 60 || {
-#			log -f "creating test set: ${ME}_TEST_SET4"
-#		}
-#		ipset_create "${ME}_TEST_SET5" ipportiphash from 192.168.1.0 to 192.168.1.23 hashsize 1024 probes 9 resize 65 || {
-#			log -f "creating test set: ${ME}_TEST_SET5"
-#		}
-#		ipset_create "${ME}_TEST_SET6" ipportnethash from 192.168.2.0 to 192.168.2.23 hashsize 2660 probes 11 resize 55 || {
-#			log -f "creating test set: ${ME}_TEST_SET6"
-#		}
-#		ipset_add "${ME}_TEST_SET" 192.168.0.1
-#		ipset_add "${ME}_TEST_SET1" 192.168.0.2
-#		ipset_add "${ME}_TEST_SET2" 192.168.0.3
-#		ipset_add "${ME}_TEST_SET4" 192.168.0.3,22
-#		ipset_add "${ME}_TEST_SET5" 192.168.1.3,22,10.1.1.1
-#		ipset_add "${ME}_TEST_SET6" 192.168.2.3,22,10.1.1.1/24
-#		ipset_test "${ME}_TEST_SET" 192.168.0.1
-#		ipset_save
-#		ipset_list
-#		ipset_flush
 	;;
 	delete)
 		log -w "deleting ipset test set"
-		dn run_ipset $str_destroy "${ME}_TEST_SET" || {
-#		dn run_ipset -X "${ME}_TEST_SET" || {
-#		ipset_destroy "${ME}_TEST_SET" || {
+		$str_dn run_ipset $str_destroy ${ME}_TEST_SET || {
 			log -f "deleting test set: \`${ME}_TEST_SET'"
-#			cmd_err_count 'misc' "${IPSET} -X ${ME}_TEST_SET"
 		}
-#		ipset_destroy
-#		ipset_destroy "${ME}_TEST_SET1"
-#		ipset_destroy "${ME}_TEST_SET2"
-#		ipset_destroy "${ME}_TEST_SET3"
-#		ipset_destroy "${ME}_TEST_SET4"
-##		ipset_destroy "${ME}_TEST_SET5"
-##		ipset_destroy "${ME}_TEST_SET6"
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
-#set +x
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
@@ -888,11 +844,26 @@ string_negated "${str_natip}" && {
 for str_ip in ${str_natip//-/ }; do val_ip4_addr ${str_ip} || return 1; done
 } # -------------------------------------------------------------------------
 
-val_nat_port() { # validate nat port specifications
+val_port_range() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local nport
-for nport in ${1//-/ }; do val_port ${nport} || return 1; done
+local str_port
+for str_port in ${1//-/ }; do
+	case "$str_port" in
+		+([[:digit:]]))
+			if val_16bit "$str_port"; then
+				continue
+			fi
+		;;
+	esac
+   	log -E "Invalid port specification \`$str_port'."
+done
 } # -------------------------------------------------------------------------
+
+#val_nat_port() { # validate nat port specifications
+#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+#local nport
+#for nport in ${1//-/ }; do val_port ${nport} || return 1; done
+#} # -------------------------------------------------------------------------
 
 val_port() { # validate port specifications
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
@@ -966,12 +937,14 @@ fi
 val_ipt_tgt() { # validate existence of iptables targets
 [[ $4 ]] || { reqparm $FUNCNAME 4; return 1; }
 declare -i mandatory=$1
-local ttarget="$2" ttable="$3"
+local ttarget="$2" ttable="$3" str_dn="dn "
 shift 3
+[[ $DEBUG_INFO ]] && str_dn=""
 log -e "${PF}checking for $ttarget target"
-if dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
+if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	set_var ${ttarget}_TGT_EXIST 1 # target exists, set according variable to 1
-	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
+#	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
+	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
 	set_var ${ttarget}_TGT_EXIST 0 # target does not exist, set according variable to 0
 	if ((mandatory == 1)); then
@@ -987,12 +960,14 @@ readonly ${ttarget}_TGT_EXIST
 val_ipt_mod() { # validate existence of iptables modules
 [[ $4 ]] || { reqparm $FUNCNAME 4; return 1; }
 declare -i mandatory=$1
-local tmod=$2 ttable=$3
+local tmod=$2 ttable=$3 str_dn="dn"
 shift 3
+[[ $DEBUG_INFO ]] && str_dn=""
 log -e "${PF}checking for $tmod extension"
-if dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
+if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	set_var "${tmod}_MOD_EXIST" 1 # module exists, set according variable to 1
-	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
+#	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
+	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
 	set_var "${tmod}_MOD_EXIST" 0 # module does not exist, set according variable to 0
 	if ((mandatory == 1)); then
@@ -1139,11 +1114,9 @@ local c chain rest
 log -S "Flushing chains in "${tgt_tbl}" table"
 while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 	if [[ ${c} = Chain ]]; then
-#		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${tgt_tbl} -F ${chain}"
 		IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${tgt_tbl} -F ${chain}"
 	fi
 done < <(run_ipt -t "${tgt_tbl}" -nL)
-#IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t "${tgt_tbl}" -X"
 IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t "${tgt_tbl}" -X"
 } # -------------------------------------------------------------------------
 
@@ -1180,20 +1153,10 @@ fi
 if ! [[ -r $IP_TABLES_NAMES ]]; then
 	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded?"
 	return 0
-#	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded. Trying to initialize."
-#	run_ipt -nL &>/dev/null || {
-#		log -E "Failed to initialize iptables"
-#		return $ER_FAIL
-#	}
 fi
-#if ! [[ -r $IP_TABLES_NAMES ]]; then
-#	log -E "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded."
-#	return $ER_FAIL
-#fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 		if [[ ${c} = Chain ]]; then
-#			IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${table} -F ${chain}"
 			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -F ${chain}"
 		fi
 	done < <(run_ipt -t ${table} -nL 2>/dev/null)
@@ -1289,10 +1252,6 @@ esac
 # -------------------------------------------------------------------------
 
 set_global_log_params() { # set default log parameters, if they are not set by the user
-#if [[ -z ${LOG_PREFIX} ]]; then
-#	readonly LOG_PREFIX="IPT_BLOCK_"
-#	log -N "\`LOG_PREFIX' is not configured, setting it to the default value: \`IPT_BLOCK_'"
-#fi
 if [[ ${GLOBAL_LOGLIMIT} ]]; then
 	val_limit "${GLOBAL_LOGLIMIT}" || return $ER_CONF
 else
@@ -1472,7 +1431,6 @@ JUMP_TREE[0]=0
 set_policy() { # set iptables policies
 [[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
 local pol_table="$1" pol_chain="$2" pol_policy="$3"
-#IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${pol_table} -P ${pol_chain} ${pol_policy}"
 IPT_POL_ARRAY[${#IPT_POL_ARRAY[@]}]="-t ${pol_table} -P ${pol_chain} ${pol_policy}"
 } # -------------------------------------------------------------------------
 
@@ -1633,71 +1591,6 @@ case "${msg_mode}" in
 esac
 } # -------------------------------------------------------------------------
 
-#iface_chains() {
-## create chains per interface and the tables builtin chains
-## and create cross interface chains (each IF -> each other IF)
-#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#local iface oif str_chn
-#local -a ARR_CLIST
-#log -I "Creating ${JUMP_TREE[1]} jump tree chains in $1 table"
-#case "$1" in
-#	filter|security)
-#		for iface in ${NET_IFLIST}; do
-#			ARR_CLIST[${#ARR_CLIST[@]}]="INPUT_${iface}"
-#			ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-#			if ((PROC_IP_FORWARD == 1)); then
-#				for oif in ${NET_IFLIST/${iface}/}; do
-#					ARR_CLIST[${#ARR_CLIST[@]}]="${iface}${IF_CON}${oif}"
-#				done
-#			fi
-#		done
-#	;;
-#	mangle)
-#		if ((ALL_MANGLE_CHAINS_PRESENT == 0)); then # mangle table chains prior to kernel 2.4.18
-#			for iface in ${NET_IFLIST}; do
-#				ARR_CLIST[${#ARR_CLIST[@]}]="PREROUTING_${iface}"
-#				ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-#			done
-#		else # mangle table chains in kernel version greater than 2.4.17
-#			for iface in ${NET_IFLIST}; do
-#				ARR_CLIST[${#ARR_CLIST[@]}]="PREROUTING_${iface}"
-#				ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-#				ARR_CLIST[${#ARR_CLIST[@]}]="INPUT_${iface}"
-#				ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
-#				if ((PROC_IP_FORWARD == 1)); then
-#					for oif in ${NET_IFLIST/${iface}/}; do
-#						ARR_CLIST[${#ARR_CLIST[@]}]="${iface}${IF_CON}${oif}"
-#					done
-#				fi
-#			done
-#		fi
-#	;;
-#	nat)
-#		for iface in ${NET_IFLIST}; do
-#			ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-#			ARR_CLIST[${#ARR_CLIST[@]}]="PREROUTING_${iface}"
-#			ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
-#		done
-#	;;
-#	raw)
-#		for iface in ${NET_IFLIST}; do
-#			ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-#			ARR_CLIST[${#ARR_CLIST[@]}]="PREROUTING_${iface}"
-#		done
-#	;;
-#	rawpost)
-#		for iface in ${NET_IFLIST}; do
-#			ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
-#		done
-#	;;
-#	*) log -o "$1" $FUNCNAME
-#		return 1
-#esac
-#for str_chn in "${ARR_CLIST[@]}"; do
-#	create_chain $1 "${str_chn}"
-#done
-#} # -------------------------------------------------------------------------
-
 iface_chains() {
 # create chains per interface and the tables builtin chains
 # and create cross interface chains (each IF -> each other IF)
@@ -1752,99 +1645,6 @@ for str_chn in "${ARR_CLIST[@]}"; do
 	create_chain $1 "${str_chn}"
 done
 } # -------------------------------------------------------------------------
-
-#iface_jumps() { # create iptables cross interface jump entries
-#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#local str_tbl="$1" iface oif str_jmsg str_chn str_tgt
-#local -i i idx
-#local -a arr_jcmd
-#log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
-#case "${str_tbl}" in
-#	filter|security)
-#		for iface in ${NET_IFLIST}; do
-#			arr_jcmd[${#arr_jcmd[@]}]="INPUT -i ${iface} -j INPUT_${iface}"
-#			arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-#			if ((PROC_IP_FORWARD == 1)); then
-#				for oif in ${NET_IFLIST/${iface}/}; do
-#					arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -o ${oif} -j ${iface}${IF_CON}${oif}"
-#				done
-#			fi
-#		done
-#		if ((PROC_IP_FORWARD == 1)); then
-#			for iface in ${NET_IFLIST}; do
-#				arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -j FWD_IN_${iface}"
-#				arr_jcmd[${#arr_jcmd[@]}]="FORWARD -o ${iface} -j FWD_OUT_${iface}"
-#			done
-#		fi
-#	;;
-#	mangle)
-#		if ((ALL_MANGLE_CHAINS_PRESENT == 0)); then # mangle table chains prior to kernel 2.4.18
-#			for iface in ${NET_IFLIST}; do
-#				arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-#				arr_jcmd[${#arr_jcmd[@]}]="PREROUTING -i ${iface} -j PREROUTING_${iface}"
-#			done
-#		else # mangle table chains in kernel version greater than 2.4.17
-#			for iface in ${NET_IFLIST}; do
-#				arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-#				arr_jcmd[${#arr_jcmd[@]}]="PREROUTING -i ${iface} -j PREROUTING_${iface}"
-#				arr_jcmd[${#arr_jcmd[@]}]="INPUT -i ${iface} -j INPUT_${iface}"
-#				arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
-#				if ((PROC_IP_FORWARD == 1)); then
-#					for oif in ${NET_IFLIST/${iface}/}; do
-#						arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -o ${oif} -j ${iface}${IF_CON}${oif}"
-#					done
-#				fi
-#			done
-#			if ((PROC_IP_FORWARD == 1)); then
-#				for iface in ${NET_IFLIST}; do
-#					arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -j FWD_IN_${iface}"
-#					arr_jcmd[${#arr_jcmd[@]}]="FORWARD -o ${iface} -j FWD_OUT_${iface}"
-#				done
-#			fi
-#		fi
-#	;;
-#	nat)
-#		for iface in ${NET_IFLIST}; do
-#			arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-#			arr_jcmd[${#arr_jcmd[@]}]="PREROUTING -i ${iface} -j PREROUTING_${iface}"
-#			arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
-#		done
-#	;;
-#	raw)
-#		for iface in ${NET_IFLIST}; do
-#			arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-#			arr_jcmd[${#arr_jcmd[@]}]="PREROUTING -i ${iface} -j PREROUTING_${iface}"
-#		done
-#	;;
-#	rawpost)
-#		for iface in ${NET_IFLIST}; do
-#			arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
-#		done
-#	;;
-#	*) log -o "$1" $FUNCNAME
-#		return 1
-#esac
-#for idx in ${!arr_jcmd[@]}; do # create log messages and add_rule commands
-#	str_jmsg="${arr_jcmd[idx]}"
-#	[[ ${str_jmsg} ]] || continue # should not be
-#	str_jmsg="${str_jmsg/-i /idev=}"
-#	str_jmsg="${str_jmsg/-o /odev=}"
-#	str_jmsg="${str_jmsg/-j /target=}"
-#	str_tgt="${str_jmsg#*target=}"
-#	set -- ${str_jmsg}
-#	str_chn=$1
-#	shift
-#	str_jmsg=${*}
-#	for i in ${!CREATED_CHAINS_ARRAY[@]}; do
-#		set -- ${CREATED_CHAINS_ARRAY[i]}
-#		if [[ $1 = ${str_tbl} && $2 = ${str_tgt} ]]; then
-#			log -e "${PF}jump table=${str_tbl} chain=${str_chn} ${str_jmsg}"
-#			add_rule "${str_tbl}" ${arr_jcmd[idx]}
-#			break
-#		fi
-#	done
-#done
-#} # -------------------------------------------------------------------------
 
 iface_jumps() { # create iptables cross interface jump entries
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
@@ -2502,14 +2302,6 @@ for idx in ${!CHAIN_MAP[@]}; do
 		}
 	done
 	(($(subst_var "ENABLE_$(string_toupper "${str_tbl}")") == 1)) || continue
-#	case "${str_tbl}" in
-#		filter|mangle|nat|raw|rawpost|security)
-#			(($(subst_var "ENABLE_$(string_toupper ${str_tbl})") == 1)) || continue
-#		;;
-##		rawpost)
-##			((ENABLE_RAW == 1)) || continue
-##		;;
-#	esac
 	for str_chn in "$@"; do
 		create_chain "${str_tbl}" "${str_chn}"
 	done
@@ -2647,15 +2439,12 @@ while read c str_chain rest; do
 		idx=0
 		str_Ochain=${str_chain}
 	else
-#		if ((idx == lim)) && [[ -z ${c} && ${str_Ochain} != @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then
 		if ((idx++ == lim)) && [[ -z ${c} && ${str_Ochain} != @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
 			log -w "${PF}found empty chain: \`${str_Ochain}'"
 			empty_chains[${#empty_chains[@]}]="${str_Ochain}"
 		fi
-#		((++idx))
 	fi
 done < <(run_ipt -nL -t ${str_tbl} 2>/dev/null)
-#if ((idx == lim)) && [[ ${str_Ochain} != @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]]; then # last chain to display could be empty
 if ((idx == lim)) && [[ ${str_Ochain} != @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then # last chain to display could be empty
 	log -w "${PF}found empty chain: \`${str_Ochain}'"
 	empty_chains[${#empty_chains[@]}]="${str_Ochain}"
@@ -4468,10 +4257,7 @@ if [[ ${arg_list_sport[OPTION_LIST_IDX]} || ${arg_list_dport[OPTION_LIST_IDX]} ]
 			done
 			# set positional param array entry
 			tmp_pos_par_val_array[${del_idx}]="icmp_type ${arg_list_icmp_type[OPTION_LIST_IDX]}"
-#			tmp_pos_par_val_array[${#tmp_pos_par_val_array[@]}]="icmp_type ${arg_list_icmp_type[OPTION_LIST_IDX]}"
-#			for pos_idx in $(eval echo \${!arr_tmp_rule_opt_${OPTION_LIST_IDX}[@]}); do
 			for pos_idx in $(arr_indicies arr_tmp_rule_opt_${OPTION_LIST_IDX}); do
-#				[[ $(eval echo \${arr_tmp_rule_opt_${OPTION_LIST_IDX}[pos_idx]}) = @(sport|dport) ]] && {
 				[[ $(subst_var "arr_tmp_rule_opt_${OPTION_LIST_IDX}[${pos_idx}]") = @(sport|dport) ]] && {
 					unset arr_tmp_rule_opt_${OPTION_LIST_IDX}[pos_idx]
 					del_idx=${pos_idx}
@@ -5234,7 +5020,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			validate_nat_ip "${tmp_opt_var_value}" || return 1
 		;;
 		(nat_port)
-			val_nat_port "${tmp_opt_var_value}" || return 1
+			val_port_range "${tmp_opt_var_value}" || return 1
 		;;
 		(nat_option)
 			case "${tmp_opt_var_value}" in
@@ -6488,7 +6274,6 @@ local target_template="$1" target_ruleblock="$2"
 	return 0
 }
 # check for valid ruleblock name
-#[[ ${target_ruleblock} != @(@(RB_|RULEBLOCK_)+([[:word:]])) ]] && {
 [[ ${target_ruleblock} = @(@(RB|RULEBLOCK)_+([[:word:]])) ]] || {
 	log -E "Invalid Ruleblock name \`${target_ruleblock}'. \
 		Ruleblock names must contain any of the following prefixes: \`RB_ | RULEBLOCK_'"
