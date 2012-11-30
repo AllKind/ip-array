@@ -1823,7 +1823,7 @@ done
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
-# INTERFACES
+# NETWORK DATA
 # ------------------------------------------------------------------------- #
 
 get_route_iface() { # retrieve and echo the interface an IP is routed over
@@ -1899,7 +1899,7 @@ show_array_column "IFDATA_ARRAY_${str_wanted_iface}" ${columns_to_show:-1 2 3 4}
 enumerate_if_data() { # Enumerate net interface (ipv4) data
 local -i net_idx if_idx if_regged if_is_ipsec net_found
 local strERR nif nalias loc netname loc_options iface_option _nalias ipaddr netm brd
-log -I "Enumerating NET interface data"
+log -I "Enumerating networks data"
 ((${#NET_INTERFACES[@]})) || {
 	log -E "Configuration variable \`NET_INTERFACES' is not defined."
 	return $ER_NODEF
@@ -2075,6 +2075,31 @@ eval 'printf "%s\n" "${NETDATA_ARRAY_'${1}'[4]}/${NETDATA_ARRAY_'${1}'[3]}"'
 # VALIDATION functions
 # ------------------------------------------------------------------------- #
 
+val_6bit() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+(($1 >= 0 && $1 <= 0x3F))
+} # -------------------------------------------------------------------------
+
+val_8bit() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+(($1 >= 0 && $1 <= 0xFF))
+} # -------------------------------------------------------------------------
+
+val_16bit() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+(($1 >= 0 && $1 <= 0xFFFF))
+} # -------------------------------------------------------------------------
+
+val_32bit() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+(($1 >= 0 && ${1} <= 0xFFFFFFFF))
+} # -------------------------------------------------------------------------
+
+val_32bit_off1() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+(($1 >= 1 && $1 <= 0xFFFFFFFF))
+} # -------------------------------------------------------------------------
+
 val_ipv4_cidr_mask() { # validate an IPv4 cidr netmask
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #val_numeric_quiet $1 || return 1
@@ -2104,6 +2129,107 @@ val_oct_range() { # check if an IP address octet is in the valid range
 local oct
 for oct in "$1" "$2" "$3" "$4"; do
 	val_8bit "${oct}" || return 1
+done
+} # -------------------------------------------------------------------------
+
+val_ip4_ip() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		val_oct_range ${1//./ } && return 0
+	;;
+esac
+log -E "IP address \`$1' is not valid."
+return 1
+} # -------------------------------------------------------------------------
+
+val_ip4_cidr_net() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
+		local ip_addr="${1%/*}" mask="${1#*/}"
+		val_oct_range ${ip_addr//./ } || {
+			log -E "IP address \`$ip_addr' is not valid."
+			return 1
+		}
+		val_ipv4_cidr_mask "$mask" || {
+			log -E "Netmask \`$mask' of address \`$ip_addr' is not valid."
+			return 1
+		}
+		if ((mask == 32)); then
+			log -E "Netmask \`$mask' is a host mask - need /0-31."
+			return 1
+		fi
+	;;
+	*) log -E "Network address \`$1' is not valid."
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+val_ip4_range() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local range_ip
+case "$1" in
+	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		for range_ip in ${1/-/ }; do
+			val_oct_range ${range_ip//./ } || {
+#				log -E "IP range \`${range_ip}' is not valid."
+				return 1
+			}
+		done
+	    if (($(decodeaddr ${1%-*}) > $(decodeaddr ${1#*-}))); then
+#			log -E "IP range \`${range_ip}' is not valid."
+			return 1
+	    fi
+	;;
+	*) return 1
+esac
+} # -------------------------------------------------------------------------
+
+val_mac() { # validate MAC addresses
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]])
+		return 0
+	;;
+	(*) log -E "Invalid MAC address \`$1'."; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+val_port_range() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_port
+for str_port in ${1//-/ }; do
+	case "$str_port" in
+		+([[:digit:]]))
+			if val_16bit "$str_port"; then
+				continue
+			fi
+		;;
+	esac
+   	log -E "Invalid port specification \`$str_port'."
+	return 1
+done
+} # -------------------------------------------------------------------------
+
+val_port_range_word() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_port
+for str_port in ${1//-/ }; do
+	case "$str_port" in
+		+([[:digit:]]))
+			if val_16bit "$str_port"; then
+				continue
+			fi
+		;;
+		*+([[:alpha:]])*)
+			if lsearch "$str_port" "${SERVICES_ARRAY[@]}"; then
+				continue
+			fi
+		;;
+	esac
+	log -E "Invalid port specification \`$str_port'."
+	return 1
 done
 } # -------------------------------------------------------------------------
 
@@ -2137,15 +2263,6 @@ fi
 check_iface ${ifname} || return 1
 } # -------------------------------------------------------------------------
 
-val_ipv4_addr_no_range() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-val_ip4_addr "$1" || return 1
-[[ ${IPSTRING} != IPRANGE ]] || {
-	log -E "IP-range address not valid in context."
-	return 1
-}
-} # -------------------------------------------------------------------------
-
 check_iface() { # validate interface existence
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IFACE_CHECK == 0)) || return 0
@@ -2163,99 +2280,6 @@ check_multi_negation ${str_m_devices} || return 1
 for m_dev in ${str_m_devices}; do
 	val_ifname "${m_dev}" || return 1
 done
-} # -------------------------------------------------------------------------
-
-val_ip4_addr() { # validate IPv4 addresses
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local range_ip str_ip_addr="$1"
-IPSTRING=""
-case "${str_ip_addr}" in
-	# IP string is global shortcut
-	(0/0 | 0.0.0.0/0)
-		IPSTRING="IPNET"
-		return 0
-	;;
-	# IP string is single IP
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		val_oct_range ${str_ip_addr//./ } || {
-			log -E "IP address \`${str_ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPADDR"
-	;;
-	# IP string is IP/CIDR Mask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
-		local ip_addr="${str_ip_addr%/*}"
-		local mask="${str_ip_addr#*/}"
-		val_oct_range ${ip_addr//./ } || {
-			log -E "IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		val_ipv4_cidr_mask "${mask}" || {
-			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPNET"
-	;;
-	# IP string is IP/Netmask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		local ip_addr="${str_ip_addr%/*}"
-		local mask="${str_ip_addr#*/}"
-		val_oct_range ${ip_addr//./ } || {
-			log -E "IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		val_ipv4_netmask "${mask}" || {
-			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPNETMASK"
-	;;
-	# IP string is IP-range
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		for range_ip in ${str_ip_addr/-/ }; do
-			val_oct_range ${range_ip//./ } || {
-				log -E "IP range \`${range_ip}' is not valid."
-				return 1
-			}
-		done
-	    if (($(decodeaddr ${str_ip_addr%-*}) > $(decodeaddr ${str_ip_addr#*-}))); then
-			log -E "IP range \`${range_ip}' is not valid."
-			return 1
-	    fi
-		IPSTRING="IPRANGE"
-	;;
-	(*) log -E "IPv4 address specification \`${str_ip_addr}' is not valid."
-		return 1
-esac
-} # -------------------------------------------------------------------------
-
-classify_ip4_addr() { # classify IPv4 addresses
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$1" in
-	# IP string is global shortcut
-	(0/0 | 0.0.0.0/0) printf "IPNET\n" ;;
-	# IP string is single IP
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPADDR\n" ;;
-	# IP string is IP/Mask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]])) printf "IPNET\n" ;;
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPNET\n" ;;
-	# IP string is IP-range
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		printf "IPRANGE\n"
-	;;
-	(*) log -E "Unknown error while processing \`$1'."; return 1 ;;
-esac
-} # -------------------------------------------------------------------------
-
-val_mac() { # validate MAC addresses
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$1" in
-	[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]]:[[:xdigit:]][[:xdigit:]])
-		return 0
-	;;
-	(*) log -E "Invalid MAC address \`$1'."; return 1 ;;
-esac
 } # -------------------------------------------------------------------------
 
 val_multi_proto() { # validate multiple protocol specifications separated by commas
@@ -2285,75 +2309,6 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
-val_ttl() { # validate TTL manipulation values
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#if (($1 < 0 || ${1} > 255)); then
-if ! val_8bit "$1"; then
-	log -E "TTL value must be between 0 and 255."
-	return 1
-fi
-} # -------------------------------------------------------------------------
-
-val_tcp_flags() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-set -- ${1/:/ }
-#local str_mask="$(IFS=, split_val $1)" str_comp="$(IFS=, split_val $2)" str_flag
-local str_mask="${1//,/ }" str_comp="${2//,/ }" str_flag
-check_str_unique "${str_mask}" || return 1
-check_str_unique "${str_comp}" || return 1
-for str_flag in ${str_mask} ${str_comp}; do
-	[[ ${str_flag} = @(SYN|ACK|FIN|RST|URG|PSH|ALL|NONE) ]] || return 1
-done
-} # -------------------------------------------------------------------------
-
-val_dscp() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$1" in
-	+([[:digit:]])|0x+([[:xdigit:]]))
-		val_6bit "$1" || {
-			log -E "DSCP value \`$1' is out of bounds."
-			return 1
-		}
-	;;
-	BE|EF|AF[1-4][1-3]|CS[1-4]) : ;;
-	*) log -i "$1" "DSCP descriptor"
-		return 1
-esac
-} # -------------------------------------------------------------------------
-
-val_6bit() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && $1 <= 0x3F))
-} # -------------------------------------------------------------------------
-
-val_8bit() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && $1 <= 0xFF))
-} # -------------------------------------------------------------------------
-
-val_16bit() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && $1 <= 0xFFFF))
-} # -------------------------------------------------------------------------
-
-val_32bit() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 0 && ${1} <= 0xFFFFFFFF))
-} # -------------------------------------------------------------------------
-
-val_32bit_off1() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-(($1 >= 1 && $1 <= 0xFFFFFFFF))
-} # -------------------------------------------------------------------------
-
-val_nf_mark() { # validate netfilter mark and mark-mask values
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-val_32bit "$1" || {
-	log -E "Mark value or mask \`$1' is out of bounds. Should be 32bit: 0-0xFFFFFFFF (4294967295)."
-	return 1
-}
-} # -------------------------------------------------------------------------
-
 val_log_facility() { # validate logging facility values, to be valid for logger utility
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$(string_tolower $1)" in
@@ -2364,22 +2319,6 @@ case "$(string_tolower $1)" in
 		return 1
 esac
 return 0
-} # -------------------------------------------------------------------------
-
-val_spi() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_spi
-set -- ${1/:/ }
-for str_spi in "$@"; do
-	val_numeric "$str_spi" || return 1
-	val_32bit "$str_spi" || {
-		log -E "SPI value \`$str_spi' is out of range."
-		return 1
-	}
-done
-if [[ $2 ]]; then
-	val_range "$1" "$2" || return 1
-fi
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #

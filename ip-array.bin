@@ -193,11 +193,11 @@ declare EXT_IFLIST			# List of all external interfaces
 declare LOCAL_IFLIST		# List of all Local interfaces
 declare IPSEC_IFLIST		# List of all ipsec enabled interfaces
 declare NET_IFLIST_CHECK_STRING
+declare DEF_ROUTE_IF	# To hold the defaults route interface
 
 # Misc Variables
 declare NET_NAME_LIST	# List of all networks names
 declare NO_OUTPUT_MSG	# Stores the message to display, when no additional OUTPUT rules will be applied
-declare DEF_ROUTE_IF	# To hold the defaults route interface
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
 declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types

@@ -76,7 +76,7 @@ case "$str_type" in
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						val_port_range "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+						val_port_range_word "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					else
 						val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					fi
@@ -188,17 +188,17 @@ case "$str_type" in
 			fi
 			case "$option" in
 				from)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_network="--$option $opt_arg"
 					shift 2
 				;;
@@ -248,17 +248,17 @@ case "$str_type" in
 			esac
 			case "$option" in
 				from)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					arr_opts=(--$option $opt_arg)
 					shift 2
 				;;
@@ -353,17 +353,17 @@ case "$str_type" in
 			fi
 			case "$option" in
 				from)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
@@ -503,22 +503,6 @@ val_setname "$str_set" || return $?
 run_ipset $str_cmd "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
-val_state() { # validate state specifications
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str
-#check_str_unique "${1//,/ }" || return 1
-#for str in $(string_toupper "$(IFS=, split_val ${1})"); do
-for str in $(string_toupper "${1//,/ }"); do
-	case "${str}" in
-		(NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED)
-			continue
-		;;
-		*) log -E "Invalid state entry \`$1'."
-			return 1
-	esac
-done
-} # -------------------------------------------------------------------------
-
 test_ipset() {
 ((USE_IPSET)) || return 0
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
@@ -564,6 +548,114 @@ esac
 # ------------------------------------------------------------------------- #
 # IPTABLES VALIDATION FUNCTIONS
 # ------------------------------------------------------------------------- #
+
+val_ip4_addr() { # validate IPv4 addresses
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local range_ip str_ip_addr="$1"
+IPSTRING=""
+case "${str_ip_addr}" in
+	# IP string is global shortcut
+	(0/0 | 0.0.0.0/0)
+		IPSTRING="IPNET"
+		return 0
+	;;
+	# IP string is single IP
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		val_oct_range ${str_ip_addr//./ } || {
+			log -E "IP address \`${str_ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPADDR"
+	;;
+	# IP string is IP/CIDR Mask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
+		local ip_addr="${str_ip_addr%/*}"
+		local mask="${str_ip_addr#*/}"
+		val_oct_range ${ip_addr//./ } || {
+			log -E "IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		val_ipv4_cidr_mask "${mask}" || {
+			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPNET"
+	;;
+	# IP string is IP/Netmask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		local ip_addr="${str_ip_addr%/*}"
+		local mask="${str_ip_addr#*/}"
+		val_oct_range ${ip_addr//./ } || {
+			log -E "IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		val_ipv4_netmask "${mask}" || {
+			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+			return 1
+		}
+		IPSTRING="IPNETMASK"
+	;;
+	# IP string is IP-range
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		for range_ip in ${str_ip_addr/-/ }; do
+			val_oct_range ${range_ip//./ } || {
+				log -E "IP range \`${range_ip}' is not valid."
+				return 1
+			}
+		done
+	    if (($(decodeaddr ${str_ip_addr%-*}) > $(decodeaddr ${str_ip_addr#*-}))); then
+			log -E "IP range \`${range_ip}' is not valid."
+			return 1
+	    fi
+		IPSTRING="IPRANGE"
+	;;
+	(*) log -E "IPv4 address specification \`${str_ip_addr}' is not valid."
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+classify_ip4_addr() { # classify IPv4 addresses
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	# IP string is global shortcut
+	(0/0 | 0.0.0.0/0) printf "IPNET\n" ;;
+	# IP string is single IP
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPADDR\n" ;;
+	# IP string is IP/Mask
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]])) printf "IPNET\n" ;;
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])) printf "IPNET\n" ;;
+	# IP string is IP-range
+	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+		printf "IPRANGE\n"
+	;;
+	(*) log -E "Unknown error while processing \`$1'."; return 1 ;;
+esac
+} # -------------------------------------------------------------------------
+
+val_ipv4_addr_no_range() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+val_ip4_addr "$1" || return 1
+[[ ${IPSTRING} != IPRANGE ]] || {
+	log -E "IP-range address not valid in context."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+val_state() { # validate state specifications
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str
+#check_str_unique "${1//,/ }" || return 1
+#for str in $(string_toupper "$(IFS=, split_val ${1})"); do
+for str in $(string_toupper "${1//,/ }"); do
+	case "${str}" in
+		(NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED)
+			continue
+		;;
+		*) log -E "Invalid state entry \`$1'."
+			return 1
+	esac
+done
+} # -------------------------------------------------------------------------
 
 val_rej_type() { # validate reject target types
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
@@ -848,21 +940,6 @@ string_negated "${str_natip}" && {
 for str_ip in ${str_natip//-/ }; do val_ip4_addr ${str_ip} || return 1; done
 } # -------------------------------------------------------------------------
 
-val_port_range() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_port
-for str_port in ${1//-/ }; do
-	case "$str_port" in
-		+([[:digit:]]))
-			if val_16bit "$str_port"; then
-				continue
-			fi
-		;;
-	esac
-   	log -E "Invalid port specification \`$str_port'."
-done
-} # -------------------------------------------------------------------------
-
 #val_nat_port() { # validate nat port specifications
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local nport
@@ -910,6 +987,66 @@ for m_port in ${str_m_ports#!}; do
 done
 } # -------------------------------------------------------------------------
 
+val_ttl() { # validate TTL manipulation values
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+#if (($1 < 0 || ${1} > 255)); then
+if ! val_8bit "$1"; then
+	log -E "TTL value must be between 0 and 255."
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+val_tcp_flags() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+set -- ${1/:/ }
+#local str_mask="$(IFS=, split_val $1)" str_comp="$(IFS=, split_val $2)" str_flag
+local str_mask="${1//,/ }" str_comp="${2//,/ }" str_flag
+check_str_unique "${str_mask}" || return 1
+check_str_unique "${str_comp}" || return 1
+for str_flag in ${str_mask} ${str_comp}; do
+	[[ ${str_flag} = @(SYN|ACK|FIN|RST|URG|PSH|ALL|NONE) ]] || return 1
+done
+} # -------------------------------------------------------------------------
+
+val_dscp() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	+([[:digit:]])|0x+([[:xdigit:]]))
+		val_6bit "$1" || {
+			log -E "DSCP value \`$1' is out of bounds."
+			return 1
+		}
+	;;
+	BE|EF|AF[1-4][1-3]|CS[1-4]) : ;;
+	*) log -i "$1" "DSCP descriptor"
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
+val_nf_mark() { # validate netfilter mark and mark-mask values
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+val_32bit "$1" || {
+	log -E "Mark value or mask \`$1' is out of bounds. Should be 32bit: 0-0xFFFFFFFF (4294967295)."
+	return 1
+}
+} # -------------------------------------------------------------------------
+
+val_spi() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_spi
+set -- ${1/:/ }
+for str_spi in "$@"; do
+	val_numeric "$str_spi" || return 1
+	val_32bit "$str_spi" || {
+		log -E "SPI value \`$str_spi' is out of range."
+		return 1
+	}
+done
+if [[ $2 ]]; then
+	val_range "$1" "$2" || return 1
+fi
+} # -------------------------------------------------------------------------
+
 val_set_flags() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 oIFS="$IFS"
@@ -919,22 +1056,6 @@ IFS="$oIFS"
 if (($# > 6)); then
 	log -E "A maximum of 6 set flags can be specified."
 	return 1
-fi
-} # -------------------------------------------------------------------------
-
-
-# -------------------------------------------------------------------------
-add_rule() { # add iptables commands to the command array
-[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_tbl="$1" str_chn="$2"
-shift 2
-local str_arr="IPT_$(string_toupper "$str_tbl")_CMD_ARRAY"
-if [[ $str_tbl = @(filter|nat|mangle|raw|rawpost|security) ]]; then
-	eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $str_chn ${@//$'\t'/}"'
-#eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $(escape_varname str_chn) $(printf "%q " "${@}";printf "\n")"'
-else
-	log -E "Illegal iptables table name: \`$str_tbl'."
-	return $ER_CONF
 fi
 } # -------------------------------------------------------------------------
 
@@ -984,71 +1105,6 @@ fi
 readonly ${tmod}_MOD_EXIST
 } # -------------------------------------------------------------------------
 
-insert_ipt_rule() {
-[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_tbl="$1" str_chn="$2"
-shift 2
-local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
-if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
-	eval ${str_arr}[$(arr_members_sum ${str_arr})]='"-t ${str_tbl} -I ${str_chn} ${@//$'\t'/}"'
-else
-	log -E "Illegal iptables table name: \`${str_tbl}'."
-	return $ER_CONF
-fi
-} # -------------------------------------------------------------------------
-
-create_chain() { # create an iptables chain
-[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_tbl="$1" str_chain="$2" str_silent="$3"
-local -i c_idx
-val_table "${str_tbl}" || {
-	raise_cfg_err_count
-	return 0
-}
-val_userdef_chain_target "${str_chain}" || {
-	raise_cfg_err_count
-	return 0
-}
-for c_idx in ${!CREATED_CHAINS_ARRAY[@]}; do
-	set -- ${CREATED_CHAINS_ARRAY[c_idx]}
-	if [[ $1 = ${str_tbl} && $2 = ${str_chain} ]]; then
-		[[ ${str_silent} = --silent ]] || {
-			log -W "\`${str_chain}' in ${str_tbl} table has already been created"
-		}
-		return 0
-	fi
-done
-log -e "creating chain: ${str_chain} table=${str_tbl}"
-#IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -N ${str_chain}"
-IPT_CCHAIN_ARRAY[${#IPT_CCHAIN_ARRAY[@]}]="-t ${str_tbl} -N ${str_chain}"
-CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
-} # -------------------------------------------------------------------------
-
-#delete_chain() { # delete an iptables chain
-#[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-#local str_tbl="$1" str_chain="$2"
-#local -i c_idx
-#val_table "${str_tbl}" || {
-#	raise_cfg_err_count
-#	return 0
-#}
-#val_userdef_chain_target "${str_chain}" || {
-#	raise_cfg_err_count
-#	return 0
-#}
-#for c_idx in ${!CREATED_CHAINS_ARRAY[@]}; do
-#	set -- ${CREATED_CHAINS_ARRAY[c_idx]}
-#	[[ $1 = ${str_tbl} && $2 = ${str_chain} ]] && {
-#		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -F ${str_chain}"
-#		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -X ${str_chain}"
-#		return 0
-#	}
-#done
-#log -W "\`${str_chain}' in ${str_tbl} table has not been created before"
-#return 0
-#}
-# -------------------------------------------------------------------------
-
 check_ipt_targets() { # check for iptables targets, which are used by IP-Array
 ((${#IPARRAY_TARGETS[@]})) || { log -u 'IPARRAY_TARGETS'; return 1; }
 local -i t_idx
@@ -1084,6 +1140,87 @@ else
 	done
 fi
 } # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# ACTION FUNCTIONS
+# ------------------------------------------------------------------------- #
+add_rule() { # add iptables commands to the command array
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_tbl="$1" str_chn="$2"
+shift 2
+local str_arr="IPT_$(string_toupper "$str_tbl")_CMD_ARRAY"
+if [[ $str_tbl = @(filter|nat|mangle|raw|rawpost|security) ]]; then
+	eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $str_chn ${@//$'\t'/}"'
+#eval ${str_arr}[$(arr_members_sum $str_arr)]='"-t $str_tbl -A $(escape_varname str_chn) $(printf "%q " "${@}";printf "\n")"'
+else
+	log -E "Illegal iptables table name: \`$str_tbl'."
+	return $ER_CONF
+fi
+} # -------------------------------------------------------------------------
+
+insert_ipt_rule() {
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_tbl="$1" str_chn="$2"
+shift 2
+local str_arr="IPT_$(string_toupper "${str_tbl}")_CMD_ARRAY"
+if [[ ${str_tbl} = @(filter|nat|mangle|raw|rawpost|security) ]]; then
+	eval ${str_arr}[$(arr_members_sum ${str_arr})]='"-t ${str_tbl} -I ${str_chn} ${@//$'\t'/}"'
+else
+	log -E "Illegal iptables table name: \`${str_tbl}'."
+	return $ER_CONF
+fi
+} # -------------------------------------------------------------------------
+
+create_chain() { # create an iptables chain
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+local str_tbl="$1" str_chain="$2" str_silent="$3"
+local -i c_idx
+val_table "${str_tbl}" || {
+	raise_cfg_err_count
+	return 0
+}
+val_userdef_chain_target "${str_chain}" || {
+	raise_cfg_err_count
+	return 0
+}
+for c_idx in ${!CREATED_CHAINS_ARRAY[@]}; do
+	set -- ${CREATED_CHAINS_ARRAY[c_idx]}
+	if [[ $1 = ${str_tbl} && $2 = ${str_chain} ]]; then
+		[[ ${str_silent} = --silent ]] || {
+			log -W "\`${str_chain}' in ${str_tbl} table has already been created"
+		}
+		return 0
+	fi
+done
+log -e "creating chain: ${str_chain} table=${str_tbl}"
+IPT_CCHAIN_ARRAY[${#IPT_CCHAIN_ARRAY[@]}]="-t ${str_tbl} -N ${str_chain}"
+CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
+} # -------------------------------------------------------------------------
+
+#delete_chain() { # delete an iptables chain
+#[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+#local str_tbl="$1" str_chain="$2"
+#local -i c_idx
+#val_table "${str_tbl}" || {
+#	raise_cfg_err_count
+#	return 0
+#}
+#val_userdef_chain_target "${str_chain}" || {
+#	raise_cfg_err_count
+#	return 0
+#}
+#for c_idx in ${!CREATED_CHAINS_ARRAY[@]}; do
+#	set -- ${CREATED_CHAINS_ARRAY[c_idx]}
+#	[[ $1 = ${str_tbl} && $2 = ${str_chain} ]] && {
+#		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -F ${str_chain}"
+#		IPT_CMD_ARRAY[${#IPT_CMD_ARRAY[@]}]="\"${IPT}\" -t ${str_tbl} -X ${str_chain}"
+#		return 0
+#	}
+#done
+#log -W "\`${str_chain}' in ${str_tbl} table has not been created before"
+#return 0
+#}
+# -------------------------------------------------------------------------
 
 set_default_policies_immediate() { # set (IP-Array) default policies
 local table c chain rest
