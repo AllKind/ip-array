@@ -3103,6 +3103,8 @@ if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdo
 		done
 		pr_banner "End of template dump."
 	fi
+	# save template names for usage in show mode
+	printf '%s\n' "${TEMP_TEMPLATE_NAMES_ARRAY[@]}" >> "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 fi
 } # -------------------------------------------------------------------------
 
@@ -3226,6 +3228,8 @@ if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to st
 		done
 		pr_banner "End of ruleblock dump."
 	fi
+	# save ruleblock names for usage in show mode
+	printf '%s\n' "${TEMP_RULEBLOCK_NAMES_ARRAY[@]}" >> "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 fi
 } # -------------------------------------------------------------------------
 

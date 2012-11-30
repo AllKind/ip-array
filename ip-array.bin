@@ -1222,13 +1222,8 @@ while (($#)); do
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
-					if [[ $MAIN_ARG = show ]]; then
-						cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args)/}"
-						cmdline_show_conf+=" defaults main targets matches ipt_args"
-					else
-						cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|ruleblocks|templates)/}"
-						cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates"
-					fi
+					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|ruleblocks|templates)/}"
+					cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates"
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
@@ -1342,6 +1337,7 @@ set_env
 [[ ${cmdline_use_ipset} ]] && USE_IPSET="${cmdline_use_ipset}"
 [[ ${cmdline_ipset_save_file} ]] && IPSET_SAVE_FILE="${cmdline_ipset_save_file}"
 [[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
+#[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
 # set the diff-file to the provided file name
@@ -1584,7 +1580,7 @@ case "$MAIN_ARG" in
 	;;
 	show)
 		[[ $cmdline_show_conf ]] || cmdline_show_conf='main'
-		MODE='SHOW'
+		MODE='SHOW' EXEC_COMMANDS=0 TEST_MODE=0
 	;;
 	start) # start mode, enforce lockdown mode with admin allow,
 			# apply commands after reading all rules
@@ -1708,65 +1704,10 @@ if ((ENABLE_COLORS)); then
 fi
 
 # -------------------------------------------------------------------------
-# show config summary
-# -------------------------------------------------------------------------
-for rvar in ${cmdline_show_conf}; do
-	case "$rvar" in
-		ansi_codes) cl_list ;;
-		colors) cl_show ;;
-		defaults)
-			pr_banner "Starting dump of defaults configuration:"
-			for i in ${!IPARRAY_PROGRAMS[@]}; do
-				dn2 declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" || continue
-			done
-			for i in ${!DEFAULTS_LIST[@]}; do
-				dn2 declare -p "${DEFAULTS_LIST[i]}" || continue
-			done
-			pr_banner "End of defaults configuration summary."
-		;;
-		main)
-			pr_banner "Starting dump of main configuration:"
-			for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
-				dn2 declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" || continue
-			done
-			pr_banner "End of main configuration summary."
-		;;
-		targets)
-			pr_banner "Starting dump of supported targets:"
-			show_array_column IPARRAY_TARGETS 2 | run_sort
-			pr_banner "End of supported targets summary."
-		;;
-		matches)
-			pr_banner "Starting dump of supported iptables matches:"
-			show_array_column IPARRAY_MODULES 2 | run_sort
-			pr_banner "End of supported iptables matches summary."
-		;;
-		ipt_args)
-			pr_banner "Starting dump of iptables arguments list:"
-			printf "%s\n" "${ARG_NAMES_LIST[@]}" | run_sort
-			pr_banner "End of iptables arguments list."
-		;;
-		ruleblocks)
-			if ((PARSE_RULEBLOCKS == 0)); then
-				err_msg "Option \`$rvar' is only available for parsing ruleblocks - i.e. with the \`parse-xml' argument."
-				bad_use_quit
-			fi
-		;;
-		templates)
-			if ((PARSE_TEMPLATES == 0)); then
-				err_msg "Option \`$rvar' is only available for parsing templates - i.e. with the \`parse-xml' argument."
-				bad_use_quit
-			fi
-		;;
-	esac
-done
-if [[ $MODE = SHOW ]]; then
-	quit_welldone
-# -------------------------------------------------------------------------
 # set runtime variables
 # check kernel version
 # -------------------------------------------------------------------------
-elif [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
+if [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
 	readonly REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 fi
 set_syslog_mode
@@ -1793,7 +1734,6 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	if ((TEST_MODE)); then
-#		[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
 		sched_restore ${me}_iptables-save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM ${me}_ipset_save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM || bail_out $?
 	fi
 	# --------------------------------------------------------------
@@ -1823,6 +1763,21 @@ fi
 	trap -p
 	pr_banner "DEBUG: end"
 }
+
+# check_saved_template_names_file
+if ((PARSE_TEMPLATES == 1)); then
+	if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+		log -w "Removing remembered template names file \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+		run_rm "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+	fi
+fi
+if ((PARSE_RULEBLOCKS == 1)); then
+	if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
+		log -w "Removing remembered template names file \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+		run_rm "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+	fi
+fi
+# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 # preparation done - run main function
