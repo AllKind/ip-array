@@ -4749,7 +4749,7 @@ case "$1" in
 		apply_rules || return $?
 		common_end
 	;;
-	SHOW)
+	SHOW) # show configuration and whatever
 		start_msg
 		for rvar in $cmdline_show_conf; do
 			case "$rvar" in
@@ -4763,19 +4763,19 @@ case "$1" in
 					for i in ${!DEFAULTS_LIST[@]}; do
 						dn2 declare -p "${DEFAULTS_LIST[i]}" || continue
 					done
-					pr_banner "End of defaults configuration summary."
+					pr_banner "End of defaults configuration summary"
 				;;
 				main)
 					pr_banner "Starting dump of main configuration:"
 					for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 						dn2 declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" || continue
 					done
-					pr_banner "End of main configuration summary."
+					pr_banner "End of main configuration summary"
 				;;
 				targets)
 					pr_banner "Starting dump of supported targets:"
 					show_array_column IPARRAY_TARGETS 2 | run_sort
-					pr_banner "End of supported targets summary."
+					pr_banner "End of supported targets summary"
 				;;
 				matches)
 					pr_banner "Starting dump of supported iptables matches:"
@@ -4783,22 +4783,16 @@ case "$1" in
 					pr_banner "End of supported iptables matches summary."
 				;;
 				ipt_args)
-					pr_banner "Starting dump of iptables arguments list:"
+					pr_banner "Starting dump of iptables arguments:"
 					printf "%s\n" "${ARG_NAMES_LIST[@]}" | run_sort
-					pr_banner "End of iptables arguments list."
+					pr_banner "End of iptables arguments"
 				;;
 				ruleblocks)
 					load_configs || return $?
 					load_all_ruleblocks || return $?
 					if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
 						pr_banner "Starting dump of ruleblocks:"
-						while read; do
-							printf "%s=(\n" "$REPLY"
-							for i in $(arr_indicies "$REPLY"); do
-								eval 'printf "['$i']=\"%s\"\n" "${'"$REPLY"'['$i']}"'
-							done
-							printf ")\n"
-						done < "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+						dump_arr < "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 						pr_banner "End of ruleblock dump"
 					else
 						log -W "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES does not exist. Ruleblocks must first be parsed."
@@ -4809,13 +4803,7 @@ case "$1" in
 					load_all_templates || return $?
 					if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 						pr_banner "Starting template dump:"
-						while read; do
-							printf "%s=(\n" "$REPLY"
-							for i in $(arr_indicies "$REPLY"); do
-								eval 'printf "['$i']=\"%s\"\n" "${'"$REPLY"'['$i']}"'
-							done
-							printf ")\n"
-						done < "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+						dump_arr < "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 						pr_banner "End of template dump"
 					else
 						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."

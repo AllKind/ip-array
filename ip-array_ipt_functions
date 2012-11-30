@@ -3037,6 +3037,17 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 done
 } # -------------------------------------------------------------------------
 
+dump_arr() {
+while read; do
+	printf "%s=(\n" "$REPLY"
+	for i in $(arr_indicies "$REPLY"); do
+#		eval 'printf "['$i']=\"%s\"\n" "${'"$REPLY"'['$i']}"'
+		eval 'printf "[$i]='\''%s'\''\n" "${'"$REPLY"'['$i']}"'
+	done
+	printf ")\n"
+done
+} # -------------------------------------------------------------------------
+
 load_ipt_templates() {
 # - parse iptables xml ruleblock templates (if needed)
 # - transform the templates into bash arrays

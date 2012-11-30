@@ -1713,7 +1713,7 @@ fi
 set_syslog_mode
 set_message_colors || bail_out $?
 precheck_config || bail_out $?
-fill_script_map
+[[ $MODE = SHOW ]] || fill_script_map
 check_kern_ver || bail_out $?
 
 # -------------------------------------------------------------------------
@@ -1764,7 +1764,9 @@ fi
 	pr_banner "DEBUG: end"
 }
 
-# check_saved_template_names_file
+# -------------------------------------------------------------------------
+# remove previously remembered template and ruleblock name files
+# -------------------------------------------------------------------------
 if ((PARSE_TEMPLATES == 1)); then
 	if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 		log -w "Removing remembered template names file \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
@@ -1777,7 +1779,6 @@ if ((PARSE_RULEBLOCKS == 1)); then
 		run_rm "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 	fi
 fi
-# -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
 # preparation done - run main function
