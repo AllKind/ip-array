@@ -4809,6 +4809,10 @@ case "$1" in
 						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
 					fi
 				;;
+				rules)
+					load_configs || return $?
+					load_all_ipt_rulefiles || return $?
+				;;
 			esac
 		done
 		common_end

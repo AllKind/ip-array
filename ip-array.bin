@@ -158,6 +158,8 @@ declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_
 	cmdline_syslog_verbosity cmdline_verbosity cmdline_show_conf cmdline_quickstart \
 	cmdline_reload_time cmdline_skip_scripts cmdline_gen_format cmdline_color cmdline_use_ipset \
 	cmdline_mod_file cmdline_proc_file
+
+# hold variables to override main config by command line
 declare -a ARR_RTIME_OPTS
 
 # list of all builtins
@@ -577,8 +579,8 @@ Options:
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
                            This option is only valid with the \`test' parameter.
 -sc, --show-config [type] [...]
-                           Select type of information to show. Available types:
-                           all, main (=default), defaults, targets, matches,
+                           Select type of information to show. Types: all,
+                           main (=default), defaults, targets, matches, rules,
                            ruleblocks, templates, ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -1222,17 +1224,19 @@ while (($#)); do
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
-					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|ruleblocks|templates)/}"
-					cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates"
+					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates)/}"
+#					cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates rules"
+					cmdline_show_conf=" defaults main targets matches ipt_args ruleblocks templates rules"
 				;;
-				main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
+				main|defaults|targets|matches|ruleblocks|templates|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
-				*)
-					cmdline_show_conf="${cmdline_show_conf//main/}"
-					cmdline_show_conf+="main "
-					continue
+				*) pr_err "Unknown argument \`$opt_arg' to option \`$option'."
+					short_usage
+#					cmdline_show_conf="${cmdline_show_conf//main/}"
+#					cmdline_show_conf+=" main"
+#					continue
 			esac
 		;;
 		-sh|--shell) # shell to use. $SHELL variable is set to.
@@ -1270,9 +1274,9 @@ while (($#)); do
 			 cmdline_verbosity="$opt_arg" VERBOSE="$opt_arg"
 		 ;;
 		--) break ;;
-		*)
-			pr_err "Unknown option: \`$option'"
+		*) pr_err "Unknown option: \`$option'"
 			short_usage
+		 ;;
 	esac
 	[[ $opt_arg ]] || {
 		pr_err "Option \`$option' requires an argument."
@@ -1696,6 +1700,8 @@ fi
 # -------------------------------------------------------------------------
 if [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
 	readonly REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
+elif [[ $MODE = SHOW ]]; then
+	ENABLE_SYSLOG=0
 fi
 set_syslog_mode
 set_message_colors || bail_out $?

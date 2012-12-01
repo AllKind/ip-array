@@ -183,8 +183,8 @@ Options:
 -rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
 -sc, --show-config [type] [...]
-                           Select type of information to show. Available types:
-                           all, main (=default), defaults, targets, matches,
+                           Select type of information to show. Types: all,
+                           main (=default), defaults, targets, matches, rules,
                            ruleblocks, templates, ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -265,7 +265,7 @@ while (($#)); do
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|ruleblocks|templates|ipt_args|ansi_codes|colors)
+				all|main|defaults|targets|matches|rules|ruleblocks|templates|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue

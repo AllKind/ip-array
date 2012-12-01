@@ -3344,7 +3344,17 @@ if ((parse_files == 1)); then
 	exec 7>&-
 	log -w "Saved parsed rule file to: \`$parsed_file'"
 fi
-if [[ $MODE != PARSE-XML ]]; then
+if [[ $MODE = SHOW ]]; then # dump rules in show mode
+	if lsearch rules $cmdline_show_conf; then
+		pr_banner "Starting rules dump from ${parsed_file##/*/}:"
+		while read -r -t $GLOBAL_READ_TIMEOUT; do
+			rvar="${REPLY%%#*}"
+			[[ -z $rvar || $rvar = +([[:space:]]) ]] && continue
+			printf '%s\n' "$REPLY"
+		done < "$parsed_file"
+		pr_banner "End of rules dump from ${parsed_file##/*/}"
+	fi
+elif [[ $MODE != PARSE-XML ]]; then # if we don't just parse, load rules
 	load_file rule "$parsed_file" || return $ER_LOAD
 fi
 } # -------------------------------------------------------------------------
