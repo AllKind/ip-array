@@ -4286,10 +4286,10 @@ case "$MAIN_ARG" in
 		return 1
 esac
 
-[[ $MAIN_ARG = @(dry-run|open|restart|start|save-commands|save-iptables-commands|save-shaping-commands|tc-start|tc-stop|'test') ]] && {
+if [[ $MODE = @(RESTART|OPEN|TC-START|TC-STOP|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 	log -w "${RULES_PROCESSED_COUNT} ruleblock rules have been processed, of which ${QUICK_RULES_COUNT} were quick-rules."
 	log -w "Resulting in ${RULES_GENERATED_COUNT} generated and ${INLINE_RULES_GENERATED_COUNT} inline rules"
-}
+fi
 
 if ((ERRORS)); then
 	if ((ENABLE_COLORS)); then
@@ -4318,7 +4318,7 @@ else
 	log -l "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
 fi
 rvar=$SECONDS
-log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 60)))) seconds of execution time"
+log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 60)))) seconds of execution time at: $(run_date --rfc-2822)"
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
