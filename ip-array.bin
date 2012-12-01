@@ -941,7 +941,7 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-modules_restore() {
+modules_restore() { # to restore remembered module state (scheduled)
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_file="${SAVE_DIR}/$1"
 if [[ -r $str_file ]]; then
@@ -955,7 +955,7 @@ if [[ -r $str_file ]]; then
 fi
 } # -------------------------------------------------------------------------
 
-proc_restore() {
+proc_restore() { # to restore remembered /proc state (scheduled)
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_file="${SAVE_DIR}/$1"
 if [[ -r $str_file ]]; then
@@ -1284,36 +1284,23 @@ done
 # -------------------------------------------------------------------------
 # load default configuration parameters from file
 # -------------------------------------------------------------------------
-if [[ $cmdline_def_file ]]; then
-	DEFAULTS_FILE="$cmdline_def_file"
-fi
-if [[ -z $DEFAULTS_FILE ]]; then
-	notice_msg "No defaults file specified. Trying: \`/etc/${me}/defaults.conf'."
-	DEFAULTS_FILE="/etc/${me}/defaults.conf"
-	i=0
-else
-	i=1
-fi
+
+DEFAULTS_FILE="${cmdline_def_file:-${DEFAULTS_FILE:-/etc/${me}/defaults.conf}}"
 if [[ -r $DEFAULTS_FILE ]]; then 
 	verbose_msg "Loading defaults file: \`$DEFAULTS_FILE'."
 	if ((SYNTAX_CHECK)); then
 		check_syntax "$DEFAULTS_FILE" || bail_out $ER_LOAD
 	fi
 	source "$DEFAULTS_FILE" || {
-		err_msg "Failed loading defaults. Ensure \`DEFAULTS_FILE' is correctly set."
+		err_msg "Failed loading defaults file."
 		bail_out $ER_LOAD
 	}
 else
-	if [[ $cmdline_def_file ]]; then
+	if [[ $cmdline_def_file ]]; then # quit if set explicitly by user
 		err_msg "Defaults file \`$DEFAULTS_FILE' does not exist!"
 		bail_out $ER_NOEX
 	else
-		if ((i)); then
-			err_msg "Defaults file \`$DEFAULTS_FILE' does not exist!"
-			bail_out $ER_NOEX
-		else
-			warn_msg "No defaults file specified and \`/etc/${me}/defaults.conf' does not exist. Trying default values."
-		fi
+		warn_msg "No defaults file specified and \`/etc/${me}/defaults.conf' does not exist. Trying default values."
 	fi
 fi
 
