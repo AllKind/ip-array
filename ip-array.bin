@@ -74,7 +74,7 @@ LC_ALL='C'
 
 # about me
 readonly ME me=ip-array
-declare -r VERSION=([0]=0 [1]=5 [2]=82 [3]=" bleeding-edge")	# Version
+declare -r VERSION=([0]=0 [1]=5 [2]=83 [3]=" bleeding-edge")	# Version
 declare -r STR_VERSION="v.${VERSION[0]}.$(printf "%.2d" ${VERSION[1]}).$(printf "%.2d" ${VERSION[2]})${VERSION[3]}"
 
 declare -r MAIN_ARG="$1"
