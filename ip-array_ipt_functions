@@ -1309,7 +1309,7 @@ flush_table_pub_save() { # flush all chains in a specified table
 "$CAT" <<'END_OF_FUNC'
 
 flush_table() {
-local tgt_tbl="\$1"
+local tgt_tbl="$1"
 local c chain rest
 while read c chain rest; do
 	if [[ $c = Chain ]]; then
