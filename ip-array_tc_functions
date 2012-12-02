@@ -35,13 +35,13 @@
 # ------------------------------------------------------------------------- #
 
 show_remove_qdisc_pub_save() { # public script to remove qdiscs
-"${CAT}" <<END_OF_FUNC
+"$CAT" <<'END_OF_FUNC'
 
 remove_tc_qdiscs() {
 local iface
-for iface in \$NET_IFLIST; do
-	"\$TC" qdisc show dev "\$iface" | "\$GREP" -v pfifo_fast &>/dev/null && {
-		"\$TC" qdisc del dev "\$iface" root
+for iface in $NET_IFLIST; do
+	"$TC" qdisc show dev "$iface" | "$GREP" -v pfifo_fast &>/dev/null && {
+		"$TC" qdisc del dev "$iface" root
 	}
 done
 }
@@ -64,13 +64,13 @@ val_tc_bw_val() { # validate tc bandwith values
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local digitval=${1//[[:alpha:]]/} alphaval=${1//[[:digit:]]/}
 if [[ ${digitval} ]]; then
-	val_numeric ${digitval} || return 1
+	val_numeric ${digitval} || return
 else
 	log -E "Missing numeric value in \`${1}'."
 	return 1
 fi
 if [[ ${alphaval} ]]; then
-	val_tc_unit ${alphaval} || return 1
+	val_tc_unit ${alphaval} || return
 fi
 } # -------------------------------------------------------------------------
 
@@ -84,18 +84,18 @@ tc_add_htbqd() { # add htb qdiscs
 OPTIND=1 # reset options index variable
 while getopts :d:u:h:f:r: option; do # enumerate options
 	case "$option" in
-		d) 	check_iface "${OPTARG}" || return 1
-			local qdev="dev ${OPTARG}"
+		d) 	check_iface "$OPTARG" || return
+			local qdev="dev $OPTARG"
 		;;
-		u) local quser="${OPTARG}" ;;
-		h) 	val_numeric "${OPTARG/:/}" || return 1
-			local qhandle="handle ${OPTARG}"
+		u) local quser="$OPTARG" ;;
+		h) 	val_numeric "${OPTARG/:/}" || return
+			local qhandle="handle $OPTARG"
 		;;
-		f) 	val_numeric "${OPTARG}" || return 1
-			local qdef="default ${OPTARG}"
+		f) 	val_numeric "$OPTARG" || return
+			local qdef="default $OPTARG"
 		;;
-		r) 	val_numeric "${OPTARG}" || return 1
-			local qr2q="r2q ${OPTARG}"
+		r) 	val_numeric "$OPTARG" || return
+			local qr2q="r2q $OPTARG"
 		;;
 		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
@@ -109,17 +109,17 @@ tc_add_sfqd() { # add sfq qdiscs
 OPTIND=1 # reset options index variable
 while getopts :d:p:h:t: option; do # enumerate options
 	case "$option" in
-		d) 	check_iface "${OPTARG}" || return 1
-			local qdev="dev ${OPTARG}"
+		d) 	check_iface "$OPTARG" || return
+			local qdev="dev $OPTARG"
 		;;
-		p) 	val_numeric "${OPTARG/:/}" || return 1
-			local qparent="parent ${OPTARG}"
+		p) 	val_numeric "${OPTARG/:/}" || return
+			local qparent="parent $OPTARG"
 		;;
-		h) 	val_numeric "${OPTARG/:/}" || return 1
-			local qhandle="handle ${OPTARG}"
+		h) 	val_numeric "${OPTARG/:/}" || return
+			local qhandle="handle $OPTARG"
 		;;
-		t) 	val_numeric "${OPTARG}" || return 1
-			local qperturb="perturb ${OPTARG}"
+		t) 	val_numeric "$OPTARG" || return
+			local qperturb="perturb $OPTARG"
 		;;
 		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
@@ -134,53 +134,53 @@ OPTIND=1 # reset options index variable
 while getopts :d:p:i:r:c:b:u:q:m:o: option; do # enumerate options
 	case "$option" in
 		d)	# device
-			check_iface "${OPTARG}" || return 1
-			local qdev="dev ${OPTARG}" m_dev="dev=${OPTARG} "
+			check_iface "$OPTARG" || return
+			local qdev="dev $OPTARG" m_dev="dev=$OPTARG "
 		;;
 		p) 	# parent
-			val_numeric "${OPTARG/:/}" || return 1
-			local qparent="parent ${OPTARG}" m_parent="parent=${OPTARG} "
+			val_numeric "${OPTARG/:/}" || return
+			local qparent="parent $OPTARG" m_parent="parent=$OPTARG "
 		;;
 		i) 	# classid
-			val_numeric "${OPTARG/:/}" || return 1
-			local qclassid="classid ${OPTARG}" m_classid="classid=${OPTARG} "
+			val_numeric "${OPTARG/:/}" || return
+			local qclassid="classid $OPTARG" m_classid="classid=$OPTARG "
 		;;
 		r) 	# rate
-			val_tc_bw_val ${OPTARG} || return 1
-			local qrate="rate ${OPTARG}" m_rate="rate=${OPTARG} "
+			val_tc_bw_val $OPTARG || return
+			local qrate="rate $OPTARG" m_rate="rate=$OPTARG "
 		;;
 		c) 	# ceil
-			val_tc_bw_val ${OPTARG} || return 1
-			local qceil="ceil ${OPTARG}" m_ceil="ceil=${OPTARG} "
+			val_tc_bw_val $OPTARG || return
+			local qceil="ceil $OPTARG" m_ceil="ceil=$OPTARG "
 		;;
 		b)	# burst
-			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
-				val_tc_bw_val ${OPTARG} || return 1
-				local qburst="burst ${OPTARG}" m_burst="burst=${OPTARG} "
+			if [[ $OPTARG && $OPTARG != $RULE_SEP ]]; then
+				val_tc_bw_val $OPTARG || return
+				local qburst="burst $OPTARG" m_burst="burst=$OPTARG "
 			fi
 		;;
 		u)	# cburst
-			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
-				val_tc_bw_val ${OPTARG} || return 1
-				local qcburst="cburst ${OPTARG}" m_cburst="cburst=${OPTARG} "
+			if [[ $OPTARG && $OPTARG != $RULE_SEP ]]; then
+				val_tc_bw_val $OPTARG || return
+				local qcburst="cburst $OPTARG" m_cburst="cburst=$OPTARG "
 			fi
 		;;
 		q) 	# quantum
-			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
-				val_numeric "${OPTARG}" || return 1
-				local qquantum="quantum ${OPTARG}" m_quantum="quantum=${OPTARG} "
+			if [[ $OPTARG && $OPTARG != $RULE_SEP ]]; then
+				val_numeric "$OPTARG" || return
+				local qquantum="quantum $OPTARG" m_quantum="quantum=$OPTARG "
 			fi
 		;;
 		m) 	# mtu
-			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
-				val_numeric "${OPTARG}" || return 1
-				local qmtu="mtu ${OPTARG}" m_mtu="mtu=${OPTARG} "
+			if [[ $OPTARG && $OPTARG != $RULE_SEP ]]; then
+				val_numeric "$OPTARG" || return
+				local qmtu="mtu $OPTARG" m_mtu="mtu=$OPTARG "
 			fi
 		;;
 		o) 	# priority
-			if [[ ${OPTARG} && ${OPTARG} != ${RULE_SEP} ]]; then
-				val_numeric "${OPTARG}" || return 1
-				local qprio="prio ${OPTARG}" m_prio="prio=${OPTARG}"
+			if [[ $OPTARG && $OPTARG != $RULE_SEP ]]; then
+				val_numeric "$OPTARG" || return
+				local qprio="prio $OPTARG" m_prio="prio=$OPTARG"
 			fi
 		;;
 		*) log -o "$option" $FUNCNAME; return 1 ;;
@@ -196,22 +196,22 @@ tc_add_filter() { # add tc filters
 OPTIND=1 # reset options index variable
 while getopts :d:p:o:r:h:m:i: option; do # enumerate options
 	case "$option" in
-		d)	check_iface "${OPTARG}" || return 1
-			local qdev="dev ${OPTARG}"
+		d)	check_iface "$OPTARG" || return
+			local qdev="dev $OPTARG"
 		;;
-		p) 	val_numeric "${OPTARG/:/}" || return 1
-			local qparent="parent ${OPTARG}"
+		p) 	val_numeric "${OPTARG/:/}" || return
+			local qparent="parent $OPTARG"
 		;;
-		o) local qproto="protocol ${OPTARG}" ;;
-		r) 	val_numeric "${OPTARG}" || return 1
-			local qprio="prio ${OPTARG}"
+		o) local qproto="protocol $OPTARG" ;;
+		r) 	val_numeric "$OPTARG" || return
+			local qprio="prio $OPTARG"
 		;;
-		h) 	val_numeric "${OPTARG}" || return 1
-			local qhandle="handle ${OPTARG}"
+		h) 	val_numeric "$OPTARG" || return
+			local qhandle="handle $OPTARG"
 		;;
-		m) local qdomain="${OPTARG}" ;;
-		i) 	val_numeric "${OPTARG/:/}" || return 1
-			local qclassid="classid ${OPTARG}"
+		m) local qdomain="$OPTARG" ;;
+		i) 	val_numeric "${OPTARG/:/}" || return
+			local qclassid="classid $OPTARG"
 		;;
 		*) log -o "$option" $FUNCNAME; return 1 ;;
 	esac
@@ -408,7 +408,7 @@ case "${ENABLE_TC_SHAPING}" in
 		[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || create_chain mangle ${BIC_TC_FORWARD_EGRESS}
 		[[ ${BIC_TC_POSTROUTING_EGRESS} = POSTROUTING ]] || create_chain mangle ${BIC_TC_POSTROUTING_EGRESS}
 		for rvar in ${TC_MARK_RULES}; do
-			load_rule_file "$rvar" || return $?
+			load_rule_file "$rvar" || return
 		done
 		[[ ${BIC_TC_OUTPUT} = OUTPUT ]] || add_rule mangle OUTPUT -j ${BIC_TC_OUTPUT}
 		[[ ${BIC_TC_FORWARD_EGRESS} = FORWARD ]] || add_rule mangle FORWARD -j ${BIC_TC_FORWARD_EGRESS}
@@ -444,14 +444,14 @@ esac
 load_tc_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in ${TC_RULEBLOCKS}; do
-	load_ruleblock_conf "$rvar" || return $?
+	load_ruleblock_conf "$rvar" || return
 done
 } # -------------------------------------------------------------------------
 
 load_tc_mangle_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in ${TC_MANGLE_RULEBLOCKS}; do
-	load_ruleblock_conf "$rvar" || return $?
+	load_ruleblock_conf "$rvar" || return
 done
 } # -------------------------------------------------------------------------
 

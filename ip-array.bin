@@ -975,12 +975,12 @@ autosave() { # automatically save a temporary ruleset, which will be restored on
 ((NO_AUTOSAVE == 0)) || return 0
 if ((IPTSAVE_FAILS == 0)); then
 	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
-	ipt_save "$AUTOSAVE_FILE" || return $?
+	ipt_save "$AUTOSAVE_FILE" || return
 	readonly AUTOSAVE_FILE
 fi
 if ((USE_IPSET)); then
 	AUTOSAVE_FILE_IPSET="_autosave-generated_ipset-save_$(run_date +%F_%T)_rnd${RANDOM}_${IPSET_SAVE_FILE}"
-	ips_save "$AUTOSAVE_FILE_IPSET" || return $?
+	ips_save "$AUTOSAVE_FILE_IPSET" || return
 	readonly AUTOSAVE_FILE_IPSET
 fi
 } # -------------------------------------------------------------------------
@@ -1225,7 +1225,6 @@ while (($#)); do
 			case "$opt_arg" in
 				all)
 					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates)/}"
-#					cmdline_show_conf+=" defaults main targets matches ipt_args ruleblocks templates rules"
 					cmdline_show_conf=" defaults main targets matches ipt_args ruleblocks templates rules"
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|rules|ipt_args|ansi_codes|colors)
@@ -1234,9 +1233,6 @@ while (($#)); do
 				;;
 				*) pr_err "Unknown argument \`$opt_arg' to option \`$option'."
 					short_usage
-#					cmdline_show_conf="${cmdline_show_conf//main/}"
-#					cmdline_show_conf+=" main"
-#					continue
 			esac
 		;;
 		-sh|--shell) # shell to use. $SHELL variable is set to.
@@ -1605,11 +1601,11 @@ if ((TEST_MODE)); then
 		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
 		bail_out $ER_CONF
 	}
-	((RELOAD_TIME > 1)) || {
+	((RELOAD_TIME >= 1)) || {
 		err_msg "\`RELOAD_TIME' is lower than 1 minute."
 		bail_out $ER_CONF
 	}
-	((RELOAD_TIME < 16)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
+	((RELOAD_TIME <= 15)) || warn_msg "\`RELOAD_TIME' is greater than 15 minutes."
 fi
 
 # -------------------------------------------------------------------------

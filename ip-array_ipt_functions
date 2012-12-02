@@ -429,7 +429,7 @@ local str_set="$1" str_cmd="-A"
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=add
 fi
-val_setname "$str_set" || return $?
+val_setname "$str_set" || return
 IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $@"
 } # -------------------------------------------------------------------------
 
@@ -439,7 +439,7 @@ if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=destroy
 fi
 if [[ $str_set ]]; then
-	val_setname "$str_set" || return $?
+	val_setname "$str_set" || return
 	run_ipset $str_cmd "$str_set"
 else
 	run_ipset $str_cmd
@@ -452,7 +452,7 @@ if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=list
 fi
 if [[ $str_set ]]; then
-	val_setname "$str_set" || return $?
+	val_setname "$str_set" || return
 	run_ipset $str_cmd "$str_set"
 else
 	run_ipset $str_cmd
@@ -465,7 +465,7 @@ if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=flush
 fi
 if [[ $str_set ]]; then
-	val_setname "$str_set" || return $?
+	val_setname "$str_set" || return
 	run_ipset $str_cmd "$str_set"
 else
 	run_ipset $str_cmd
@@ -478,7 +478,7 @@ if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=save
 fi
 if [[ $str_set ]]; then
-	val_setname "$str_set" || return $?
+	val_setname "$str_set" || return
 	run_ipset $str_cmd "$str_set"
 else
 	run_ipset $str_cmd
@@ -499,7 +499,7 @@ local str_set="$1" str_entry="$2" str_cmd="-T"
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=test
 fi
-val_setname "$str_set" || return $?
+val_setname "$str_set" || return
 run_ipset $str_cmd "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
@@ -1118,7 +1118,7 @@ if ((NO_IPT_COMPAT_CHECK)); then
 else
 	log -I "Checking for iptables targets"
 	for t_idx in ${!IPARRAY_TARGETS[@]}; do
-		val_ipt_tgt ${IPARRAY_TARGETS[t_idx]} || return $?
+		val_ipt_tgt ${IPARRAY_TARGETS[t_idx]} || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -1136,7 +1136,7 @@ if ((NO_IPT_COMPAT_CHECK)); then
 else
 	log -I "Checking for iptables match extension"
 	for m_idx in ${!IPARRAY_MODULES[@]}; do
-		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return $?
+		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -1250,7 +1250,7 @@ done < "$IP_TABLES_NAMES"
 flush_table() { # flush all chains in a specified table
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local tgt_tbl="$1"
-val_table "${tgt_tbl}" || return $?
+val_table "${tgt_tbl}" || return
 local c chain rest
 log -S "Flushing chains in "${tgt_tbl}" table"
 while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
@@ -1297,47 +1297,47 @@ if ! [[ -r $IP_TABLES_NAMES ]]; then
 fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
-		if [[ ${c} = Chain ]]; then
+		if [[ $c = Chain ]]; then
 			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -F ${chain}"
 		fi
-	done < <(run_ipt -t ${table} -nL 2>/dev/null)
+	done < <(run_ipt -t $table -nL 2>/dev/null)
 	IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -X"
 done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 flush_table_pub_save() { # flush all chains in a specified table
-"${CAT}" <<END_OF_FUNC
+"$CAT" <<'END_OF_FUNC'
 
 flush_table() {
 local tgt_tbl="\$1"
 local c chain rest
 while read c chain rest; do
-	if [[ \$c = Chain ]]; then
-		"\$IPT" -t "\$tgt_tbl" -F "\$chain"
+	if [[ $c = Chain ]]; then
+		"$IPT" -t "$tgt_tbl" -F "$chain"
 	fi
-done < <("\$IPT" -t "\$tgt_tbl" -nL)
-"\$IPT" -t "\$tgt_tbl" -X
+done < <("$IPT" -t "$tgt_tbl" -nL)
+"$IPT" -t "$tgt_tbl" -X
 }
 
 END_OF_FUNC
 } # -------------------------------------------------------------------------
 
 show_flush_del_pub_save() { # generate iptables chains flusing/deleting function
-"${CAT}" <<END_OF_FUNC
+"$CAT" <<'END_OF_FUNC'
 
 flush_del_ipt_chains() {
-if ! [[ -f \$IP_TABLES_NAMES ]]; then
-	printf "%s\n" "\$IP_TABLES_NAMES does not exist, module ip_tables is not loaded?"
+if ! [[ -f $IP_TABLES_NAMES ]]; then
+	printf "%s\n" "$IP_TABLES_NAMES does not exist, module ip_tables is not loaded?"
 	return 0
 fi
 while read; do
-	"\$IPT" -t \$REPLY -nL | while read c chain rest; do
-		if [[ \$c = Chain ]]; then
-			"\$IPT" -t \$REPLY -F "\$chain"
+	"$IPT" -t $REPLY -nL | while read c chain rest; do
+		if [[ $c = Chain ]]; then
+			"$IPT" -t $REPLY -F "$chain"
 		fi
 	done
-	"\$IPT" -t \$REPLY -X
-done < "\$IP_TABLES_NAMES"
+	"$IPT" -t $REPLY -X
+done < "$IP_TABLES_NAMES"
 }
 
 END_OF_FUNC
@@ -1632,7 +1632,7 @@ while read -t $GLOBAL_READ_TIMEOUT ipt_table; do
 		if [[ ${ipt_chain} = Chain@([[:space:]])+([[:upper:]])@([[:space:]])\(policy@([[:space:]])+([[:upper:]])\) ]]
 		then
 			set -- ${ipt_chain}
-			set_policy ${ipt_table} $2 ${pol} || return $?
+			set_policy ${ipt_table} $2 ${pol} || return
 		fi
 	done < <(run_ipt -t ${ipt_table} -nL)
 done < "$IP_TABLES_NAMES"
@@ -1657,7 +1657,7 @@ for idx in ${!POLICY_MAP[@]}; do
 		log -W "It's not advisable to use a DROP policy for a non filter/security table chain."
 	fi
 	log -e "${PF}setting policy: table=${str_tbl} chain=${str_chn} policy=${str_policy}"
-	set_policy ${str_tbl} ${str_chn} ${str_policy} || return $?
+	set_policy ${str_tbl} ${str_chn} ${str_policy} || return
 done
 } # -------------------------------------------------------------------------
 
@@ -2539,14 +2539,14 @@ case "$1" in
 	*) log -o "$1" $FUNCNAME || return 1
 esac
 for rvar in raw rawpost mangle nat filter security ; do
-	classification_chains $1 $rvar || return $?
+	classification_chains $1 $rvar || return
 done
 } # -------------------------------------------------------------------------
 
 all_chains_creation() {
-create_jump_tree 'chains' || return $?
-create_mandatory_chains || return $?
-create_custom_chains || return $?
+create_jump_tree 'chains' || return
+create_mandatory_chains || return
+create_custom_chains || return
 } # -------------------------------------------------------------------------
 
 #list_count_chain() {
@@ -2778,7 +2778,7 @@ done
 ((${#tmp_aluse1_arr[@]})) && insert_array 'tmp_aluse1_arr' 'always_use_1'
 if ((${#tmp_loadtmpl_arr[@]})); then
 	for ((tmp_arr_idx=$(last_arr_member tmp_loadtmpl_arr); tmp_arr_idx>=0; --tmp_arr_idx)); do
-		_load_another_ipt_template "${tmp_loadtmpl_arr[tmp_arr_idx]}" || return $?
+		_load_another_ipt_template "${tmp_loadtmpl_arr[tmp_arr_idx]}" || return
 	done
 fi
 return 0
@@ -3121,14 +3121,14 @@ fi
 
 load_base_templates() { # load ipt base templates
 for rvar in ${BASE_TEMPLATES}; do
-	load_ipt_templates "$rvar" || return $?
+	load_ipt_templates "$rvar" || return
 done
 } # -------------------------------------------------------------------------
 
 load_ipt_filter_templates() { # load ipt filter templates
 if ((ENABLE_FILTER)); then
 	for rvar in ${IPT_FILTER_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3136,7 +3136,7 @@ fi
 load_ipt_security_templates() { # load ipt security templates
 if ((ENABLE_SECURITY)); then
 	for rvar in ${IPT_SECURITY_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3144,7 +3144,7 @@ fi
 load_ipt_mangle_templates() { # load ipt mangle templates
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${IPT_MANGLE_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3152,7 +3152,7 @@ fi
 load_ipt_nat_templates() { # load ipt nat templates
 if ((ENABLE_NAT)); then
 	for rvar in ${IPT_NAT_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3160,7 +3160,7 @@ fi
 load_ipt_raw_templates() { # load ipt raw templates
 if ((ENABLE_RAW)); then
 	for rvar in ${IPT_RAW_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3168,19 +3168,19 @@ fi
 load_ipt_rawpost_templates() { # load ipt rawpost templates
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${IPT_RAWPOST_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return $?
+		load_ipt_templates "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
 
 load_all_templates() { # load all templates
-load_base_templates || return $?
-load_ipt_filter_templates || return $?
-load_ipt_security_templates || return $?
-load_ipt_mangle_templates || return $?
-load_ipt_nat_templates || return $?
-load_ipt_raw_templates || return $?
-load_ipt_rawpost_templates || return $?
+load_base_templates || return
+load_ipt_filter_templates || return
+load_ipt_security_templates || return
+load_ipt_mangle_templates || return
+load_ipt_nat_templates || return
+load_ipt_raw_templates || return
+load_ipt_rawpost_templates || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3247,7 +3247,7 @@ fi
 load_filter_ruleblocks() {
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3255,7 +3255,7 @@ fi
 load_security_ruleblocks() {
 if ((ENABLE_SECURITY)); then
 	for rvar in ${SECURITY_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3263,7 +3263,7 @@ fi
 load_mangle_ruleblocks() {
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${MANGLE_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3271,7 +3271,7 @@ fi
 load_nat_ruleblocks() {
 if ((ENABLE_NAT)); then
 	for rvar in ${NAT_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3279,7 +3279,7 @@ fi
 load_raw_ruleblocks() {
 if ((ENABLE_RAW)); then
 	for rvar in ${RAW_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3287,19 +3287,19 @@ fi
 load_rawpost_ruleblocks() {
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${RAWPOST_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return $?
+		load_ruleblock_conf "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
 
 load_all_ruleblocks() {
-load_raw_ruleblocks || return $?
-load_rawpost_ruleblocks || return $?
-load_mangle_ruleblocks || return $?
-load_tc_ruleblocks || return $?
-load_tc_mangle_ruleblocks || return $?
-load_nat_ruleblocks || return $?
-load_filter_ruleblocks || return $?
+load_raw_ruleblocks || return
+load_rawpost_ruleblocks || return
+load_mangle_ruleblocks || return
+load_tc_ruleblocks || return
+load_tc_mangle_ruleblocks || return
+load_nat_ruleblocks || return
+load_filter_ruleblocks || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3362,7 +3362,7 @@ fi
 load_filter_rules() { # Load the filter table rule files
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3370,7 +3370,7 @@ fi
 load_security_rules() { # Load the security table rule files
 if ((ENABLE_SECURITY)); then
 	for rvar in ${SECURITY_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3378,7 +3378,7 @@ fi
 load_nat_rules() { # Load the nat table rule files
 if ((ENABLE_NAT)); then
 	for rvar in ${NAT_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3386,7 +3386,7 @@ fi
 load_mangle_rules() { # Load the mangle table rule files
 if ((ENABLE_MANGLE)); then
 	for rvar in ${MANGLE_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3394,7 +3394,7 @@ fi
 load_raw_rules() { # Load the raw table rule files
 if ((ENABLE_RAW)); then
 	for rvar in ${RAW_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3402,19 +3402,19 @@ fi
 load_rawpost_rules() { # Load the rawpost table rule files
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${RAWPOST_RULES}; do
-		load_rule_file "$rvar" || return $?
+		load_rule_file "$rvar" || return
 	done
 fi
 } # -------------------------------------------------------------------------
 
 load_all_ipt_rulefiles() { # load all rule files
 log -T "Loading rule files"
-load_raw_rules || return $?
-load_rawpost_rules || return $?
-load_mangle_rules || return $?
-load_nat_rules || return $?
-load_filter_rules || return $?
-load_security_rules || return $?
+load_raw_rules || return
+load_rawpost_rules || return
+load_mangle_rules || return
+load_nat_rules || return
+load_filter_rules || return
+load_security_rules || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -6384,7 +6384,7 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 	# log the generated message
 	log -e "${str_log}"
 	# add the generated rule
-	add_rule "${table}" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return $?
+	add_rule "${table}" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return
 	let RULES_GENERATED_COUNT+=1
 done
 } # -------------------------------------------------------------------------
@@ -7143,7 +7143,7 @@ local TEMPLATE_BUILTIN_ANTI_SPOOF=(
 "option_list_0[3]=src"
 )
 
-create_chain raw ANTI_SPOOF || return $?
+create_chain raw ANTI_SPOOF || return
 
 for str_xnet in $EXT_NETNAME_LIST; do
 	str_xnet_if=$(get_net_iface $str_xnet)
@@ -8187,7 +8187,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 	local str_chain="$1" str_action="$2" str_limit="${3:-${GLOBAL_LOGLIMIT}}" str_burst="${4:-${GLOBAL_BURSTLIMIT}}" \
 		str_loglevel="${5:-${GLOBAL_LOGLEVL}}" str_log_options="${6}" str_pol=""
 	if [[ ${str_chain} = @(INPUT|OUTPUT|FORWARD) ]]; then
-			str_pol="$(get_policy filter ${str_chain})_" || return $?
+			str_pol="$(get_policy filter ${str_chain})_" || return
 	fi
 	case "${str_action}" in
 		log)

@@ -43,124 +43,137 @@ done
 
 if ((BASH_VERSINFO[0] < 4)); then
 # retrieve codes from names (bash prior to v4)
-	cl_get_fg_code() {
-		local -i i
-		for i in ${!ARR_FG_COLORS[@]}; do
-			[[ ${ARR_FG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
-		done
-	}
-	cl_get_bg_code() {
-		local -i i
-		for i in ${!ARR_BG_COLORS[@]}; do
-			[[ ${ARR_BG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
-		done
-	}
-	cl_get_ansi_code() {
-		local -i i
-		for i in ${!ARR_ANSI_MODES[@]}; do
-			[[ ${ARR_ANSI_MODES[i]} = $1 ]] && printf "%d\n" $i && return
-		done
-	}
+cl_get_fg_code() {
+	local -i i
+	for i in ${!ARR_FG_COLORS[@]}; do
+		[[ ${ARR_FG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
+	done
+}
+
+cl_get_bg_code() {
+	local -i i
+	for i in ${!ARR_BG_COLORS[@]}; do
+		[[ ${ARR_BG_COLORS[i]} = $1 ]] && printf "%d\n" $i && return
+	done
+}
+
+cl_get_ansi_code() {
+	local -i i
+	for i in ${!ARR_ANSI_MODES[@]}; do
+		[[ ${ARR_ANSI_MODES[i]} = $1 ]] && printf "%d\n" $i && return
+	done
+}
+
 # retrieve codes from names (bash prior to v4) - incl. variants
-	cl_get_fg_code_all() {
-		local x
-		local -i i
-		for i in ${!ARR_FGNAMES_ALL[@]}; do
-			for x in ${ARR_FGNAMES_ALL[i]}; do
-				[[ $x = $1 ]] && printf "%d\n" $i && return
-			done
+cl_get_fg_code_all() {
+	local x
+	local -i i
+	for i in ${!ARR_FGNAMES_ALL[@]}; do
+		for x in ${ARR_FGNAMES_ALL[i]}; do
+			[[ $x = $1 ]] && printf "%d\n" $i && return
 		done
-	}
-	cl_get_bg_code_all() {
-		local x
-		local -i i
-		for i in ${!ARR_BGNAMES_ALL[@]}; do
-			for x in ${ARR_BGNAMES_ALL[i]}; do
-				[[ $x = $1 ]] && printf "%d\n" $i && return
-			done
+	done
+}
+
+cl_get_bg_code_all() {
+	local x
+	local -i i
+	for i in ${!ARR_BGNAMES_ALL[@]}; do
+		for x in ${ARR_BGNAMES_ALL[i]}; do
+			[[ $x = $1 ]] && printf "%d\n" $i && return
 		done
-	}
-	cl_get_ansi_code_all() {
-		local x
-		local -i i
-		for i in ${!ARR_MODNAMES_ALL[@]}; do
-			for x in ${ARR_MODNAMES_ALL[i]}; do
-				[[ $x = $1 ]] && printf "%d\n" $i && return
-			done
+	done
+}
+
+cl_get_ansi_code_all() {
+	local x
+	local -i i
+	for i in ${!ARR_MODNAMES_ALL[@]}; do
+		for x in ${ARR_MODNAMES_ALL[i]}; do
+			[[ $x = $1 ]] && printf "%d\n" $i && return
 		done
-	}
-	cl_set_variants() { # set variations of code names
-		local name n_long n_short variant
-		local -i fg_code bg_code
-		for name in ${!ARR_COLNAMES_MAP[@]}; do
-			set -- ${ARR_COLNAMES_MAP[$name]}
-			n_long=$1 n_short=$2 fg_code=$(cl_get_fg_code $1) bg_code=$(cl_get_bg_code $1)
-			for variant in $(cl_get_variants $n_long $n_short); do
-				ARR_FGNAMES_ALL[fg_code]="${ARR_FGNAMES_ALL[fg_code]} $variant"
-				ARR_BGNAMES_ALL[bg_code]="${ARR_BGNAMES_ALL[bg_code]} $variant"
-			done
+	done
+}
+
+cl_set_variants() { # set variations of code names
+	local name n_long n_short variant
+	local -i fg_code bg_code
+	for name in ${!ARR_COLNAMES_MAP[@]}; do
+		set -- ${ARR_COLNAMES_MAP[$name]}
+		n_long=$1 n_short=$2 fg_code=$(cl_get_fg_code $1) bg_code=$(cl_get_bg_code $1)
+		for variant in $(cl_get_variants $n_long $n_short); do
+			ARR_FGNAMES_ALL[fg_code]="${ARR_FGNAMES_ALL[fg_code]} $variant"
+			ARR_BGNAMES_ALL[bg_code]="${ARR_BGNAMES_ALL[bg_code]} $variant"
 		done
-		for name in ${!ARR_MODNAMES_MAP[@]}; do
-			set -- ${ARR_MODNAMES_MAP[$name]}
-			n_long=$1 n_short=$2 fg_code=$(cl_get_ansi_code $1)
-			for variant in $(cl_get_variants $n_long $n_short); do
-				ARR_MODNAMES_ALL[fg_code]="${ARR_MODNAMES_ALL[fg_code]} $variant"
-			done
+	done
+	for name in ${!ARR_MODNAMES_MAP[@]}; do
+		set -- ${ARR_MODNAMES_MAP[$name]}
+		n_long=$1 n_short=$2 fg_code=$(cl_get_ansi_code $1)
+		for variant in $(cl_get_variants $n_long $n_short); do
+			ARR_MODNAMES_ALL[fg_code]="${ARR_MODNAMES_ALL[fg_code]} $variant"
 		done
-		readonly ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
-	}
-	cl_save_variants() { # print (for saving) the code name variation arrays
-		declare -p ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
-	}
-	cl_ismode() { # check if name is a known mode
-		local x
-		local -i i
-		for i in ${!ARR_MODNAMES_ALL[@]}; do
-			for x in ${ARR_MODNAMES_ALL[i]}; do
-				[[ $x = $1 ]] && return
-			done
+	done
+	readonly ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
+}
+
+cl_save_variants() { # print (for saving) the code name variation arrays
+	declare -p ARR_FGNAMES_ALL ARR_BGNAMES_ALL ARR_MODNAMES_ALL
+}
+
+cl_ismode() { # check if name is a known mode
+	local x
+	local -i i
+	for i in ${!ARR_MODNAMES_ALL[@]}; do
+		for x in ${ARR_MODNAMES_ALL[i]}; do
+			[[ $x = $1 ]] && return
 		done
-		return 1
-	}
-	cl_iscolor() { # check if name is a known color
-		local x
-		local -i i
-		for i in ${!ARR_FGNAMES_ALL[@]}; do
-			for x in ${ARR_FGNAMES_ALL[i]}; do
-				[[ $x = $1 ]] && return
-			done
+	done
+	return 1
+}
+
+cl_iscolor() { # check if name is a known color
+	local x
+	local -i i
+	for i in ${!ARR_FGNAMES_ALL[@]}; do
+		for x in ${ARR_FGNAMES_ALL[i]}; do
+			[[ $x = $1 ]] && return
 		done
-		return 1
-	}
+	done
+	return 1
+}
 else
-	cl_set_variants() { # set variations of code names
-		local name n_long n_short variant
-		for name in ${!ARR_COLNAMES_MAP[@]}; do
-			set -- ${ARR_COLNAMES_MAP[$name]}
-			n_long=$1 n_short=$2
-			for variant in $(cl_get_variants $n_long $n_short); do
-				AAR_FGNAMES_ALL[$variant]=${AAR_FG_COLORS[$n_long]}
-				AAR_BGNAMES_ALL[$variant]=${AAR_BG_COLORS[$n_long]}
-			done
+
+cl_set_variants() { # set variations of code names
+	local name n_long n_short variant
+	for name in ${!ARR_COLNAMES_MAP[@]}; do
+		set -- ${ARR_COLNAMES_MAP[$name]}
+		n_long=$1 n_short=$2
+		for variant in $(cl_get_variants $n_long $n_short); do
+			AAR_FGNAMES_ALL[$variant]=${AAR_FG_COLORS[$n_long]}
+			AAR_BGNAMES_ALL[$variant]=${AAR_BG_COLORS[$n_long]}
 		done
-		for name in ${!ARR_MODNAMES_MAP[@]}; do
-			set -- ${ARR_MODNAMES_MAP[$name]}
-			n_long=$1 n_short=$2
-			for variant in $(cl_get_variants $n_long $n_short); do
-				AAR_MODNAMES_ALL[$variant]=${AAR_ANSI_MODES[$n_long]}
-			done
+	done
+	for name in ${!ARR_MODNAMES_MAP[@]}; do
+		set -- ${ARR_MODNAMES_MAP[$name]}
+		n_long=$1 n_short=$2
+		for variant in $(cl_get_variants $n_long $n_short); do
+			AAR_MODNAMES_ALL[$variant]=${AAR_ANSI_MODES[$n_long]}
 		done
-		readonly AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
-	}
-	cl_save_variants() { # print (for saving) the code name variation arrays
-		declare -p AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
-	}
-	cl_ismode() { # check if name is a known mode
-		[[ ${AAR_MODNAMES_ALL[$1]} ]]
-	}
-	cl_iscolor() { # check if name is a known color
-		[[ ${AAR_FGNAMES_ALL[$1]} ]]
-	}
+	done
+	readonly AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
+}
+
+cl_save_variants() { # print (for saving) the code name variation arrays
+	declare -p AAR_FGNAMES_ALL AAR_BGNAMES_ALL AAR_MODNAMES_ALL
+}
+
+cl_ismode() { # check if name is a known mode
+	[[ ${AAR_MODNAMES_ALL[$1]} ]]
+}
+
+cl_iscolor() { # check if name is a known color
+	[[ ${AAR_FGNAMES_ALL[$1]} ]]
+}
 fi
 # -------------------------------------------------------------------------
 
@@ -168,11 +181,11 @@ cl_list() { # List colors and modes
 local x fgc bgc
 local -i i
 if ((BASH_VERSINFO[0] >= 4)); then
-	local STR_FGNAMES=$(printf "%s\n" "${!AAR_FG_COLORS[@]}" | sort)
-	local STR_MODENAMES=$(printf "%s\n" "${!AAR_ANSI_MODES[@]}" | sort)
+	local STR_FGNAMES=$(printf "%s\n" "${!AAR_FG_COLORS[@]}" | run_sort)
+	local STR_MODENAMES=$(printf "%s\n" "${!AAR_ANSI_MODES[@]}" | run_sort)
 else
-	local STR_FGNAMES=$(printf "%s\n" "${ARR_FG_COLORS[@]}" | sort)
-	local STR_MODENAMES=$(printf "%s\n" "${ARR_ANSI_MODES[@]}" | sort)
+	local STR_FGNAMES=$(printf "%s\n" "${ARR_FG_COLORS[@]}" | run_sort)
+	local STR_MODENAMES=$(printf "%s\n" "${ARR_ANSI_MODES[@]}" | run_sort)
 fi
 pr_banner "Colors: Long-form | Shortest-form - Fore- / Background"
 for x in $STR_FGNAMES; do
@@ -315,64 +328,64 @@ log() { # Logging FUNCTION
 local log_param="$1"
 shift
 local log_message="${@//[$'\t']/}"
-case "${log_param}" in
-	-d) log -E "Unable to retrieve interface for network: ${log_message}." ;;
+case "$log_param" in
+	-d) log -E "Unable to retrieve interface for network: $log_message." ;;
 	-e)
-		((VERBOSE >= 6)) && printf "%s\n" "${log_message}"
-		((SYSLOG_VERBOSE >= 5)) && syslog ${LOG_FACILITY} info "${log_message}"
+		((VERBOSE >= 6)) && printf "%s\n" "$log_message"
+		((SYSLOG_VERBOSE >= 5)) && syslog $LOG_FACILITY info "$log_message"
 	;;
-	-f) log -W "Failed ${log_message}" ;;
+	-f) log -W "Failed $log_message" ;;
 	-i) log -E "Illegal value \`$1' for \`$2'." ;;
-	-l) syslog ${LOG_FACILITY} notice "${log_message}" ;;
-	-m) printf "%s\n" "${log_message}"; syslog ${LOG_FACILITY} notice "${log_message}" ;;
+	-l) syslog $LOG_FACILITY notice "$log_message" ;;
+	-m) printf "%s\n" "$log_message"; syslog $LOG_FACILITY notice "$log_message" ;;
 	-o) log -E "Illegal parameter \`$1' for function: ${2}()." ;;
-	-r) log -E "Array \`${log_message}' has no members." ;;
-	-s) log -E "System is missing the \`${log_message}' match extension." ;;
-	-t) log -E "System is missing the \`${log_message}' target." ;;
-	-u) log -W "\`${log_message}' is unset." ;;
-	-v) log -N "\`${log_message}' is unset." ;;
+	-r) log -E "Array \`$log_message' has no members." ;;
+	-s) log -E "System is missing the \`$log_message' match extension." ;;
+	-t) log -E "System is missing the \`$log_message' target." ;;
+	-u) log -W "\`$log_message' is unset." ;;
+	-v) log -N "\`$log_message' is unset." ;;
 	-w)
-		((VERBOSE >= 7)) && printf "%s\n" "${log_message}"
-		((SYSLOG_VERBOSE >= 6)) && syslog ${LOG_FACILITY} info "${log_message}"
+		((VERBOSE >= 7)) && printf "%s\n" "$log_message"
+		((SYSLOG_VERBOSE >= 6)) && syslog $LOG_FACILITY info "$log_message"
 	;;
-	-x) log -E "\`${log_message}' does not exist." ;;
+	-x) log -E "\`$log_message' does not exist." ;;
 	-C) # Config file loading
-		((VERBOSE >= 4)) && print_msg -f "${COLOR_MSG_CONFIG_LOAD}" ${log_message}
-		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+		((VERBOSE >= 4)) && print_msg -f "$COLOR_MSG_CONFIG_LOAD" $log_message
+		((SYSLOG_VERBOSE >= 3)) && syslog $LOG_FACILITY notice "$log_message"
 	;;
 	-E) # Error message
-		((VERBOSE >= 1)) && print_msg -o -E -f "${COLOR_MSG_ERROR}" ${log_message}
-		syslog ${LOG_FACILITY} error "ERROR: ${log_message}"
+		((VERBOSE >= 1)) && print_msg -o -E -f "$COLOR_MSG_ERROR" $log_message
+		syslog $LOG_FACILITY error "ERROR: $log_message"
 	;;
-	-F) log -E "Failed ${log_message}" ;;
+	-F) log -E "Failed $log_message" ;;
 	-I) # Sub-Sub(title) message
-		((VERBOSE >= 4)) && print_msg -f "${COLOR_MSG_INFO_TITLE}" ${log_message}
-		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+		((VERBOSE >= 4)) && print_msg -f "$COLOR_MSG_INFO_TITLE" $log_message
+		((SYSLOG_VERBOSE >= 3)) && syslog $LOG_FACILITY notice "$log_message"
 	;;
 	-N) # Notice
-		((VERBOSE >= 5)) && print_msg -N -f "${COLOR_MSG_NOTICE}" ${log_message}
-		((SYSLOG_VERBOSE >= 4)) && syslog ${LOG_FACILITY} notice "NOTICE: ${log_message}"
+		((VERBOSE >= 5)) && print_msg -N -f "$COLOR_MSG_NOTICE" $log_message
+		((SYSLOG_VERBOSE >= 4)) && syslog $LOG_FACILITY notice "NOTICE: $log_message"
 	;;
 	-R) # Rule file loading
-		((VERBOSE  >= 4)) && print_msg -f "${COLOR_MSG_RULE_LOAD}" ${log_message}
-		((SYSLOG_VERBOSE >= 3)) && syslog ${LOG_FACILITY} notice "${log_message}"
+		((VERBOSE  >= 4)) && print_msg -f "$COLOR_MSG_RULE_LOAD" $log_message
+		((SYSLOG_VERBOSE >= 3)) && syslog $LOG_FACILITY notice "$log_message"
 	;;
 	-S) # Sub(title) message
-		((VERBOSE >= 3)) && print_msg -m bold -f "${COLOR_MSG_SUBTITLE}" ${log_message}
-		((SYSLOG_VERBOSE >= 2)) && syslog ${LOG_FACILITY} notice "${log_message}"
+		((VERBOSE >= 3)) && print_msg -m bold -f "$COLOR_MSG_SUBTITLE" $log_message
+		((SYSLOG_VERBOSE >= 2)) && syslog $LOG_FACILITY notice "$log_message"
 	;;
 	-T) # Main (header) message
-		((VERBOSE >= 2)) && print_msg -m bold -f "${COLOR_MSG_MAIN_TITLE}" ${log_message}
-		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} notice "${log_message}"
+		((VERBOSE >= 2)) && print_msg -m bold -f "$COLOR_MSG_MAIN_TITLE" $log_message
+		((SYSLOG_VERBOSE >= 1)) && syslog $LOG_FACILITY notice "$log_message"
 	;;
 	-U) # Unknown error
 		log -E "Unknown error in function \`${1}()'."
 	;;
 	-W) # Warning message
-		((VERBOSE >= 2)) && print_msg -o -W -f "${COLOR_MSG_WARNING}" ${log_message}
-		((SYSLOG_VERBOSE >= 1)) && syslog ${LOG_FACILITY} warning "WARNING: ${log_message}"
+		((VERBOSE >= 2)) && print_msg -o -W -f "$COLOR_MSG_WARNING" $log_message
+		((SYSLOG_VERBOSE >= 1)) && syslog $LOG_FACILITY warning "WARNING: $log_message"
 	;;
-	*) err_msg "unknow option \`${log_param}' for function: ${FUNCNAME}()"
+	*) err_msg "unknow option \`$log_param' for function: ${FUNCNAME}()"
 		return 1
 	;;
 esac
@@ -396,7 +409,7 @@ log -E "$2 parameter(s) required for function: \`$1'"
 file_readable() { # check if a file is really readable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local file="$1" pv
-read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}" || {
+read -t $GLOBAL_READ_TIMEOUT pv < "${file}" || {
 	log -E "File \`${file}' is not readable."
 	return $ER_FAIL
 }
@@ -405,7 +418,7 @@ read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}" || {
 proc_file_writable() { # check if a /proc file is really writable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local file="$1" pv
-if read -t ${GLOBAL_READ_TIMEOUT} pv < "${file}"; then
+if read -t $GLOBAL_READ_TIMEOUT pv < "${file}"; then
 	(printf "%s\n" "${pv}" > "${file}") &>/dev/null
 else
 	return $ER_FAIL
@@ -474,7 +487,7 @@ while getopts :d:c: option; do
 	esac
 done
 OPTIND=1
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	[[ ${str_line} ]] || continue
 	local IFS="${NewIFS:-${OldIFS}}"
 	set -- ${str_line}
@@ -640,7 +653,7 @@ return 1
 lsearch_lines() { # search for a given word in std input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	while (($#)); do
 		[[ ${str_search} = $1 ]] && return
@@ -653,7 +666,7 @@ return 1
 lsearch_echo() { # search for the first occurence of a given word in input and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	str_input="$@"
 	while (($#)); do
@@ -670,7 +683,7 @@ return 1
 lsearch_echo_multiline() { # search for a given word in input (multi line) and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	str_input="$@"
 	while (($#)); do
@@ -687,7 +700,7 @@ done
 lsearch_echo_reverse() { # show only the part of the input, which does not contain 'word'
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line str_input
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	str_input="$@"
 	while (($#)); do
@@ -702,7 +715,7 @@ lsearch_echo_reverse_single() { # search for a given word, remove first occurenc
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line str_input
 local -i found_str=0
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	while (($#)); do
 		[[ ${str_search} = $1 ]] && ((found_str == 0)) && {
@@ -724,7 +737,7 @@ done
 lsearch_regex() { # perform a regex search in input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	[[ ${str_line} =~ ${str_search} ]] && {
 		printf "%s\n" "${str_line}"
 		return 0
@@ -736,7 +749,7 @@ return 1
 lsearch_regex_echo_object() { # perform a regex search in input and print result
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_search="$1" str_line
-while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 	set -- ${str_line}
 	while (($#)); do
 		[[ $1 =~ ${str_search} ]] && {
@@ -754,7 +767,7 @@ return 1
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #local str_search str_line
 #str_search="$1"
-#while read -r -u 0 -t ${GLOBAL_READ_TIMEOUT} str_line; do
+#while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
 #	[[ "${str_line}" =~ "${str_search}" ]] && {
 #		echo "${str_line}"
 #	}
@@ -1069,7 +1082,7 @@ case "${arr_var_content}" in
 		unset "$1"
 		return 0
 	;;
-	*) while read -r -t ${GLOBAL_READ_TIMEOUT} rline; do
+	*) while read -r -t $GLOBAL_READ_TIMEOUT rline; do
 #			((line_cnt++)) # raise line counter
 			let line_cnt+=1 # raise line counter
 			# maybe line contains a comment, remove everything after the '#'.
@@ -1102,14 +1115,14 @@ check_var_overlap "$1" 'array_name' || return 1
 local array_name="$1" file_name="$2"
 local str_name rest last_entry
 local -i arr_idx=0
-while read -r -t ${GLOBAL_READ_TIMEOUT} str_name rest; do
+while read -r -t $GLOBAL_READ_TIMEOUT str_name rest; do
 	str_name="${str_name###*}"
-	[[ ${str_name} && ${str_name} != +([[:space:]]) ]] && {
-		[[ ${str_name} = ${last_entry} ]] && continue
-		eval "${array_name}"'[arr_idx++]="'"${str_name}"'"'
-		last_entry="${str_name}"
+	[[ $str_name && $str_name != +([[:space:]]) ]] && {
+		[[ $str_name = $last_entry ]] && continue
+		eval "$array_name"'[arr_idx++]="'"$str_name"'"'
+		last_entry="$str_name"
 	}
-done < "${file_name}"
+done < "$file_name"
 return 0
 } # -------------------------------------------------------------------------
 
@@ -1295,7 +1308,7 @@ enable -n kill
 enable -n umask
 
 if ((SYNTAX_CHECK == 1)); then
-	check_syntax "$s_file" || return $?
+	check_syntax "$s_file" || return
 fi
 source "$s_file" || ret_code=$?
 
@@ -1312,7 +1325,7 @@ sched_restore() { # schedule ruleset restore job
 local str_file="$1" str_ips_f="$2" str_job
 local str_tmp_def_f="${SAVE_DIR}/__tmp_restore_defaults_$$"
 local str_mybin="${BIN_DIR}/${0##*/}"
-check_dirs BIN_DIR || return $?
+check_dirs BIN_DIR || return
 if ! bin_ok "$str_mybin"; then # check if $0 is good
 	log -E "Cannot work with \`\$0' variable."
 	return $ER_FAIL
@@ -1335,8 +1348,8 @@ else
 	log -F "creating temporary defaults file: \`$str_tmp_def_f'."
 	return $ER_FAIL
 fi
-ipt_save "$str_file" || return $? # save currently active iptables ruleset
-ips_save "$str_ips_f" || return $? # save currently active ipset ruleset
+ipt_save "$str_file" || return # save currently active iptables ruleset
+ips_save "$str_ips_f" || return # save currently active ipset ruleset
 if str_job=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -si "%s" -sm "%s" -sp "%s" -v 2\n"%s" -f "%s" "%s" "%s" 2>&1 >/dev/null\n' \
 	"$SHELL" "$str_mybin" restore "$str_tmp_def_f" "$str_file" "$str_ips_f" "$MODULE_RESTORE_FILE" "$PROC_RESTORE_FILE" \
 	"$RM" "$str_tmp_def_f" "${SAVE_DIR}/$str_file" "${SAVE_DIR}/$str_ips_f" | "$AT" now + $RELOAD_TIME minutes 2>&1)
@@ -1386,20 +1399,20 @@ local mod_to_rm="$1"
 # see if mod name exists in module path
 local str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${mod_to_rm}.*")
 # see if mod name is an alias
-if [[ -z ${str_psearch} ]]; then # was not found in module path
+if [[ -z $str_psearch ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
 		local foo str_alias str_realmod
 		while read -r foo str_alias str_realmod; do
 			[[ ${str_alias} = ${mod_to_rm} ]] && {
-				log -N "Module name \`${mod_to_rm}' is an alias for \`${str_realmod}'."
-				mod_to_rm="${str_realmod}"
+				log -N "Module name \`${mod_to_rm}' is an alias for \`$str_realmod'."
+				mod_to_rm="$str_realmod"
 				str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${mod_to_rm}.*")
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
 	fi
 fi
-if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
+if [[ $str_psearch ]]; then # was found in any of the 2 previous searches
 	while read -r ; do
 		REPLY=${REPLY##*/}
 		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
@@ -1414,7 +1427,6 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 			log -e "${PF}removing ${mod_to_rm}"
 			case "$MODE" in
 			# in dry run and save commands modes, just probe with modprobe -n
-#				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
 				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
 					run_modprobe -nr "${mod_to_rm}" || {
 						log -f "removing ${mod_to_rm}"
@@ -1440,9 +1452,9 @@ if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
 				;;
 			esac
 		fi
-	done < <(printf "%s\n" "${str_psearch}")
+	done < <(printf "%s\n" "$str_psearch")
 else
-	log -W "Module ${module_name} not found"
+	log -W "Module $module_name not found"
 fi
 } # -------------------------------------------------------------------------
 
@@ -1458,65 +1470,63 @@ local module_params="$@"
 # see if mod name exists in module path
 local str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${module_name}.*")
 # see if mod name is an alias
-if [[ -z ${str_psearch} ]]; then # was not found in module path
+if [[ -z $str_psearch ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
 		local foo str_alias str_realmod
 		while read -r foo str_alias str_realmod; do
-			[[ ${str_alias} = ${module_name} ]] && {
-				log -N "Module name \`${module_name}' is an alias for \`${str_realmod}'."
-				module_name="${str_realmod}"
+			[[ ${str_alias} = $module_name ]] && {
+				log -N "Module name \`$module_name' is an alias for \`$str_realmod'."
+				module_name="$str_realmod"
 				str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${module_name}.*")
 				break
 			}
 		done < "${MODULE_DIR}/${MODS_ALIAS_FILE}"
 	fi
 fi
-if [[ ${str_psearch} ]]; then # was found in any of the 2 previous searches
+if [[ $str_psearch ]]; then # was found in any of the 2 previous searches
 	while read -r ; do
 		REPLY="${REPLY##*/}"
 		if [[ ${REPLY#*.} = @(o|gz|ko|o.gz|ko.gz) ]]; then # module present on system?
 			if [[ $MODE != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
 			then
 			# in any mode that is not saving commands, check if module is already loaded
-				if "${LSMOD}" | my_cut | lsearch_lines "${module_name}"; then
-					log -N "Module ${module_name} is already loaded"
+				if "${LSMOD}" | my_cut | lsearch_lines "$module_name"; then
+					log -N "Module $module_name is already loaded"
 					# remember the module sate, by writing it to an array
-#					[[ $MODE != DRY-RUN ]] && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
-					((EXEC_COMMANDS)) && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded ${module_name}"
+					((EXEC_COMMANDS)) && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded $module_name"
 					return 0
 				fi
 			fi
-			log -e "${PF}probing module: ${module_name}"
+			log -e "${PF}probing module: $module_name"
 			case "$MODE" in
 			# in dry run and save commands modes, just probe with modprobe -n
-#				DRY-RUN|SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
 				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
-					run_modprobe -n "${module_name}" ${module_params} || {
-						log -f "probing module: ${module_name} ${module_params}"
+					run_modprobe -n "$module_name" $module_params || {
+						log -f "probing module: $module_name $module_params"
 					}
 					# add commands to the command array, to be executed after collecting all commands
-					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="${module_name} ${module_params}"
+					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="$module_name $module_params"
 				;;
 				*)	# not in dry run or commands saving mode, so perform the module probing
 				if ((EXEC_COMMANDS)); then
-					run_modprobe "${module_name}" ${module_params} || {
-						log -f "probing module: ${module_name} ${module_params}"
+					run_modprobe "$module_name" $module_params || {
+						log -f "probing module: $module_name $module_params"
 						return $ER_FAIL
 					}
 					# remember mod state, to be restored in case of error
-					MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="unload ${module_name} ${module_params}"
+					MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="unload $module_name $module_params"
 				else
-					run_modprobe -n "${module_name}" ${module_params} || {
-						log -f "probing module: ${module_name} ${module_params}"
+					run_modprobe -n "$module_name" $module_params || {
+						log -f "probing module: $module_name $module_params"
 					}
 				fi
 				;;
 			esac
 			return 0
 		fi
-	done < <(printf "%s\n" "${str_psearch}")
+	done < <(printf "%s\n" "$str_psearch")
 else
-	log -W "Module ${module_name} not found"
+	log -W "Module $module_name not found"
 fi
 } # -------------------------------------------------------------------------
 
@@ -1525,7 +1535,7 @@ local -i idx
 ((${#MODS_TO_RM[@]})) || return 0
 log -S "Removing modules"
 for idx in ${!MODS_TO_RM[@]}; do
-	rm_mod "${MODS_TO_RM[idx]}" || return $?
+	rm_mod "${MODS_TO_RM[idx]}" || return
 done
 } # -------------------------------------------------------------------------
 
@@ -1540,7 +1550,7 @@ case "$1" in
 	load)
 		log -S "Loading modules"
 		for idx in ${!MODULES_TO_LOAD[@]}; do
-			load_mod ${MODULES_TO_LOAD[idx]} || return $?
+			load_mod ${MODULES_TO_LOAD[idx]} || return
 		done
 	;;
 	unload)
@@ -1566,20 +1576,20 @@ for idx in ${!MOD_STATE_ARRAY[@]}; do
 	module_state="$1" module_name="$2"
 	shift 2
 	module_params="$@"
-	case "${module_state}" in
+	case "$module_state" in
 		load)
-			log -e "${PF}probing module: ${module_name}"
-			run_modprobe "${module_name}" ${module_params} || {
-				log -f "probing module: ${module_name} ${module_params}"
+			log -e "${PF}probing module: $module_name"
+			run_modprobe "$module_name" $module_params || {
+				log -f "probing module: $module_name $module_params"
 			}
 		;;
 		loaded)
-			log -e "${module_name} was already loaded"
+			log -e "$module_name was already loaded"
 		;;
 		unload)
-			unload_arr[${#unload_arr[@]}]="${module_name}"
+			unload_arr[${#unload_arr[@]}]="$module_name"
 		;;
-		*) log -o "${module_state}" $FUNCNAME
+		*) log -o "$module_state" $FUNCNAME
 			return 1
 		;;
 	esac
@@ -1655,7 +1665,6 @@ case "$PROC_CONNTRACK_HASHSIZE" in
 esac
 return 0
 } # -------------------------------------------------------------------------
-
 
 set_proc() { # set the proc values
 [[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
@@ -1780,7 +1789,7 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 				continue
 			}
 		;;
-		(range:+([[:digit:]])-+([[:digit:]]))
+		range:+([[:digit:]])-+([[:digit:]]))
 			[[ $vresult = [${vtype#range:}] ]] || {
 				log -E "$vname is not in range of: \`${vtype#range:}'"
 				raise_cfg_err_count
@@ -2014,15 +2023,15 @@ if [[ $DEBUG_INFO ]]; then pr_sepstr; fi
 } # -------------------------------------------------------------------------
 
 validate_net_config() { # check network config
-[[ ${NET_IFLIST} ]] || {
+[[ $NET_IFLIST ]] || {
 	log -E "Cannot find any network interface. One interface is mandatory. \`NET_INTERFACES' variable needs to be configured."
 	return $ER_FAIL
 }
-readonly NET_IFLIST="$(strip_blanks "${NET_IFLIST}")"
-readonly NET_IFLIST_CHECK_STRING="$(build_list '|' "${NET_IFLIST}")"
+readonly NET_IFLIST="$(strip_blanks "$NET_IFLIST")"
+readonly NET_IFLIST_CHECK_STRING="$(build_list '|' "$NET_IFLIST")"
 
-for rvar in ${NET_IFLIST}; do
-	lsearch "$rvar" ${NET_NAME_LIST} && {
+for rvar in $NET_IFLIST; do
+	lsearch "$rvar" $NET_NAME_LIST && {
 		log -E "Network names must not be the same as interface names."
 		raise_cfg_err_count
 		return $ER_CONF
@@ -2032,7 +2041,7 @@ done
 #	log -E "Cannot find any external interface. One external interface is mandatory"
 #	return $ER_FAIL
 #}
-[[ ${DEF_ROUTE_IF} ]] || {
+[[ $DEF_ROUTE_IF ]] || {
 	log -W "No default route set, be sure to include external interface in other configuration options"
 }
 if [[ $DEBUG_INFO ]]; then
@@ -2125,10 +2134,10 @@ dn ip_vlsm "$1"
 } # -------------------------------------------------------------------------
 
 val_oct_range() { # check if an IP address octet is in the valid range
-[[ ${4} ]] || { reqparm $FUNCNAME 4; return 1; }
+[[ $4 ]] || { reqparm $FUNCNAME 4; return 1; }
 local oct
 for oct in "$1" "$2" "$3" "$4"; do
-	val_8bit "${oct}" || return 1
+	val_8bit "$oct" || return 1
 done
 } # -------------------------------------------------------------------------
 
@@ -2443,7 +2452,7 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 	esac
 	# if a validation command is defined in the array, run it here
 	if [[ $check_cmd ]]; then
-		eval "$check_cmd" || return $?
+		eval "$check_cmd" || return
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -2493,8 +2502,8 @@ case "${ENABLE_SYSLOG}" in
 		fi
 		if [[ -x ${LOGGER} ]]; then # we can only log if we have logger program available
 			notice_msg "Syslog logging is enabled"
-			if [[ ${LOG_FACILITY} ]]; then # check for valid facility user config
-				if ! val_log_facility "${LOG_FACILITY}"; then
+			if [[ $LOG_FACILITY ]]; then # check for valid facility user config
+				if ! val_log_facility "$LOG_FACILITY"; then
 					readonly LOG_FACILITY="${DEFAULT_LOG_FACILITY}"
 					raise_cfg_err_count
 					notice_msg "Setting logging facility to default value: \'${DEFAULT_LOG_FACILITY}'"
@@ -2731,7 +2740,7 @@ set_sysctl() { # Set proc stuff
 log -T "Setting sysctl configuration"
 calc_conntrack_max
 calc_conntrack_hashsize
-proc_conf_global || return $?
+proc_conf_global || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3666,9 +3675,9 @@ if ((${#ARR_TMP_TAGS[@]})); then
 	return 1
 fi
 case "${str_interpreter}" in
-	rules) xml_interpreter_rules || return $? ;;
-	ruleblocks) xml_interpreter_ruleblocks || return $? ;;
-	templates) xml_interpreter_templates || return $? ;;
+	rules) xml_interpreter_rules || return ;;
+	ruleblocks) xml_interpreter_ruleblocks || return ;;
+	templates) xml_interpreter_templates || return ;;
 esac
 } # -------------------------------------------------------------------------
 
@@ -3790,9 +3799,9 @@ save_ipset_command_array() { # save the ipset commands (-gf = cmd)
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((USE_IPSET)) || return 0
 printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$1"
-ipset_merge_arrays
+#ipset_merge_arrays
 if arr_populated IPSET_CMD_ARRAY; then
-	save_command_array IPSET_CMD_ARRAY "$1" || return $?
+	save_command_array IPSET_CMD_ARRAY "$1" || return
 fi
 } # -------------------------------------------------------------------------
 
@@ -3804,7 +3813,7 @@ printf '# Generated by %s %s at %s\n' "$ME" "$STR_VERSION" "$(run_date --rfc-282
 	log -F "creating \`$str_rfile'"
 	return $ER_FAIL
 }
-ipset_merge_arrays
+#ipset_merge_arrays
 for idx in ${!IPSET_CMD_ARRAY[@]}; do
 	printf "%s\n" "${IPSET_CMD_ARRAY[idx]}" >>"$str_rfile"
 done
@@ -3915,7 +3924,8 @@ if [[ $MODE = @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 		fi
 	fi
 	if ((USE_IPSET)); then
-		arr_populated 'IPSET_SETS_ARRAY' && construct_assignment IPSET >>"$str_rfile"
+#		arr_populated 'IPSET_SETS_ARRAY' && construct_assignment IPSET >>"$str_rfile"
+		construct_assignment IPSET >>"$str_rfile"
 	fi
 fi
 if [[ $MODE = @(SAVE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
@@ -3930,34 +3940,34 @@ case "$MODE" in
 	(SAVE-COMMANDS) # save all commands
 		if [[ $GEN_FORMAT = ipt ]]; then
 			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
-			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?; }
+			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY "$str_rfile" || return; }
 			printf '\n# iptables ruleset\n' >>"$str_rfile"
 			printf '"$%s" < "%s"\n' "IPT_RESTORE" "${str_rfile%.bash}.iptsave" >>"$str_rfile"
 			if ((USE_IPSET)); then
 				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$str_rfile"
 				printf '\n"$%s" -R < "%s"\n' "IPSET" "$ips_rfile" >>"$str_rfile"
-				ipset_save_ruleset "$ips_rfile" || return $?
+				ipset_save_ruleset "$ips_rfile" || return
 			fi
 			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
 					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
-					save_command_array $cmd_array "$str_rfile" || return $?
+					save_command_array $cmd_array "$str_rfile" || return
 				fi
 			done
 			tmp_rfile="${str_rfile%.bash}.iptsave"
 			log -I "Saving generated iptables-save formatted script to: $tmp_rfile"
-			iptsave_rulesets "$tmp_rfile" || return $?
+			iptsave_rulesets "$tmp_rfile" || return
 		elif [[ $GEN_FORMAT = cmd ]]; then
 			show_flush_del_pub_save >>"$str_rfile"
 			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
-			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?
+			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
 			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
 			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
 			do
 				if arr_populated $cmd_array; then
 					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
-					save_command_array $cmd_array "$str_rfile" || return $?
+					save_command_array $cmd_array "$str_rfile" || return
 				fi
 			done
 			save_ipset_command_array "$str_rfile" || return
@@ -3970,21 +3980,21 @@ case "$MODE" in
 			IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 		do
 			if arr_populated $cmd_array; then
-				save_command_array $cmd_array "$str_rfile" || return $?
+				save_command_array $cmd_array "$str_rfile" || return
 			fi
 		done
 		save_ipset_command_array "$str_rfile" || return
 	;;
 	(SAVE-MODPROBE-COMMANDS) # save modprobe commands only
-		save_command_array MODULE_CMD_ARRAY "$str_rfile" || return $?
+		save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
 	;;
 	(SAVE-PROC-COMMANDS) # save proc commands only
-		save_command_array PROC_CMD_ARRAY "$str_rfile" || return $?
+		save_command_array PROC_CMD_ARRAY "$str_rfile" || return
 	;;
 	(SAVE-TC-COMMANDS) # save tc commands only
 		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
 		printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
-		save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
+		save_command_array TC_CMD_ARRAY "$str_rfile" || return
 	;;
 	(SAVE-SHAPING-COMMANDS) # save tc and iptables mangle table commands
 		if [[ $GEN_FORMAT = ipt ]]; then
@@ -3994,25 +4004,25 @@ case "$MODE" in
 			if ((USE_IPSET)); then
 				printf '\n# ipset ruleset\n"$IPSET" -F\n"$IPSET" -X\n' >>"$str_rfile"
 				printf '\n"$%s" -R < "%s"\n' "IPSET" "$ips_rfile" >>"$str_rfile"
-				ipset_save_ruleset "$ips_rfile" || return $?
+				ipset_save_ruleset "$ips_rfile" || return
 			fi
 			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
-			save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
+			save_command_array TC_CMD_ARRAY "$str_rfile" || return
 			tmp_rfile="${str_rfile%.bash}.iptsave"
 			log -I "Saving generated iptables-save formatted script to: $tmp_rfile"
-			iptsave_rulesets "$tmp_rfile" || return $?
+			iptsave_rulesets "$tmp_rfile" || return
 		elif [[ $GEN_FORMAT = cmd ]]; then
 			flush_table_pub_save >>"$str_rfile"
 			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
 			for cmd_array in IPT_POL_ARRAY IPT_CCHAIN_ARRAY IPT_MANGLE_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
 					[[ $cmd_array = IPT_CCHAIN_ARRAY ]] && printf "\n%s\n%s\n" "# flush and delete chains" "flush_table 'mangle'" >>"$str_rfile"
-					save_command_array $cmd_array "$str_rfile" || return $?
+					save_command_array $cmd_array "$str_rfile" || return
 				fi
 			done
 			save_ipset_command_array "$str_rfile" || return
 			printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
-			save_command_array TC_CMD_ARRAY "$str_rfile" || return $?
+			save_command_array TC_CMD_ARRAY "$str_rfile" || return
 		fi
 	;;
 esac
@@ -4041,7 +4051,7 @@ apply_rules() { # apply or save commands form the various command holding arrays
 #"-A fox 1.1.3.2"
 #)
 local str_arr_name
-local -i work_arr_sum i
+local -i work_arr_sum=0 i
 ((${#CMD_NAMES_ARRAY[@]})) || { # use array names from command names array
 	log -u 'CMD_NAMES_ARRAY'
 	return 1
@@ -4054,8 +4064,11 @@ if ! ((work_arr_sum)); then
 	return 0
 fi
 case "$MODE" in # act according to runtime mode
-	(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
+	SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
 		log -T "Saving generated script to: $RULESETFILE"
+		if ((USE_IPSET)); then
+			ipset_merge_arrays
+		fi
 		if [[ $MODE = SAVE-IPT-COMMANDS && $GEN_FORMAT = ipt ]]; then
 			if ((USE_IPSET)); then
 				ipset_save_ruleset "${SAVE_DIR}/${IPSET_SAVE_FILE}" || return
@@ -4065,7 +4078,7 @@ case "$MODE" in # act according to runtime mode
 			save_rulesets "$RULESETFILE" "${SAVE_DIR}/${IPSET_SAVE_FILE}" || return
 		fi
 	;;
-	(*)
+	*)
 		if ((EXEC_COMMANDS == 0)); then
 			log -T "Would apply generated commands"
 		else
@@ -4300,9 +4313,9 @@ if ((ERRORS)); then
  $(cl bold red black)${mode_msg} with errors$(cl)"
  		fi
 	else
-		((VERBOSE)) && pr_str "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
+		((VERBOSE)) && pr_str "${ME} Firewall $STR_VERSION ${mode_msg} with errors"
 	fi
-	syslog ${LOG_FACILITY} warning "${ME} Firewall ${STR_VERSION} ${mode_msg} with errors"
+	syslog $LOG_FACILITY warning "${ME} Firewall $STR_VERSION ${mode_msg} with errors"
 else
 	if ((ENABLE_COLORS)); then
 		if ((VERBOSE)); then
@@ -4313,12 +4326,19 @@ else
  $(cl bold green black)successfully$(cl)"
  		fi
 	else
-		((VERBOSE)) && pr_str "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
+		((VERBOSE)) && pr_str "${ME} Firewall $STR_VERSION ${mode_msg} successfully"
 	fi
-	log -l "${ME} Firewall ${STR_VERSION} ${mode_msg} successfully"
+	log -l "${ME} Firewall $STR_VERSION ${mode_msg} successfully"
 fi
-rvar=$SECONDS
-log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 60)))) seconds of execution time at: $(run_date --rfc-2822)"
+rvar=$SECONDS i=$((RELOAD_TIME * 60))
+if ((TEST_MODE && EXEC_COMMANDS)); then
+	if ((rvar > i)); then
+		log -W "Execution time exceeds \`RELOAD_TIME'!"
+	else
+		log -W "Saved ruleset will be restored in about $(( $((i - rvar)) / 60)) minutes and $(( $((i - rvar)) - $(( $(( $((i - rvar)) / 60)) * 60)) )) seconds!"
+	fi
+fi
+log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(( $((rvar / 60)) * 60)) )) seconds of execution time at: $(run_date --rfc-2822)"
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
@@ -4326,19 +4346,19 @@ log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(($((rvar / 60)) * 6
 # ------------------------------------------------------------------------- #
 
 handle_network_data() { # enumerate and validate local networking data
-fill_netif_array || return $?
-enumerate_if_data || return $?
-validate_net_config || return $?
+fill_netif_array || return
+enumerate_if_data || return
+validate_net_config || return
 } # -------------------------------------------------------------------------
 
 compatibility_check() { # check for tables targets and extensions
 check_raw_table
 check_rawpost_table
 check_security_table
-test_chain create || return $?
-test_ipset create || return $?
-check_ipt_targets || return $?
-check_ipt_modules || return $?
+test_chain create || return
+test_ipset create || return
+check_ipt_targets || return
+check_ipt_modules || return
 test_chain delete
 test_ipset delete
 check_ipt_rule_list_param
@@ -4348,53 +4368,53 @@ module_handling() { # removing and loading of modules
 ((NO_MODPROBE == 1)) && return 0
 fill_loadmod_list_array
 fill_rmmod_list_array
-check_mod_dir || return $?
+check_mod_dir || return
 ((${#MODS_TO_RM[@]})) && remove_modules
 if ((${#MODULES_TO_LOAD[@]})); then
-	load_modules load || return $?
+	load_modules load || return
 fi
 } # -------------------------------------------------------------------------
 
 minimal_run() { # minimal prerun required
-handle_network_data || return $?
-module_handling || return $?
-compatibility_check || return $?
+handle_network_data || return
+module_handling || return
+compatibility_check || return
 } # -------------------------------------------------------------------------
 
 common_start() { # Common start procedure
-check_sys_files || return $?
+check_sys_files || return
 start_msg
 load_pro_epilog_scripts 'prolog'
-load_configs || return $?
-fill_proto_svc_arrays || return $?
+load_configs || return
+fill_proto_svc_arrays || return
 } # -------------------------------------------------------------------------
 
 ipt_mode_run() { # complete iptables loading prerun
-set_chain_classification || return $?
+set_chain_classification || return
 load_policy_map || return $ER_FAIL
 get_output_policy || return $ER_FAIL
-set_output_rule_mode || return $?
-fill_net_arrays || return $?
+set_output_rule_mode || return
+fill_net_arrays || return
 load_known_traffic_map
 fill_final_rule_map
-load_all_templates || return $?
-load_all_ruleblocks || return $?
-set_global_policies || return $?
-flushdel_tables || return $?
-allow_loopback || return $?
+load_all_templates || return
+load_all_ruleblocks || return
+set_global_policies || return
+flushdel_tables || return
+allow_loopback || return
 } # -------------------------------------------------------------------------
 
 tc_mode_run() { # tc Mode only actions
-minimal_run || return $?
-load_base_templates || return $?
-load_ipt_mangle_templates || return $?
+minimal_run || return
+load_base_templates || return
+load_ipt_mangle_templates || return
 } # -------------------------------------------------------------------------
 
 common_stop() { # Common stop procedure
 start_msg
 load_pro_epilog_scripts 'prolog'
-load_configs || return $?
-handle_network_data || return $?
+load_configs || return
+handle_network_data || return
 } # -------------------------------------------------------------------------
 
 common_end() { # process the most common tasks at the end of runtime
@@ -4414,38 +4434,38 @@ case "$1" in
 	# SAVE-COMMANDS: modprobe, proc, iptables and tc commands are saved to a file
 	# START: lockdown mode (except (if configured) admin connection + locahost traffic)
 	#  until all rules are generated and applied at the end
-		set_placeholder || return $?
-		set_global_log_params || return $?
+		set_placeholder || return
+		set_global_log_params || return
 		[[ $MODE = SAVE-COMMANDS ]] && set_rulesetfile
-		common_start || return $?
+		common_start || return
 		if [[ $MODE = START ]] && ((EXEC_COMMANDS)); then
-			set_default_policies_immediate || return $?
-			flushdel_tables_immediate || return $?
+			set_default_policies_immediate || return
+			flushdel_tables_immediate || return
 			allow_loopback_immediate
 			allow_admin_connection
 		fi
 		set_tc_mode
-		minimal_run || return $?
-		ipt_mode_run || return $?
-		set_sysctl || return $?
-		all_chains_creation || return $?
-		load_all_ipt_rulefiles || return $?
-		traffic_shaping_marks || return $?
-		create_jump_tree 'jumps' || return $?
-		state_allow_chains || return $?
-		apply_final_rule || return $?
+		minimal_run || return
+		ipt_mode_run || return
+		set_sysctl || return
+		all_chains_creation || return
+		load_all_ipt_rulefiles || return
+		traffic_shaping_marks || return
+		create_jump_tree 'jumps' || return
+		state_allow_chains || return
+		apply_final_rule || return
 		remove_qdiscs
 		enable_traffic_shaping
-		apply_rules || return $?
+		apply_rules || return
 		common_end
 	;;
 	COMPAT_CHECK)
 	# just perform compatibility check
 		start_msg
 		load_pro_epilog_scripts 'prolog'
-		load_configs || return $?
-		module_handling || return $?
-		compatibility_check || return $?
+		load_configs || return
+		module_handling || return
+		compatibility_check || return
 		for rvar in raw rawpost security; do
 			if (($(subst_var $(string_toupper "$rvar")_TABLE_PRESENT) == 0)); then
 				log -W "\`$rvar' table is not present on the local system."
@@ -4456,7 +4476,7 @@ case "$1" in
 			pr_banner "Dumping /proc settings:"
 			calc_conntrack_max
 			calc_conntrack_hashsize
-			proc_conf_global || return $?
+			proc_conf_global || return
 			pr_banner "End of /proc dump"
 		fi
 		common_end
@@ -4480,22 +4500,22 @@ case "$1" in
 	LOCKDOWN)
 	# Lockdown mode.
 	# NO network connections are allowed except localhost (eventually)
-		common_start || return $?
-		minimal_run || return $?
+		common_start || return
+		minimal_run || return
 		set_tc_mode
 		remove_qdiscs
 		if ((EXEC_COMMANDS)); then
-			set_default_policies_immediate || return $?
-			flushdel_tables_immediate || return $?
+			set_default_policies_immediate || return
+			flushdel_tables_immediate || return
 			if ((USE_IPSET)); then
 				ipset_flush || :
 				ipset_destroy || :
 			fi
 		fi
-		allow_loopback || return $?
-		apply_rules || return $?
+		allow_loopback || return
+		apply_rules || return
 		if ((EXEC_COMMANDS)); then
-			allow_admin_connection || return $?
+			allow_admin_connection || return
 		fi
 		common_end
 	;;
@@ -4505,41 +4525,41 @@ case "$1" in
 	# NAT is preserved.
 	# /proc configuration is not touched
 	# Traffic shaping is removed
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		common_start || return $?
-		minimal_run || return $?
+		set_placeholder || return
+		set_global_log_params || return
+		common_start || return
+		minimal_run || return
 		set_tc_mode
-		set_chain_classification || return $?
-		load_base_templates || return $?
-		load_ipt_nat_templates || return $?
-		load_nat_ruleblocks || return $?
+		set_chain_classification || return
+		load_base_templates || return
+		load_ipt_nat_templates || return
+		load_nat_ruleblocks || return
 		remove_qdiscs
-		flushdel_tables || return $?
-		policy_all_en_disable 'ACCEPT' || return $?
-		classification_chains 'chains' 'nat' || return $?
+		flushdel_tables || return
+		policy_all_en_disable 'ACCEPT' || return
+		classification_chains 'chains' 'nat' || return
 		log -T "Loading nat rule files"
-		load_nat_rules || return $?
-		classification_chains 'jumps' 'nat' || return $?
-		apply_rules || return $?
+		load_nat_rules || return
+		classification_chains 'jumps' 'nat' || return
+		apply_rules || return
 		common_end
 	;;
 	PARSE-XML)
 	# parse xml data files and compile to bash scripts
 		start_msg
-		load_configs || return $?
-		compatibility_check || return $?
+		load_configs || return
+		compatibility_check || return
 		if ((PARSE_TEMPLATES == 1)); then
-			load_all_templates || return $?
+			load_all_templates || return
 		fi
 		if ((PARSE_RULEBLOCKS == 1)); then
-			load_all_ruleblocks || return $?
+			load_all_ruleblocks || return
 		fi
 		if ((PARSE_RULEFILES == 1)); then
-			load_all_ipt_rulefiles || return $?
+			load_all_ipt_rulefiles || return
 			if ((ENABLE_IPSEC == 1)); then
 				for rvar in ${IPSEC_RULES}; do
-					load_rule_file "$rvar" || return $?
+					load_rule_file "$rvar" || return
 				done
 			fi
 		fi
@@ -4547,52 +4567,52 @@ case "$1" in
 	;;
 	PREPARE_QUICKSTART)
 	# prepare quick-start scripts
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		common_start || return $?
-		handle_network_data || return $?
+		set_placeholder || return
+		set_global_log_params || return
+		common_start || return
+		handle_network_data || return
 		
 		log -T "Preparing known-good modprobe script"
 		MODE='SAVE-MODPROBE-COMMANDS'
 		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
-		module_handling || return $?
-		apply_rules || return $?
+		module_handling || return
+		apply_rules || return
 		MODULE_CMD_ARRAY=()
 
 		log -T "Preparing known-good /proc settings script"
 		MODE='SAVE-PROC-COMMANDS'
 		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
-		set_sysctl || return $?
-		apply_rules || return $?
+		set_sysctl || return
+		apply_rules || return
 		PROC_CMD_ARRAY=()
 
 		log -T "Preparing known-good traffic control script"
 		MODE='SAVE-TC-COMMANDS'
 		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
 		set_tc_mode
-		load_tc_ruleblocks || return $?	
+		load_tc_ruleblocks || return	
 		remove_qdiscs
 		enable_traffic_shaping
-		apply_rules || return $?
+		apply_rules || return
 		TC_CMD_ARRAY=()
 
 		log -T "Preparing known-good iptables ruleset"
 		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
-			ipt_save "$KNOWN_GOOD_RULES" || return $?
+			ipt_save "$KNOWN_GOOD_RULES" || return
 		else
 			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
 			MODE='SAVE-IPT-COMMANDS'
-			compatibility_check || return $?
-			ipt_mode_run || return $?
-			all_chains_creation || return $?
-			load_all_ipt_rulefiles || return $?
-			traffic_shaping_marks || return $?
-			create_jump_tree 'jumps' || return $?
-			state_allow_chains || return $?
-			apply_final_rule || return $?
-			apply_rules || return $?
+			compatibility_check || return
+			ipt_mode_run || return
+			all_chains_creation || return
+			load_all_ipt_rulefiles || return
+			traffic_shaping_marks || return
+			create_jump_tree 'jumps' || return
+			state_allow_chains || return
+			apply_final_rule || return
+			apply_rules || return
 		fi
-		ips_save "$KNOWN_GOOD_IPSET_RULES" || return $?
+		ips_save "$KNOWN_GOOD_IPSET_RULES" || return
 
 		MODE='PREPARE_QUICKSTART'
 		end_msg
@@ -4682,71 +4702,71 @@ case "$1" in
 	;;
 	SAVE-IPT-COMMANDS)
 	# iptables commands are saved to file.
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		set_rulesetfile || return $?
-		common_start || return $?
-		minimal_run || return $?
-		ipt_mode_run || return $?
-		all_chains_creation || return $?
-		load_all_ipt_rulefiles || return $?
-		create_jump_tree 'jumps' || return $?
-		state_allow_chains || return $?
-		apply_final_rule || return $?
-		apply_rules || return $?
+		set_placeholder || return
+		set_global_log_params || return
+		set_rulesetfile || return
+		common_start || return
+		minimal_run || return
+		ipt_mode_run || return
+		all_chains_creation || return
+		load_all_ipt_rulefiles || return
+		create_jump_tree 'jumps' || return
+		state_allow_chains || return
+		apply_final_rule || return
+		apply_rules || return
 		common_end
 	;;
 	SAVE-MODPROBE-COMMANDS)
 	# modprobe commands are saved to file.
-		set_rulesetfile || return $?
+		set_rulesetfile || return
 		start_msg
 		load_pro_epilog_scripts 'prolog'
-		module_handling || return $?
-		apply_rules || return $?
+		module_handling || return
+		apply_rules || return
 		common_end
 	;;
 	SAVE-PROC-COMMANDS)
 	# /proc commands are saved to file.
-		set_rulesetfile || return $?
+		set_rulesetfile || return
 		start_msg
 		load_pro_epilog_scripts 'prolog'
-		set_sysctl || return $?
-		apply_rules || return $?
+		set_sysctl || return
+		apply_rules || return
 		common_end
 	;;
 	SAVE-TC-COMMANDS)
 	# tc commands are saved to file.
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		set_rulesetfile || return $?
+		set_placeholder || return
+		set_global_log_params || return
+		set_rulesetfile || return
 		set_tc_mode
-		common_start || return $?
-		handle_network_data || return $?
-		load_tc_ruleblocks || return $?	
+		common_start || return
+		handle_network_data || return
+		load_tc_ruleblocks || return	
 		remove_qdiscs
 		enable_traffic_shaping
-		apply_rules || return $?
+		apply_rules || return
 		common_end
 	;;
 	SAVE-SHAPING-COMMANDS)
 	# iptables mangle table and tc commands are saved to file.
 		ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		set_rulesetfile || return $?
+		set_placeholder || return
+		set_global_log_params || return
+		set_rulesetfile || return
 		set_tc_mode
-		common_start || return $?
-		set_chain_classification || return $?
-		tc_mode_run || return $?
-		load_tc_ruleblocks || return $?
-		load_tc_mangle_ruleblocks || return $?
+		common_start || return
+		set_chain_classification || return
+		tc_mode_run || return
+		load_tc_ruleblocks || return
+		load_tc_mangle_ruleblocks || return
 		flush_table 'mangle'
 		remove_qdiscs
-		classification_chains 'chains' 'mangle' || return $?
-		traffic_shaping_marks || return $?
-		classification_chains 'jumps' 'mangle' || return $?
+		classification_chains 'chains' 'mangle' || return
+		traffic_shaping_marks || return
+		classification_chains 'jumps' 'mangle' || return
 		enable_traffic_shaping
-		apply_rules || return $?
+		apply_rules || return
 		common_end
 	;;
 	SHOW) # show configuration and whatever
@@ -4788,8 +4808,8 @@ case "$1" in
 					pr_banner "End of iptables arguments"
 				;;
 				ruleblocks)
-					load_configs || return $?
-					load_all_ruleblocks || return $?
+					load_configs || return
+					load_all_ruleblocks || return
 					if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
 						pr_banner "Starting dump of ruleblocks:"
 						dump_arr < "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
@@ -4799,8 +4819,8 @@ case "$1" in
 					fi
 				;;
 				templates)
-					load_configs || return $?
-					load_all_templates || return $?
+					load_configs || return
+					load_all_templates || return
 					if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 						pr_banner "Starting template dump:"
 						dump_arr < "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
@@ -4810,8 +4830,8 @@ case "$1" in
 					fi
 				;;
 				rules)
-					load_configs || return $?
-					load_all_ipt_rulefiles || return $?
+					load_configs || return
+					load_all_ipt_rulefiles || return
 				;;
 			esac
 		done
@@ -4821,14 +4841,14 @@ case "$1" in
 	# Tables are flushed/deleted.
 	# Policy is set to accept.
 	# /proc configuration is not touched
-		common_stop || return $?
+		common_stop || return
 		((NO_MODPROBE == 0)) && fill_loadmod_list_array
-		check_mod_dir || return $?
+		check_mod_dir || return
 		set_tc_mode
 		remove_qdiscs
-		flushdel_tables || return $?
-		policy_all_en_disable 'ACCEPT' || return $?
-		apply_rules || return $?
+		flushdel_tables || return
+		policy_all_en_disable 'ACCEPT' || return
+		apply_rules || return
 		((EXEC_COMMANDS && USE_IPSET)) && { ipset_flush; ipset_destroy; }
 		((NO_MODPROBE == 0)) && ((${#MODULES_TO_LOAD[@]})) && load_modules 'unload'
 		common_end
@@ -4837,45 +4857,45 @@ case "$1" in
 	# Start traffic shaping only
 	# /proc configuration is not touched
 	# mangle table is reloaded
-		set_placeholder || return $?
-		set_global_log_params || return $?
+		set_placeholder || return
+		set_global_log_params || return
 		set_tc_mode
-		common_start || return $?
-		tc_mode_run || return $?
-		set_chain_classification || return $?
-		load_mangle_ruleblocks || return $?
-		load_tc_mangle_ruleblocks || return $?
-		load_tc_ruleblocks || return $?
+		common_start || return
+		tc_mode_run || return
+		set_chain_classification || return
+		load_mangle_ruleblocks || return
+		load_tc_mangle_ruleblocks || return
+		load_tc_ruleblocks || return
 		flush_table 'mangle'
 		remove_qdiscs
-		classification_chains 'chains' 'mangle' || return $?
+		classification_chains 'chains' 'mangle' || return
 		log -T "Loading mangle rule files"
-		load_mangle_rules || return $?
-		traffic_shaping_marks || return $?
-		classification_chains 'jumps' 'mangle' || return $?
+		load_mangle_rules || return
+		traffic_shaping_marks || return
+		classification_chains 'jumps' 'mangle' || return
 		enable_traffic_shaping
-		apply_rules || return $?
+		apply_rules || return
 		common_end
 	;;
 	TC-STOP)
 	# Stop traffic shaping only
 	# mangle table is reloaded
-		common_stop || return $?
-		set_placeholder || return $?
-		set_global_log_params || return $?
-		compatibility_check || return $?
+		common_stop || return
+		set_placeholder || return
+		set_global_log_params || return
+		compatibility_check || return
 		set_tc_mode
-		set_chain_classification || return $?
-		load_base_templates || return $?
-		load_ipt_mangle_templates || return $?
-		load_mangle_ruleblocks || return $?
-		flush_table 'mangle' || return $?
+		set_chain_classification || return
+		load_base_templates || return
+		load_ipt_mangle_templates || return
+		load_mangle_ruleblocks || return
+		flush_table 'mangle' || return
 		remove_qdiscs
-		classification_chains 'chains' 'mangle' || return $?
+		classification_chains 'chains' 'mangle' || return
 		log -T "Loading mangle rule files"
-		load_mangle_rules || return $?
-		classification_chains 'jumps' 'mangle' || return $?
-		apply_rules || return $?
+		load_mangle_rules || return
+		classification_chains 'jumps' 'mangle' || return
+		apply_rules || return
 		common_end
 	;;
 	*) log -o "$1" $FUNCNAME
