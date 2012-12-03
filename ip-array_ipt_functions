@@ -12,7 +12,7 @@
 
 # ------------------------------------------------------------------------- #
 #
-#    Copyright (C) 2005-2011  AllKind
+#    Copyright (C) 2005-2013  AllKind
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -543,6 +543,34 @@ case "$1" in
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
+} # -------------------------------------------------------------------------
+
+ipset_flush_destroy() {
+if [[ $IPSET_SYNTAX = new ]]; then
+	IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]="flush"
+	IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]="destroy"
+else
+	IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]="-F"
+	IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]="-X"
+fi
+} # -------------------------------------------------------------------------
+
+ipset_merge_arrays() { # join entries to their according sets
+local str_set
+local -i idx eidx
+ipset_flush_destroy
+for idx in ${!IPSET_SETS_ARRAY[@]}; do
+	IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]=${IPSET_SETS_ARRAY[idx]}
+	set -- ${IPSET_SETS_ARRAY[idx]}
+	str_set=$2
+	for eidx in ${!IPSET_ENTRIES_ARRAY[@]}; do
+		set -- ${IPSET_ENTRIES_ARRAY[eidx]}
+		if [[ $2 = $str_set ]]; then
+			IPSET_CMD_ARRAY[${#IPSET_CMD_ARRAY[@]}]=$@
+			unset IPSET_ENTRIES_ARRAY[eidx]
+		fi
+	done
+done
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
