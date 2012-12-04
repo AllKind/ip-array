@@ -203,8 +203,8 @@ declare NO_OUTPUT_MSG	# Stores the message to display, when no additional OUTPUT
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
 declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types
-declare MODULE_RESTORE_FILE="${me}_modprobe_commands_$$"
-declare PROC_RESTORE_FILE="${me}_proc_commands_$$"	# files to save modprobe and /proc commands to
+declare MODULE_RESTORE_FILE="${me}_modprobe_commands_$PID"
+declare PROC_RESTORE_FILE="${me}_proc_commands_$PID"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
@@ -946,9 +946,9 @@ if ((TEST_MODE && EXEC_COMMANDS)); then
 			"$AT" -d "$AT_JOB" || :
 		fi
 		# remove files saved for restore
-		if [[ -f ${SAVE_DIR}/__tmp_restore_defaults_$$ ]]; then
-			verbose_msg "Removing temporary defaults file \`${SAVE_DIR}/__tmp_restore_defaults_$$"
-			run_rm "${SAVE_DIR}/__tmp_restore_defaults_$$" || :
+		if [[ -f ${SAVE_DIR}/__tmp_restore_defaults_$PID ]]; then
+			verbose_msg "Removing temporary defaults file \`${SAVE_DIR}/__tmp_restore_defaults_$PID"
+			run_rm "${SAVE_DIR}/__tmp_restore_defaults_$PID" || :
 		fi
 		if [[ -f ${SAVE_DIR}/$SAVE_FILE ]]; then
 			verbose_msg "Removing saved iptables-save file \`${SAVE_DIR}/$SAVE_FILE"
@@ -1645,8 +1645,8 @@ if ((EXEC_COMMANDS)); then
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
 	 if ((TEST_MODE)); then
-		SAVE_FILE="${me}_iptables-save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM"
-		IPSET_SAVE_FILE="${me}_ipset_save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM"
+		SAVE_FILE="${me}_iptables-save_to_restore_${PID}_$(run_date +%F_%T)_rnd$RANDOM"
+		IPSET_SAVE_FILE="${me}_ipset_save_to_restore_${PID}_$(run_date +%F_%T)_rnd$RANDOM"
 		sched_restore "$SAVE_FILE" "$IPSET_SAVE_FILE" || bail_out $?
 	fi
 	# --------------------------------------------------------------

@@ -1344,7 +1344,7 @@ set_env
 
 sched_restore() { # schedule ruleset restore job
 local str_file="$1" str_ips_f="$2" str_job
-local str_tmp_def_f="${SAVE_DIR}/__tmp_restore_defaults_$$"
+local str_tmp_def_f="${SAVE_DIR}/__tmp_restore_defaults_$PID"
 local str_mybin="${BIN_DIR}/${0##*/}"
 check_dirs BIN_DIR || return
 if ! bin_ok "$str_mybin"; then # check if $0 is good
