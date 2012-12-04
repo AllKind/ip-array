@@ -897,89 +897,20 @@ local str_file="${1:-${IPSET_SAVE_FILE}}"
 if run_ipset -S >"${SAVE_DIR}/${str_file}"; then
 	notice_msg "ipset rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
 else
-	err_msg "Failed saving ipset rules from: \`${SAVE_DIR}/${str_file}'."
+	err_msg "Failed saving ipset rules to: \`${SAVE_DIR}/${str_file}'."
 	return $ER_FAIL
-fi
-} # -------------------------------------------------------------------------
-
-ips_restore() { # restore ipset data
-((USE_IPSET)) || return 0
-local str_file="${1:-${IPSET_SAVE_FILE}}"
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
-	verbose_msg "Destroying existing sets"
-	run_ipset -F -q
-	run_ipset -X -q
-	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
-		notice_msg "ipset rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
-	else
-		err_msg "Failed restoring ipset rules from: \`${SAVE_DIR}/${str_file}'."
-		return $ER_FAIL
-	fi
-else
-	err_msg "\`${SAVE_DIR}/${str_file}' does not exist."
-	return $ER_NOEX
-fi
-} # -------------------------------------------------------------------------
-
-ipt_restore() { # restore the firewall with iptables-restore
-if ((IPTSAVE_FAILS)); then
-	err_msg "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
-	return $ER_FAIL
-fi
-local str_c="" str_file="${1:-${SAVE_FILE}}"
-if ((USE_COUNTERS)); then
-	str_c="--counters "
-fi
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
-	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
-		notice_msg "iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
-	else
-		err_msg "Failed restoring iptables rules."
-		return $ER_FAIL
-	fi
-else
-	err_msg "\`${SAVE_DIR}/${str_file}' does not exist."
-	return $ER_NOEX
-fi
-} # -------------------------------------------------------------------------
-
-modules_restore() { # to restore remembered module state (scheduled)
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_file="${SAVE_DIR}/$1"
-if [[ -r $str_file ]]; then
-	if source "$str_file"; then
-		notice_msg "Module state successfully restored from: \`$str_file'"
-		run_rm "$str_file"
-	else
-		err_msg "Failed restoring module state."
-		return $ER_FAIL
-	fi
-fi
-} # -------------------------------------------------------------------------
-
-proc_restore() { # to restore remembered /proc state (scheduled)
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_file="${SAVE_DIR}/$1"
-if [[ -r $str_file ]]; then
-	if source "$str_file"; then
-		notice_msg "/proc state successfully restored from: \`$str_file'"
-		run_rm "$str_file"
-	else
-		err_msg "Failed restoring /proc state."
-		return $ER_FAIL
-	fi
 fi
 } # -------------------------------------------------------------------------
 
 autosave() { # automatically save a temporary ruleset, which will be restored on error
 ((NO_AUTOSAVE == 0)) || return 0
 if ((IPTSAVE_FAILS == 0)); then
-	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}_${SAVE_FILE}"
+	AUTOSAVE_FILE="_autosave-generated_iptables-save_$(run_date +%F_%T)_rnd${RANDOM}"
 	ipt_save "$AUTOSAVE_FILE" || return
 	readonly AUTOSAVE_FILE
 fi
 if ((USE_IPSET)); then
-	AUTOSAVE_FILE_IPSET="_autosave-generated_ipset-save_$(run_date +%F_%T)_rnd${RANDOM}_${IPSET_SAVE_FILE}"
+	AUTOSAVE_FILE_IPSET="_autosave-generated_ipset-save_$(run_date +%F_%T)_rnd${RANDOM}"
 	ips_save "$AUTOSAVE_FILE_IPSET" || return
 	readonly AUTOSAVE_FILE_IPSET
 fi
@@ -1006,23 +937,35 @@ fi
 } # -------------------------------------------------------------------------
 
 cleanup_at_job() { # remove scheduled restore job
-if ((TEST_MODE)); then
-	if [[ $AT_JOB ]]; then
-		verbose_msg "Removing scheduled restore job: \`$AT_JOB'."
-		"$AT" -d "$AT_JOB" || :
-	fi
-	# remove files saved for restore
-	if [[ -e ${SAVE_DIR}/__tmp_restore_defaults_$$ ]]; then
-		verbose_msg "Removing temporary defaults file \`${SAVE_DIR}/__tmp_restore_defaults_$$"
-		run_rm "${SAVE_DIR}/__tmp_restore_defaults_$$" || :
-	fi
-	if [[ -e ${SAVE_DIR}/$SAVE_FILE ]]; then
-		verbose_msg "Removing saved iptables-save file \`${SAVE_DIR}/$SAVE_FILE"
-		run_rm "${SAVE_DIR}/$SAVE_FILE" || :
-	fi
-	if [[ -e ${SAVE_DIR}/$IPSET_SAVE_FILE ]]; then
-		verbose_msg "Removing saved ipset file \`${SAVE_DIR}/$IPSET_SAVE_FILE"
-		run_rm "${SAVE_DIR}/$IPSET_SAVE_FILE" || :
+if ((TEST_MODE && EXEC_COMMANDS)); then
+	if ((NO_AUTOSAVE == 1 && $((ipt_err_count + ips_err_count + proc_err_count)) > 0)) && [[ $AT_JOB ]]; then
+			log -W "As autosave is disabled, the scheduled restore job will not be removed!"
+	else
+		if [[ $AT_JOB ]]; then
+			verbose_msg "Removing scheduled restore job: \`$AT_JOB'."
+			"$AT" -d "$AT_JOB" || :
+		fi
+		# remove files saved for restore
+		if [[ -f ${SAVE_DIR}/__tmp_restore_defaults_$$ ]]; then
+			verbose_msg "Removing temporary defaults file \`${SAVE_DIR}/__tmp_restore_defaults_$$"
+			run_rm "${SAVE_DIR}/__tmp_restore_defaults_$$" || :
+		fi
+		if [[ -f ${SAVE_DIR}/$SAVE_FILE ]]; then
+			verbose_msg "Removing saved iptables-save file \`${SAVE_DIR}/$SAVE_FILE"
+			run_rm "${SAVE_DIR}/$SAVE_FILE" || :
+		fi
+		if [[ -f ${SAVE_DIR}/$IPSET_SAVE_FILE ]]; then
+			verbose_msg "Removing saved ipset file \`${SAVE_DIR}/$IPSET_SAVE_FILE"
+			run_rm "${SAVE_DIR}/$IPSET_SAVE_FILE" || :
+		fi
+		if [[ -f ${SAVE_DIR}/$MODULE_RESTORE_FILE ]]; then
+			verbose_msg "Removing saved modules-restore file \`${SAVE_DIR}/$MODULE_RESTORE_FILE"
+			run_rm "${SAVE_DIR}/$MODULE_RESTORE_FILE" || :
+		fi
+		if [[ -f ${SAVE_DIR}/$PROC_RESTORE_FILE ]]; then
+			verbose_msg "Removing saved /proc-restore file \`${SAVE_DIR}/$PROC_RESTORE_FILE"
+			run_rm "${SAVE_DIR}/$PROC_RESTORE_FILE" || :
+		fi
 	fi
 fi
 } # -------------------------------------------------------------------------
@@ -1034,7 +977,7 @@ cleanup_lock
 
 bail_out() { # exit IP-Array on fatal error. $1 = exit code.
 if ((${VERBOSE:-6} > 0)); then
-	pr_err "${ME} exiting on error! Exit code: ${1:-$ER_LOAD}"
+	pr_err "$ME exiting on error! Exit code: ${1:-$ER_LOAD}"
 fi
 cleanup_at_job
 cleanup
@@ -1042,25 +985,11 @@ builtin enable exit
 exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
-bail_out_restore() {  # exit IP-Array on fatal error. $1 = exit code. restore in case.
-if ((NO_AUTOSAVE == 0)) && ((ipt_err_count || ips_err_count)); then
-	if [[ $AUTOSAVE_FILE ]]; then
-		pr_str "Restoring automatically saved iptables ruleset from: \`$AUTOSAVE_FILE'"
-		ipt_restore "$AUTOSAVE_FILE" || :
-	fi
-	if [[ $AUTOSAVE_FILE_IPSET ]]; then
-		pr_str "Restoring automatically saved ipset ruleset from: \`$AUTOSAVE_FILE_IPSET'"
-		ips_restore "$AUTOSAVE_FILE_IPSET" || :
-	fi
-fi
-bail_out ${1:-$ER_LOAD}
-} # -------------------------------------------------------------------------
-
 trap_err() {
 if ((${VERBOSE:-6} > 0)); then
 	pr_err "ERROR trap activated - exiting"
 fi
-bail_out_restore $ER_FAIL
+bail_out $ER_FAIL
 } # -------------------------------------------------------------------------
 
 trap_gen() {
@@ -1521,25 +1450,13 @@ case "$MAIN_ARG" in
 		MODE='RESTART'
 	;;
 	restore) # restore iptables-save saved ruleset
-		if [[ $cmdline_mod_file ]]; then
-			modules_restore "$cmdline_mod_file" || bail_out $?
-		fi
-		ips_restore "$IPSET_SAVE_FILE" || bail_out $?
-		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
-		if [[ $cmdline_proc_file ]]; then
-			proc_restore "${cmdline_proc_file}" || bail_out $?
-		fi
-		quit_welldone
+		MODE='RESTORE'
 	;;
 	save) # save ruleset with iptables-save
-		ipt_save "${cmdline_save_file:-$SAVE_FILE}" || bail_out $?
-		ips_save "$IPSET_SAVE_FILE" || bail_out $?
-		quit_welldone
+		MODE='SAVE'
 	;;
 	save-known-good) # save known good ruleset with iptables-save
-		ipt_save "$KNOWN_GOOD_RULES" || bail_out $?
-		ips_save "$KNOWN_GOOD_IPSET_RULES" || bail_out $?
-		quit_welldone
+		MODE='SAVE'
 	;;
 	save-commands) # save all commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
@@ -1594,9 +1511,14 @@ case "$MAIN_ARG" in
 esac
 
 # -------------------------------------------------------------------------
-# check for valid RELOAD_TIME specification
+# TEST_MODE checks
 # -------------------------------------------------------------------------
 if ((TEST_MODE)); then
+	((IPTSAVE_FAILS == 0)) || {
+		err_msg "Cannot schedule a restore if \`IPTSAVE_FAILS' is enabled."
+		bail_out $ER_CONF
+	}
+	# check for valid RELOAD_TIME specification
 	[[ $RELOAD_TIME = +([[:digit:]]) ]] || {
 		err_msg "Invalid value \`$RELOAD_TIME' for \`RELOAD_TIME'."
 		bail_out $ER_CONF
@@ -1717,13 +1639,15 @@ if ((EXEC_COMMANDS)); then
 		pr_str "$PID" >"$LOCKFILE"
 	else
 		log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
-		bad_use_quit
+		bail_out $ER_FAIL
 	fi
 	# --------------------------------------------------
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------
-	if ((TEST_MODE)); then
-		sched_restore ${me}_iptables-save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM ${me}_ipset_save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM || bail_out $?
+	 if ((TEST_MODE)); then
+		SAVE_FILE="${me}_iptables-save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM"
+		IPSET_SAVE_FILE="${me}_ipset_save_to_restore_$$_$(run_date +%F_%T)_rnd$RANDOM"
+		sched_restore "$SAVE_FILE" "$IPSET_SAVE_FILE" || bail_out $?
 	fi
 	# --------------------------------------------------------------
 	# if in a MODE that could make use of auto-backup, save ruleset
@@ -1732,7 +1656,11 @@ if ((EXEC_COMMANDS)); then
 		start)
 			case "$RESTORE_ON_START" in
 				0) autosave || bail_out $? ;;
-				1) log -N "RESTORE_ON_START is enabled, not performing autosaving." ;;
+				1)
+					if ((NO_AUTOSAVE == 0)); then
+						log -N "RESTORE_ON_START is enabled, not performing autosaving."
+					fi
+				;;
 			esac
 		;;
 		restart|test|open|tc-start|tc-stop) autosave || bail_out $? ;;
@@ -1758,13 +1686,13 @@ fi
 # -------------------------------------------------------------------------
 if ((PARSE_TEMPLATES == 1)); then
 	if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-		log -w "Removing remembered template names file \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+		log -w "Removing remembered templates names file \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 		run_rm "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 	fi
 fi
 if ((PARSE_RULEBLOCKS == 1)); then
 	if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
-		log -w "Removing remembered template names file \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+		log -w "Removing remembered ruleblocks names file \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 		run_rm "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 	fi
 fi
@@ -1776,7 +1704,6 @@ if run_main "$MODE"; then
 	cleanup
 	quit_welldone
 else
-#	bail_out_restore $?
 	exit_on_err_act $?
 fi
 exit $?

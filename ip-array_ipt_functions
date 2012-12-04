@@ -1250,13 +1250,93 @@ CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
 #}
 # -------------------------------------------------------------------------
 
+emerge_ips_restore() { # restore ipset data in error case in error case
+((USE_IPSET)) || return 0
+local str_file="${1:-${IPSET_SAVE_FILE}}"
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	run_ipset -F -q
+	run_ipset -X -q
+	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'ipset rules successfully restored from: ${SAVE_DIR}/${str_file}'"
+	else
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring ipset rules from: ${SAVE_DIR}/${str_file}.'"
+		return $ER_FAIL
+	fi
+else
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -x '${SAVE_DIR}/${str_file}'"
+	return $ER_NOEX
+fi
+} # -------------------------------------------------------------------------
+
+emerge_ipt_restore() { # restore the firewall with iptables-restore in error case
+if ((IPTSAVE_FAILS)); then
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'IPTSAVE_FAILS is set to $IPTSAVE_FAILS.'"
+	return $ER_FAIL
+fi
+local str_c="" str_file="${1:-${SAVE_FILE}}"
+if ((USE_COUNTERS)); then
+	str_c="--counters "
+fi
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'iptables rules successfully restored from: ${SAVE_DIR}/${str_file}'"
+	else
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring iptables rules.'"
+		return $ER_FAIL
+	fi
+else
+	log -x "${SAVE_DIR}/${str_file}"
+	return $ER_NOEX
+fi
+} # -------------------------------------------------------------------------
+
+ips_restore() { # restore ipset data
+((USE_IPSET)) || return 0
+local str_file="${1:-${IPSET_SAVE_FILE}}"
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	log -w "Destroying existing sets"
+	run_ipset -F -q
+	run_ipset -X -q
+	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
+		log -N "ipset rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+	else
+		log -E "Failed restoring ipset rules from: \`${SAVE_DIR}/${str_file}'."
+		return $ER_FAIL
+	fi
+else
+	log -x "${SAVE_DIR}/${str_file}"
+	return $ER_NOEX
+fi
+} # -------------------------------------------------------------------------
+
+ipt_restore() { # restore the firewall with iptables-restore
+if ((IPTSAVE_FAILS)); then
+	log -E "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
+	return $ER_FAIL
+fi
+local str_c="" str_file="${1:-${SAVE_FILE}}"
+if ((USE_COUNTERS)); then
+	str_c="--counters "
+fi
+if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
+		log -N "iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+	else
+		log -E "Failed restoring iptables rules."
+		return $ER_FAIL
+	fi
+else
+	log -x "${SAVE_DIR}/${str_file}"
+	return $ER_NOEX
+fi
+} # -------------------------------------------------------------------------
+
 set_default_policies_immediate() { # set (IP-Array) default policies
 local table c chain rest
 log -I "Immediately applying default policies"
 if ! [[ -r $IP_TABLES_NAMES ]]; then
 	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded"
 	dn run_ipt -nL
-#	return 0
 fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do

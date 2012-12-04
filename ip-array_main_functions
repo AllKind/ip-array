@@ -1185,22 +1185,43 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 } # -------------------------------------------------------------------------
 # end of borrowed functions
 
+restore_autosave() {
+restore_module_state
+restore_proc_state
+if ((NO_AUTOSAVE == 0)); then
+	if [[ $AUTOSAVE_FILE_IPSET ]]; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved ipset ruleset from: $AUTOSAVE_FILE_IPSET'"
+		emerge_ips_restore "$AUTOSAVE_FILE_IPSET" || :
+	fi
+	if [[ $AUTOSAVE_FILE ]]; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved iptables ruleset from: $AUTOSAVE_FILE'"
+		emerge_ipt_restore "$AUTOSAVE_FILE" || :
+	fi
+	if [[ $AUTOSAVE_FILE_IPSET || $AUTOSAVE_FILE ]]; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Restored auto-saved ruleset'"
+	fi
+fi
+} # -------------------------------------------------------------------------
+
+trap_err() {
+if ((${VERBOSE:-6} > 0)); then
+	pr_err "ERROR trap activated - exiting"
+fi
+exit_on_err_act $ER_FAIL
+} # -------------------------------------------------------------------------
+
 exit_on_err_act() {
 if ((EXEC_COMMANDS)); then
 	if ((ipt_err_count > 0 || ips_err_count > 0)); then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
 		fail_lockdown
 	fi
-	if ((RESTORE_ON_START == 0)); then
-		restore_proc_state
-		restore_module_state
+	if [[ $MODE != RESTORE_ON_START ]]; then
+		restore_autosave
 	fi
 fi
 calc_err
 display_errors
-if ((ipt_err_count > 0 || ips_err_count > 0)); then
-	bail_out_restore ${1:-${ER_FAIL}}
-fi
 bail_out ${1:-${ER_FAIL}}
 } # -------------------------------------------------------------------------
 
@@ -1567,10 +1588,11 @@ restore_module_state() { # try to restore initial (remembered) module state
 	log -v 'MOD_STATE_ARRAY'
 	return 0
 }
+((NO_AUTOSAVE == 0)) || return 0
 local module_state module_name module_params
 local -a unload_arr
 local -i idx
-log -I "Trying to restore initial module state"
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial module state"'
 for idx in ${!MOD_STATE_ARRAY[@]}; do
 	set -- ${MOD_STATE_ARRAY[idx]}
 	module_state="$1" module_name="$2"
@@ -1578,13 +1600,13 @@ for idx in ${!MOD_STATE_ARRAY[@]}; do
 	module_params="$@"
 	case "$module_state" in
 		load)
-			log -e "${PF}probing module: $module_name"
+			ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}probing module: $module_name'"
 			run_modprobe "$module_name" $module_params || {
-				log -f "probing module: $module_name $module_params"
+				ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -f 'probing module: $module_name $module_params'"
 			}
 		;;
 		loaded)
-			log -e "$module_name was already loaded"
+			ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '$module_name was already loaded'"
 		;;
 		unload)
 			unload_arr[${#unload_arr[@]}]="$module_name"
@@ -1596,8 +1618,8 @@ for idx in ${!MOD_STATE_ARRAY[@]}; do
 done
 if ((${#unload_arr[@]})); then
 	for ((idx=$(last_arr_member unload_arr); idx>=0; --idx)); do
-		log -e "${PF}removing ${unload_arr[idx]}"
-		run_modprobe -r "${unload_arr[idx]}" || log -f "removing ${unload_arr[idx]}"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}removing ${unload_arr[idx]}'"
+		run_modprobe -r "${unload_arr[idx]}" || ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -f 'removing ${unload_arr[idx]}'"
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -1820,13 +1842,14 @@ restore_proc_state() { # try to restore initial (remembered) /proc settings
 	log -v 'PROC_STATE_ARRAY'
 	return 0
 }
+((NO_AUTOSAVE == 0)) || return 0
 local -i idx
-log -I "Trying to restore initial proc configuration"
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial proc configuration"'
 for idx in ${!PROC_STATE_ARRAY[@]}; do
 	eval set -- "${PROC_STATE_ARRAY[idx]}"
-	log -e "${PF}restoring: "$1" to \`$2'"
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: $2 to $1'"
 	printf "%s\n" "$1" >"$2" || {
-		log -E "failed setting "$1" to \`$2'"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'failed setting $2 to $1'"
 	}
 done
 } # -------------------------------------------------------------------------
@@ -4272,6 +4295,7 @@ case "$MODE" in # act according to runtime mode
 				fi
 			fi
 		fi
+cmd_err_count ipt "TEST ERROR"
 	;;
 esac
 } # -------------------------------------------------------------------------
@@ -4328,6 +4352,8 @@ case "$MAIN_ARG" in
 	restart) mode_msg="reloaded" ;;
 	start) mode_msg="loaded" ;;
 	stop) mode_msg="stopped" ;;
+	save) mode_msg="saved active ruleset" ;;
+	restore) mode_msg="restored ruleset" ;;
 	save-commands) mode_msg="saved commands" ;;
 	save-iptables-commands) mode_msg="saved iptables commands" ;;
 	save-modprobe-commands) mode_msg="saved modprobe commands" ;;
@@ -4383,6 +4409,34 @@ if ((TEST_MODE && EXEC_COMMANDS)); then
 	fi
 fi
 log -w "Exiting after $((rvar / 60)) minutes and $((rvar - $(( $((rvar / 60)) * 60)) )) seconds of execution time at: $(run_date --rfc-2822)"
+} # -------------------------------------------------------------------------
+
+modules_restore() { # to restore remembered module state (scheduled)
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
+	if source "$str_file"; then
+		log -N "Module state successfully restored from: \`$str_file'"
+		run_rm "$str_file"
+	else
+		log -E "Failed restoring module state."
+		return $ER_FAIL
+	fi
+fi
+} # -------------------------------------------------------------------------
+
+proc_restore() { # to restore remembered /proc state (scheduled)
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
+	if source "$str_file"; then
+		log -N "/proc state successfully restored from: \`$str_file'"
+		run_rm "$str_file"
+	else
+		log -E "Failed restoring /proc state."
+		return $ER_FAIL
+	fi
+fi
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
@@ -4470,6 +4524,14 @@ if ((VERBOSE > 0 || SYSLOG_VERBOSE >= 0)); then
 fi
 } # -------------------------------------------------------------------------
 
+minimal_end() { # process the minimal wanted tasks at the end of runtime
+calc_err
+if ((VERBOSE > 0 || SYSLOG_VERBOSE >= 0)); then
+	display_errors
+	end_msg
+fi
+} # -------------------------------------------------------------------------
+
 run_main() {
 case "$1" in
 	RESTART|SAVE-COMMANDS|START)
@@ -4529,6 +4591,7 @@ case "$1" in
 	# run a diff on previously saved ruleset listings
 		start_msg
 		load_pro_epilog_scripts 'prolog'
+		load_configs || return
 		check_raw_table
 		check_rawpost_table
 		check_security_table
@@ -4591,6 +4654,7 @@ case "$1" in
 	PARSE-XML)
 	# parse xml data files and compile to bash scripts
 		start_msg
+		load_pro_epilog_scripts 'prolog'
 		load_configs || return
 		compatibility_check || return
 		if ((PARSE_TEMPLATES == 1)); then
@@ -4659,7 +4723,7 @@ case "$1" in
 		ips_save "$KNOWN_GOOD_IPSET_RULES" || return
 
 		MODE='PREPARE_QUICKSTART'
-		end_msg
+		minimal_end
 	;;
 	RESTORE_ON_START)
 	# quick-start - load previously saved known-good scripts
@@ -4684,6 +4748,10 @@ case "$1" in
 			log -N "Modprobing is disabled by configuration."
 		fi
 		if ((USE_IPSET)); then
+			set_default_policies_immediate || return
+			flushdel_tables_immediate || return
+			allow_loopback_immediate
+			allow_admin_connection
 			log -N "Loading known good ipset commands."
 			ips_restore "$KNOWN_GOOD_IPSET_RULES" || {
 				log -E "Failed restoring saved ipset script."
@@ -4743,6 +4811,35 @@ case "$1" in
 			log -N "/proc settings are disabled by configuration."
 		fi
 		common_end
+	;;
+	RESTORE)
+		start_msg
+		if [[ $cmdline_mod_file ]]; then
+			modules_restore "$cmdline_mod_file" || return
+		fi
+		if ((USE_IPSET)); then
+			set_default_policies_immediate || return
+			flushdel_tables_immediate || return
+			allow_loopback_immediate
+			allow_admin_connection
+			ips_restore "$IPSET_SAVE_FILE" || return
+		fi
+		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || return
+		if [[ $cmdline_proc_file ]]; then
+			proc_restore "${cmdline_proc_file}" || return
+		fi
+		minimal_end
+	;;
+	SAVE)
+		start_msg
+		if [[ $MAIN_ARG = save-known-good ]]; then
+			ipt_save "$KNOWN_GOOD_RULES" || return
+			ips_save "$KNOWN_GOOD_IPSET_RULES" || return
+		else
+			ipt_save "${cmdline_save_file:-$SAVE_FILE}" || return
+			ips_save "$IPSET_SAVE_FILE" || return
+		fi
+		minimal_end
 	;;
 	SAVE-IPT-COMMANDS)
 	# iptables commands are saved to file.
@@ -4879,7 +4976,7 @@ case "$1" in
 				;;
 			esac
 		done
-		common_end
+		minimal_end
 	;;
 	STOP)
 	# Tables are flushed/deleted.
