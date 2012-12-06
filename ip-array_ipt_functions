@@ -3180,6 +3180,9 @@ else
 fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML template file: \`$template_file'"
+	if ! ((EXEC_COMMANDS)); then
+		mutex_on || return
+	fi
 	if [[ -e $parsed_file ]]; then
 		run_rm "$parsed_file" || {
 			log -F "removing old parsed file \`$parsed_file'."
@@ -3208,6 +3211,9 @@ if ((parse_files == 1)); then
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_TEMPLATE_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_TEMPLATE_NAMES_ARRAY[@]} templates"
 	log -w "Saved parsed template file to: \`$parsed_file'"
+	if ! ((EXEC_COMMANDS)); then
+		cleanup_lock
+	fi
 fi
 load_file config "$parsed_file" || return $ER_LOAD
 if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdout
@@ -3313,6 +3319,9 @@ else
 fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML ruleblock file: \`$ruleblock_file'"
+	if ! ((EXEC_COMMANDS)); then
+		mutex_on || return
+	fi
 	if [[ -e $parsed_file ]]; then
 		run_rm "$parsed_file" || {
 			log -F "removing old parsed file \`$parsed_file'."
@@ -3331,6 +3340,9 @@ if ((parse_files == 1)); then
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_RULEBLOCK_NAMES_ARRAY"
 	log -e "${PF}generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
 	log -w "Saved parsed ruleblock file to: \`$parsed_file'"
+	if ! ((EXEC_COMMANDS)); then
+		cleanup_lock
+	fi
 fi
 
 load_file config "$parsed_file" || return $ER_LOAD
@@ -3434,6 +3446,9 @@ else
 fi
 if ((parse_files == 1)); then
 	log -N "Parsing XML rule file: \`${rule_file}'"
+	if ! ((EXEC_COMMANDS)); then
+		mutex_on || return
+	fi
 	if [[ -e $parsed_file ]]; then
 		run_rm "$parsed_file" || {
 			log -F "removing old parsed file \`$parsed_file'."
@@ -3451,6 +3466,9 @@ if ((parse_files == 1)); then
 	}
 	exec 7>&-
 	log -w "Saved parsed rule file to: \`$parsed_file'"
+	if ! ((EXEC_COMMANDS)); then
+		cleanup_lock
+	fi
 fi
 if [[ $MODE = SHOW ]]; then # dump rules in show mode
 	if lsearch rules $cmdline_show_conf; then

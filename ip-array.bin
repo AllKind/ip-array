@@ -929,6 +929,16 @@ if [[ $AUTOSAVE_FILE_IPSET && -e ${SAVE_DIR}/${AUTOSAVE_FILE_IPSET} ]]; then
 fi
 } # -------------------------------------------------------------------------
 
+mutex_on() {
+log -w "Creating lockfile: \`$LOCKFILE'"
+if (set -C; create_file "$LOCKFILE") &>/dev/null; then
+	pr_str "$PID" >"$LOCKFILE"
+else
+	log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME (PID: $PID) running?"
+	return $ER_FAIL
+fi
+} # -------------------------------------------------------------------------
+
 cleanup_lock() { # remove temp lockfile
 if [[ -e $LOCKFILE ]]; then
 	verbose_msg "Removing lock file: \`$LOCKFILE'."
@@ -1634,13 +1644,7 @@ if ((EXEC_COMMANDS)); then
 	# -------------------------
 	# mutual exclusion - lock
 	# -------------------------
-	log -w "Creating lockfile: \`$LOCKFILE'"
-	if (set -C; create_file "$LOCKFILE") &>/dev/null; then
-		pr_str "$PID" >"$LOCKFILE"
-	else
-		log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME running?"
-		bail_out $ER_FAIL
-	fi
+	mutex_on || bail_out $?
 	# --------------------------------------------------
 	# if in TEST_MODE, save ruleset & schedule restore
 	# --------------------------------------------------

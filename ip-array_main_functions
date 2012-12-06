@@ -4104,7 +4104,9 @@ case "$MODE" in # act according to runtime mode
 		if ((USE_IPSET)); then
 			ipset_merge_arrays
 		fi
+		mutex_on || return
 		save_rulesets "$RULESETFILE" || return
+		cleanup_lock
 	;;
 	*)
 		if ((EXEC_COMMANDS == 0)); then
@@ -4453,12 +4455,18 @@ compatibility_check() { # check for tables targets and extensions
 check_raw_table
 check_rawpost_table
 check_security_table
+if ((EXEC_COMMANDS == 0 && NO_IPT_COMPAT_CHECK == 0)); then
+	mutex_on || return
+fi
 test_chain create || return
 test_ipset create || return
 check_ipt_targets || return
 check_ipt_modules || return
 test_chain delete
 test_ipset delete
+if ((EXEC_COMMANDS == 0 && NO_IPT_COMPAT_CHECK == 0)); then
+	cleanup_lock
+fi
 check_ipt_rule_list_param
 } # -------------------------------------------------------------------------
 
