@@ -1516,8 +1516,8 @@ fi
 if [[ ${GLOBAL_LOGLEVL} ]]; then
 	val_loglevel "${GLOBAL_LOGLEVL}" || return $ER_CONF
 else
-	GLOBAL_LOGLEVL="INFO"
-	log -N "\`GLOBAL_BURSTLIMIT' is not configured, setting it to the default value: \`INFO'"
+	GLOBAL_LOGLEVL="info"
+	log -N "\`GLOBAL_BURSTLIMIT' is not configured, setting it to the default value: \`info'"
 fi
 readonly GLOBAL_LOGLIMIT GLOBAL_BURSTLIMIT GLOBAL_LOGLEVL
 } # -------------------------------------------------------------------------
@@ -1711,7 +1711,7 @@ local str_tbl="$1" str_chn="$2"
 for pm_idx in ${!POLICY_MAP[@]}; do
 	set -- ${POLICY_MAP[pm_idx]}
 	if [[ ${str_tbl} = $1 && ${str_chn} = $2 ]]; then
-		printf "%s\n" "$3"
+		pr_str "$3"
 		return 0
 	fi
 done
@@ -3114,7 +3114,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 
 	# open array
 	m_count=0
-	printf "%s\n" "${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}=(" >&7
+	pr_str "${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}=(" >&7
 	# assign string type values
 	for rvar in table reverse_mode reverse_condition template_msg; do
 		if [[ ${!rvar} ]]; then
@@ -3141,7 +3141,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 		fi
 	done
 	# close array
-	printf "%s\n" ")" >&7
+	pr_str ")" >&7
 done
 } # -------------------------------------------------------------------------
 
@@ -3721,7 +3721,7 @@ _process_tcp_option() {
 local str_neg=""
 string_negated "${arg_list_tcp_option[ARG_LIST_IDX]}" && str_neg="! "
 RULELIST_TCP_OPTION[RULE_LIST_IDX]="-m tcp ${str_neg}--tcp-option $(remove_negation "${arg_list_tcp_option[ARG_LIST_IDX]}") "
-MSG_LIST_TCP_OPTION[RULE_LIST_IDX]="tcp-option=${str_neg/ /}$(remove_negation "${arg_list_tcp_option[ARG_LIST_IDX]}") "
+MSG_LIST_TCP_OPTION[RULE_LIST_IDX]="tcp-option=${arg_list_tcp_option[ARG_LIST_IDX]}"
 } # -------------------------------------------------------------------------
 
 _process_icmp_type() { # fill the icmp types rulelist and msglist arrays
@@ -3738,92 +3738,96 @@ fi
 _process_state() { # fill the state match rulelist and msglist arrays
 local str_neg=""
 string_negated "${arg_list_state[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_STATE[RULE_LIST_IDX]="-m state ${str_neg}--state ${arg_list_state[ARG_LIST_IDX]/!/! } "
-MSG_LIST_STATE[RULE_LIST_IDX]="state=${arg_list_state[ARG_LIST_IDX]} "
+if ((USE_M_CONNTRACK)); then
+	RULELIST_STATE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstate $(remove_negation "${arg_list_state[ARG_LIST_IDX]}") "
+	MSG_LIST_STATE[RULE_LIST_IDX]="ctstate=${arg_list_state[ARG_LIST_IDX]} "
+else
+	RULELIST_STATE[RULE_LIST_IDX]="-m state ${str_neg}--state $(remove_negation "${arg_list_state[ARG_LIST_IDX]}") "
+	MSG_LIST_STATE[RULE_LIST_IDX]="state=${arg_list_state[ARG_LIST_IDX]} "
+fi
 } # -------------------------------------------------------------------------
-
 
 _process_ctstate() {
 local str_neg=""
 string_negated "${arg_list_ctstate[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTSTATE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstate ${arg_list_ctstate[ARG_LIST_IDX]/!/! } "
+RULELIST_CTSTATE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstate $(remove_negation "${arg_list_ctstate[ARG_LIST_IDX]}") "
 MSG_LIST_CTSTATE[RULE_LIST_IDX]="ctstate=${arg_list_ctstate[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctproto() {
 local str_neg=""
 string_negated "${arg_list_ctproto[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTPROTO[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctproto ${arg_list_ctproto[ARG_LIST_IDX]/!/! } "
+RULELIST_CTPROTO[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctproto $(remove_negation "${arg_list_ctproto[ARG_LIST_IDX]}") "
 MSG_LIST_CTPROTO[RULE_LIST_IDX]="ctproto=${arg_list_ctproto[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctorigsrc() {
 local str_neg=""
 string_negated "${arg_list_ctorigsrc[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrc ${arg_list_ctorigsrc[ARG_LIST_IDX]/!/! } "
+RULELIST_CTORIGSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrc $(remove_negation "${arg_list_ctorigsrc[ARG_LIST_IDX]}") "
 MSG_LIST_CTORIGSRC[RULE_LIST_IDX]="ctorigsrc=${arg_list_ctorigsrc[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctorigdst() {
 local str_neg=""
 string_negated "${arg_list_ctorigdst[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdst ${arg_list_ctorigdst[ARG_LIST_IDX]/!/! } "
+RULELIST_CTORIGDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdst $(remove_negation "${arg_list_ctorigdst[ARG_LIST_IDX]}") "
 MSG_LIST_CTORIGDST[RULE_LIST_IDX]="ctorigdst=${arg_list_ctorigdst[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctreplsrc() {
 local str_neg=""
 string_negated "${arg_list_ctreplsrc[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrc ${arg_list_ctreplsrc[ARG_LIST_IDX]/!/! } "
+RULELIST_CTREPLSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrc $(remove_negation "${arg_list_ctreplsrc[ARG_LIST_IDX]}") "
 MSG_LIST_CTREPLSRC[RULE_LIST_IDX]="ctreplsrc=${arg_list_ctreplsrc[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctrepldst() {
 local str_neg=""
 string_negated "${arg_list_ctrepldst[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldst ${arg_list_ctrepldst[ARG_LIST_IDX]/!/! } "
+RULELIST_CTREPLDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldst $(remove_negation "${arg_list_ctrepldst[ARG_LIST_IDX]}") "
 MSG_LIST_CTREPLDST[RULE_LIST_IDX]="ctrepldst=${arg_list_ctrepldst[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctorigsrcport() {
 local str_neg=""
 string_negated "${arg_list_ctorigsrcport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrcport ${arg_list_ctorigsrcport[ARG_LIST_IDX]/!/! } "
+RULELIST_CTORIGSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrcport $(remove_negation "${arg_list_ctorigsrcport[ARG_LIST_IDX]}") "
 MSG_LIST_CTORIGSRCPORT[RULE_LIST_IDX]="ctorigsrcport=${arg_list_ctorigsrcport[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctorigdstport() {
 local str_neg=""
 string_negated "${arg_list_ctorigdstport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdstport ${arg_list_ctorigdstport[ARG_LIST_IDX]/!/! } "
+RULELIST_CTORIGDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdstport $(remove_negation "${arg_list_ctorigdstport[ARG_LIST_IDX]}") "
 MSG_LIST_CTORIGDSTPORT[RULE_LIST_IDX]="ctorigdstport=${arg_list_ctorigdstport[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctreplsrcport() {
 local str_neg=""
 string_negated "${arg_list_ctreplsrcport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrcport ${arg_list_ctreplsrcport[ARG_LIST_IDX]/!/! } "
+RULELIST_CTREPLSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrcport $(remove_negation "${arg_list_ctreplsrcport[ARG_LIST_IDX]}") "
 MSG_LIST_CTREPLSRCPORT[RULE_LIST_IDX]="ctreplsrcport=${arg_list_ctreplsrcport[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctrepldstport() {
 local str_neg=""
 string_negated "${arg_list_ctrepldstport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldstport ${arg_list_ctrepldstport[ARG_LIST_IDX]/!/! } "
+RULELIST_CTREPLDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldstport $(remove_negation "${arg_list_ctrepldstport[ARG_LIST_IDX]}") "
 MSG_LIST_CTREPLDSTPORT[RULE_LIST_IDX]="ctrepldstport=${arg_list_ctrepldstport[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctstatus() {
 local str_neg=""
 string_negated "${arg_list_ctstatus[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTSTATUS[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstatus ${arg_list_ctstatus[ARG_LIST_IDX]/!/! } "
+RULELIST_CTSTATUS[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstatus $(remove_negation "${arg_list_ctstatus[ARG_LIST_IDX]}") "
 MSG_LIST_CTSTATUS[RULE_LIST_IDX]="ctstatus=${arg_list_ctstatus[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_ctexpire() {
 local str_neg=""
 string_negated "${arg_list_ctexpire[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTEXPIRE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctexpire ${arg_list_ctexpire[ARG_LIST_IDX]/!/! } "
+RULELIST_CTEXPIRE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctexpire $(remove_negation "${arg_list_ctexpire[ARG_LIST_IDX]}") "
 MSG_LIST_CTEXPIRE[RULE_LIST_IDX]="ctexpire=${arg_list_ctexpire[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
@@ -3898,10 +3902,29 @@ MSG_LIST_TOS[RULE_LIST_IDX]="tos=${arg_list_m_tos[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_m_set() {
-local str_neg=""
-string_negated "${arg_list_m_set[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_SET[RULE_LIST_IDX]="-m set ${str_neg}--match-set $(remove_negation "${arg_list_m_set[ARG_LIST_IDX]/:/ }") "
-MSG_LIST_M_SET[RULE_LIST_IDX]="set=${arg_list_m_set[ARG_LIST_IDX]} "
+local str_entry 
+# ugly hack to allow more than one ipset match (m_set)
+unset RULELIST_M_SET[RULE_LIST_IDX] MSG_LIST_M_SET[RULE_LIST_IDX]
+for str_entry in ${arg_list_m_set[ARG_LIST_IDX]}; do
+	local str_neg=""
+	string_negated "$str_entry" && str_neg="! "
+	if [[ ${RULELIST_M_SET[RULE_LIST_IDX]} ]]; then
+		RULELIST_M_SET[RULE_LIST_IDX]="${RULELIST_M_SET[RULE_LIST_IDX]}-m set ${str_neg}--match-set $(remove_negation "${str_entry/:/ }") "
+		MSG_LIST_M_SET[RULE_LIST_IDX]="${MSG_LIST_M_SET[RULE_LIST_IDX]}set=${str_entry} "
+	else
+		RULELIST_M_SET[RULE_LIST_IDX]="-m set ${str_neg}--match-set $(remove_negation "${str_entry/:/ }") "
+		MSG_LIST_M_SET[RULE_LIST_IDX]="set=${str_entry} "
+	fi
+done
+#local str_neg=""
+#string_negated "${arg_list_m_set[ARG_LIST_IDX]}" && str_neg="! "
+#if [[ ${RULELIST_M_SET[RULE_LIST_IDX]} ]]; then
+#	RULELIST_M_SET[RULE_LIST_IDX]="${RULELIST_M_SET[RULE_LIST_IDX]}-m set ${str_neg}--match-set $(remove_negation "${arg_list_m_set[ARG_LIST_IDX]/:/ }") "
+#	MSG_LIST_M_SET[RULE_LIST_IDX]="${MSG_LIST_M_SET[RULE_LIST_IDX]}set=${arg_list_m_set[ARG_LIST_IDX]} "
+#else
+#	RULELIST_M_SET[RULE_LIST_IDX]="-m set ${str_neg}--match-set $(remove_negation "${arg_list_m_set[ARG_LIST_IDX]/:/ }") "
+#	MSG_LIST_M_SET[RULE_LIST_IDX]="set=${arg_list_m_set[ARG_LIST_IDX]} "
+#fi
 } # -------------------------------------------------------------------------
 
 _process_m_mark() { # fill the iptables mark match rulelist and msglist arrays
@@ -4201,6 +4224,7 @@ MSG_LIST_REJECT_TYPE[RULE_LIST_IDX]="reject=${arg_list_reject_type[ARG_LIST_IDX]
 } # -------------------------------------------------------------------------
 
 _process_log_level() { # fill the loglevel rulelist and msglist arrays
+arg_list_log_level[ARG_LIST_IDX]="$(string_tolower "${arg_list_log_level[ARG_LIST_IDX]}")"
 RULELIST_LOG_LEVEL[RULE_LIST_IDX]="--log-level ${arg_list_log_level[ARG_LIST_IDX]} "
 MSG_LIST_LOG_LEVEL[RULE_LIST_IDX]="level=${arg_list_log_level[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
@@ -4408,7 +4432,7 @@ local -i tmp_opt_idx reference_positional_param
 # last array member of the option list
 local -i option_list_sum=$(last_arr_member option_list_${OPTION_LIST_IDX})
 local str_var_name
-[[ $DEBUG_INFO ]] && printf "%s\n" "mandatory_vars_${OPTION_LIST_IDX}: ${mandatory_vars[OPTION_LIST_IDX]}"
+[[ $DEBUG_INFO ]] && pr_str "mandatory_vars_${OPTION_LIST_IDX}: ${mandatory_vars[OPTION_LIST_IDX]}"
 # for every variable name (comma separated) in mandatory_vars check if it's defined
 #for str_var_name in $(IFS=, split_val ${mandatory_vars[OPTION_LIST_IDX]}); do
 for str_var_name in ${mandatory_vars[OPTION_LIST_IDX]//,/ }; do
@@ -4460,8 +4484,8 @@ _read_option_list() {
 # read the values of the template option list and fill the according arrays for later processing
 # the rule string is set as positional parameters
 [[ $DEBUG_INFO ]] && {
-	printf "%s\n" "Parameters to ${FUNCNAME}(): ${*}"
-	printf "%s\n" "Referenced option list in ${FUNCNAME}(): ${!reference_command_array}"
+	pr_str "Parameters to ${FUNCNAME}(): ${*}"
+	pr_str "Referenced option list in ${FUNCNAME}(): ${!reference_command_array}"
 }
 local str_arr_var_name arr_element
 local -i reference_positional_param=1 tmp_opt_idx=0
@@ -4496,7 +4520,12 @@ for arr_element in ${!reference_command_array}; do
 				tmp_pos_par_val_array[reference_positional_param -1]="${str_arr_var_name} ${!reference_positional_param}"
 			fi
 			eval arr_tmp_rule_opt_${OPTION_LIST_IDX}[tmp_opt_idx]=${str_arr_var_name}
-			eval 'arg_list_'${str_arr_var_name}'[OPTION_LIST_IDX]="'"${!reference_positional_param}"'"'
+			# ugly hack for multiple ipset (m_set) match entries in rule
+			if [[ ${str_arr_var_name} = m_set ]] && var_defined_silent "arg_list_${str_arr_var_name}[$OPTION_LIST_IDX]"; then
+				eval 'arg_list_'${str_arr_var_name}'[OPTION_LIST_IDX]="${arg_list_'${str_arr_var_name}'[OPTION_LIST_IDX]} '"${!reference_positional_param}"'"'
+			else
+				eval 'arg_list_'${str_arr_var_name}'[OPTION_LIST_IDX]="'"${!reference_positional_param}"'"'
+			fi
 			[[ $DEBUG_INFO ]] && dbg_arr "arg_list_${str_arr_var_name}"
 			((++tmp_opt_idx))
 		fi
@@ -4507,12 +4536,12 @@ done
 if [[ ${state_match_arg[OPTION_LIST_IDX]} ]]; then
 	eval arr_tmp_rule_opt_${OPTION_LIST_IDX}[tmp_opt_idx]="state"
 	arg_list_state[OPTION_LIST_IDX]="${state_match_arg[OPTION_LIST_IDX]}"
-	[[ $DEBUG_INFO ]] && printf "%s\n" "arg_list_state[${OPTION_LIST_IDX}]: ${arg_list_state[OPTION_LIST_IDX]}"
+	[[ $DEBUG_INFO ]] && pr_str "arg_list_state[${OPTION_LIST_IDX}]: ${arg_list_state[OPTION_LIST_IDX]}"
 fi
 [[ $DEBUG_INFO ]] && {
-	printf "%s\n" "arr_tmp_rule_opt_${OPTION_LIST_IDX} in ${FUNCNAME}():"
+	pr_str "arr_tmp_rule_opt_${OPTION_LIST_IDX} in ${FUNCNAME}():"
 	dbg_arr "arr_tmp_rule_opt_${OPTION_LIST_IDX}"
-	printf "%s\n" "tmp_pos_par_val_array in ${FUNCNAME}():"
+	pr_str "tmp_pos_par_val_array in ${FUNCNAME}():"
 	dbg_arr "tmp_pos_par_val_array"
 }
 return 0
@@ -4588,7 +4617,7 @@ multi_destination_ports=0 multi_protocols=0 multi_input_devices=0 multi_output_d
 ((table_in_template == 0)) && table=""
 
 [[ $DEBUG_INFO ]] && {
-	printf "%s\n" "tmp_pos_par_val_array in ${FUNCNAME}():"
+	pr_str "tmp_pos_par_val_array in ${FUNCNAME}():"
 	dbg_arr "tmp_pos_par_val_array"
 }
 
@@ -5522,9 +5551,13 @@ for target_idx in ${!arg_list_target[@]}; do
 					log -E "\`${arg_list_nat_option[ARG_LIST_IDX]}' is not valid with ${str_target} target."
 					return 1
 				else
-					if [[ ${str_target} = REDIRECT ]] && ((KERN_VER[2] < 22)); then
-						log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.22'."
-						return 1
+					if [[ ${str_target} = REDIRECT ]]; then
+						if ((KERN_VER[0] = 2)); then
+							if ((KERN_VER[1] < 6)) || ((KERN_VER[1] = 6 && KERN_VER[2] < 22)); then
+								log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.22'."
+								return 1
+							fi
+						fi
 					fi
 				fi
 				
@@ -5674,18 +5707,16 @@ local -i rule_count_after=$((rule_count_before * multi_count))
 RULE_COUNT=${rule_count_after}
 
 [[ $DEBUG_INFO ]] && {
-	printf "%s\n" "Multiplying: ${str_rulelist_array} Global factor: ${RULE_MULTIPLICATOR} Rule Count before: ${rule_count_before} Current factor: ${multi_count} Rule sum: ${rule_count_after}"
+	pr_str "Multiplying: ${str_rulelist_array} Global factor: ${RULE_MULTIPLICATOR} Rule Count before: ${rule_count_before} Current factor: ${multi_count} Rule sum: ${rule_count_after}"
 }
 # for every arg_list array, check if it contains data. if yes, duplicate the entries
 for rule_array in ${ARG_LIST_ARRAYS_MULTIPLY}; do
 	if arr_populated "${rule_array}"; then
 		new_rule_count=${rule_count_before}
-#		for multi_type_idx in $("${SEQ}" ${rule_count_before} ${rule_count_before} $((rule_count_after - 1))); do
-#			for rule_idx in $("${SEQ}" 0 $((rule_count_before - 1))); do
-#				eval ${rule_array}'[new_rule_count++]="${'${rule_array}'[rule_idx]}"'
-#			done
 		for ((multi_type_idx=rule_count_before; multi_type_idx<=rule_count_after-1; multi_type_idx=multi_type_idx+rule_count_before)); do
 			for ((rule_idx=0; rule_idx<=rule_count_before-1; ++rule_idx)); do
+				[[ $DEBUG_INFO ]] && pr_str "new_rule_count: $new_rule_count multi_type_idx: $multi_type_idx rule_idx: $rule_idx"
+				[[ $DEBUG_INFO ]] && pr_str "${rule_array}[$new_rule_count]=${rule_array}[$rule_idx]"
 				eval ${rule_array}'[new_rule_count++]="${'${rule_array}'[rule_idx]}"'
 			done
 		done
@@ -5693,10 +5724,7 @@ for rule_array in ${ARG_LIST_ARRAYS_MULTIPLY}; do
 done
 
 # now place the multi types into the according arg_list array
-multi_type_idx=0
-#for rule_idx in $("${SEQ}" 0 ${rule_count_before} $((rule_count_after - 1))); do
-#	for range_idx in $("${SEQ}" ${rule_idx} $((rule_idx + $((rule_count_before - 1))))); do
-for ((rule_idx=0; rule_idx<=rule_count_after-1; rule_idx=rule_idx+rule_count_before)); do
+for ((rule_idx=0,multi_type_idx=0; rule_idx<=rule_count_after-1; rule_idx=rule_idx+rule_count_before,++multi_type_idx)); do
 	for ((rev_idx=0,range_idx=rule_idx; range_idx < rule_idx + rule_count_before; ++range_idx)); do
 		tmp_str_rulelist_array="${str_rulelist_array%,*}" # name of the arg_list array
 		if ((reverse_rule == 1)); then # this is a rule to reverse
@@ -5708,9 +5736,9 @@ for ((rule_idx=0; rule_idx<=rule_count_after-1; rule_idx=rule_idx+rule_count_bef
 			fi
 		fi
 		eval ${tmp_str_rulelist_array}'[range_idx]="'"${tmp_multi_type_array[multi_type_idx]}"'"'
+		[[ $DEBUG_INFO ]] && pr_str "multi_type_idx: $multi_type_idx rule_idx: $rule_idx range_idx: $range_idx"
 		[[ $DEBUG_INFO ]] && eval 'printf "%s\n" "'${tmp_str_rulelist_array}'['${range_idx}']: ${'${tmp_str_rulelist_array}'[range_idx]}"'
 	done
-	let multi_type_idx+=1
 done
 } # -------------------------------------------------------------------------
 
@@ -5785,7 +5813,7 @@ get_netname_by_iface() {
 local str_iface="$1" str_net
 for str_net in $NET_NAME_LIST; do
 	if [[ $(get_net_iface $str_net) = $str_iface ]]; then
-		printf "%s\n" "$str_net"
+		pr_str "$str_net"
 		break
 	fi
 done
@@ -5794,7 +5822,7 @@ done
 _set_chain_by_netname() { # set the target chain classified by netname
 #[[ ${str_target_chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]] || {
 [[ ${str_target_chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE||POST)ROUTING) ]] || {
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): chain is not a builtin quitting."
 	return 0
 }
 local str_src="${arg_list_src[ARG_LIST_IDX]}" str_dst="${arg_list_dst[ARG_LIST_IDX]}"
@@ -5804,7 +5832,7 @@ local new_target_chain="" str_src_netname="" str_dst_netname="" str_in_dev="" st
 local -i idev_members=odev_members=src_net_negated=dst_net_negated=src_net_external=dst_net_external=idev_external=odev_external=0
 
 [[ -z ${str_src} && -z ${str_dst} && -z ${str_idev} && -z ${str_odev} ]] && {
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): src, dst, idev and odev are empty - nothing to match"
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): src, dst, idev and odev are empty - nothing to match"
 	return 0
 }
 if [[ ${str_idev} ]]; then
@@ -5923,7 +5951,7 @@ done
 #esac
 ((src_net_negated == 1)) && { str_src_netname=""; src_net_dev=""; src_net_external=0 ; }
 ((dst_net_negated == 1)) && { str_dst_netname=""; dst_net_dev=""; dst_net_external=0 ; }
-[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): source network: '${str_src_netname}' destination network: '${str_dst_netname}'"
+[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): source network: '${str_src_netname}' destination network: '${str_dst_netname}'"
 
 [[ ${str_in_dev:-0} = ${str_out_dev:-1} ]] && {
 	log -W "Input and output device are equal, cannot set chain for \`${str_target_chain}'."
@@ -6050,7 +6078,7 @@ elif [[ ${str_dst_netname} ]]; then # only destination network is known
 		POSTROUTING) new_target_chain="${str_dst_netname}_POST" ;;
 	esac
 else  # no matching network, looking for matching interfaces
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): input interface: '${str_in_dev}' output interface: '${str_out_dev}'"
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): input interface: '${str_in_dev}' output interface: '${str_out_dev}'"
 	[[ ${str_in_dev} || ${str_out_dev} ]] || {
 		log -W "No matching network or interface found, cannot set chain for \`${str_target_chain}'."
 		return 0
@@ -6229,20 +6257,20 @@ else  # no matching network, looking for matching interfaces
 fi
 
 if [[ ${new_target_chain} ]]; then
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
 		create_chain "${table}" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
 else
-	if [[ $DEBUG_INFO ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
+	if [[ $DEBUG_INFO ]]; then pr_str "${FUNCNAME}(): Chain was not modified"; fi
 fi
 } # -------------------------------------------------------------------------
 
 _set_chain_by_interface() { # set the target chain classified by interfaces
 [[ ${str_target_chain} = @(INPUT|OUTPUT|FORWARD|PREROUTING|POSTROUTING) ]] || {
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): chain is not a builtin quitting."
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): chain is not a builtin quitting."
 	return 0
 }
 local str_idev="${arg_list_idev[ARG_LIST_IDX]}" str_odev="${arg_list_odev[ARG_LIST_IDX]}"
@@ -6354,14 +6382,14 @@ elif ((iface_count == 2)); then # two interfaces in rule
 	esac
 fi
 if [[ ${new_target_chain} ]]; then
-	[[ $DEBUG_INFO ]] && printf "%s\n" "${FUNCNAME}(): new chain: '${new_target_chain}'"
+	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
 		create_chain "${table}" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
 else
-	if [[ $DEBUG_INFO ]]; then printf "%s\n" "${FUNCNAME}(): Chain was not modified"; fi
+	if [[ $DEBUG_INFO ]]; then pr_str "${FUNCNAME}(): Chain was not modified"; fi
 fi
 } # -------------------------------------------------------------------------
 
@@ -6658,7 +6686,7 @@ if [[ ${reverse_mode} ]]; then
 			raise_cfg_err_count
 			return 0
 	esac
-	[[ $DEBUG_INFO ]] && printf "%s\n" "Reverse mode is set to: ${reverse_mode}"
+	[[ $DEBUG_INFO ]] && pr_str "Reverse mode is set to: ${reverse_mode}"
 	# check if there is a 'reverse condition' defined in the template
 	# if it evaluates to true, the second iptables chain provided will not be included in rule generation
 	if [[ ${reverse_condition} ]]; then
@@ -6674,7 +6702,7 @@ if [[ ${reverse_mode} ]]; then
 			reverse_rule=0
 			second_optionlist=0
 			chain_max=0
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Reverse mode disabled by reverse condition: ${reverse_condition}"
+			[[ $DEBUG_INFO ]] && pr_str "Reverse mode disabled by reverse condition: ${reverse_condition}"
 		}
 	fi
 
@@ -6684,7 +6712,7 @@ fi
 # now we know there is a target definition in the template
 if [[ ${table} ]]; then
 	table_in_template=1
-	[[ $DEBUG_INFO ]] && printf "%s\n" "Table set in template: ${table}"
+	[[ $DEBUG_INFO ]] && pr_str "Table set in template: ${table}"
 fi
 
 # look for target definitions in the template.
@@ -6696,7 +6724,7 @@ if ((${#target[@]})); then
 		return 0
 	}
 	target_in_template=1
-	[[ $DEBUG_INFO ]] && for opt_idx in ${!target[@]}; do printf "%s\n" "Target set in template: ${target[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!target[@]}; do pr_str "Target set in template: ${target[opt_idx]}"; done
 fi
 
 # look for chain defintions in the template.
@@ -6708,14 +6736,14 @@ if ((${#chain[@]})); then
 	done
 	# now we know there is a chain defined in the template.
 	chain_in_template=1
-	[[ $DEBUG_INFO ]] && for opt_idx in ${!chain[@]}; do printf "%s\n" "Chain set in template: ${chain[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!chain[@]}; do pr_str "Chain set in template: ${chain[opt_idx]}"; done
 fi
 # look for state match definitions in the template.
 # index [0] refers to chain[0] and index [1] to chain[1].
 # now we know there is a state definition in the template
 if ((${#state_match_arg[@]})); then
 	state_in_template=1
-	[[ $DEBUG_INFO ]] && for opt_idx in ${!state_match_arg[@]}; do printf "%s\n" "State set in template: ${state_match_arg[opt_idx]}"; done
+	[[ $DEBUG_INFO ]] && for opt_idx in ${!state_match_arg[@]}; do pr_str "State set in template: ${state_match_arg[opt_idx]}"; done
 fi
 
 # always use certain options

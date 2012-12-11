@@ -207,6 +207,7 @@ declare MODULE_RESTORE_FILE="${me}_modprobe_commands_$PID"
 declare PROC_RESTORE_FILE="${me}_proc_commands_$PID"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
+declare -i IPA_DID_LOCK=0	# Did we turn on mutex?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
 declare IPT_RULE_LIST_PARAM="-S"	# Switch to use for iptables rule diff
 declare IPSET_SYNTAX=old	# depending on ipset version use different syntax
@@ -933,14 +934,17 @@ mutex_on() {
 log -w "Creating lockfile: \`$LOCKFILE'"
 if (set -C; create_file "$LOCKFILE") &>/dev/null; then
 	pr_str "$PID" >"$LOCKFILE"
+	IPA_DID_LOCK=1
 else
-	log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME (PID: $PID) running?"
-	return $ER_FAIL
+	if ((IPA_DID_LOCK == 0)); then
+		log -E "Lockfile \`$LOCKFILE' found with PID: \`$("$CAT" "$LOCKFILE")', is another instance of $ME (PID: $PID) running?"
+		return $ER_FAIL
+	fi
 fi
 } # -------------------------------------------------------------------------
 
 cleanup_lock() { # remove temp lockfile
-if [[ -e $LOCKFILE ]]; then
+if ((IPA_DID_LOCK == 1)) && [[ -f $LOCKFILE ]]; then
 	verbose_msg "Removing lock file: \`$LOCKFILE'."
 	run_rm "$LOCKFILE" || :
 fi
