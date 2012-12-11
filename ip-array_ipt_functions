@@ -5735,9 +5735,9 @@ for ((rule_idx=0,multi_type_idx=0; rule_idx<=rule_count_after-1; rule_idx=rule_i
 				rev_idx=0
 			fi
 		fi
-		eval ${tmp_str_rulelist_array}'[range_idx]="'"${tmp_multi_type_array[multi_type_idx]}"'"'
 		[[ $DEBUG_INFO ]] && pr_str "multi_type_idx: $multi_type_idx rule_idx: $rule_idx range_idx: $range_idx"
 		[[ $DEBUG_INFO ]] && eval 'printf "%s\n" "'${tmp_str_rulelist_array}'['${range_idx}']: ${'${tmp_str_rulelist_array}'[range_idx]}"'
+		eval ${tmp_str_rulelist_array}'[range_idx]="'"${tmp_multi_type_array[multi_type_idx]}"'"'
 	done
 done
 } # -------------------------------------------------------------------------
@@ -7482,7 +7482,7 @@ restrict_output() { # restrict OUTPUT chain
 ((ENABLE_FILTER)) || return 0
 [[ ${RESTRICT_OUTPUT} ]] || { log -v 'RESTRICT_OUTPUT'; return 0; }
 local -i idx in_rule_exist in_estab_found in_related_found
-local no_restr_state no_restr_state_out str_iface str_iface_ip str_existing_in_chain
+local str_state_in_msg str_state_out_msg str_iface str_iface_ip str_existing_in_chain
 local TEMPLATE_BUILTIN_RESTRICT_OUTPUT=(
 "table=filter"
 "target[0]=ACCEPT"
@@ -7500,8 +7500,8 @@ if [[ ${NO_OUTPUT_MSG} ]]; then log -N "${NO_OUTPUT_MSG}"; fi
 case "${RESTRICT_OUTPUT}" in
 	IPBOUND | IFBOUND) # rules bound to IP or interface
 		case "${REST_ALLOW_RELATED:=1}" in # set state for back in traffic
-			0) no_restr_state=${stateE} no_restr_state_out=${stateNE} str_state_in_msg=${stE} str_state_out_msg=${stNE} ;;
-			1) no_restr_state=${stateER} no_restr_state_out=${stateNER} str_state_in_msg=${stER} str_state_out_msg=${stNER} ;;
+			0) str_state_in_msg=${stE} str_state_out_msg=${stNE} ;;
+			1) str_state_in_msg=${stER} str_state_out_msg=${stNER} ;;
 			*) log -i "${REST_ALLOW_RELATED}" 'REST_ALLOW_RELATED'
 				raise_cfg_err_count
 				return 0
@@ -8276,43 +8276,48 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_IPSEC_JUMPS RULEBLOCK_BUILTIN_IPSEC_JUMPS
 # -------------------------------------------------------------------------
 state_allow_chains() {
 ((ENABLE_FILTER)) || return 0
-[[ ${KNOWN_TRAFFIC_MAP} ]] || {
+[[ $KNOWN_TRAFFIC_MAP ]] || {
 	log -w "Not applying known traffic rules"
 	return 0
 }
 local -i idx
+if ((USE_M_CONNTRACK == 1)); then
+	str_state_arg="-m conntrack --ctstate"
+else
+	str_state_arg="-m state --state"
+fi
 log -I "Allowing established/related traffic in certain chains"
 for idx in ${!KNOWN_TRAFFIC_MAP[@]}; do
 	set -- ${KNOWN_TRAFFIC_MAP[idx]}
 	local str_chain="$1" str_state="$2" str_place="$3"
-	if [[ ${str_state} && ${str_state} != $RULE_SEP ]]; then
-		case "${str_state}" in
-			e|E) local str_state_cmd="${stateE}" str_state=${stE} ;;
-			r|R) local str_state_cmd="${stateR}" str_state=${stR} ;;
-			er|ER) local str_state_cmd="${stateER}" str_state=${stER} ;;
-			*) log -E "Invalid value \`${str_state}' for state descriptor in variable \`KNOWN_TRAFFIC_MAP'."
+	if [[ $str_state && $str_state != $RULE_SEP ]]; then
+		case "$str_state" in
+			e|E) local str_state_cmd="$str_state_arg ESTABLISHED" str_state=ESTABLISHED ;;
+			r|R) local str_state_cmd="$str_state_arg RELATED" str_state=RELATED ;;
+			er|ER) local str_state_cmd="$str_state_arg ESTABLISHED,RELATED" str_state=ESTABLISHED,RELATED ;;
+			*) log -E "Invalid value \`$str_state' for state descriptor in variable \`KNOWN_TRAFFIC_MAP'."
 				raise_cfg_err_count
 				continue
 		esac
 	else
-		local str_state="${stER}" str_state_cmd="${stateER}"
+		local str_state=ESTABLISHED,RELATED str_state_cmd="$str_state_arg ESTABLISHED,RELATED"
 	fi
-	if [[ ${str_place} && ${str_place} != $RULE_SEP ]]; then
-		local str_place=$(string_tolower "${str_place}")
-		[[ ${str_place} = @(top|bottom) ]] || {
-			log -E "Invalid value \`${str_place}' for rule placement descriptor in variable \`KNOWN_TRAFFIC_MAP'."
+	if [[ $str_place && $str_place != $RULE_SEP ]]; then
+		local str_place=$(string_tolower "$str_place")
+		[[ $str_place = @(top|bottom) ]] || {
+			log -E "Invalid value \`$str_place' for rule placement descriptor in variable \`KNOWN_TRAFFIC_MAP'."
 			raise_cfg_err_count
 			continue
 		}
 	else
 		local str_place=top
 	fi
-	case "${str_place}" in
+	case "$str_place" in
 		bottom) local str_add='add_rule' ;;
 		top) local str_add='insert_ipt_rule' ;;
 	esac
-	log -e "${PF}accept table=filter chain=${str_chain} state=${str_state} placement=${str_place}"
-	${str_add} filter "${str_chain}" ${str_state_cmd} -j ACCEPT
+	log -e "${PF}accept table=filter chain=$str_chain state=$str_state placement=$str_place"
+	$str_add filter "$str_chain" $str_state_cmd -j ACCEPT
 done
 } # -------------------------------------------------------------------------
 
