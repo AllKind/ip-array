@@ -419,6 +419,7 @@ case "$str_type" in
 	*) log -E "Unknown set type \`$str_type'."
 		return $ER_CONF
 esac
+log -e "creating set: \`$str_set'"
 IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="$str_create $str_set $str_type ${arr_opts[@]}"
 CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set"
 } # -------------------------------------------------------------------------
@@ -429,7 +430,13 @@ local str_set="$1" str_cmd="-A"
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=add
 fi
-val_setname "$str_set" || return
+val_setname "$str_set" || { raise_cfg_err_count; return 0; }
+lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} || {
+	log -E "ipset set \`$str_set' has not been created."
+	raise_cfg_err_count
+	return 0
+}
+log -e "adding to set: $*"
 IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $@"
 } # -------------------------------------------------------------------------
 
@@ -7293,26 +7300,56 @@ anti_spoof_rules() { # Anti-Spoofing rules in raw table
 }
 
 local -i idx=0
-local str_xnet str_lnet str_xnet_if
+local str_xnet str_lnet
 local -a RULEBLOCK_BUILTIN_ANTI_SPOOF
 local TEMPLATE_BUILTIN_ANTI_SPOOF=(
 "table=raw"
 "template_msg='Creating Anti-Spoofing rules'"
-"option_list_0[0]=chain"
-"option_list_0[1]=target"
-"option_list_0[2]=idev"
-"option_list_0[3]=src"
 )
 
-create_chain raw ANTI_SPOOF || return
-
-for str_xnet in $EXT_NETNAME_LIST; do
-	str_xnet_if=$(get_net_iface $str_xnet)
-	for str_lnet in $LOC_NETNAME_LIST; do
-		RULEBLOCK_BUILTIN_ANTI_SPOOF[idx++]="ANTI_SPOOF DROP $str_xnet_if $(get_net_addr $str_lnet)"
+if ((USE_IPSET)); then
+	if [[ $IPSET_SYNTAX = old ]]; then
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[0]=chain"
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[1]=target"
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[2]=idev"
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[3]=m_set"
+		create_chain raw ANTI_SPOOF
+		ipset_create ANTI_SPOOF nethash || return 0
+		for str_xnet in $EXT_NETNAME_LIST; do
+			str_xnet=$(get_net_iface $str_xnet)
+			for str_lnet in $LOC_NETNAME_LIST; do
+				ipset_add ANTI_SPOOF "$(get_net_addr $str_lnet)"
+			done
+			RULEBLOCK_BUILTIN_ANTI_SPOOF[idx++]="ANTI_SPOOF DROP $str_xnet ANTI_SPOOF:src"
+		done
+		RULEBLOCK_BUILTIN_ANTI_SPOOF[idx]="PREROUTING ANTI_SPOOF"
+	else
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="chain[0]=PREROUTING"
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="target[0]=DROP"
+		TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[0]=m_set"
+		ipset_create ANTI_SPOOF "hash:net,iface" || return 0
+		for str_xnet in $EXT_NETNAME_LIST; do
+			str_xnet=$(get_net_iface $str_xnet)
+			for str_lnet in $LOC_NETNAME_LIST; do
+				ipset_add ANTI_SPOOF "$(get_net_addr $str_lnet),$str_xnet"
+			done
+		done
+		RULEBLOCK_BUILTIN_ANTI_SPOOF[idx]="ANTI_SPOOF:src,dst"
+	fi
+else
+	TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[0]=chain"
+	TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[1]=target"
+	TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[2]=idev"
+	TEMPLATE_BUILTIN_ANTI_SPOOF[${#TEMPLATE_BUILTIN_ANTI_SPOOF[@]}]="option_list_0[3]=src"
+	create_chain raw ANTI_SPOOF
+	for str_xnet in $EXT_NETNAME_LIST; do
+		str_xnet=$(get_net_iface $str_xnet)
+		for str_lnet in $LOC_NETNAME_LIST; do
+			RULEBLOCK_BUILTIN_ANTI_SPOOF[idx++]="ANTI_SPOOF DROP $str_xnet $(get_net_addr $str_lnet)"
+		done
 	done
-done
-RULEBLOCK_BUILTIN_ANTI_SPOOF[idx]="PREROUTING ANTI_SPOOF"
+	RULEBLOCK_BUILTIN_ANTI_SPOOF[idx]="PREROUTING ANTI_SPOOF"
+fi
 process_ipt_ruleblock TEMPLATE_BUILTIN_ANTI_SPOOF RULEBLOCK_BUILTIN_ANTI_SPOOF
 } # -------------------------------------------------------------------------
 
