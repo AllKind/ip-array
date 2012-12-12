@@ -5350,21 +5350,25 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(nat_option)
 			case "${tmp_opt_var_value}" in
 				random)
-					if ((KERN_VER[1] < 6)); then
-						log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.21'."
-						return 1
-					elif ((KERN_VER[2] < 21)); then
-						log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.21'."
-						return 1
+					if ((KERN_VER[0] == 2)); then
+						if ((KERN_VER[1] < 6)); then
+							log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.21'."
+							return 1
+						elif ((KERN_VER[1] == 6 && KERN_VER[2] < 21)); then
+							log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.21'."
+							return 1
+						fi
 					fi
 				;;
 				persistent)
-					if ((KERN_VER[1] < 6)); then
-						log -E "NAT \`persistent' option requires kernel versions greater or equal to \`2.6.29'."
-						return 1
-					elif ((KERN_VER[2] < 29)); then
-						log -E "NAT \`persistent' option requires kernel versions greater or equal to \`2.6.29'."
-						return 1
+					if ((KERN_VER[0] == 2)); then
+						if ((KERN_VER[1] < 6)); then
+							log -E "NAT \`persistent' option requires kernel versions greater or equal to \`2.6.29'."
+							return 1
+						elif ((KERN_VER[1] == 6 && KERN_VER[2] < 29)); then
+							log -E "NAT \`persistent' option requires kernel versions greater or equal to \`2.6.29'."
+							return 1
+						fi
 					fi
 				;;
 				*) log -i "${tmp_opt_var_value}" "NAT option descriptor"
@@ -5556,8 +5560,8 @@ for target_idx in ${!arg_list_target[@]}; do
 					return 1
 				else
 					if [[ ${str_target} = REDIRECT ]]; then
-						if ((KERN_VER[0] = 2)); then
-							if ((KERN_VER[1] < 6)) || ((KERN_VER[1] = 6 && KERN_VER[2] < 22)); then
+						if ((KERN_VER[0] == 2)); then
+							if ((KERN_VER[1] < 6)) || ((KERN_VER[1] == 6 && KERN_VER[2] < 22)); then
 								log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.22'."
 								return 1
 							fi
