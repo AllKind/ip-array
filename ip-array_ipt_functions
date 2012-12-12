@@ -1344,33 +1344,33 @@ if ! [[ -r $IP_TABLES_NAMES ]]; then
 fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
-		if [[ ${c} = Chain ]]; then
-			if [[ ${table} = filter ]]; then
-				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD) ]]; then
-					dn run_ipt -t ${table} -P ${chain} 'DROP' || continue
+		if [[ $c = Chain ]]; then
+			if [[ $table = filter ]]; then
+				if [[ $chain = @(@(IN|OUT)PUT|FORWARD) ]]; then
+					dn run_ipt -t $table -P $chain 'DROP' || continue
 				fi
 			else
-				if [[ ${chain} = @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
-					dn run_ipt -t ${table} -P ${chain} 'ACCEPT' || continue
+				if [[ $chain = @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
+					dn run_ipt -t $table -P $chain 'ACCEPT' || continue
 				fi
 			fi
 		fi
-	done < <(run_ipt -t ${table} -nL)
+	done < <(run_ipt -t $table -nL)
 done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
 flush_table() { # flush all chains in a specified table
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local tgt_tbl="$1"
-val_table "${tgt_tbl}" || return
+val_table "$tgt_tbl" || return
 local c chain rest
-log -S "Flushing chains in "${tgt_tbl}" table"
+log -S "Flushing chains in "$tgt_tbl" table"
 while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
-	if [[ ${c} = Chain ]]; then
-		IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${tgt_tbl} -F ${chain}"
+	if [[ $c = Chain ]]; then
+		IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t $tgt_tbl -F $chain"
 	fi
-done < <(run_ipt -t "${tgt_tbl}" -nL)
-IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t "${tgt_tbl}" -X"
+done < <(run_ipt -t "$tgt_tbl" -nL)
+IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t "$tgt_tbl" -X"
 } # -------------------------------------------------------------------------
 
 flushdel_tables_immediate() { # immediately flush and delete existing tables
@@ -1389,11 +1389,11 @@ if ! [[ -r $IP_TABLES_NAMES ]]; then
 fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
-		if [[ ${c} = Chain ]]; then
-			run_ipt -t ${table} -F ${chain} || log -f "flushing ${chain} chain"
+		if [[ $c = Chain ]]; then
+			run_ipt -t $table -F $chain || log -f "flushing $chain chain"
 		fi
-	done < <(run_ipt -t ${table} -nL 2>/dev/null)
-	run_ipt -t ${table} -X || log -f "deleting user defined chains in ${table} table"
+	done < <(run_ipt -t $table -nL 2>/dev/null)
+	run_ipt -t $table -X || log -f "deleting user defined chains in $table table"
 done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
@@ -1410,10 +1410,10 @@ fi
 while read -t $GLOBAL_READ_TIMEOUT table; do
 	while read -t $GLOBAL_READ_TIMEOUT c chain rest; do
 		if [[ $c = Chain ]]; then
-			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -F ${chain}"
+			IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t $table -F $chain"
 		fi
 	done < <(run_ipt -t $table -nL 2>/dev/null)
-	IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t ${table} -X"
+	IPT_FLUSH_ARRAY[${#IPT_FLUSH_ARRAY[@]}]="-t $table -X"
 done < "$IP_TABLES_NAMES"
 } # -------------------------------------------------------------------------
 
@@ -1468,12 +1468,12 @@ case "$1" in
 			if [[ $rvar = rawpost ]]; then
 				((RAWPOST_TABLE_PRESENT == 1)) || continue
 			fi
-			if dn run_ipt -t $rvar -nL ${BIC_TEST_CHAIN}; then
-				log -W "chain ${BIC_TEST_CHAIN} in $rvar table already exists"
+			if dn run_ipt -t $rvar -nL $BIC_TEST_CHAIN; then
+				log -W "chain $BIC_TEST_CHAIN in $rvar table already exists"
 				continue
 			else
-				run_ipt -t $rvar -N ${BIC_TEST_CHAIN} || {
-					log -E "Failed creating chain ${BIC_TEST_CHAIN} in $rvar table"
+				run_ipt -t $rvar -N $BIC_TEST_CHAIN || {
+					log -E "Failed creating chain $BIC_TEST_CHAIN in $rvar table"
 					return $ER_FAIL
 				}
 			fi
@@ -1488,8 +1488,8 @@ case "$1" in
 			if [[ $rvar = rawpost ]]; then
 				((RAWPOST_TABLE_PRESENT == 1)) || continue
 			fi
-			run_ipt -t $rvar -F ${BIC_TEST_CHAIN} || log -f "flushing chain ${BIC_TEST_CHAIN} in $rvar table"
-			run_ipt -t $rvar -X ${BIC_TEST_CHAIN} || log -f "deleting chain ${BIC_TEST_CHAIN} in $rvar table"
+			run_ipt -t $rvar -F $BIC_TEST_CHAIN || log -f "flushing chain $BIC_TEST_CHAIN in $rvar table"
+			run_ipt -t $rvar -X $BIC_TEST_CHAIN || log -f "deleting chain $BIC_TEST_CHAIN in $rvar table"
 		done
 	;;
 	*) log -o "$1" $FUNCNAME
@@ -2688,11 +2688,11 @@ dn run_ipt -nL -t ${str_tbl} || {
 	return 0
 }
 while read c str_chain rest; do
-	if [[ ${c} = Chain ]]; then
+	if [[ $c = Chain ]]; then
 		idx=0
 		str_Ochain=${str_chain}
 	else
-		if ((idx++ == lim)) && [[ -z ${c} && ${str_Ochain} != @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
+		if ((idx++ == lim)) && [[ -z $c && ${str_Ochain} != @(@(IN|OUT)PUT|FORWARD|@(PRE|POST)ROUTING) ]]; then
 			log -w "${PF}found empty chain: \`${str_Ochain}'"
 			empty_chains[${#empty_chains[@]}]="${str_Ochain}"
 		fi
@@ -2706,14 +2706,14 @@ str_Ochain=""
 while read rnum str_target rest; do
 	((${#empty_chains[@]} > 0 )) || break
 	if [[ ${rnum} = Chain ]]; then
-		str_Ochain=${str_target}
+		str_Ochain=$str_target
 		continue
 	fi
 	[[ ${rnum} != +([[:digit:]]) ]] && continue
 	[[ ${str_Ochain} ]] || { log -U $FUNCNAME; return 1; }
 	for idx in ${!empty_chains[@]}; do
-		if [[ ${empty_chains[idx]} = ${str_target} ]]; then
-			log -e "${PF}deleting table=${str_tbl} chain=${str_Ochain} rule-number=${rnum} target=${str_target}"
+		if [[ ${empty_chains[idx]} = $str_target ]]; then
+			log -e "${PF}deleting table=${str_tbl} chain=${str_Ochain} rule-number=${rnum} target=$str_target"
 			cmd_arr[${#cmd_arr[@]}]="'${IPT}' -t ${str_tbl} -D '${str_Ochain}' ${rnum}"
 			break
 		fi
@@ -2744,7 +2744,7 @@ dn run_ipt -nL -t ${str_tbl} || {
 	return 0
 }
 while read c str_chain rest; do
-	if [[ ${c} = Chain ]]; then
+	if [[ $c = Chain ]]; then
 		if [[ ${rest} = "(0 references)" ]]; then
 			log -e "removing table=${str_tbl} chain=${str_chain}"
 			dn run_ipt -t ${str_tbl} -F "${str_chain}" || {
@@ -2816,7 +2816,7 @@ local -a tmp_template_arr tmp_tgt_arr tmp_chn_arr tmp_state_arr tmp_opt0_arr tmp
 local tmp_templ_ass tmp_templ_val tmp_man_var0 tmp_man_var1 template_to_load="$1" # The name of the template to load
 
 # copy the template array to a temporary array
-$(${copy_array} "${template_to_load}" 'tmp_template_arr')
+$($copy_array "${template_to_load}" 'tmp_template_arr')
 # cycle through the template array data, look for known values.
 # if found and option is a 'normal' variable, set it immediately,
 # if option is an array variable, copy data to temp array,
@@ -2969,8 +2969,8 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	fi
 
 	# check if we have an iptables table definition in template.
-	if [[ ${table} ]]; then
-		val_table "${table}" || {
+	if [[ $table ]]; then
+		val_table "$table" || {
 			log -E "Invalid table specification in template \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'."
 			raise_cfg_err_count
 			continue
@@ -3552,7 +3552,7 @@ load_security_rules || return
 # -------------------------------------------------------------------------
 _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
-case "${str_target}" in
+case "$str_target" in
 	ACCEPT) str_target_msg="accept" ;;
 	CLASSIFY) str_target_msg="classify" ;;
 	CONNMARK) str_target_msg="connmark" ;;
@@ -3581,14 +3581,14 @@ case "${str_target}" in
 	TOS) str_target_msg="set-tos" ;;
 	TPROXY) str_target_msg="tproxy" ;;
 	TTL) str_target_msg="set-ttl" ;;
-	*) str_target_msg="target: ${str_target}" ;;
+	*) str_target_msg="target: $str_target" ;;
 esac
-RULELIST_TARGET[RULE_LIST_IDX]="${str_target}"
+RULELIST_TARGET[RULE_LIST_IDX]="$str_target"
 MSG_LIST_TARGET[RULE_LIST_IDX]="${str_target_msg}"
 } # -------------------------------------------------------------------------
 
 _process_table() { # fill the iptables table msglist array
-MSG_LIST_TABLE[RULE_LIST_IDX]="table=${table} "
+MSG_LIST_TABLE[RULE_LIST_IDX]="table=$table "
 } # -------------------------------------------------------------------------
 
 _process_chain() { # fill the iptables chain rulelist and msglist arrays
@@ -4172,7 +4172,7 @@ esac
 } # -------------------------------------------------------------------------
 
 _process_nat_ip() { # fill the nat ip address rulelist and msglist arrays
-case "${str_target}" in
+case "$str_target" in
 	SNAT)
 		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-source ${arg_list_nat_ip[ARG_LIST_IDX]}"
 		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATsrc=${arg_list_nat_ip[ARG_LIST_IDX]} "
@@ -4193,13 +4193,13 @@ case "${str_target}" in
 		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-destination ${arg_list_nat_ip[ARG_LIST_IDX]}"
 		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATdst=${arg_list_nat_ip[ARG_LIST_IDX]} "
 	;;
-	*) log -i "${str_target}" 'an iptables target'
+	*) log -i "$str_target" 'an iptables target'
 		return 1
 esac
 } # -------------------------------------------------------------------------
 
 _process_nat_port() { # fill the nat port address rulelist and msglist arrays
-case "${str_target}" in
+case "$str_target" in
 	MASQUERADE|REDIRECT)
 		case "$(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}")" in # only valid with tcp or udp
 			(tcp|udp|6|17)
@@ -4423,7 +4423,7 @@ _validate_ipt_option_name() { # check if the given template option name is valid
 
 _val_tgtopt_set() {
 check_var_no_sep_silent "$1" || {
-	log -E "No ${str_target} target option value specified."
+	log -E "No $str_target target option value specified."
 	return 1
 }
 } # -------------------------------------------------------------------------
@@ -4629,36 +4629,36 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 	tmp_opt_var="${tmp_pos_par_val_array[pos_idx]%% *}"
 #	tmp_opt_var_value="${tmp_pos_par_val_array[pos_idx]##* }"
 	tmp_opt_var_value="${tmp_pos_par_val_array[pos_idx]#* }"
-	tmp_opt_var_value_neg_ok=$(remove_negation "${tmp_opt_var_value}")
-	case "${tmp_opt_var}" in
+	tmp_opt_var_value_neg_ok=$(remove_negation "$tmp_opt_var_value")
+	case "$tmp_opt_var" in
 		(table)
-			val_table "${tmp_opt_var_value}" || return 1
+			val_table "$tmp_opt_var_value" || return 1
 			((table_in_template == 1)) && {
-				log -N "Table definition \`${tmp_opt_var_value}' from option list \
-					overwrites entry \`${table}' from template."
+				log -N "Table definition \`$tmp_opt_var_value' from option list \
+					overwrites entry \`$table' from template."
 			}
-			table="${tmp_opt_var_value}"
+			table="$tmp_opt_var_value"
 			table_in_rule=1
 		;;
 		(target)
 			((target_in_template == 1)) && {
-				log -N "Target definition \`${tmp_opt_var_value}' from option list \
+				log -N "Target definition \`$tmp_opt_var_value' from option list \
 					overwrites entry \`${arr_tmp_targets[*]}' from template."
 			}
 			arg_list_target=()
-#			for str_var in $(IFS=, split_val ${tmp_opt_var_value}); do
+#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 			for str_var in ${tmp_opt_var_value//,/ }; do
-				validate_target "${str_var}" || return 1
-				arg_list_target[${#arg_list_target[@]}]="${str_var}"
+				validate_target "$str_var" || return 1
+				arg_list_target[${#arg_list_target[@]}]="$str_var"
 			done
 			target_in_rule=1 # there is a target definition in the rule
 		;;
 		(chain)
 			((chain_in_template == 1)) && {
-				log -N "Chain definition \`${tmp_opt_var_value}' from option list \
+				log -N "Chain definition \`$tmp_opt_var_value' from option list \
 					overwrites entry \`${arr_tmp_chains[*]}' from template."
 			}
-			arg_idx=$(($(IFS=, members_in_string ${tmp_opt_var_value}) - 1))
+			arg_idx=$(($(IFS=, members_in_string $tmp_opt_var_value) - 1))
 			chain_max=$((chain_max == -1 ? arg_idx : chain_max))
 			if ((arg_idx > chain_max)); then
 				log -E "Not more than $((chain_max + 1)) chain specifications allowed."
@@ -4666,55 +4666,55 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 			arg_list_chain=()
 			arg_idx=0
-#			for str_var in $(IFS=, split_val ${tmp_opt_var_value}); do
+#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 			for str_var in  ${tmp_opt_var_value//,/ }; do
-				val_userdef_chain_target "${str_var}" || return 1
-				arg_list_chain[${#arg_list_chain[@]}]="${str_var}"
+				val_userdef_chain_target "$str_var" || return 1
+				arg_list_chain[${#arg_list_chain[@]}]="$str_var"
 				((++arg_idx > chain_max)) && break
 			done
 			chain_in_rule=1 # there is a chain definition in the rule
 		;;
 		(idev|odev)
-			if (($(IFS=, members_in_string ${tmp_opt_var_value}) > 1)); then
-				val_multi_device "${tmp_opt_var_value}" || return 1
-				case "${tmp_opt_var}" in
+			if (($(IFS=, members_in_string $tmp_opt_var_value) > 1)); then
+				val_multi_device "$tmp_opt_var_value" || return 1
+				case "$tmp_opt_var" in
 					(idev)
 						multi_input_devices=1
-						str_multi_input_devices="${tmp_opt_var_value}"
+						str_multi_input_devices="$tmp_opt_var_value"
 					;;
 					(odev)
 						multi_output_devices=1
-						str_multi_output_devices="${tmp_opt_var_value}"
+						str_multi_output_devices="$tmp_opt_var_value"
 					;;
 				esac
 			else
-				val_ifname "${tmp_opt_var_value_neg_ok}" || return 1
+				val_ifname "$tmp_opt_var_value_neg_ok" || return 1
 			fi
 		;;
 		(src|dst)
 			# see if the address specified matches a net name
-			if [[ ${tmp_opt_var_value_neg_ok} = @(${NET_NAME_LIST//[[:space:]]/|}) ]]; then
-				if string_negated "${tmp_opt_var_value}"; then
-					str_var="!$(get_net_addr "${tmp_opt_var_value_neg_ok}")"
+			if [[ $tmp_opt_var_value_neg_ok = @(${NET_NAME_LIST//[[:space:]]/|}) ]]; then
+				if string_negated "$tmp_opt_var_value"; then
+					str_var="!$(get_net_addr "$tmp_opt_var_value_neg_ok")"
 				else
-					str_var=$(get_net_addr "${tmp_opt_var_value}")
+					str_var=$(get_net_addr "$tmp_opt_var_value")
 				fi
-				[[ ${str_var} ]] || {
-					log -E "Unable to retrieve address for net \`${tmp_opt_var_value_neg_ok}'."
+				[[ $str_var ]] || {
+					log -E "Unable to retrieve address for net \`$tmp_opt_var_value_neg_ok'."
 					return 1
 				}
 				for arg_idx in "${!arg_list_src[@]}"; do
-					if [[ ${arg_list_src[arg_idx]} = ${tmp_opt_var_value} ]]; then
-						arg_list_src[arg_idx]="${str_var}"
+					if [[ ${arg_list_src[arg_idx]} = $tmp_opt_var_value ]]; then
+						arg_list_src[arg_idx]="$str_var"
 					fi
 				done
 				for arg_idx in "${!arg_list_dst[@]}"; do
-					if [[ ${arg_list_dst[arg_idx]} = ${tmp_opt_var_value} ]]; then
-						arg_list_dst[arg_idx]="${str_var}"
+					if [[ ${arg_list_dst[arg_idx]} = $tmp_opt_var_value ]]; then
+						arg_list_dst[arg_idx]="$str_var"
 					fi
 				done
 			else
-				val_ip4_addr "${tmp_opt_var_value_neg_ok}" || return 1
+				val_ip4_addr "$tmp_opt_var_value_neg_ok" || return 1
 				if [[ ${IPSTRING} = IPRANGE ]]; then
 					((iprange_MOD_EXIST)) || { log -s 'iprange'; return 1; }
 				fi
@@ -4722,14 +4722,14 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(mac)
 			((mac_MOD_EXIST)) || { log -s 'mac'; return 1; }
-			val_mac "${tmp_opt_var_value_neg_ok}" || return 1
+			val_mac "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(nfqueue)
 			((NFQUEUE_TGT_EXIST)) || { log -t 'NFQUEUE'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:digit:]]))
-					if ! val_16bit "${tmp_opt_var_value}"; then
-						log -i "${tmp_opt_var_value}" "queue number"
+					if ! val_16bit "$tmp_opt_var_value"; then
+						log -i "$tmp_opt_var_value" "queue number"
 						return 1
 					fi
 				;;
@@ -4742,18 +4742,18 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					done
 					val_range "${tmp_opt_var_value%:*}" "${tmp_opt_var_value#*:}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "nfqueue descriptor"
+				*) log -i "$tmp_opt_var_value" "nfqueue descriptor"
 					return 1
 			esac
 		;;
 		(helper)
 			((helper_MOD_EXIST)) || { log -s 'helper'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:word:]])) : ;;
 				+([[:word:]])-*)
 					val_port "${tmp_opt_var_value#+([[:word:]])-}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "conntrack helper descriptor"
+				*) log -i "$tmp_opt_var_value" "conntrack helper descriptor"
 					return 1
 			esac
 		;;
@@ -4761,8 +4761,8 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((owner_MOD_EXIST)) || { log -s 'owner'; return 1; }
 			set -- ${tmp_opt_var_value//:/ }
 			for str_var in uid gid socket; do
-				lsearch "${str_var}" ${*/${str_var}/} && {
-					log -E "Duplicate option \`${str_var}' in \`${tmp_opt_var_value}'."
+				lsearch "$str_var" ${*/${str_var}/} && {
+					log -E "Duplicate option \`$str_var' in \`$tmp_opt_var_value'."
 					return 1
 				}
 			done
@@ -4777,51 +4777,51 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					?(!)socket)
 						shift
 					;;
-					*) log -i "${tmp_opt_var_value}" "owner match descriptor"
+					*) log -i "$tmp_opt_var_value" "owner match descriptor"
 						return 1
 				esac
 			done
 		;;
 		(length)
 			((length_MOD_EXIST)) || { log -s 'length'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) : ;;
 				+([[:digit:]]):+([[:digit:]]))
 					val_range "${tmp_opt_var_value_neg_ok%:*}" "${tmp_opt_var_value_neg_ok#*:}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "length descriptor"
+				*) log -i "$tmp_opt_var_value" "length descriptor"
 					return 1
 			esac
 		;;
 		(fragment)
-			if [[ $(string_tolower "${tmp_opt_var_value_neg_ok}") != @(f|fr|fra|frag|fragm|fragme|fragmen|fragment) ]]; then
-				log -i "${tmp_opt_var_value}" "fragment descriptor"
+			if [[ $(string_tolower "$tmp_opt_var_value_neg_ok") != @(f|fr|fra|frag|fragm|fragme|fragmen|fragment) ]]; then
+				log -i "$tmp_opt_var_value" "fragment descriptor"
 				return 1
 			fi
 		;;
 		(proto)
-			if (($(IFS=, members_in_string ${tmp_opt_var_value}) > 1)); then
-				val_multi_proto "${tmp_opt_var_value}" || return 1
+			if (($(IFS=, members_in_string $tmp_opt_var_value) > 1)); then
+				val_multi_proto "$tmp_opt_var_value" || return 1
 				multi_protocols=1
-				str_multi_protocols="${tmp_opt_var_value}"
+				str_multi_protocols="$tmp_opt_var_value"
 			else
-				val_proto "${tmp_opt_var_value_neg_ok}" || return 1
+				val_proto "$tmp_opt_var_value_neg_ok" || return 1
 			fi
 		;;
 		(sport|dport)
 			# check if option value is a multiport string
-			local -i multi_count=$(IFS=, members_in_string ${tmp_opt_var_value})
+			local -i multi_count=$(IFS=, members_in_string $tmp_opt_var_value)
 			if ((multi_count > 1)); then
 				# if the system does not support the multiport match, save data for later processing
 				if ((multiport_MOD_EXIST == 0)); then
-					case "${tmp_opt_var}" in
+					case "$tmp_opt_var" in
 						(sport)
 							multi_source_ports=1
-							str_source_ports="${tmp_opt_var_value}"
+							str_source_ports="$tmp_opt_var_value"
 						;;
 						(dport)
 							multi_destination_ports=1
-							str_destination_ports="${tmp_opt_var_value}"
+							str_destination_ports="$tmp_opt_var_value"
 						;;
 					esac
 				else
@@ -4830,234 +4830,234 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						return 1
 					}
 				fi
-				val_multi_ports "${tmp_opt_var_value}" || return 1
+				val_multi_ports "$tmp_opt_var_value" || return 1
 			else
-				val_port "${tmp_opt_var_value_neg_ok}" || return 1
+				val_port "$tmp_opt_var_value_neg_ok" || return 1
 			fi
 		;;
 		(tcp_flags)
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+(+([[:alpha:]])?(,)):+(+([[:alpha:]])?(,)))
-					val_tcp_flags "${tmp_opt_var_value_neg_ok}" || {
-						log -i "${tmp_opt_var_value}" "TCP flag descriptor"
+					val_tcp_flags "$tmp_opt_var_value_neg_ok" || {
+						log -i "$tmp_opt_var_value" "TCP flag descriptor"
 						return 1
 					}
 				;;
-				*) log -i "${tmp_opt_var_value}" "TCP flag descriptor"
+				*) log -i "$tmp_opt_var_value" "TCP flag descriptor"
 					return 1
 			esac
 		;;
 		(tcp_syn)
-			if [[ $(string_tolower "${tmp_opt_var_value_neg_ok}") != @(s|sy|syn) ]]; then
-				log -i "${tmp_opt_var_value}" "TCP SYN description"
+			if [[ $(string_tolower "$tmp_opt_var_value_neg_ok") != @(s|sy|syn) ]]; then
+				log -i "$tmp_opt_var_value" "TCP SYN description"
 				return 1
 			fi
 		;;
 		(tcp_option)
-			if ! val_numeric_quiet "${tmp_opt_var_value_neg_ok}" && val_8bit "${tmp_opt_var_value_neg_ok}"; then
-				log -i "${tmp_opt_var_value}" "TCP option"
+			if ! val_numeric_quiet "$tmp_opt_var_value_neg_ok" && val_8bit "${tmp_opt_var_value_neg_ok}"; then
+				log -i "$tmp_opt_var_value" "TCP option"
 				return 1
 			fi
 		;;
 		(icmp_type)
 			# check if there are multiple icmp types
-			if (($(IFS=, members_in_string ${tmp_opt_var_value}) > 1)); then
-				val_icmp_types "${tmp_opt_var_value}" || return 1
+			if (($(IFS=, members_in_string $tmp_opt_var_value) > 1)); then
+				val_icmp_types "$tmp_opt_var_value" || return 1
 				# set values so we know it later
 				multi_icmp_types=1
-				str_icmp_types="${tmp_opt_var_value}"
+				str_icmp_types="$tmp_opt_var_value"
 			else
-				val_icmp_type "${tmp_opt_var_value_neg_ok}" || return 1
+				val_icmp_type "$tmp_opt_var_value_neg_ok" || return 1
 			fi
 		;;
 		(state)
 			((state_MOD_EXIST)) || { log -s 'state'; return 1; }
-			val_state "${tmp_opt_var_value_neg_ok}" || return 1
+			val_state "$tmp_opt_var_value_neg_ok" || return 1
 			# remember that there is a state match definition in the rule
 			state_in_rule=1
 		;;
 		(limit)
 			((limit_MOD_EXIST)) || { log -s 'limit'; return 1; }
-			val_limit "${tmp_opt_var_value_neg_ok}" || return 1
+			val_limit "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(limit_burst)
 			((limit_MOD_EXIST)) || { log -s 'limit'; return 1; }
-			val_limit_burst "${tmp_opt_var_value}" || return 1
+			val_limit_burst "$tmp_opt_var_value" || return 1
 		;;
 		(connbytes)
 			((connbytes_MOD_EXIST)) || { log -s 'connbytes'; return 1; }
-			[[ ${tmp_opt_var_value_neg_ok} = @(original|reply|both):@(packets|bytes|avgpkt):+([[:digit:]])?(:+([[:digit:]])) ]] || {
-				log -i "${tmp_opt_var_value}" "connbytes descriptor"
+			[[ $tmp_opt_var_value_neg_ok = @(original|reply|both):@(packets|bytes|avgpkt):+([[:digit:]])?(:+([[:digit:]])) ]] || {
+				log -i "$tmp_opt_var_value" "connbytes descriptor"
 				return 1
 			}
 		;;
 		(connlimit)
 			((connlimit_MOD_EXIST)) || { log -s 'connlimit'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])|+([[:digit:]])/+([[:digit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "connlimit descriptor"
+				*) log -i "$tmp_opt_var_value" "connlimit descriptor"
 					return 1
 			esac
 		;;
 		(ctstate)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			case "$(string_toupper "${tmp_opt_var_value_neg_ok}")" in
+			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
 				NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT) : ;;
-				*) log -i "${tmp_opt_var_value}" "${tmp_opt_var} descriptor"
+				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
 					return 1
 			esac
 		;;
 		(ctproto)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			val_proto "${tmp_opt_var_value_neg_ok}" || return 1
+			val_proto "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(ctorigsrc|ctorigdst|ctreplsrc|ctrepldst)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			val_ipv4_addr_no_range "${tmp_opt_var_value_neg_ok}" || return 1
+			val_ipv4_addr_no_range "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) 
 					for arg_idx in ${!tmp_pos_par_val_array[@]}; do # TO DO: DOES IT REFER TO PROTO OR CTPROTO?
 						if [[ ${tmp_pos_par_val_array[pos_idx]%% *} = proto ]]; then
 							if [[ $(string_tolower "${tmp_pos_par_val_array[pos_idx]#* }") = @(gre|47) ]]; then
-								val_32bit "${tmp_opt_var_value_neg_ok}" || {
-									log -i "${tmp_opt_var_value}" "${tmp_opt_var} descriptor"
+								val_32bit "$tmp_opt_var_value_neg_ok" || {
+									log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
 									return 1
 								}
 							else
-								val_port "${tmp_opt_var_value_neg_ok}" || return 1
+								val_port "$tmp_opt_var_value_neg_ok" || return 1
 							fi
 							break
 						fi
 					done
 				;;
-				*) val_port "${tmp_opt_var_value_neg_ok}" || return 1
+				*) val_port "$tmp_opt_var_value_neg_ok" || return 1
 			esac
 		;;
 		(ctstatus)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			case "$(string_toupper "${tmp_opt_var_value_neg_ok}")" in
+			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
 				NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) : ;;
-				*) log -i "${tmp_opt_var_value}" "${tmp_opt_var} descriptor"
+				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
 					return 1
 			esac
 		;;
 		(ctexpire)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) : ;;
 				+([[:digit:]]):+([[:digit:]]))
 					set -- ${tmp_opt_var_value_neg_ok/:/ }
 					(($2 >= $1)) || {
-						log -E "${tmp_opt_var} min. range value \`$1' greater than max. range value \`$2'."
+						log -E "$tmp_opt_var min. range value \`$1' greater than max. range value \`$2'."
 						return 1
 					}
 				;;
-				*) log -i "${tmp_opt_var_value}" "${tmp_opt_var} descriptor"
+				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
 					return 1
 			esac
 		;;
 		(ctdir)
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
-			[[ ${tmp_opt_var_value} = @(ORIGINAL|REPLY) ]] || {
-				log -E "Invalid value \`${tmp_opt_var_value}' for \`${tmp_opt_var}' descriptor. Valid content is: ORIGINAL or REPLY."
+			[[ $tmp_opt_var_value = @(ORIGINAL|REPLY) ]] || {
+				log -E "Invalid value \`$tmp_opt_var_value' for \`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
 				return 1
 			}
 		;;
 		(log_level)
 			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
-			val_loglevel "${tmp_opt_var_value}" || return 1
+			val_loglevel "$tmp_opt_var_value" || return 1
 		;;
 		(log_prefix)
 			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
 			if ((${#tmp_opt_var_value} > 28)); then
-				log -E "Log prefix value \`${tmp_opt_var_value}' longer then 28 characters."
+				log -E "Log prefix value \`$tmp_opt_var_value' longer then 28 characters."
 				return 1
 			fi
 		;;
 		(log_options)
 			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
 			for str_var in ${tmp_opt_var_value//,/ }; do
-#			for str_var in $(IFS=, split_val ${tmp_opt_var_value}); do
-				[[ ${str_var} = @(log_tcp_seq|log_tcp_opt|log_ip_opt|log_uid) ]] || {
-					log -E "Invalid value \`${str_var}' in \`${tmp_opt_var_value}' for \`${tmp_opt_var}'."
+#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
+				[[ $str_var = @(log_tcp_seq|log_tcp_opt|log_ip_opt|log_uid) ]] || {
+					log -E "Invalid value \`$str_var' in \`$tmp_opt_var_value' for \`$tmp_opt_var'."
 					return 1
 				}
 			done
 		;;
 		(nflog_group)
 			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
-					val_32bit_off1 "${tmp_opt_var_value}" || {
+					val_32bit_off1 "$tmp_opt_var_value" || {
 						log -E "NFLOG netlink group value is out of range. Allowed range: 1-4294967295."
 						return 1
 					}
 				;;
-				*) log -i "${tmp_opt_var_value}" "NFLOG netlink group descriptor"
+				*) log -i "$tmp_opt_var_value" "NFLOG netlink group descriptor"
 					return 1
 			esac
 		;;
 		(nflog_prefix)
 			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
 			if ((${#tmp_opt_var_value} > 63)); then
-				log -E "NFLOG prefix value \`${tmp_opt_var_value}' longer then 63 characters."
+				log -E "NFLOG prefix value \`$tmp_opt_var_value' longer then 63 characters."
 				return 1
 			fi
 		;;
 		(nflog_range)
 			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
-			val_numeric_quiet "${tmp_opt_var_value}" || {
-				log -i "${tmp_opt_var_value}" "NFLOG byte size descriptor"
+			val_numeric_quiet "$tmp_opt_var_value" || {
+				log -i "$tmp_opt_var_value" "NFLOG byte size descriptor"
 				return 1
 			}
 		;;
 		(nflog_thresh)
 			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
-			val_numeric_quiet "${tmp_opt_var_value}" || {
-				log -i "${tmp_opt_var_value}" "NFLOG threshold size descriptor"
+			val_numeric_quiet "$tmp_opt_var_value" || {
+				log -i "$tmp_opt_var_value" "NFLOG threshold size descriptor"
 				return 1
 			}
 		;;
 		(ulog_group)
 			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
 					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 32)) || {
 						log -E "ULOG netlink group value is out of range. Allowed range: 1-32."
 						return 1
 					}
 				;;
-				*) log -i "${tmp_opt_var_value}" "ULOG netlink group descriptor"
+				*) log -i "$tmp_opt_var_value" "ULOG netlink group descriptor"
 					return 1
 			esac
 		;;
 		(ulog_prefix)
 			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
 			if ((${#tmp_opt_var_value} > 31)); then
-				log -E "ULOG prefix value \`${tmp_opt_var_value}' longer then 31 characters."
+				log -E "ULOG prefix value \`$tmp_opt_var_value' longer then 31 characters."
 				return 1
 			fi
 		;;
 		(ulog_range)
 			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
-			val_numeric_quiet "${tmp_opt_var_value}" || {
-				log -i "${tmp_opt_var_value}" "ULOG byte size descriptor"
+			val_numeric_quiet "$tmp_opt_var_value" || {
+				log -i "$tmp_opt_var_value" "ULOG byte size descriptor"
 				return 1
 			}
 		;;
 		(ulog_thresh)
 			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
 					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 50)) || {
 						log -E "ULOG queue threshold value is out of range. Allowed range: 1-50."
 						return 1
 					}
 					;;
-				*) log -i "${tmp_opt_var_value}" "ULOG queue threshold descriptor"
+				*) log -i "$tmp_opt_var_value" "ULOG queue threshold descriptor"
 					return 1
 			esac
 		;;
@@ -5065,40 +5065,40 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((addrtype_MOD_EXIST)) || { log -s 'addrtype'; return 1; }
 			case "${tmp_opt_var_value_neg_ok%:*}" in
 				src|dst) : ;;
-				*) log -i "${tmp_opt_var_value}" "addrtype descriptor."
+				*) log -i "$tmp_opt_var_value" "addrtype descriptor."
 					return 1
 			esac
 			case "${tmp_opt_var_value_neg_ok#*:}" in
 				UNSPEC|UNICAST|LOCAL|BROADCAST|ANYCAST|MULTICAST|BLACKHOLE|UNREACHABLE|PROHIBIT|THROW|NAT|XRESOLVE) : ;;
-				*) log -i "${tmp_opt_var_value}" "addrtype descriptor"
+				*) log -i "$tmp_opt_var_value" "addrtype descriptor"
 					return 1
 			esac
 		;;
 		(pkttype)
 			((pkttype_MOD_EXIST)) || { log -s 'pkttype'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				unicast|broadcast|multicast) : ;;
-				*) log -i "${tmp_opt_var_value}" "pkttype descriptor"
+				*) log -i "$tmp_opt_var_value" "pkttype descriptor"
 					return 1
 			esac
 		;;
 		(socket)
 			((socket_MOD_EXIST)) || { log -s 'socket'; return 1; }
-			if [[ $(string_tolower "${tmp_opt_var_value}") != @(s|so|soc|sock|socke|socket) ]]; then
-				log -i "${tmp_opt_var_value}" "socket descriptor"
+			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket) ]]; then
+				log -i "$tmp_opt_var_value" "socket descriptor"
 				return 1
 			fi
 		;;
 		(t_mark)
 			((MARK_TGT_EXIST)) || { log -t 'MARK'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				?(@(set|xset):)?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
 				@(and|or|xor):?(0x)+([[:xdigit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "MARK value descriptor"
+				*) log -i "$tmp_opt_var_value" "MARK value descriptor"
 					return 1
 			esac
 			local str_msk=""
-			if [[ ${tmp_opt_var_value} = */* ]]; then
+			if [[ $tmp_opt_var_value = */* ]]; then
 				local str_mrk="${tmp_opt_var_value%/*}" str_msk="${tmp_opt_var_value#*/}"
 				local str_mrk=${str_mrk/@(@(and|or|set|xset|xor):)/}
 			else
@@ -5113,21 +5113,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(t_connmark)
 			((CONNMARK_TGT_EXIST)) || { log -t 'CONNMARK'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				@(save|restore)?(:?(0x)*([[:xdigit:]]))?(/?(0x)+([[:xdigit:]]))) : ;;
 				@(set|xset):?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
 				@(and|or|xor):?(0x)+([[:xdigit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "CONNMARK value descriptor"
+				*) log -i "$tmp_opt_var_value" "CONNMARK value descriptor"
 					return 1
 			esac
 			local str_msk=""
-			if [[ ${tmp_opt_var_value} = */* ]]; then
+			if [[ $tmp_opt_var_value = */* ]]; then
 				local str_mrk="${tmp_opt_var_value%/*}" str_msk="${tmp_opt_var_value#*/}"
 				local str_mrk=${str_mrk/@(@(and|or|set|xset|xor|save|restore)?(:))/}
 			else
 				local str_mrk=${tmp_opt_var_value/@(@(and|or|set|xset|xor|save|restore)?(:))/}
 			fi
-			if [[ ${tmp_opt_var_value} = @(save|restore)* && ${str_mrk} && -z ${str_msk} ]]; then
+			if [[ $tmp_opt_var_value = @(save|restore)* && ${str_mrk} && -z ${str_msk} ]]; then
 				log -E "If nfmask is specified, ctmask is mandatory."
 				return 1
 			fi
@@ -5144,16 +5144,16 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(t_connsecmark)
 			((CONNSECMARK_TGT_EXIST)) || { log -t 'CONNSECMARK'; return 1; }
-			[[ ${tmp_opt_var_value} = @(s|sa|sav|save|r|re|res|rest|resto|restore) ]] || {
-				log -i "${tmp_opt_var_value}" "CONNSECMARK option descriptor"
+			[[ $tmp_opt_var_value = @(s|sa|sav|save|r|re|res|rest|resto|restore) ]] || {
+				log -i "$tmp_opt_var_value" "CONNSECMARK option descriptor"
 				return 1
 			}
 		;;
 		(m_mark)
 			((mark_MOD_EXIST)) || { log -s 'mark'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "mark match descriptor"
+				*) log -i "$tmp_opt_var_value" "mark match descriptor"
 					return 1
 			esac
 			local str_mrk="${tmp_opt_var_value_neg_ok%/*}" str_msk="${tmp_opt_var_value_neg_ok#*/}"
@@ -5164,9 +5164,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(m_connmark)
 			((connmark_MOD_EXIST)) || { log -s 'connmark'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "connmark match descriptor"
+				*) log -i "$tmp_opt_var_value" "connmark match descriptor"
 					return 1
 			esac
 			local str_mrk="${tmp_opt_var_value_neg_ok%/*}" str_msk="${tmp_opt_var_value_neg_ok#*/}"
@@ -5177,17 +5177,17 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(m_dscp)
 			((dscp_MOD_EXIST)) || { log -s 'dscp'; return 1; }
-			val_dscp "${tmp_opt_var_value_neg_ok}" || return 1
+			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(t_dscp)
 			((DSCP_TGT_EXIST)) || { log -t 'DSCP'; return 1; }
-			val_dscp "${tmp_opt_var_value_neg_ok}" || return 1
+			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(m_tos)
 			((tos_MOD_EXIST)) || { log -s 'tos'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])|?(0x)+([[:xdigit:]])|+([[:word:]])-+([[:word:]]))
-					val_tos "${tmp_opt_var_value_neg_ok}" || return 1
+					val_tos "$tmp_opt_var_value_neg_ok" || return 1
 				;;
 				+([[:digit:]])/+([[:digit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]]))
 					val_tos "${tmp_opt_var_value_neg_ok%/*}" || return 1
@@ -5196,51 +5196,51 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						return 1
 					}
 				;;
-				*) log -i "${tmp_opt_var_value}" "tos match descriptor"
+				*) log -i "$tmp_opt_var_value" "tos match descriptor"
 					return 1
 			esac
 		;;
 		(m_set)
 			((set_MOD_EXIST)) || { log -s 'set'; return 1; }
-			case "${tmp_opt_var_value_neg_ok}" in
+			case "$tmp_opt_var_value_neg_ok" in
 				*:@(src|dst)*(,@(src|dst)))
 					val_set_flags "${tmp_opt_var_value_neg_ok#*:}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "set match descriptor"
+				*) log -i "$tmp_opt_var_value" "set match descriptor"
 					return 1
 			esac
 		;;
 		(t_set)
 			((SET_TGT_EXIST)) || { log -t 'SET'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				@(add|del):*:@(src|dst)*(,@(src|dst)))
 					val_set_flags "${tmp_opt_var_value##*:}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "SET option descriptor"
+				*) log -i "$tmp_opt_var_value" "SET option descriptor"
 					return 1
 			esac
 		;;
 		(ahspi)
 			((ah_MOD_EXIST)) || { log -s 'ah'; return 1; }
-			val_spi "${tmp_opt_var_value_neg_ok}" || return 1
+			val_spi "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(espspi)
 			((esp_MOD_EXIST)) || { log -s 'esp'; return 1; }
-			val_spi "${tmp_opt_var_value_neg_ok}" || return 1
+			val_spi "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(t_class)
 			((CLASSIFY_TGT_EXIST)) || { log -t 'CLASSIFY'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				?(0x)+([[:xdigit:]])| ?(0x)+([[:xdigit:]]):?(0x)+([[:xdigit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "class"
+				*) log -i "$tmp_opt_var_value" "class"
 					return 1
 			esac
 		;;
 		(t_tos)
 			((TOS_TGT_EXIST)) || { log -t 'TOS'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0x+([[:xdigit:]]))
-					val_tos "${tmp_opt_var_value}" || return 1
+					val_tos "$tmp_opt_var_value" || return 1
 				;;
 				+([[:digit:]])/+([[:digit:]]) | ?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]]))
 					val_tos "${tmp_opt_var_value%/*}" || return 1
@@ -5252,15 +5252,15 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				@(and|or|xor):@(+([[:digit:]])|0x+([[:xdigit:]])))
 					val_tos "${tmp_opt_var_value#@(and|or|xor):}" || return 1
 				;;
-				*) log -i "${tmp_opt_var_value}" "TOS option descriptor"
+				*) log -i "$tmp_opt_var_value" "TOS option descriptor"
 					return 1
 			esac
 		;;
 		(t_tcpmss)
 			((TCPMSS_TGT_EXIST)) || { log -t 'TCPMSS'; return 1; }
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				pmtu|+([[:digit:]])) : ;;
-				*) log -i "${tmp_opt_var_value}" "TCPMSS option descriptor"
+				*) log -i "$tmp_opt_var_value" "TCPMSS option descriptor"
 					return 1
 			esac
 		;;
@@ -5309,7 +5309,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						fi
 						shift
 					;;
-					*) log -i "${tmp_opt_var_value}" "TPROXY option descriptor"
+					*) log -i "$tmp_opt_var_value" "TPROXY option descriptor"
 						return 1
 				esac
 				shift
@@ -5322,33 +5322,33 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(tcpoptstrip)
 			((TCPOPTSTRIP_TGT_EXIST)) || { log -t 'TCPOPTSTRIP'; return 1; }
 			for str_var in ${tmp_opt_var_value//,/ }; do
-#			for str_var in $(IFS=, split_val ${tmp_opt_var_value}); do
-				case "${str_var}" in
+#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
+				case "$str_var" in
 					+([[:digit:]]))
-						if val_bool_bin "${str_var}"; then
+						if val_bool_bin "$str_var"; then
 							log -E "TCPOPTSTRIP option may not be 0 or 1."
 							return 1
 						else
-							val_8bit "${str_var}" || {
-								log -E "TCPOPTSTRIP option value \`${str_var}' is out of bounds. Allowed range: 2 - 255."
+							val_8bit "$str_var" || {
+								log -E "TCPOPTSTRIP option value \`$str_var' is out of bounds. Allowed range: 2 - 255."
 								return 1
 							}
 						fi
 					;;
 					wscale|mss|sack-permitted|sack|timestamp|md5) : ;;
-					*) log -E "Invalid value \`${str_var}' for TCPOPTSTRIP option descriptor in \`${tmp_opt_var_value}'."
+					*) log -E "Invalid value \`$str_var' for TCPOPTSTRIP option descriptor in \`$tmp_opt_var_value'."
 						return 1
 				esac
 			done
 		;;
 		(nat_ip)
-			validate_nat_ip "${tmp_opt_var_value}" || return 1
+			validate_nat_ip "$tmp_opt_var_value" || return 1
 		;;
 		(nat_port)
-			val_port_range "${tmp_opt_var_value}" || return 1
+			val_port_range "$tmp_opt_var_value" || return 1
 		;;
 		(nat_option)
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				random)
 					if ((KERN_VER[0] == 2)); then
 						if ((KERN_VER[1] < 6)); then
@@ -5371,12 +5371,12 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						fi
 					fi
 				;;
-				*) log -i "${tmp_opt_var_value}" "NAT option descriptor"
+				*) log -i "$tmp_opt_var_value" "NAT option descriptor"
 					return 1
 			esac
 		;;
 		(t_ttl|m_ttl)
-			case "${tmp_opt_var}" in
+			case "$tmp_opt_var" in
 				m_ttl)
 					((ttl_MOD_EXIST)) || { log -s 'ttl'; return 1; }
 				;;
@@ -5384,9 +5384,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					((TTL_TGT_EXIST)) || { log -t 'TTL'; return 1; }
 				;;
 			esac
-			case "${tmp_opt_var_value}" in
+			case "$tmp_opt_var_value" in
 				(+([[:digit:]]))
-					val_ttl ${tmp_opt_var_value} || return 1
+					val_ttl $tmp_opt_var_value || return 1
 				;;
 				("+"+([[:digit:]]))
 					val_ttl ${tmp_opt_var_value/+/} || return 1
@@ -5394,7 +5394,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				("-"+([[:digit:]]))
 					val_ttl ${tmp_opt_var_value/-/} || return 1 
 				;;
-				(*) log -E "Illegal TTL value \`${tmp_opt_var_value}'"
+				(*) log -E "Illegal TTL value \`$tmp_opt_var_value'"
 					return 1
 			esac
 		;;
@@ -5404,11 +5404,11 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(comment)
 			((comment_MOD_EXIST)) || { log -s 'comment'; return 1; }
 			if ((${#tmp_opt_var_value} > 256)); then
-				log -E "Comment is longer than 256 characters: \`${tmp_opt_var_value}'."
+				log -E "Comment is longer than 256 characters: \`$tmp_opt_var_value'."
 				return 1
 			fi
 		;;
-		*) log -o "${tmp_opt_var}" $FUNCNAME || return 1 ;;
+		*) log -o "$tmp_opt_var" $FUNCNAME || return 1 ;;
 	esac
 done
 } # -------------------------------------------------------------------------
@@ -5444,7 +5444,6 @@ RULE_LIST_IDX=0
 for target_idx in ${!arg_list_target[@]}; do
 	ARG_LIST_IDX=0 # reset arg_list counter on each loop
 	local str_target="${arg_list_target[target_idx]}"
-#	for ((chain_idx=0; chain_idx<${#arg_list_chain[@]} && chain_idx<=second_optionlist; chain_idx++)); do
 	for ((chain_idx=0; chain_idx<${#arg_list_chain[@]} && chain_idx<=chain_max; chain_idx++)); do
 		
 		case "${arg_list_chain[chain_idx]}" in
@@ -5462,25 +5461,25 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 		esac
 
-		if [[ ${str_target} = @(DSCP|ECN|MARK|TCPMSS|TCPOPTSTRIP|TOS|TPROXY|TTL) && ${table} != mangle ]]; then # targets only valid in mangle table
-			log -E "The ${str_target} target is only valid in the mangle table."
+		if [[ $str_target = @(DSCP|ECN|MARK|TCPMSS|TCPOPTSTRIP|TOS|TPROXY|TTL) && $table != mangle ]]; then # targets only valid in mangle table
+			log -E "The $str_target target is only valid in the mangle table."
 			return 1
-		elif [[ ${str_target} = @(SECMARK|CONNSECMARK) && ${table} != @(mangle|security) ]]; then # targets only valid in mangle or security table
-			log -E "The ${str_target} target is only valid in the mangle or security table."
+		elif [[ $str_target = @(SECMARK|CONNSECMARK) && $table != @(mangle|security) ]]; then # targets only valid in mangle or security table
+			log -E "The $str_target target is only valid in the mangle or security table."
 			return 1
-		elif [[ ${str_target} = @(DNAT|SNAT|MASQUERADE|NETMAP|REDIRECT) && ${table} != nat ]]; then # targets only valid in nat table
-			log -E "The ${str_target} target is only valid in the nat table."
+		elif [[ $str_target = @(DNAT|SNAT|MASQUERADE|NETMAP|REDIRECT) && $table != nat ]]; then # targets only valid in nat table
+			log -E "The $str_target target is only valid in the nat table."
 			return 1
 		fi
 
 		# if CONNMARK match is used with --restore-mark, check if table is mangle
-		if [[ ${arg_list_t_connmark[ARG_LIST_IDX]:-0} = restore* && ${table} != mangle ]]; then
+		if [[ ${arg_list_t_connmark[ARG_LIST_IDX]:-0} = restore* && $table != mangle ]]; then
 			log -E "restore-mark is only valid in the mangle table."
 			return 1
 		fi
 
-		if [[ ${str_target} = NOTRACK && ${table} != raw ]]; then # NOTRACK is only valid in raw table
-			log -E "The ${str_target} target is only valid in the raw table."
+		if [[ $str_target = NOTRACK && $table != raw ]]; then # NOTRACK is only valid in raw table
+			log -E "The $str_target target is only valid in the raw table."
 			return 1
 		fi
 
@@ -5494,7 +5493,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			return 1
 		fi
 
-		case "${str_target}" in # target dependant checks
+		case "$str_target" in # target dependant checks
 		# empty target params should not happen, if they are defined as mandatory variable in the template	
 		# still we check for them here for safety
 			CLASSIFY)
@@ -5515,25 +5514,25 @@ for target_idx in ${!arg_list_target[@]}; do
 			ECN)
 				((ECN_TGT_EXIST)) || { log -t 'ECN'; return 1; }
 				if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|6) ]]; then
-					log -E "The ${str_target} target is only valid with the tcp protocol."
+					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
 				fi
 			;;
 			TCPMSS)
 				_val_tgtopt_set "${arg_list_t_tcpmss[ARG_LIST_IDX]}" || return 1
 				[[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") = @(tcp|6) ]] || {
-					log -E "The ${str_target} target is only valid with the tcp protocol."
+					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
 				}
 				[[ $(string_tolower "${arg_list_tcp_syn[ARG_LIST_IDX]:-_}") = @(s|sy|syn) || ${arg_list_tcp_flags[ARG_LIST_IDX]} = FIN,SYN,RST,ACK:SYN ]] || {
-					log -E "The ${str_target} target is only valid with tcp SYN packets."
+					log -E "The $str_target target is only valid with tcp SYN packets."
 					return 1
 				}
 			;;
 			TCPOPTSTRIP)
 				_val_tgtopt_set "${arg_list_tcpoptstrip[ARG_LIST_IDX]}" || return 1
 				if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|6) ]]; then
-					log -E "The ${str_target} target is only valid with the tcp protocol."
+					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
 				fi
 			;;
@@ -5545,21 +5544,21 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 			DNAT|SNAT|NETMAP) # should not happen if option is defined as mandatory
 				check_var_no_sep_silent "${arg_list_nat_ip[ARG_LIST_IDX]}" || {
-					log -E "No ${str_target} target IP address specified."
+					log -E "No $str_target target IP address specified."
 					return 1
 				}
-				if [[ ${arg_list_nat_option[ARG_LIST_IDX]} && ${arg_list_nat_option[ARG_LIST_IDX]} = @(random|persistent) && ${str_target} != @(DNAT|SNAT) ]]
+				if [[ ${arg_list_nat_option[ARG_LIST_IDX]} && ${arg_list_nat_option[ARG_LIST_IDX]} = @(random|persistent) && $str_target != @(DNAT|SNAT) ]]
 				then
-					log -E "\`${arg_list_nat_option[ARG_LIST_IDX]}' is not valid with ${str_target} target."
+					log -E "\`${arg_list_nat_option[ARG_LIST_IDX]}' is not valid with $str_target target."
 					return 1
 				fi
 			;;
 			MASQUERADE|REDIRECT)
 				if [[ ${arg_list_nat_option[ARG_LIST_IDX]} && ${arg_list_nat_option[ARG_LIST_IDX]} != random ]]; then
-					log -E "\`${arg_list_nat_option[ARG_LIST_IDX]}' is not valid with ${str_target} target."
+					log -E "\`${arg_list_nat_option[ARG_LIST_IDX]}' is not valid with $str_target target."
 					return 1
 				else
-					if [[ ${str_target} = REDIRECT ]]; then
+					if [[ $str_target = REDIRECT ]]; then
 						if ((KERN_VER[0] == 2)); then
 							if ((KERN_VER[1] < 6)) || ((KERN_VER[1] == 6 && KERN_VER[2] < 22)); then
 								log -E "NAT \`random' option requires kernel versions greater or equal to \`2.6.22'."
@@ -5571,13 +5570,13 @@ for target_idx in ${!arg_list_target[@]}; do
 				
 				if [[ ${arg_list_nat_port[ARG_LIST_IDX]} ]]; then # if a nat port is defined
 					check_var_no_sep_silent "${arg_list_proto[ARG_LIST_IDX]}" || {
-						log -E "Protocol not defined, port specifications with ${str_target} are only valid with tcp or udp."
+						log -E "Protocol not defined, port specifications with $str_target are only valid with tcp or udp."
 						return 1
 					}
 				fi
 			;;
 		esac
-		case "${table}" in # table dependant checks
+		case "$table" in # table dependant checks
 #			filter)
 #			;;
 #			security)
@@ -5593,7 +5592,7 @@ for target_idx in ${!arg_list_target[@]}; do
 				fi
 			;;
 			nat) # nat rule logic
-				case "${str_target}" in
+				case "$str_target" in
 					DROP|REJECT)
 						log -E "Do NOT drop in the nat table."
 						return 1
@@ -5602,7 +5601,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 			raw|rawpost)
 				if [[ ${arg_list_state[ARG_LIST_IDX]} ]]; then
-					log -E "There is no connection tracking available in ${table} table."
+					log -E "There is no connection tracking available in $table table."
 					return 1
 				fi
 				local str_state
@@ -5610,7 +5609,7 @@ for target_idx in ${!arg_list_target[@]}; do
 					ctorigdstport ctreplsrcport ctrepldstport ctstatus ctexpire ctdir
 				do
 					if var_defined_silent "arg_list_${str_state}[${ARG_LIST_IDX}]"; then
-						log -E "There is no connection tracking available in ${table} table."
+						log -E "There is no connection tracking available in $table table."
 						return 1
 					fi
 				done
@@ -5641,24 +5640,24 @@ fi
 } # -------------------------------------------------------------------------
 
 _post_multiply_checks() {
-case "${table}" in
+case "$table" in
 #	filter) : ;;
 	mangle)
-		case "${str_target}" in
+		case "$str_target" in
 			TPROXY)
 				if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|udp|6|17) ]]; then
-					log -E "The ${str_target} is only valid with tcp or udp."
+					log -E "The $str_target is only valid with tcp or udp."
 					return 1
 				fi
 			;;
 		esac
 	;;
 	nat)
-		case "${str_target}" in
+		case "$str_target" in
 			MASQUERADE|REDIRECT)
 				if [[ ${arg_list_nat_port[ARG_LIST_IDX]} ]]; then # if a nat port is defined
 					if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|udp|6|17) ]]; then
-						log -E "Port specifications with ${str_target} are only valid with tcp or udp."
+						log -E "Port specifications with $str_target are only valid with tcp or udp."
 						return 1
 					fi
 				fi	
@@ -6267,7 +6266,7 @@ fi
 if [[ ${new_target_chain} ]]; then
 	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
-		create_chain "${table}" "${new_target_chain}" --silent
+		create_chain "$table" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
@@ -6392,7 +6391,7 @@ fi
 if [[ ${new_target_chain} ]]; then
 	[[ $DEBUG_INFO ]] && pr_str "${FUNCNAME}(): new chain: '${new_target_chain}'"
 	if ((JUMP_TREE_CHAINS_CREATE_ALL == 0)); then
-		create_chain "${table}" "${new_target_chain}" --silent
+		create_chain "$table" "${new_target_chain}" --silent
 	fi
 	RULELIST_CHAIN[RULE_LIST_IDX]="${new_target_chain}"
 	MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${new_target_chain} "
@@ -6435,11 +6434,11 @@ for target_idx in ${!arg_list_target[@]}; do
 			_process_target
 			_process_chain
 
-			if [[ ${str_target} = goto:* ]]; then # remove goto: prefix for the _process_$option functions 
+			if [[ $str_target = goto:* ]]; then # remove goto: prefix for the _process_$option functions 
 				str_target="${str_target#goto:}"
 			fi
 			# copy the option list array to a temp array, so 'eval' is not needed
-			$(${copy_array} arr_tmp_rule_opt_${opt_idx} tmp_opt_array) || return 1
+			$($copy_array arr_tmp_rule_opt_${opt_idx} tmp_opt_array) || return 1
 
 			# fill RULELIST and MSG_LIST arrays
 			for tmp_opt_idx in ${!tmp_opt_array[@]}; do
@@ -6452,7 +6451,7 @@ for target_idx in ${!arg_list_target[@]}; do
 
 			# evaluate the chain to place the rule into
 			if ((JUMP_TREE[0] == 1)); then
-				if [[ ${JUMP_TREE[2]} ]] && lsearch "${table}" ${JUMP_TREE[2]}; then
+				if [[ ${JUMP_TREE[2]} ]] && lsearch "$table" ${JUMP_TREE[2]}; then
 					case "${JUMP_TREE[1]}" in
 						interface) _set_chain_by_interface || return $ER_CONF ;;
 						netname|netname+interface) _set_chain_by_netname || return $ER_CONF ;;
@@ -6479,21 +6478,21 @@ done
 for xidx in ${!TABLE_DEPEND_MATCH_LIST[@]}; do # options/matches usable only in specific tables
 	set -- ${TABLE_DEPEND_MATCH_LIST[xidx]}
 	for str_t in ${1//,/ }; do
-		if [[ ${str_t} = ${table} ]]; then
+		if [[ ${str_t} = $table ]]; then
 			for str_m in ${2//,/ }; do
 				eval 'str_log+="${MSG_LIST_'${str_m}'[ridx]}" str_cmd+="${RULELIST_'${str_m}'[ridx]}"'
 			done
 		fi
 	done
 done
-[[ ${str_target} ]] || return 0 # empty target -> job done
+[[ $str_target ]] || return 0 # empty target -> job done
 for xidx in ${!GLOBAL_TARGET_LIST[@]}; do # targets usable in all tables
 	set -- ${GLOBAL_TARGET_LIST[xidx]}
-	if [[ $1 = ${str_target} ]]; then
+	if [[ $1 = $str_target ]]; then
 		shift
-		str_cmd+="-j ${str_target} "
+		str_cmd+="-j $str_target "
 		for str_opt in "$@"; do
-			eval 'str_log+="${MSG_LIST_'${str_opt}'[ridx]}" str_cmd+="${RULELIST_'${str_opt}'[ridx]}"'
+			eval 'str_log+="${MSG_LIST_'$str_opt'[ridx]}" str_cmd+="${RULELIST_'$str_opt'[ridx]}"'
 		done
 		return 0
 	fi
@@ -6504,14 +6503,14 @@ for xidx in ${!TABLE_DEPEND_TARGET_LIST[@]}; do # targets usable only in specifi
 	shift
 	str_tlist="$@"
 	for str_t in ${str_tables}; do
-		if [[ ${str_t} = ${table} ]]; then
+		if [[ ${str_t} = $table ]]; then
 			for str_opt in ${str_tlist}; do
-				if [[ ${str_opt%:*} = ${str_target} ]]; then
-					str_cmd+="-j ${str_target} "
+				if [[ ${str_opt%:*} = $str_target ]]; then
+					str_cmd+="-j $str_target "
 					str_opt="${str_opt#*:}"
 					set -- ${str_opt//,/ }
 					for str_opt in "$@"; do
-						eval 'str_log+="${MSG_LIST_'${str_opt}'[ridx]}" str_cmd+="${RULELIST_'${str_opt}'[ridx]}"'
+						eval 'str_log+="${MSG_LIST_'$str_opt'[ridx]}" str_cmd+="${RULELIST_'$str_opt'[ridx]}"'
 					done
 					return 0
 				fi
@@ -6519,7 +6518,7 @@ for xidx in ${!TABLE_DEPEND_TARGET_LIST[@]}; do # targets usable only in specifi
 		fi
 	done
 done
-str_cmd+="${str_action} ${str_target}" # no matching target found
+str_cmd+="$str_action $str_target" # no matching target found
 } # -------------------------------------------------------------------------
 
 _compute_rules() {
@@ -6530,12 +6529,12 @@ local -i ridx
 
 for ridx in ${!RULELIST_TARGET[@]}; do
 	str_target="${RULELIST_TARGET[ridx]}"
-	if [[ ${str_target} = empty ]]; then # rules with no target have it set to `empty' by the user
+	if [[ $str_target = empty ]]; then # rules with no target have it set to `empty' by the user
 		str_target=""
-	elif [[ ${str_target} = goto:* ]]; then # goto:target changes default jump behaviour
+	elif [[ $str_target = goto:* ]]; then # goto:target changes default jump behaviour
 		str_target="${str_target#goto:}"
 		str_action="-g"
-	elif [[ ${str_target} = ECN ]]; then # target without an option that could be set
+	elif [[ $str_target = ECN ]]; then # target without an option that could be set
 		local RULELIST_REM_ECN[ridx]="--ecn-tcp-remove"
 	fi
 	str_log="${PF}${MSG_LIST_TARGET[ridx]} ${MSG_LIST_TABLE[ridx]}${MSG_LIST_CHAIN[ridx]}"
@@ -6546,7 +6545,7 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 	# log the generated message
 	log -e "${str_log}"
 	# add the generated rule
-	add_rule "${table}" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return
+	add_rule "$table" "${RULELIST_CHAIN[ridx]}" "${str_cmd}" || return
 	let RULES_GENERATED_COUNT+=1
 done
 } # -------------------------------------------------------------------------
@@ -6681,7 +6680,7 @@ if [[ ${reverse_mode} ]]; then
 			chain_max=1
 		;;
 		mirror) # option is mirror, use values of option_list_0 for option_list_1
-			$(${copy_array} option_list_0 option_list_1) || {
+			$($copy_array option_list_0 option_list_1) || {
 				raise_gen_err_count
 				log -U $FUNCNAME
 				return 0
@@ -6718,15 +6717,15 @@ fi
 
 # look for table definitions in the template.
 # now we know there is a target definition in the template
-if [[ ${table} ]]; then
+if [[ $table ]]; then
 	table_in_template=1
-	[[ $DEBUG_INFO ]] && pr_str "Table set in template: ${table}"
+	[[ $DEBUG_INFO ]] && pr_str "Table set in template: $table"
 fi
 
 # look for target definitions in the template.
 # now we know there is a target definition in the template
 if ((${#target[@]})); then
-	$(${copy_array} target arr_tmp_targets) || {
+	$($copy_array target arr_tmp_targets) || {
 		raise_gen_err_count
 		log -U $FUNCNAME
 		return 0
@@ -6796,7 +6795,7 @@ if ((${#always_use_0[@]})); then
 fi
 
 # copy it to a temporary array, so we don't need to use 'eval' all the time
-$(${copy_array} "${target_ruleblock}" arr_tmp_ruleblock) || {
+$($copy_array "${target_ruleblock}" arr_tmp_ruleblock) || {
 	raise_gen_err_count
 	log -U $FUNCNAME
 	return 0
@@ -6811,8 +6810,8 @@ for tmp_arr_idx in ${!arr_tmp_ruleblock[@]}; do
 	# the rule string is composed of the entries collected through ALWAYS_USE options
 	# and the options of the ruleblock
 	arr_user_pos_p=()
-	arr_populated 'arr_alw_use_pos_p' && $(${copy_array} arr_alw_use_pos_p arr_user_pos_p)
-	eval 'set -- '"${arr_tmp_ruleblock[tmp_arr_idx]}"
+	arr_populated 'arr_alw_use_pos_p' && $($copy_array arr_alw_use_pos_p arr_user_pos_p)
+	eval set -- "${arr_tmp_ruleblock[tmp_arr_idx]}"
 	for str_entry in "$@"; do
 		arr_user_pos_p[${#arr_user_pos_p[@]}]="${str_entry}"
 	done
@@ -6840,11 +6839,11 @@ for tmp_arr_idx in ${!arr_tmp_ruleblock[@]}; do
 
 	# if the target(s) are defined in the template, copy the info to the arg_list_X array
 	if ((target_in_template == 1)); then
-		$(${copy_array} arr_tmp_targets arg_list_target)
+		$($copy_array arr_tmp_targets arg_list_target)
 	fi
 	# if the chain(s) are defined in the template, copy the info to the arg_list_X array
 	if ((chain_in_template == 1)); then
-		$(${copy_array} arr_tmp_chains arg_list_chain)
+		$($copy_array arr_tmp_chains arg_list_chain)
 	fi
 
 	# now reference the option lists provided in the template.
@@ -7275,7 +7274,7 @@ drop_illegal_tcp
 # We send all tcp packets through the bad_tcp_packets chain
 if ((BLOCK_ILLEGAL || LOG_ILLEGAL)); then
 	for c in ${str_cl}; do
-		add_rule filter "${c}" -p tcp -j "${BIC_BAD_TCP_PACKETS}"
+		add_rule filter "$c" -p tcp -j "${BIC_BAD_TCP_PACKETS}"
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -7436,7 +7435,7 @@ global_broadcasts_chain() {
 if [[ ${DROP_DHCP} || ${DROP_UPNP} ]]; then
 	log -N "Creating global broadcasts chain: ${BIC_GLOBAL_BROADCASTS_CHAIN}"
 	create_chain filter "${BIC_GLOBAL_BROADCASTS_CHAIN}"
-	log -e "${PF}chain=${c} dst=${BCAST_DEST} target=${BIC_GLOBAL_BROADCASTS_CHAIN}"
+	log -e "${PF}chain=$c dst=${BCAST_DEST} target=${BIC_GLOBAL_BROADCASTS_CHAIN}"
 	add_rule filter INPUT -d ${BCAST_DEST} -j "${BIC_GLOBAL_BROADCASTS_CHAIN}"
 fi
 } # -------------------------------------------------------------------------

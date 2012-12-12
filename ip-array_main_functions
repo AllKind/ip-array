@@ -990,7 +990,7 @@ check_var_overlap "$1" 'insert_arr' || return 1
 check_var_overlap "$2" 'append_arr' || return 1
 local insert_arr="$1" append_arr="$2"
 append_array "${insert_arr}" "${append_arr}"
-$(${copy_array} "${insert_arr}" "${append_arr}")
+$($copy_array "${insert_arr}" "${append_arr}")
 } # -------------------------------------------------------------------------
 
 dbg_arr() {
@@ -1009,15 +1009,15 @@ check_var_overlap "$1" 't_arr' || return 1
 local -a t_arr
 local -i arr_idx
 local str_output col
-$(${copy_array} "$1" 't_arr')
+$($copy_array "$1" 't_arr')
 shift
 local columns_to_show="${@:-1}"
 for arr_idx in ${!t_arr[@]}; do
 	set -- ${t_arr[arr_idx]}
-	for col in ${columns_to_show}; do
+	for col in $columns_to_show; do
 		str_output+="${!col} "
 	done
-	printf "%s\n" "${str_output}"
+	printf "%s\n" "$str_output"
 	str_output=""
 done
 } # -------------------------------------------------------------------------
@@ -1028,8 +1028,8 @@ check_var_overlap "$1" 'uniq_arr' || return 1
 local uniq_arr="$1"
 local -a tmp_arr
 local -i arr_idx arr_idx2 last_index
-if arr_populated "${uniq_arr}"; then
-	$(${copy_array} "${uniq_arr}" 'tmp_arr')
+if arr_populated "$uniq_arr"; then
+	$($copy_array "$uniq_arr" 'tmp_arr')
 	last_index=$(last_arr_member tmp_arr)
 else
 	return 0
@@ -1037,7 +1037,7 @@ fi
 for ((arr_idx=0; arr_idx<last_index; ++arr_idx)); do
 	for ((arr_idx2=arr_idx+1; arr_idx2<=last_index; ++arr_idx2)); do
 		if [[ ${tmp_arr[arr_idx]} = ${tmp_arr[arr_idx2]} ]]; then
-			log -E "Duplicate value \`${tmp_arr[arr_idx]}' in \`${uniq_arr}'."
+			log -E "Duplicate value \`${tmp_arr[arr_idx]}' in \`$uniq_arr'."
 			return 1
 		fi
 	done
@@ -1050,8 +1050,8 @@ check_var_overlap "$1" 'uniq_arr' || return 1
 local uniq_arr="$1"
 local -a tmp_arr
 local -i arr_idx arr_idx2 last_index
-if arr_populated "${uniq_arr}"; then
-	$(${copy_array} "${uniq_arr}" 'tmp_arr')
+if arr_populated "$uniq_arr"; then
+	$($copy_array "$uniq_arr" 'tmp_arr')
 	last_index=$(last_arr_member tmp_arr)
 else
 	return 0
@@ -1059,7 +1059,7 @@ fi
 for ((arr_idx=0; arr_idx<last_index; ++arr_idx)); do
 	for ((arr_idx2=arr_idx+1; arr_idx2<=last_index; ++arr_idx2)); do
 		if [[ ${tmp_arr[arr_idx]%%=*} = ${tmp_arr[arr_idx2]%%=*} ]]; then
-			log -E "Duplicate option \`${tmp_arr[arr_idx]%%=*}' in \`${uniq_arr}'."
+			log -E "Duplicate option \`${tmp_arr[arr_idx]%%=*}' in \`$uniq_arr'."
 			return 1
 		fi
 	done
@@ -1076,14 +1076,13 @@ check_var_overlap "$1" 'arr_var_content' || return 1
 local rline
 declare -i array_cnt=line_cnt=ignore_cnt=0
 local arr_var_content="${!1}" # eval variable name
-case "${arr_var_content}" in
+case "$arr_var_content" in
 	(+([[:space:]])) # array variable contains only space class chars
 		log -N "\`$1' is empty"
 		unset "$1"
 		return 0
 	;;
 	*) while read -r -t $GLOBAL_READ_TIMEOUT rline; do
-#			((line_cnt++)) # raise line counter
 			let line_cnt+=1 # raise line counter
 			# maybe line contains a comment, remove everything after the '#'.
 			# if line becomes empty, whole line gets ignored,
@@ -1091,14 +1090,13 @@ case "${arr_var_content}" in
 			# line contains only space class chars,
 			# raise ignore counter and continue with next line
 			rline="${rline%%#*}"
-			[[ -z ${rline} || ${rline} = +([[:space:]]) ]] && {
-#				((ignore_cnt++))
+			[[ -z $rline || $rline = +([[:space:]]) ]] && {
 				let ignore_cnt+=1
 				continue
 			}
 			# if all test are passed, add line to array
-			eval "$1"'[array_cnt++]="'"${rline}"'"'
-		done < <(printf "%s\n" "${arr_var_content}")
+			eval "$1"'[array_cnt++]="'"$rline"'"'
+		done < <(printf "%s\n" "$arr_var_content")
 	;;
 esac
 if ((line_cnt == ignore_cnt)); then # if line and ignore counters are equal, unset array variable
@@ -1283,7 +1281,7 @@ local IFS="$Oifs"
 
 (($# < 2)) && {
 	log -E "Error while retrieving kernel version!"
-	return 1
+	return $ER_FAIL
 }
 # Save kernel version, so we can check version depending matters (TO DO!)
 KERN_VER=("$1" "$2" "${3:0:2}")
