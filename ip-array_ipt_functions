@@ -45,21 +45,22 @@ val_setname() { # validate name of an ipset set
 }
 } # -------------------------------------------------------------------------
 
-ipset_create() { # create an ipset set
+ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_set="$1" str_type="$2" str_create="-N"
 shift 2
 local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
-val_setname "$str_set" || return $ER_CONF
+val_setname "$str_set" || { raise_cfg_err_count; return $ER_CONF; }
 lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} && {
 	log -W "ipset set \`$str_set' has already been created."
 	return 0
 }
 lsearch "$str_type" $UNSUPPORTED_SETLIST && {
 	log -E "ipset set type \`$str_type' is not supported."
-	return $ER_FAIL
+	raise_gen_err_count
+	return $ER_CONF
 }
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_create=create
@@ -71,36 +72,40 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						val_port_range_word "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+						val_port_range_word "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					else
-						val_ip4_addr "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+						val_ip4_addr "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					fi
 					shift 2
 				;;
 				netmask)
 					if [[ $str_type = bitmap:ip ]]; then
-						val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+						val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 						((opt_arg >= 1 && <= 32)) || {
 							log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
+							raise_cfg_err_count
 							return $ER_CONF
 						}
 						shift 2
 					else
 						log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+						raise_cfg_err_count
 						return $ER_CONF
 
 					fi
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 				;;
 			esac
@@ -112,26 +117,29 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				family)
 					if [[ $opt_arg = inet6 ]]; then
 						log -E "Option argument \`$opt_arg' is not supported."
+						raise_cfg_err_count
 						return $ER_CONF
 					elif [[ $opt_arg = inet ]]; then :
 					else
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid values: inet|inet6."
+						raise_cfg_err_count
 						return $ER_CONF
 					fi	
 					shift 2
 				;;
 				hashsize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				maxelem)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				netmask)
@@ -139,19 +147,22 @@ case "$str_type" in
 						hash:ip)
 							((opt_arg >= 1 && <= 32)) || {
 								log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
+								raise_cfg_err_count
 								return $ER_CONF
 							}
 							shift 2
 						;;
 						*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-						return $ER_CONF
+							raise_cfg_err_count
+							return $ER_CONF
 					esac
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -162,18 +173,20 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				size)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -184,33 +197,36 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_network="--$option $opt_arg"
 					shift 2
 				;;
 				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
+						raise_cfg_err_count
 						return $ER_CONF
 					}
 					str_netmask="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -226,11 +242,13 @@ case "$str_type" in
 				fi
 			else
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 		fi
 		if [[ $str_netmask ]] && [[ -z $str_from || -z $str_to ]]; then
 			log -E "$strErr \`$str_type' option \`netmask' needs \`from value to value' options."
+			raise_cfg_err_count
 			return $ER_CONF
 		fi
 	;;
@@ -242,23 +260,24 @@ case "$str_type" in
 				from|to|network)
 					if [[ -z $opt_arg ]]; then
 						log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+						raise_cfg_err_count
 						return $ER_CONF
 					fi
 				;;
 			esac
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts=(--$option $opt_arg)
 					shift 2
 				;;
@@ -267,6 +286,7 @@ case "$str_type" in
 					shift
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -274,6 +294,7 @@ case "$str_type" in
 			arr_opts=($str_from $str_to)
 		elif [[ $str_from && -z $str_to ]]; then
 			log -E "$strErr \`$str_type' needs \`from value to value' options."
+			raise_cfg_err_count
 			return $ER_CONF
 		fi
 	;;
@@ -281,15 +302,17 @@ case "$str_type" in
 		if (($# == 4)); then
 			if [[ $1 = from && $2 = +([[:digit:]]) && $3 = to && $4 = +([[:digit:]]) ]]; then
 				for rvar in $2 $4; do
-					val_port $rvar || { log -E "$strERR"; return $ER_CONF; }
+					val_port $rvar || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 				done
 				arr_opts=(--from $2 --to $4)
 			else
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 		else
 			log -E "$strErr \`$str_type' needs \`from value to value' options."
+			raise_cfg_err_count
 			return $ER_CONF
 		fi
 	;;
@@ -298,24 +321,26 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			case "$option" in
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
+						raise_cfg_err_count
 						return $ER_CONF
 					}
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -325,20 +350,22 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -349,35 +376,37 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; return $ER_CONF; }
+					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 			esac
 		done
@@ -386,6 +415,7 @@ case "$str_type" in
 		else
 			if [[ $str_from && -z $str_to ]] || [[ -z $str_from && $str_to ]]; then
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 		fi
@@ -404,27 +434,31 @@ case "$str_type" in
 						arr_opts=(--$1 $2)
 					else
 						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
+						raise_cfg_err_count
 						return $ER_CONF
 					fi
 				else
 					log -E "$strERR Missing value to option \`$1' for \`$str_type' set."
+					raise_cfg_err_count
 					return $ER_CONF
 				fi
 			else
 				log -E "$strERR Invalid option \`$1' for \`$str_type' set."
+				raise_cfg_err_count
 				return $ER_CONF
 			fi
 		fi
 	;;
 	*) log -E "Unknown set type \`$str_type'."
+		raise_cfg_err_count
 		return $ER_CONF
 esac
-log -e "creating set: \`$str_set'"
+log -e "creating set: \`$str_set' of type: \`$str_type'"
 IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="$str_create $str_set $str_type ${arr_opts[@]}"
 CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set"
 } # -------------------------------------------------------------------------
 
-ipset_add() {
+ipset_add() { # add an entry (cache) to an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_set="$1" str_cmd="-A"
 if [[ $IPSET_SYNTAX = new ]]; then
@@ -511,7 +545,6 @@ run_ipset $str_cmd "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
 test_ipset() {
-((USE_IPSET)) || return 0
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
 local -i idx
@@ -523,20 +556,22 @@ if dn run_ipset list; then
 fi
 case "$1" in
 	create)
-		log -I "Checking for ipset set types"
-		for idx in ${!IPARRAY_IPSET_SETTYPE_LIST[@]}; do
-			set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
-			str_typename=$1
-			shift
-			log -e "${PF}checking $str_typename set"
-			if $str_dn run_ipset $str_create ${ME}_TEST_SET $str_typename $@; then
-				$str_dn run_ipset $str_destroy ${ME}_TEST_SET
-			else
-				UNSUPPORTED_SETLIST+=" $str_typename"
-				log -f "creating set: \`${ME}_TEST_SET $str_typename $@'"
-			fi
-		done
-		readonly UNSUPPORTED_SETLIST
+		if ((USE_IPSET)); then
+			log -I "Checking for ipset set types"
+			for idx in ${!IPARRAY_IPSET_SETTYPE_LIST[@]}; do
+				set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
+				str_typename=$1
+				shift
+				log -e "${PF}checking $str_typename set"
+				if $str_dn run_ipset $str_create ${ME}_TEST_SET $str_typename $@; then
+					$str_dn run_ipset $str_destroy ${ME}_TEST_SET
+				else
+					UNSUPPORTED_SETLIST+=" $str_typename"
+					log -f "creating set: \`${ME}_TEST_SET $str_typename $@'"
+				fi
+			done
+			readonly UNSUPPORTED_SETLIST
+		fi
 		log -w "creating ipset test set"
 		$str_dn run_ipset $str_create ${ME}_TEST_SET ipmap --network 192.168.0.0/24 || {
 			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
@@ -1534,7 +1569,7 @@ readonly GLOBAL_LOGLIMIT GLOBAL_BURSTLIMIT GLOBAL_LOGLEVL
 } # -------------------------------------------------------------------------
 
 check_mangle_chains() {
-((ENABLE_MANGLE)) || return 0
+((ENABLE_MANGLE || ENABLE_TC_SHAPING)) || return 0
 if ((MANGLE_CHAINS_PRESENT == 0)); then
 	dn run_ipt -t mangle -nL INPUT && MANGLE_CHAINS_PRESENT=1
 fi
@@ -7470,10 +7505,10 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST RULEBLOCK_BUILTIN_DROP
 global_broadcasts_chain() {
 ((ENABLE_FILTER)) || return 0
 if [[ ${DROP_DHCP} || ${DROP_UPNP} ]]; then
-	log -N "Creating global broadcasts chain: ${BIC_GLOBAL_BROADCASTS_CHAIN}"
-	create_chain filter "${BIC_GLOBAL_BROADCASTS_CHAIN}"
-	log -e "${PF}chain=$c dst=${BCAST_DEST} target=${BIC_GLOBAL_BROADCASTS_CHAIN}"
-	add_rule filter INPUT -d ${BCAST_DEST} -j "${BIC_GLOBAL_BROADCASTS_CHAIN}"
+	log -N "Creating global broadcasts chain: $BIC_GLOBAL_BROADCASTS_CHAIN"
+	create_chain filter "$BIC_GLOBAL_BROADCASTS_CHAIN"
+	log -e "${PF}chain=INPUT dst=${BCAST_DEST} target=$BIC_GLOBAL_BROADCASTS_CHAIN"
+	add_rule filter INPUT -d ${BCAST_DEST} -j "$BIC_GLOBAL_BROADCASTS_CHAIN"
 fi
 } # -------------------------------------------------------------------------
 
@@ -7486,7 +7521,7 @@ drop_dhcp() { # drop DHCP broadcasts on certain interfaces (prevent log spamming
 local TEMPLATE_BUILTIN_DROP_DHCP=(
 "table=filter"
 "target[0]=DROP"
-"chain[0]=${BIC_GLOBAL_BROADCASTS_CHAIN}"
+"chain[0]=$BIC_GLOBAL_BROADCASTS_CHAIN"
 "template_msg='Dropping DHCP broadcasts on certain interfaces'"
 "option_list_0[0]=idev"
 "always_use_0[0]=proto=udp"
@@ -7507,7 +7542,7 @@ drop_upnp() { # drop (Microsoft) UPNP broadcasts on certain interfaces (prevent 
 local TEMPLATE_BUILTIN_DROP_UPNP=(
 "table=filter"
 "target[0]=DROP"
-"chain[0]=${BIC_GLOBAL_BROADCASTS_CHAIN}"
+"chain[0]=$BIC_GLOBAL_BROADCASTS_CHAIN"
 "template_msg='Dropping UPNP broadcasts on certain interfaces'"
 "option_list_0[0]=idev"
 "always_use_0[0]=proto=udp"
@@ -7701,7 +7736,7 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-allow_out_ntp() { # allow local to remote NTP server traffic
+allow_out_ntp() { # allow local (host itself) to remote NTP server traffic
 ((REST_OUT_NTP_ALLOW)) || {
 	log -w "Not allowing local host to NTP server(s) traffic"
 	return 0
@@ -7710,14 +7745,14 @@ if ! ((${#TIME_SERVERS[@]})); then
 	log -u 'TIME_SERVERS'
 	return 0
 fi
-local -i idx
+local -i idx i=0
 local -a RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS
-local strERR NTP_SERVERS ext_net ext_netif ext_if iface_ip ntp_host ntp_if_list ntp_if
+local strERR str_ntp_servers str_ext_net str_ext_netif str_iface_ip str_ntp_host str_ntp_if_list str_setname
 local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW=(
 "table=filter"
 "template_msg='Allowing local host to NTP server(s) traffic'"
 "target[0]=ACCEPT"
-"chain[0]=${BIC_NTP_SVR_CHAIN}"
+"chain[0]=$BIC_NTP_SVR_CHAIN"
 "option_list_0[0]=odev"
 "option_list_0[1]=src"
 "option_list_0[2]=dst"
@@ -7725,7 +7760,7 @@ local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW=(
 )
 local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS=(
 "table=filter"
-"target[0]=${BIC_NTP_SVR_CHAIN}"
+"target[0]=$BIC_NTP_SVR_CHAIN"
 "chain[0]=OUTPUT"
 "chain[1]=INPUT"
 "reverse_mode=reverse"
@@ -7739,41 +7774,78 @@ local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS=(
 "always_use_1[1]=dport=123"
 "always_use_1[2]=sport=123"
 )
-local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+if ((USE_IPSET)); then
+	TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[${#TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[@]}]="option_list_0[4]=m_set"
+fi
 for idx in ${!TIME_SERVERS[@]}; do
 	set -- ${TIME_SERVERS[idx]}
-#	NTP_SERVERS=$(IFS=, split_val $1) ext_net=$2
-	NTP_SERVERS=${1//,/ } ext_net=$2
-	strERR="TIME_SERVERS ${idx} ${TIME_SERVERS[idx]}"
-	if [[ ${ext_net} ]]; then # get external interface
-		ext_netif=$(get_net_iface ${ext_net})
-		[[ ${ext_netif} ]] || {
-			log -d "${ext_net}"
-			cfg_err ${strERR}
+	str_ntp_servers=${1//,/ } str_ext_net=$2
+	strERR="TIME_SERVERS $idx ${TIME_SERVERS[idx]}"
+	if [[ $str_ext_net ]]; then # get external interface
+		str_ext_netif=$(get_net_iface $ext_net)
+		str_iface_ip=$(get_net_ipaddr $ext_net)
+		[[ $str_ext_netif && $str_iface_ip ]] || {
+			log -d "$str_ext_net"
+			cfg_err $strERR
 			continue
 		}
-	fi
-	for ntp_host in ${NTP_SERVERS}; do
-		if [[ -z ${ext_netif} ]]; then
-			ext_if=$(get_route_iface "${ntp_host}")
-			[[ ${ext_if} ]] || {
-				log -E "Unable to retrieve interface to route ${ntp_host} over."
+		if ((USE_IPSET)); then
+			str_setname="NTP_PROVIDERS_${str_ext_net}"
+			if [[ $IPSET_SYNTAX = old ]]; then
+				ipset_create "$str_setname" "iphash" || return 0
+			else
+				ipset_create "$str_setname" "hash:ip" || return 0
+			fi
+			for ntp_host in $str_ntp_servers; do
+				ipset_add "$str_setname" "$str_ntp_host"
+			done
+			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW $str_setname:dst"
+		else
+			for ntp_host in $str_ntp_servers; do
+				RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW"
+			done
+		fi
+	else # no external network specified
+		for str_ntp_host in $str_ntp_servers; do
+			str_ext_netif=$(get_route_iface "$str_ntp_host") # retrieve external interface for each host
+			[[ $str_ext_netif ]] || {
+				log -E "Unable to retrieve interface to route $str_ntp_host over."
 				raise_gen_err_count
 				continue
 			}
-		else
-			ext_if=${ext_netif}
-		fi
-		lsearch "${ext_if}" ${ntp_if_list} || ntp_if_list+="${ext_if} "
-		while read iface_ip; do
-			local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[@]}]="${ext_if} ${iface_ip} ${ntp_host} ${stN}"
-		done < <(get_if_ipv4_data "${ext_if}" -i)
-	done
+			if ! lsearch "$str_ext_netif" $str_ntp_if_list; then # register interface
+				str_ntp_if_list+="$str_ext_netif "
+				if ((USE_IPSET)); then
+					str_setname="NTP_PROVIDERS_${str_ext_netif}"
+					if [[ $IPSET_SYNTAX = old ]]; then
+						ipset_create "$str_setname" "iphash" || return 0
+					else
+						ipset_create "$str_setname" "hash:ip" || return 0
+					fi
+				fi
+			fi
+			if ((USE_IPSET)); then
+				ipset_add "$str_setname" "$str_ntp_host"
+			else
+				while read str_iface_ip; do
+					RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW"
+				done < <(get_if_ipv4_data "$str_ext_netif" -i)
+			fi
+		done
+	fi
 done
-if [[ ${ntp_if_list} ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[@]} > 1 )); then
+if ((USE_IPSET)); then
+	for str_ext_netif in $str_ntp_if_list; do
+		while read str_iface_ip; do
+			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW NTP_PROVIDERS_${str_ext_netif}:dst"
+		done < <(get_if_ipv4_data "$str_ext_netif" -i)
+	done
+fi
+if ((${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[@]} > 1 )); then
 	((REVERSE_INPUT_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[0]
-	local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[@]}]=$(build_list ',' "${ntp_if_list}")
-	create_chain filter "${BIC_NTP_SVR_CHAIN}"
+	RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS[@]}]=$(build_list ',' "$str_ntp_if_list")
+	create_chain filter "$BIC_NTP_SVR_CHAIN"
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS
 else

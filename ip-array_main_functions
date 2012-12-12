@@ -4223,7 +4223,7 @@ case "$MODE" in # act according to runtime mode
 				log -I "Removing empty chains"
 				((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_empty_chains 'raw'
 				((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_empty_chains 'rawpost'
-				((ENABLE_MANGLE == 1)) && delete_empty_chains 'mangle'
+				((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_empty_chains 'mangle'
 				((ENABLE_NAT == 1))&& delete_empty_chains 'nat'
 				((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_empty_chains 'security'
 				((ENABLE_FILTER == 1)) && delete_empty_chains

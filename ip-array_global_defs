@@ -418,11 +418,13 @@ CONFIG_ENTRY_ARRAY=(
 "IPT_NAT_TEMPLATES print 0 check_str_unique \${IPT_NAT_TEMPLATES}"
 "IPT_RAW_TEMPLATES print 0 check_str_unique \${IPT_RAW_TEMPLATES}"
 "IPT_RAWPOST_TEMPLATES print 0 check_str_unique \${IPT_RAWPOST_TEMPLATES}"
+"IPT_SECURITY_TEMPLATES print 0 check_str_unique \${IPT_SECURITY_TEMPLATES}"
 "FILTER_RULEBLOCKS print 0 check_str_unique \${FILTER_RULEBLOCKS}"
 "MANGLE_RULEBLOCKS print 0 check_str_unique \${MANGLE_RULEBLOCKS}"
 "NAT_RULEBLOCKS print 0 check_str_unique \${NAT_RULEBLOCKS}"
 "RAW_RULEBLOCKS print 0 check_str_unique \${RAW_RULEBLOCKS}"
 "RAWPOST_RULEBLOCKS print 0 check_str_unique \${RAWPOST_RULEBLOCKS}"
+"SECURITY_RULEBLOCKS print 0 check_str_unique \${SECURITY_RULEBLOCKS}"
 "TC_RULEBLOCKS print 0 check_str_unique \${TC_RULEBLOCKS}"
 "TC_MANGLE_RULEBLOCKS print 0 check_str_unique \${TC_MANGLE_RULEBLOCKS}"
 # modules
@@ -443,6 +445,9 @@ CONFIG_ENTRY_ARRAY=(
 "ENABLE_RAWPOST bool 0"
 "RAW_RULES print 0 check_str_unique \${RAW_RULES}"
 "RAWPOST_RULES print 0 check_str_unique \${RAWPOST_RULES}"
+# security
+"ENABLE_SECURITY bool 0"
+"SECURITY_RULES print 0 check_str_unique \${SECURITY_RULES}"
 # vpn
 "ENABLE_IPSEC bool 0"
 "ALLOW_ALL_BRANCH bool 0"
