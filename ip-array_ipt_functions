@@ -1251,82 +1251,86 @@ CREATED_CHAINS_ARRAY[${#CREATED_CHAINS_ARRAY[@]}]="${str_tbl} ${str_chain}"
 # -------------------------------------------------------------------------
 
 emerge_ips_restore() { # restore ipset data in error case in error case
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((USE_IPSET)) || return 0
-local str_file="${1:-${IPSET_SAVE_FILE}}"
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
 	run_ipset -F -q
 	run_ipset -X -q
-	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'ipset rules successfully restored from: ${SAVE_DIR}/${str_file}'"
+	if run_ipset -R <"$str_file"; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'ipset rules successfully restored from: $str_file'"
 	else
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring ipset rules from: ${SAVE_DIR}/${str_file}.'"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring ipset rules from: $str_file.'"
 		return $ER_FAIL
 	fi
 else
-	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -x '${SAVE_DIR}/${str_file}'"
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -x '$str_file'"
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
 
 emerge_ipt_restore() { # restore the firewall with iptables-restore in error case
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 if ((IPTSAVE_FAILS)); then
 	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'IPTSAVE_FAILS is set to $IPTSAVE_FAILS.'"
 	return $ER_FAIL
 fi
-local str_c="" str_file="${1:-${SAVE_FILE}}"
+local str_c="" str_file="${SAVE_DIR}/$1"
 if ((USE_COUNTERS)); then
 	str_c="--counters "
 fi
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
-	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'iptables rules successfully restored from: ${SAVE_DIR}/${str_file}'"
+if [[ -r $str_file ]]; then
+	if "$IPT_RESTORE" $str_c <"$str_file"; then
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'iptables rules successfully restored from: $str_file'"
 	else
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring iptables rules.'"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring iptables rules from: $str_file.'"
 		return $ER_FAIL
 	fi
 else
-	log -x "${SAVE_DIR}/${str_file}"
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -x '$str_file'"
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
 
 ips_restore() { # restore ipset data
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((USE_IPSET)) || return 0
-local str_file="${1:-${IPSET_SAVE_FILE}}"
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
+local str_file="${SAVE_DIR}/$1"
+if [[ -r $str_file ]]; then
 	log -w "Destroying existing sets"
 	run_ipset -F -q
 	run_ipset -X -q
-	if run_ipset -R <"${SAVE_DIR}/${str_file}"; then
-		log -N "ipset rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+	if run_ipset -R <"$str_file"; then
+		log -N "ipset rules successfully restored from: \`$str_file'"
 	else
-		log -E "Failed restoring ipset rules from: \`${SAVE_DIR}/${str_file}'."
+		log -E "Failed restoring ipset rules from: \`$str_file'."
 		return $ER_FAIL
 	fi
 else
-	log -x "${SAVE_DIR}/${str_file}"
+	log -x "$str_file"
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
 
 ipt_restore() { # restore the firewall with iptables-restore
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 if ((IPTSAVE_FAILS)); then
 	log -E "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 	return $ER_FAIL
 fi
-local str_c="" str_file="${1:-${SAVE_FILE}}"
+local str_c="" str_file="${SAVE_DIR}/$1"
 if ((USE_COUNTERS)); then
 	str_c="--counters "
 fi
-if [[ -r ${SAVE_DIR}/${str_file} ]]; then
-	if "${IPT_RESTORE}" ${str_c}<"${SAVE_DIR}/${str_file}"; then
-		log -N "iptables rules successfully restored from: \`${SAVE_DIR}/${str_file}'"
+if [[ -r $str_file ]]; then
+	if "$IPT_RESTORE" $str_c <"$str_file"; then
+		log -N "iptables rules successfully restored from: \`$str_file'"
 	else
-		log -E "Failed restoring iptables rules."
+		log -E "Failed restoring iptables rules from: \`$str_file'."
 		return $ER_FAIL
 	fi
 else
-	log -x "${SAVE_DIR}/${str_file}"
+	log -x "$str_file"
 	return $ER_NOEX
 fi
 } # -------------------------------------------------------------------------
@@ -2763,7 +2767,7 @@ save_for_diff() { # save output of iptables -nL, to be compared to the currently
 local str_tbl="${1:-filter}"
 log -w "${PF}saving $str_tbl"
 run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
-	cmd_err_count 'ipt' "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
+	cmd_err_count ipt "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
 	return 0
 }
 } # -------------------------------------------------------------------------
@@ -2777,7 +2781,7 @@ local str_dfile="${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" tmp_dfile="${SAVE_DIR}/tmp
 }
 run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"$tmp_dfile" || {
 	log -F "saving $str_tbl table ruleset to: \`${tmp_dfile}'"
-	cmd_err_count 'ipt' "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >$tmp_dfile"
+	cmd_err_count ipt "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >$tmp_dfile"
 	return 0
 }
 if dn "$DIFF" "$tmp_dfile" "$str_dfile"; then

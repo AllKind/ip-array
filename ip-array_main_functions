@@ -331,13 +331,13 @@ local log_message="${@//[$'\t']/}"
 case "$log_param" in
 	-d) log -E "Unable to retrieve interface for network: $log_message." ;;
 	-e)
-		((VERBOSE >= 6)) && printf "%s\n" "$log_message"
+		((VERBOSE >= 6)) && pr_str "$log_message"
 		((SYSLOG_VERBOSE >= 5)) && syslog $LOG_FACILITY info "$log_message"
 	;;
 	-f) log -W "Failed $log_message" ;;
 	-i) log -E "Illegal value \`$1' for \`$2'." ;;
 	-l) syslog $LOG_FACILITY notice "$log_message" ;;
-	-m) printf "%s\n" "$log_message"; syslog $LOG_FACILITY notice "$log_message" ;;
+	-m) pr_str "$log_message"; syslog $LOG_FACILITY notice "$log_message" ;;
 	-o) log -E "Illegal parameter \`$1' for function: ${2}()." ;;
 	-r) log -E "Array \`$log_message' has no members." ;;
 	-s) log -E "System is missing the \`$log_message' match extension." ;;
@@ -345,7 +345,7 @@ case "$log_param" in
 	-u) log -W "\`$log_message' is unset." ;;
 	-v) log -N "\`$log_message' is unset." ;;
 	-w)
-		((VERBOSE >= 7)) && printf "%s\n" "$log_message"
+		((VERBOSE >= 7)) && pr_str "$log_message"
 		((SYSLOG_VERBOSE >= 6)) && syslog $LOG_FACILITY info "$log_message"
 	;;
 	-x) log -E "\`$log_message' does not exist." ;;
@@ -1222,7 +1222,7 @@ if ((EXEC_COMMANDS)); then
 fi
 calc_err
 display_errors
-bail_out ${1:-${ER_FAIL}}
+bail_out ${1:-$ER_FAIL}
 } # -------------------------------------------------------------------------
 
 raise_gen_err_count() {
@@ -1243,10 +1243,10 @@ cfg_err() { # report and count ruleblock rules config errors
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local barray="$1" bindex="$2"
 shift 2
-if [[ ${barray} = quick-rule ]]; then
+if [[ $barray = quick-rule ]]; then
 	log -E "Bad entry in rule: \`$*'"
 else
-	log -E "Bad entry in ruleblock \`${barray}' at index \`${bindex}': \`$*'"
+	log -E "Bad entry in ruleblock \`$barray' at index \`$bindex': \`$*'"
 fi
 raise_cfg_err_count
 } # -------------------------------------------------------------------------
@@ -1278,8 +1278,8 @@ check_kern_ver() { # check for necessary kernel version
 log -w "Checking for proper kernel version"
 local Oifs="$IFS"
 local IFS='.'
-set -- $("${UNAME}" -r)
-local IFS="${Oifs}"
+set -- $("$UNAME" -r)
+local IFS="$Oifs"
 
 (($# < 2)) && {
 	log -E "Error while retrieving kernel version!"
@@ -1371,7 +1371,7 @@ else
 fi
 ipt_save "$str_file" || return # save currently active iptables ruleset
 ips_save "$str_ips_f" || return # save currently active ipset ruleset
-if str_job=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -si "%s" -sm "%s" -sp "%s" -v 2\n"%s" -f "%s" "%s" "%s" 2>&1 >/dev/null\n' \
+if str_job=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -si "%s" -sm "%s" -sp "%s" -v 2 -o EXIT_ON_ERROR=0\n"%s" -f "%s" "%s" "%s" 2>&1 >/dev/null\n' \
 	"$SHELL" "$str_mybin" restore "$str_tmp_def_f" "$str_file" "$str_ips_f" "$MODULE_RESTORE_FILE" "$PROC_RESTORE_FILE" \
 	"$RM" "$str_tmp_def_f" "${SAVE_DIR}/$str_file" "${SAVE_DIR}/$str_ips_f" | "$AT" now + $RELOAD_TIME minutes 2>&1)
 then
@@ -1424,8 +1424,8 @@ if [[ -z $str_psearch ]]; then # was not found in module path
 	if [[ -e ${MODULE_DIR}/${MODS_ALIAS_FILE} ]]; then
 		local foo str_alias str_realmod
 		while read -r foo str_alias str_realmod; do
-			[[ ${str_alias} = ${mod_to_rm} ]] && {
-				log -N "Module name \`${mod_to_rm}' is an alias for \`$str_realmod'."
+			[[ $str_alias = $mod_to_rm ]] && {
+				log -N "Module name \`$mod_to_rm' is an alias for \`$str_realmod'."
 				mod_to_rm="$str_realmod"
 				str_psearch=$(dn2 run_find "$MODULE_DIR" -name "${mod_to_rm}.*")
 				break
@@ -1440,34 +1440,34 @@ if [[ $str_psearch ]]; then # was found in any of the 2 previous searches
 			# in any mode that is not saving commands, check if module is loaded
 			if [[ $MODE != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
 			then
-				if ! "${LSMOD}" | my_cut | lsearch_lines "${mod_to_rm}"; then
-					log -W "Module ${mod_to_rm} is not loaded"
+				if ! "$LSMOD" | my_cut | lsearch_lines "$mod_to_rm"; then
+					log -W "Module $mod_to_rm is not loaded"
 					return 0
 				fi
 			fi
-			log -e "${PF}removing ${mod_to_rm}"
+			log -e "${PF}removing $mod_to_rm"
 			case "$MODE" in
 			# in dry run and save commands modes, just probe with modprobe -n
 				SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS)
-					run_modprobe -nr "${mod_to_rm}" || {
-						log -f "removing ${mod_to_rm}"
+					run_modprobe -nr "$mod_to_rm" || {
+						log -f "removing $mod_to_rm"
 					}
 					# add commands to the command array, to be saved after collecting all commands
-					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="-r ${mod_to_rm}"
+					MODULE_CMD_ARRAY[${#MODULE_CMD_ARRAY[@]}]="-r $mod_to_rm"
 					return 0
 				;;
 				*)  # not in dry run or commands saving mode, so perform the module probing
 					if ((EXEC_COMMANDS)); then
-						run_modprobe -r "${mod_to_rm}" || {
-							log -f "removing ${mod_to_rm}"
+						run_modprobe -r "$mod_to_rm" || {
+							log -f "removing $mod_to_rm"
 							return $ER_FAIL
 						}
 						# remember the module sate, by writing it to an array
-						MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="load ${mod_to_rm}"
+						MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="load $mod_to_rm"
 						return 0
 					else
-						run_modprobe -nr "${mod_to_rm}" || {
-							log -f "removing ${mod_to_rm}"
+						run_modprobe -nr "$mod_to_rm" || {
+							log -f "removing $mod_to_rm"
 						}
 					fi
 				;;
@@ -1511,7 +1511,7 @@ if [[ $str_psearch ]]; then # was found in any of the 2 previous searches
 			if [[ $MODE != @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]
 			then
 			# in any mode that is not saving commands, check if module is already loaded
-				if "${LSMOD}" | my_cut | lsearch_lines "$module_name"; then
+				if "$LSMOD" | my_cut | lsearch_lines "$module_name"; then
 					log -N "Module $module_name is already loaded"
 					# remember the module sate, by writing it to an array
 					((EXEC_COMMANDS)) && MOD_STATE_ARRAY[${#MOD_STATE_ARRAY[@]}]="loaded $module_name"
@@ -1691,30 +1691,30 @@ return 0
 set_proc() { # set the proc values
 [[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
 local proc_val="$1" proc_path="$2" proc_msg="$3" proc_mode_msg
-[[ -f ${proc_path} ]] || {
-	log -x "${proc_path}"
+[[ -f $proc_path ]] || {
+	log -x "$proc_path"
 	raise_cfg_err_count
 	return 0
 }
-proc_file_writable "${proc_path}" ] || {
-	log -E "\`${proc_path}' is not writable."
+proc_file_writable "$proc_path" ] || {
+	log -E "\`$proc_path' is not writable."
 	raise_cfg_err_count
 	return 0
 }
-case "${proc_val}" in
-	(0) proc_mode_msg="disabling ${proc_msg}" ;;
-	(1) proc_mode_msg="enabling ${proc_msg}" ;;
+case "$proc_val" in
+	(0) proc_mode_msg="disabling $proc_msg" ;;
+	(1) proc_mode_msg="enabling $proc_msg" ;;
 	(+([[:digit:]]) | \
 		+(*([[:space:]])+([[:word:]])*([[:space:]])) | \
 		@(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])))
-		proc_mode_msg="setting ${proc_msg} to: ${proc_val}"
+		proc_mode_msg="setting $proc_msg to: $proc_val"
 	;;
-	(*) log -i "${proc_val}" 'proc_val'
+	(*) log -i "$proc_val" 'proc_val'
 		raise_cfg_err_count
 		return 0
 esac
-log -e "${PF}${proc_mode_msg}"
-PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="\"${proc_val}\" \"${proc_path}\""
+log -e "${PF}$proc_mode_msg"
+PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="\"$proc_val\" \"$proc_path\""
 #PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="$(escape_varname proc_val) $(escape_varname proc_path)"
 } # -------------------------------------------------------------------------
 
@@ -2836,7 +2836,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 	case "${str_act}" in
 		open)
 			[[ $DEBUG_INFO ]] && {
-				printf "%s\n" "opening tag: \`${tag_name}'"
+				pr_str "opening tag: \`${tag_name}'"
 				for str_cont in ARR_COMMENT_NO ARR_ATTR_NO ARR_CONT_NO; do
 					dbg_arr ${str_cont}_${tag_idx}
 				done
@@ -2984,7 +2984,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 			fi
 		;;
 		close)
-			[[ $DEBUG_INFO ]] && printf "%s\n" "closing tag: \`${tag_name}'"
+			[[ $DEBUG_INFO ]] && pr_str "closing tag: \`${tag_name}'"
 			if [[ ${tag_name} = template ]]; then
 				template_open=0
 				RESULT_ARR[IDX++]=")"
@@ -3074,7 +3074,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					esac
 				done < <(_get_attribute_data)
 				[[ ${ruleblock_name} ]] || { log -E "No ruleblock name provided."; return 1; }
-				[[ $DEBUG_INFO ]] && printf "%s\n" "Ruleblock: '${ruleblock_name}' opened"
+				[[ $DEBUG_INFO ]] && pr_str "Ruleblock: '${ruleblock_name}' opened"
 				for i in ${!RULEBLOCK_NAMES_ARRAY[@]}; do # check for duplicate ruleblock names
 					if [[ ${RULEBLOCK_NAMES_ARRAY[i]} = ${ruleblock_name} ]]; then
 						log -E "Duplicate ruleblock name \`${ruleblock_name}'."
@@ -3101,7 +3101,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 				eval 'RESULT_ARR[IDX++]="# ${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
 			done
 			if [[ ${tag_name} == ruleblock ]]; then
-				[[ $DEBUG_INFO ]] && printf "%s\n" "Ruleblock '${ruleblock_name}' closed"
+				[[ $DEBUG_INFO ]] && pr_str "Ruleblock '${ruleblock_name}' closed"
 			fi
 		;;
 	esac
@@ -3523,7 +3523,7 @@ local -i tag_idx=0 tmp_tag_idx=0 comment_mode=0 comment_idx=0 attr_idx=0 cont_id
 local -a ARR_TAGS ARR_TMP_TAGS
 while read -r; do let line_count+=1
 	line="${REPLY}"
-	[[ $DEBUG_INFO ]] && printf "%s\n" "Reading new line #${line_count}: '${line}'"
+	[[ $DEBUG_INFO ]] && pr_str "Reading new line #${line_count}: '${line}'"
 	# skip empty, xml version and comment lines
 	local -a "ARR_COMMENT_NO_${tag_idx}"
 	[[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]] && {
@@ -3534,7 +3534,7 @@ while read -r; do let line_count+=1
 		continue
 	}
 	if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-		[[ $DEBUG_INFO ]] && printf "%s\n" "Comment starts with: '${line}'"
+		[[ $DEBUG_INFO ]] && pr_str "Comment starts with: '${line}'"
 		line="${line#*'<!--'}"
 		[[ ${line} && ${line} != +([[:blank:]]) ]] && {
 			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
@@ -3542,7 +3542,7 @@ while read -r; do let line_count+=1
 		let comment_mode+=1
 		continue
 	elif [[ ${line} = *'-->'* ]]; then # multiline comment ends
-		[[ $DEBUG_INFO ]] && printf "%s\n" "Comment ends with: '${line}'"
+		[[ $DEBUG_INFO ]] && pr_str "Comment ends with: '${line}'"
 		tmp_content="${line%'-->'*}"
 		[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
 			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
@@ -3554,9 +3554,9 @@ while read -r; do let line_count+=1
 			log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
 			return 1
 		fi
-		[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && printf "%s\n" "Leaving comment mode with: '${line}' #${line_count}"
+		[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && pr_str "Leaving comment mode with: '${line}' #${line_count}"
 	else
-		[[ $DEBUG_INFO ]] && ((comment_mode > 0)) && printf "%s\n" "Skipping comment line: '${line}' #${line_count}"
+		[[ $DEBUG_INFO ]] && ((comment_mode > 0)) && pr_str "Skipping comment line: '${line}' #${line_count}"
 		((comment_mode > 0)) && {
 			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
 				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
@@ -3566,10 +3566,10 @@ while read -r; do let line_count+=1
 	fi
 	[[ ${line} = @(*([[:blank:]])<[?]xml+([[:blank:]])version=*[?]>*) ]] && line="${line#*'>'}"
 	while [[ ${line} && ${line} != +([[:blank:]]) ]]; do # re-iterate until line is blank
-		[[ $DEBUG_INFO ]] && printf "%s\n" "NEW LOOP RUN - line: '${line}'"
+		[[ $DEBUG_INFO ]] && pr_str "NEW LOOP RUN - line: '${line}'"
 		if [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag>
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Tag found on line #${line_count}: '${line}'"
+			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"; tag_name="${tag_name//[[:blank:]]/}"
 			last_tag="${tag_name}" line="${line#*<*>}"
 			cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
@@ -3578,7 +3578,7 @@ while read -r; do let line_count+=1
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
 		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag attrib=val >
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Tag with attributes found on line #${line_count}: '${line}'"
+			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"; tag_name="${tag_name%%+([[:blank:]])*}"
 			attributes="${line#*'<'"${tag_name}"}"; attributes="${attributes%%'>'*}"
 			last_tag="${tag_name}" line="${line#*<*>}"
@@ -3598,7 +3598,7 @@ while read -r; do let line_count+=1
 			let tag_idx+=1
 		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))* ]]; then
 		# NEW TAG IN LINE <tag attrib=val
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Tag with attributes found on line #${line_count}: '${line}'"
+			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"
 			attributes="${line##*'<'+([[:word:]])}"; attributes="${attributes%%?(/)'>'*}"
 			tag_name="${tag_name%"${attributes}"*}"
@@ -3617,7 +3617,7 @@ while read -r; do let line_count+=1
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
 			let tag_idx+=1
 		elif [[ ${line} = *\</+([[:word:]])\>* ]]; then
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Closing tag found on line #${line_count}: '${line}'"
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'/}"; tag_name="${tag_name%%'>'*}"
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close tag \`${tag_name}', but there is no tag opened."; return 1; }
 			[[ ${tag_name} = ${ARR_TMP_TAGS[tmp_tag_idx-1]} ]] || {
@@ -3633,7 +3633,7 @@ while read -r; do let line_count+=1
 			line="${line#*'<'/*'>'}"
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
 		elif [[ ${line} = */\>* ]]; then
-			[[ $DEBUG_INFO ]] && printf "%s\n" "Closing tag found on line #${line_count}: '${line}'"
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close a tag, but there is no tag opened."; return 1; }
 			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
 			strip_blanks_var 'tmp_content'
@@ -3668,7 +3668,7 @@ while read -r; do let line_count+=1
 						tmp_content="${line%%<+([[:word:]])*([[:blank:]])>*}"
 						line="${line#*"${tmp_content}"}"
 						strip_blanks_var 'tmp_content'
-						[[ $DEBUG_INFO ]] && printf "%s\n"  "Adding content for tag ${tag_name}: '${tmp_content}'"
+						[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
 						eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
 					else
 						log -E "Unmatched line #${line_count} - no content expected: '${line}'"
@@ -3810,8 +3810,9 @@ fi
 } # -------------------------------------------------------------------------
 
 ipset_save_ruleset() { # save generated ipset commands to file
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i idx
-local str_rfile="${1:-${SAVE_DIR}/${IPSET_SAVE_FILE}}"
+local str_rfile="$1"
 printf '# Generated by %s %s at %s\n' "$ME" "$STR_VERSION" "$(run_date --rfc-2822)"  >>"$str_rfile"
 for idx in ${!IPSET_CMD_ARRAY[@]}; do
 	printf "%s\n" "${IPSET_CMD_ARRAY[idx]}" >>"$str_rfile"
@@ -4741,11 +4742,11 @@ case "$1" in
 	RESTORE_ON_START)
 	# quick-start - load previously saved known-good scripts
 		start_msg
-		MODE='START'
+#		MODE='START'
 		((EXEC_COMMANDS)) || log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
 		EXEC_COMMANDS=1
 		load_pro_epilog_scripts 'prolog'
-		if ((NO_MODPROBE == 0)); then
+		if ! ((NO_MODPROBE)); then
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
 			if [[ -r $rvar ]]; then
 				log -N "Loading known good modprobe commands."
@@ -4807,7 +4808,7 @@ case "$1" in
 			log -N "Traffic shaping is disabled by configuration."
 		fi
 		# /proc settings at last, as filesystem may not be fully populated before
-		if ((NO_PROC == 0)); then
+		if ! ((NO_PROC)); then
 			rvar="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
 			if [[ -r $rvar ]]; then
 				log -N "Loading known good /proc settings."
@@ -4828,18 +4829,18 @@ case "$1" in
 	RESTORE)
 		start_msg
 		if [[ $cmdline_mod_file ]]; then
-			modules_restore "$cmdline_mod_file" || return
+			modules_restore "$cmdline_mod_file" || raise_gen_err_count
 		fi
 		if ((USE_IPSET)); then
 			set_default_policies_immediate || return
 			flushdel_tables_immediate || return
 			allow_loopback_immediate
 			allow_admin_connection
-			ips_restore "$IPSET_SAVE_FILE" || return
+			ips_restore "$IPSET_SAVE_FILE" || raise_gen_err_count
 		fi
-		ipt_restore "${cmdline_save_file:-$SAVE_FILE}" || return
+		ipt_restore "$SAVE_FILE" || raise_gen_err_count
 		if [[ $cmdline_proc_file ]]; then
-			proc_restore "${cmdline_proc_file}" || return
+			proc_restore "$cmdline_proc_file" || raise_gen_err_count
 		fi
 		minimal_end
 	;;
@@ -4849,7 +4850,7 @@ case "$1" in
 			ipt_save "$KNOWN_GOOD_RULES" || return
 			ips_save "$KNOWN_GOOD_IPSET_RULES" || return
 		else
-			ipt_save "${cmdline_save_file:-$SAVE_FILE}" || return
+			ipt_save "$SAVE_FILE" || return
 			ips_save "$IPSET_SAVE_FILE" || return
 		fi
 		minimal_end

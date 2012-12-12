@@ -125,7 +125,7 @@ declare -r GLOBAL_DEFS="${me}_global_defs"
 declare -r IPARRAY_MAIN_FUNCTIONS="${me}_main_functions"
 declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions"
 declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
-declare -r IPARRAY_FUNCTIONS="${IPARRAY_MAIN_FUNCTIONS} ${IPARRAY_IPT_FUNCTIONS} ${IPARRAY_TC_FUNCTIONS}"
+declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS"
 
 # don't perform autosave, modprobe, proc, compatibility,... check - yes/no
 declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
@@ -162,14 +162,14 @@ declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_
 # hold variables to override main config by command line
 declare -a ARR_RTIME_OPTS
 
+# reusable vars
+declare option opt_arg rvar rest
+declare -i idx i
+
 # list of all builtins
 declare -r BUILTIN_LIST=$(enable -p|while read rvar x;do printf "%s " "$x";done;echo)
 
 declare -r SEPSTR="# ---------------------------------------------------------------"
-
-# reusable vars
-declare option opt_arg rvar rest
-declare -i idx i
 
 # needed before we can read the config file
 : ${VERBOSE:=2}
@@ -732,13 +732,13 @@ if [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]]; then
 	notice_msg "Checking for mandatory programs"
 fi
 val_bool_bin "${AUTO_GET_PROGS:=1}" || {
-	err_msg "Illegal value \`${AUTO_GET_PROGS}' for \`AUTO_GET_PROGS'"
+	err_msg "Illegal value \`$AUTO_GET_PROGS' for \`AUTO_GET_PROGS'"
 	return $ER_CONF
 }
 for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 	set -- ${IPARRAY_PROGRAMS[idx]}
 	prog_var="$1" prog_name="$2" prog_mandatory="$3"
-	case "${AUTO_GET_PROGS}" in
+	case "$AUTO_GET_PROGS" in
 		0) # no automatic detection
 			prog_path="${!prog_var}"
 			[[ $prog_path ]] && { # user has defined the according variable
@@ -756,8 +756,7 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 					err_msg "Failed locating the program \`$prog_name' in \$PATH."
 					return $ER_FAIL
 				}
-#				set_var "${prog_var}" "$prog_path" # set global program variable
-				printf -v "${prog_var}" "$prog_path" # set global program variable
+				printf -v "$prog_var" "$prog_path" # set global program variable
 				[[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
 					verbose_msg "found $prog_name at: $prog_path"
 				}
@@ -766,7 +765,7 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 		;;
 	esac
 	# positive cases are done, this is only run if program was not found
-	case "${prog_mandatory}" in
+	case "$prog_mandatory" in
 		0) [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
 				warn_msg "Path for program \`$prog_name' was not found."
 			}
@@ -847,45 +846,42 @@ show_pubfunc_help() { # show usage for a public function
 local f_name="$1"
 for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
 	set -- ${PUBLIC_FUNCTION_LIST[idx]}
-	if [[ $1 = ${f_name} ]]; then
+	if [[ $1 = $f_name ]]; then
 		[[ -r ${HELP_DIR}/${f_name}.txt ]] || {
 			err_msg "\`${HELP_DIR}/${f_name}.txt' does not exist"
 			return $ER_NOEX
 		}
-		"${CAT}" "${HELP_DIR}/${f_name}.txt" || return 1
+		"$CAT" "${HELP_DIR}/${f_name}.txt" || return 1
 		return 0
 	fi
 done
-err_msg "Unknown public function name \`${f_name}'."
+err_msg "Unknown public function name \`$f_name'."
 return $ER_USE
 } # -------------------------------------------------------------------------
 
 ipt_save() { # save the firewall with iptables-save
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 if ((IPTSAVE_FAILS)); then
 	err_msg "\`IPTSAVE_FAILS' is set to \`$IPTSAVE_FAILS'."
 	return $ER_FAIL
 fi
-local str_c="" str_file="${1:-${SAVE_FILE}}"
+local str_c="" str_file="$1"
 if ((USE_COUNTERS)); then
 	str_c="--counters "
 fi
 verbose_msg "Saving iptables rules to \`${SAVE_DIR}/${str_file}'"
-if ! [[ -d ${SAVE_DIR} ]]; then
-	err_msg "\`${SAVE_DIR}' does not exit."
-	return $ER_NOEX
-fi
-if ! [[ -r ${IP_TABLES_NAMES} ]]; then # try to initialize
+if ! [[ -r $IP_TABLES_NAMES ]]; then # try to initialize
 	dn run_ipt -nL
 fi
-if [[ -r ${IP_TABLES_NAMES} ]]; then
-	if "${IPT_SAVE}" ${str_c}>"${SAVE_DIR}/${str_file}"; then
+if [[ -r $IP_TABLES_NAMES ]]; then
+	if "$IPT_SAVE" $str_c >"${SAVE_DIR}/${str_file}"; then
 		notice_msg "iptables rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
 	else
 		err_msg "Failed saving iptables rules."
 		return $ER_FAIL
 	fi
 else
-	err_msg "\`${IP_TABLES_NAMES}' does not exist!
+	err_msg "\`$IP_TABLES_NAMES' does not exist!
  Load at least the ip_tables module and one of the table\
  (iptable_filter, iptable_nat, iptable_mangle or iptable_raw) modules."
 	return $ER_NOEX
@@ -893,12 +889,13 @@ fi
 } # -------------------------------------------------------------------------
 
 ips_save() { # save ipset data
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((USE_IPSET)) || return 0
-local str_file="${1:-${IPSET_SAVE_FILE}}"
-if run_ipset -S >"${SAVE_DIR}/${str_file}"; then
-	notice_msg "ipset rules successfully saved to: \`${SAVE_DIR}/${str_file}'"
+local str_file="${SAVE_DIR}/$1"
+if run_ipset -S >"$str_file"; then
+	notice_msg "ipset rules successfully saved to: \`$str_file'"
 else
-	err_msg "Failed saving ipset rules to: \`${SAVE_DIR}/${str_file}'."
+	err_msg "Failed saving ipset rules to: \`$str_file'."
 	return $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
@@ -918,12 +915,12 @@ fi
 } # -------------------------------------------------------------------------
 
 cleanup_autosave() { # remove automatically saved temporary ruleset
-if [[ $AUTOSAVE_FILE && -e ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
+if [[ $AUTOSAVE_FILE && -f ${SAVE_DIR}/${AUTOSAVE_FILE} ]]; then
 	run_rm "${SAVE_DIR}/${AUTOSAVE_FILE}" || {
 		err_msg "Failed removing automatically saved iptables ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE}'"
 	}
 fi
-if [[ $AUTOSAVE_FILE_IPSET && -e ${SAVE_DIR}/${AUTOSAVE_FILE_IPSET} ]]; then
+if [[ $AUTOSAVE_FILE_IPSET && -f ${SAVE_DIR}/${AUTOSAVE_FILE_IPSET} ]]; then
 	run_rm "${SAVE_DIR}/${AUTOSAVE_FILE_IPSET}" || {
 		err_msg "Failed removing automatically saved ipset ruleset: \`${SAVE_DIR}/${AUTOSAVE_FILE_IPSET}'"
 	}
@@ -1267,7 +1264,7 @@ set_env
 [[ ${cmdline_use_ipset} ]] && USE_IPSET="${cmdline_use_ipset}"
 [[ ${cmdline_ipset_save_file} ]] && IPSET_SAVE_FILE="${cmdline_ipset_save_file}"
 [[ ${cmdline_gen_format} ]] && GEN_FORMAT="${cmdline_gen_format}"
-#[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
+[[ $cmdline_save_file ]] && SAVE_FILE="$cmdline_save_file"
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
 # set the diff-file to the provided file name
@@ -1567,7 +1564,8 @@ set_env # reset possibly messed up env
 for idx in ${!ARR_RTIME_OPTS[@]}; do
 	for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 		if [[ ${ARR_RTIME_OPTS[idx]%%=*} = ${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*} ]]; then
-			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\""${ARR_RTIME_OPTS[idx]#*=}"\" || {
+#			eval "${ARR_RTIME_OPTS[idx]%%=*}"=\""${ARR_RTIME_OPTS[idx]#*=}"\" || {
+			printf -v "${ARR_RTIME_OPTS[idx]%%=*}" "${ARR_RTIME_OPTS[idx]#*=}" || {
 				err_msg "Failed overriding main configuration variable. Failed command: \`${ARR_RTIME_OPTS[idx]}'."
 				bail_out $ER_FAIL
 			}
