@@ -3820,7 +3820,7 @@ printf "# Completed on %s\n" "$(run_date --rfc-2822)" >>"$str_rfile"
 } # -------------------------------------------------------------------------
 
 iptsave_rulesets() { # save generated iptables commands in iptables-save format
-[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i tidx
 local str_tbl str_ton str_rsfile="$1" str_act="${2:-all}"
 for str_tbl in rawpost security raw nat mangle filter; do

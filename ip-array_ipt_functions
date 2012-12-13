@@ -7655,7 +7655,7 @@ fi
 return 0
 } # -------------------------------------------------------------------------
 
-allow_out_dns() { # allow local to remote DNS server traffic
+allow_out_dns() { # allow local (host itself) to remote DNS server traffic
 ((REST_OUT_DNS_ALLOW == 0)) && {
 	log -w "Not allowing local host to ISP nameservers traffic"
 	return 0
@@ -7665,22 +7665,22 @@ if ! ((${#LOCAL_NS[@]})); then
 	return 0
 fi
 local -i idx
-local strERR nslist ext_net ext_netif ext_if ns_host ns_if_list
+local strERR str_nslist str_ext_net str_ext_netif str_ns_host str_ns_if_list
 local -a RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS
 local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW=(
 "table=filter"
 "template_msg='Allowing local host to ISP nameservers traffic'"
 "target[0]=ACCEPT"
-"chain[0]=${BIC_LOCAL_NAMESERVERS}"
+"chain[0]=$BIC_LOCAL_NAMESERVERS"
 "option_list_0[0]=odev"
 "option_list_0[1]=src"
 "option_list_0[2]=dst"
 "option_list_0[3]=state"
 )
-local -i idx=0
+local -i idx=0 i=0
 local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 "table=filter"
-"target[0]=${BIC_LOCAL_NAMESERVERS}"
+"target[0]=$BIC_LOCAL_NAMESERVERS"
 "chain[0]=OUTPUT"
 "chain[1]=INPUT"
 "reverse_mode=reverse"
@@ -7688,47 +7688,63 @@ local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 "option_list_0[1]=odev"
 "option_list_1[1]=idev"
 "always_use_0[0]=proto=udp,tcp"
-"always_use_0[1]=sport=${UNPRIV_PORTS}"
-"always_use_0[2]=dport=53"
+"always_use_0[1]=dport=53"
 "always_use_1[0]=proto=udp,tcp"
-"always_use_1[1]=dport=${UNPRIV_PORTS}"
-"always_use_1[2]=sport=53"
+"always_use_1[1]=sport=53"
 )
-local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 for idx in ${!LOCAL_NS[@]}; do
 	set -- ${LOCAL_NS[idx]}
-#	nslist=$(IFS=, split_val $1) ext_net=$2
-	nslist=${1//,/ } ext_net=$2
+	str_nslist=${1//,/ } str_ext_net=$2
 	strERR="LOCAL_NS ${idx} ${LOCAL_NS[idx]}"
-	if [[ ${ext_net} ]]; then # get external interface
-		ext_netif=$(get_net_iface "${ext_net}")
-		[[ ${ext_netif} ]] || {
-			log -d "${ext_net}"
+	if [[ ${str_ext_net} ]]; then # get external interface
+		str_ext_netif=$(get_net_iface "${str_ext_net}")
+		[[ $str_ext_netif ]] || {
+			log -d "${str_ext_net}"
 			cfg_err ${strERR}
 			continue
 		}
 	fi
-	for ns_host in ${nslist}; do
-		if [[ -z ${ext_netif} ]]; then
-			ext_if=$(get_route_iface "${ns_host}")
-			[[ ${ext_if} ]] || {
-				log -E "Unable to retrieve interface to route ${ns_host} over."
+	for str_ns_host in $str_nslist; do
+		if [[ -z $str_ext_netif ]]; then
+			str_ext_netif=$(get_route_iface "$str_ns_host")
+			[[ $str_ext_netif ]] || {
+				log -E "Unable to retrieve interface to route $str_ns_host over."
 				raise_gen_err_count
 				continue
 			}
-		else
-			ext_if=${ext_netif}
 		fi
-		lsearch "${ext_if}" ${ns_if_list[@]} || ns_if_list+="${ext_if} "
-		while read iface_ip; do
-			local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[@]}]="${ext_if} ${iface_ip} ${ns_host} ${stN}"
-		done < <(get_if_ipv4_data "${ext_if}" -i)
+		if ! lsearch "$str_ext_netif" $str_ns_if_list; then
+		   	str_ns_if_list+="$str_ext_netif "
+			if ((USE_IPSET)); then
+				if [[ $IPSET_SYNTAX = old ]]; then
+					ipset_create "${BIC_LOCAL_NAMESERVERS}_$str_ext_netif" "iphash" || return 0
+				else
+					ipset_create "${BIC_LOCAL_NAMESERVERS}_$str_ext_netif" "hash:ip" || return 0
+				fi
+			fi
+		fi
+		if ((USE_IPSET)); then
+			ipset_add "${BIC_LOCAL_NAMESERVERS}_$str_ext_netif" "$str_ns_host"
+		else
+			while read iface_ip; do
+				RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$str_ext_netif ${iface_ip} $str_ns_host NEW,ESTABLISHED"
+			done < <(get_if_ipv4_data "$str_ext_netif" -i)
+		fi
 	done
 done
-if [[ ${ns_if_list} ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[@]} > 1)); then
+if ((USE_IPSET)); then
+	if [[ $str_ns_if_list ]]; then
+		TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="option_list_0[4]=m_set"
+	fi
+	for str_ext_netif in $str_ns_if_list; do
+		RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$str_ext_netif $RULE_SEP $RULE_SEP NEW,ESTABLISHED ${BIC_LOCAL_NAMESERVERS}_$str_ext_netif:dst"
+	done
+fi
+if [[ $str_ns_if_list ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[@]} > 1)); then
 	((REVERSE_INPUT_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]
-	create_chain filter "${BIC_LOCAL_NAMESERVERS}"
-	RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[@]}]=$(build_list ',' "${ns_if_list}")
+	create_chain filter "$BIC_LOCAL_NAMESERVERS"
+	RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[@]}]=$(build_list ',' "$str_ns_if_list")
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW 
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS 
 else
@@ -7791,7 +7807,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 			continue
 		}
 		if ((USE_IPSET)); then
-			str_setname="NTP_PROVIDERS_${str_ext_net}"
+			str_setname="${BIC_NTP_SVR_CHAIN}_${str_ext_net}"
 			if [[ $IPSET_SYNTAX = old ]]; then
 				ipset_create "$str_setname" "iphash" || return 0
 			else
@@ -7800,10 +7816,10 @@ for idx in ${!TIME_SERVERS[@]}; do
 			for ntp_host in $str_ntp_servers; do
 				ipset_add "$str_setname" "$str_ntp_host"
 			done
-			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW $str_setname:dst"
+			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW,ESTABLISHED $str_setname:dst"
 		else
 			for ntp_host in $str_ntp_servers; do
-				RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW"
+				RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW,ESTABLISHED"
 			done
 		fi
 	else # no external network specified
@@ -7817,7 +7833,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 			if ! lsearch "$str_ext_netif" $str_ntp_if_list; then # register interface
 				str_ntp_if_list+="$str_ext_netif "
 				if ((USE_IPSET)); then
-					str_setname="NTP_PROVIDERS_${str_ext_netif}"
+					str_setname="${BIC_NTP_SVR_CHAIN}_${str_ext_netif}"
 					if [[ $IPSET_SYNTAX = old ]]; then
 						ipset_create "$str_setname" "iphash" || return 0
 					else
@@ -7829,7 +7845,7 @@ for idx in ${!TIME_SERVERS[@]}; do
 				ipset_add "$str_setname" "$str_ntp_host"
 			else
 				while read str_iface_ip; do
-					RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW"
+					RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $str_ntp_host NEW,ESTABLISHED"
 				done < <(get_if_ipv4_data "$str_ext_netif" -i)
 			fi
 		done
@@ -7838,7 +7854,7 @@ done
 if ((USE_IPSET)); then
 	for str_ext_netif in $str_ntp_if_list; do
 		while read str_iface_ip; do
-			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW NTP_PROVIDERS_${str_ext_netif}:dst"
+			RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$str_ext_netif $str_iface_ip $RULE_SEP NEW,ESTABLISHED ${BIC_NTP_SVR_CHAIN}_${str_ext_netif}:dst"
 		done < <(get_if_ipv4_data "$str_ext_netif" -i)
 	done
 fi
@@ -8006,16 +8022,16 @@ for idx in ${!ISP_SMTP[@]}; do
 			cfg_err ${strERR}
 			continue
 		}
-		RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[${#RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[@]}]="${loc_netif} ${ext_netif} ${netaddr} ${smtp_host} ${stN}"
+		RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[${#RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[@]}]="${loc_netif} ${ext_netif} ${netaddr} ${smtp_host} NEW"
 		lsearch "${loc_netif}_to_${ext_netif}" $(show_array_column SMTP_IF_LIST) || SMTP_IF_LIST[${#SMTP_IF_LIST[@]}]="${loc_netif}_to_${ext_netif} ${netaddr}"
 	done
 done
 if ((${#SMTP_IF_LIST[@]} > 0 && ${#RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[@]} > 1)); then
 	((REVERSE_FOWARD_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[0]
+	create_chain filter ${BIC_SMTP_SRV_CHAIN}
 	for idx in ${!SMTP_IF_LIST[@]}; do
 		RULEBLOCK_BUILTIN_LAN_USE_SMTP_JUMPS[${#RULEBLOCK_BUILTIN_LAN_USE_SMTP_JUMPS[@]}]="${SMTP_IF_LIST[idx]/_to_/ }"
 	done
-	create_chain filter ${BIC_SMTP_SRV_CHAIN}
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LAN_USE_SMTP_ALLOW RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LAN_USE_SMTP_JUMPS RULEBLOCK_BUILTIN_LAN_USE_SMTP_JUMPS
 else
@@ -8075,7 +8091,7 @@ for ns_idx in ${!LAN_NS[@]}; do
 	set -- ${LAN_NS[ns_idx]}
 	[[ $2 ]] || { cfg_err LAN_NS ${ns_idx} "${LAN_NS[ns_idx]}"; continue; }
 	netname=$1 intNS=$2 intNSmac=$3
-	[[ ${intNSmac} ]] || intNSmac='_' # is mac address specified?
+	[[ ${intNSmac} ]] || intNSmac="$RULE_SEP" # is mac address specified?
 	nsiface=$(get_net_iface "${netname}") # retrieve interface for network of nameserver
 	[[ ${nsiface} ]] || {
 		log -d "${netname}"
