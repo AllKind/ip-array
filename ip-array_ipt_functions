@@ -7323,8 +7323,8 @@ fi
 
 anti_spoof_rules() { # Anti-Spoofing rules in raw table
 ((ENABLE_RAW && RAW_TABLE_PRESENT)) || return 0
-[[ $PROC_RP_FILTER = 1 ]] && {
-	log -E "\`PROC_RP_FILTER' is set to \`1', does not make sense to create Anti-Spoofing rules."
+[[ $PROC_RP_FILTER && $PROC_RP_FILTER != 0 ]] && {
+	log -E "\`PROC_RP_FILTER' is set - Anti-Spoofing rules will not be created."
 	raise_cfg_err_count
 	return 0
 }
