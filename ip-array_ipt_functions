@@ -8077,10 +8077,10 @@ intns_to_extns() { # allow internal DNS servers udp traffic to providers name se
 }
 local -i ns_idx isp_idx i=0
 local -a arr_ns_iflist RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_JUMPS
-local str_netname str_intNS str_intNSmac str_nsiface str_isp_nslist str_ext_net str_ext_if str_ns str_loc_net_list str_isp_net_list str_isp_ns_list
+local str_netname str_net_addr str_intNS str_intNSmac str_nsiface str_isp_nslist str_ext_net str_ext_if
+local str_ns str_loc_net_list str_isp_net_list str_isp_ns_list str_set_list str_loc_ns_list
 local TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW=(
 "table=filter"
-"template_msg='Allowing LAN DNS server to ISP nameserver traffic'"
 "target[0]=ACCEPT"
 "chain[0]=$BIC_NAMESERVER_CHAIN"
 "option_list_0[0]=idev"
@@ -8105,10 +8105,15 @@ local TEMPLATE_BUILTIN_LAN_DNS_SERVERS_JUMPS=(
 "always_use_1[0]=proto=udp,tcp"
 "always_use_1[1]=sport=53"
 )
-RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+
+log -I "Allowing LAN DNS server to ISP nameserver traffic"
 if ((USE_IPSET)); then
-	TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW[6]="option_list_0[2]=m_set"
-	TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW[8]="option_list_0[4]=m_set"
+	TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW[5]="option_list_0[2]=m_set"
+	TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW[7]="option_list_0[4]=m_set"
+else
+	if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
+		RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+	fi
 fi
 for ns_idx in ${!LAN_NS[@]}; do # for every entry in the LAN_NS array do...
 	set -- ${LAN_NS[ns_idx]}
@@ -8117,21 +8122,44 @@ for ns_idx in ${!LAN_NS[@]}; do # for every entry in the LAN_NS array do...
 	str_netname=$1 str_intNS=$2 str_intNSmac=$3
 	[[ $str_intNSmac ]] || str_intNSmac="$RULE_SEP" # is mac address specified?
 	str_nsiface=$(get_net_iface "$str_netname") # retrieve interface for network of nameserver
-	[[ $str_nsiface ]] || {
+	str_net_addr=$(get_net_addr "$str_netname") # retrieve network address
+	[[ $str_nsiface  && $str_net_addr ]] || {
 		log -d "$str_netname"
 		raise_gen_err_count
 		continue
 	}
 	if ((USE_IPSET)); then
-		if ! lsearch "$str_netname" $str_loc_net_list; then
+		if [[ $str_intNSmac != $RULE_SEP ]]; then # if a mac address is used create set of type that includs mac
+			if ! lsearch "${str_netname}_MAC" $str_loc_net_list; then
+				str_loc_net_list+="${str_netname}_MAC "
+				if [[ $IPSET_SYNTAX = old ]]; then
+					ipset_create "NAMESERVERS_${str_netname}_MAC" "macipmap" network "$str_net_addr" || continue
+				else
+					ipset_create "NAMESERVERS_${str_netname}_MAC" "bitmap:ip,mac" range "$str_net_addr" || continue
+				fi
+			fi
+			if ! lsearch "NAMESERVERS_${str_netname}_MAC" $str_set_list; then
+				str_set_list+="NAMESERVERS_${str_netname}_MAC " # remember created sets
+			fi
+		elif ! lsearch "$str_netname" $str_loc_net_list; then # otherwise only ip type of set
 			str_loc_net_list+="$str_netname "
 			if [[ $IPSET_SYNTAX = old ]]; then
-				ipset_create "NAMESERVERS_$str_netname" "iphash" || return 0
+				ipset_create "NAMESERVERS_$str_netname" "iphash" || continue
 			else
-				ipset_create "NAMESERVERS_$str_netname" "hash:ip" || return 0
+				ipset_create "NAMESERVERS_$str_netname" "hash:ip" || continue
+			fi
+			if ! lsearch "NAMESERVERS_$str_netname" $str_set_list; then
+				str_set_list+="NAMESERVERS_$str_netname " # remember created sets
 			fi
 		fi
-		ipset_add "NAMESERVERS_$str_netname" "$str_intNS"
+		if ! lsearch "$str_netname:$str_intNS" $str_loc_ns_list; then # don't add dupes
+			str_loc_ns_list+="$str_netname:$str_intNS "
+			if [[ $str_intNSmac != $RULE_SEP ]]; then
+				ipset_add "NAMESERVERS_${str_netname}_MAC" "$str_intNS,$str_intNSmac"
+			else
+				ipset_add "NAMESERVERS_$str_netname" "$str_intNS"
+			fi
+		fi
 	fi
 	for isp_idx in ${!ISP_NS[@]}; do # cycle through isp nameserver array
 		set -- ${ISP_NS[isp_idx]}
@@ -8149,11 +8177,14 @@ for ns_idx in ${!LAN_NS[@]}; do # for every entry in the LAN_NS array do...
 			str_isp_net_list+="$str_netname "
 			if ((USE_IPSET)); then
 				if [[ $IPSET_SYNTAX = old ]]; then
-					ipset_create "ISP_NAMESERVERS_$str_netname" "iphash" || return 0
+					ipset_create "ISP_NAMESERVERS_$str_netname" "iphash" || continue
 				else
-					ipset_create "ISP_NAMESERVERS_$str_netname" "hash:ip" || return 0
+					ipset_create "ISP_NAMESERVERS_$str_netname" "hash:ip" || continue
 				fi
-				RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[i++]="$str_nsiface $RULE_SEP NAMESERVERS_$str_netname:src $RULE_SEP ISP_NAMESERVERS_$str_netname:dst NEW,ESTABLISHED"
+				RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[i++]="$str_nsiface $RULE_SEP SETLIST_NAMESERVERS:src,src $RULE_SEP ISP_NAMESERVERS_$str_netname:dst NEW,ESTABLISHED"
+				if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
+					RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $str_nsiface ISP_NAMESERVERS_$str_netname:src $RULE_SEP SETLIST_NAMESERVERS:dst,dst ESTABLISHED"
+				fi
 			fi
 		fi
 		for str_ns in $str_isp_nslist; do # handle ISP nameservers
@@ -8183,10 +8214,20 @@ for ns_idx in ${!LAN_NS[@]}; do # for every entry in the LAN_NS array do...
 	done
 done
 if ((${#arr_ns_iflist[@]} > 0 && ${#RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[@]} > 1)); then
-	((REVERSE_FOWARD_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[0]
+	((USE_IPSET == 0 && REVERSE_FOWARD_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW[0]
 	for ns_idx in ${!arr_ns_iflist[@]}; do
 		RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_JUMPS[@]}]="${arr_ns_iflist[ns_idx]/_to_/ }"
 	done
+	if ((USE_IPSET)); then # create the setlist late, because of mergin other sets are not available before
+		if [[ $IPSET_SYNTAX = old ]]; then
+			ipset_create "SETLIST_NAMESERVERS" "setlist" || return 0
+		else
+			ipset_create "SETLIST_NAMESERVERS" "list:set" || return 0
+		fi
+		for str_ns in $str_set_list; do
+				ipset_add SETLIST_NAMESERVERS "$str_ns"
+		done
+	fi
 	create_chain filter $BIC_NAMESERVER_CHAIN # create the chain to put the nameserver rules into
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LAN_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LAN_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LAN_DNS_SERVERS_JUMPS
