@@ -53,7 +53,7 @@ local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
 val_setname "$str_set" || { raise_cfg_err_count; return $ER_CONF; }
-lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} && {
+lsearch "$str_set" $(show_array_column CREATED_SETS_ARRAY) && {
 	log -W "ipset set \`$str_set' has already been created."
 	return 0
 }
@@ -455,23 +455,108 @@ case "$str_type" in
 esac
 log -e "creating set: \`$str_set' of type: \`$str_type'"
 IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="$str_create $str_set $str_type ${arr_opts[@]}"
-CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set"
+CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set $str_type"
 } # -------------------------------------------------------------------------
 
 ipset_add() { # add an entry (cache) to an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_set="$1" str_cmd="-A"
+local str_set="$1" str_in="$2" str_cmd="-A" str_type str_in
+local strERR="adding entry to set: \`$*'"
+local str_failcmd="log -f $strERR; raise_cfg_err_count; return 0"
+shift 2
+local arr_opts=("$@")
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=add
 fi
-val_setname "$str_set" || { raise_cfg_err_count; return 0; }
-lsearch "$str_set" ${CREATED_SETS_ARRAY[@]} || {
+val_setname "$str_set" || $str_failcmd
+str_type=$(printf "%s\n" "${CREATED_SETS_ARRAY[@]}" | lsearch_echo "$str_set") || {
 	log -E "ipset set \`$str_set' has not been created."
-	raise_cfg_err_count
-	return 0
+	$str_failcmd
 }
-log -e "adding to set: $*"
-IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $@"
+str_type=${str_type#$str_set }
+case $str_type in
+	ipmap|bitmap:ip|iphash|hash:ip)
+		val_ip4_addr "$str_in" || $str_failcmd
+	;;
+	nethash|hash:net)
+		val_ip4_cidr_net "$str_in" || $str_failcmd
+	;;
+	macipmap|bitmap:ip,mac)
+		val_ip4_ip "${str_in%,*}" || $str_failcmd
+		val_mac "${str_in#*,}" || $str_failcmd
+	;;
+	portmap|bitmap:port)
+		case "$str_in" in
+			*-*) val_port_range_word "$str_in" || $str_failcmd ;;
+			*) val_port "$str_in" || $str_failcmd
+		esac
+	;;
+	hash:net,iface)
+		val_ip4_cidr_net "${str_in%,*}" || $str_failcmd
+		check_iface "${str_in#*,}" || $str_failcmd
+	;;
+	iptree)
+		val_ip4_ip "${str_in%,*}" || $str_failcmd
+		if [[ ${str_in#*,} ]]; then
+			val_numeric "${str_in#*,}" || $str_failcmd
+		fi
+	;;
+	iptreemap)
+		val_ip4_addr "${str_in%,*}" || $str_failcmd
+		if [[ ${str_in#*,} ]]; then
+			val_numeric "${str_in#*,}" || $str_failcmd
+		fi
+	;;
+	ipporthash)
+		case "$str_in" in
+			*,*)
+				val_ip4_ip "${str_in%,*}" || $str_failcmd
+				val_port "${str_in#*,}" || $str_failcmd
+			;;
+			*) log -E "Invalid entry \`$str_in' expecting: ip,port."
+				$str_failcmd
+		esac
+	;;
+	ipportiphash)
+		case "$str_in" in
+			*,*,*)
+				val_ip4_ip "${str_in%%,*}" || $str_failcmd
+				val_ip4_ip "${str_in##*,}" || $str_failcmd
+				str_in="${str_in%,*}"
+				val_port "${str_in#*,}" || $str_failcmd
+			;;
+			*) log -E "Invalid entry \`$str_in' expecting: ip,port."
+				$str_failcmd
+		esac
+	;;
+	ipportnethash)
+		case "$str_in" in
+			*,*,*)
+				val_ip4_ip "${str_in%%,*}" || $str_failcmd
+				val_ip4_cidr_net "${str_in##*,}" || $str_failcmd
+				str_in="${str_in%,*}"
+				val_port "${str_in#*,}" || $str_failcmd
+			;;
+			*) log -E "Invalid entry \`$str_in' expecting: ip,port."
+				$str_failcmd
+		esac
+	;;
+	setlist|list:set)
+		val_setname "$str_in" || $str_failcmd
+		lsearch "$str_in" $(show_array_column CREATED_SETS_ARRAY) || {
+			log -E "ipset set \`$str_in' has not been created."
+			$str_failcmd
+		}
+	;;
+	"")
+		log -U $FUNCNAME
+		log -f "$strERR"
+		raise_gen_err_count
+		return 1
+	;;
+esac
+log -e "adding to set: $str_set $str_in ${arr_opts[@]}"
+IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $str_set $str_in ${arr_opts[@]}"
 } # -------------------------------------------------------------------------
 
 ipset_destroy() {
@@ -953,7 +1038,7 @@ local str_tgt="$1"
 	return 1
 }
 case "${str_tgt}" in
-	+([[:graph:]]))
+	+([[:graph:]])*)
 		[[ ${str_tgt:0:1} = @('!'|'-') ]] && {
 			log -E "Chain or target names must not begin with \`${str_tgt:0:1}'."
 			return 1
@@ -964,13 +1049,14 @@ case "${str_tgt}" in
 		}
 		return 0
 	;;
-	+([[:space:]]))
+	*+([[:space:]])*)
 		log -E "Iptables does support space class characters in chain or target names, but ${ME} forbids it."
 		return 1
 	;;
-	*) log -E "Invalid iptables chain or target name \`${str_tgt}'."
-		return 1
+#	*) log -E "Invalid iptables chain or target name \`${str_tgt}'."
+#		return 1
 esac
+return 0
 } # -------------------------------------------------------------------------
 
 val_policy_target() { # validate iptables policy targets
@@ -7669,7 +7755,6 @@ local strERR str_nslist str_ext_net str_ext_netif str_ns_host str_ns_if_list
 local -a RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS
 local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW=(
 "table=filter"
-"template_msg='Allowing local host to ISP nameservers traffic'"
 "target[0]=ACCEPT"
 "chain[0]=$BIC_LOCAL_NAMESERVERS"
 "option_list_0[0]=odev"
@@ -7693,6 +7778,7 @@ local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 "always_use_1[1]=sport=53"
 )
 local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
+log -I "Allowing local host to ISP nameservers traffic"
 for idx in ${!LOCAL_NS[@]}; do
 	set -- ${LOCAL_NS[idx]}
 	str_nslist=${1//,/ } str_ext_net=$2
@@ -7735,7 +7821,7 @@ for idx in ${!LOCAL_NS[@]}; do
 done
 if ((USE_IPSET)); then
 	if [[ $str_ns_if_list ]]; then
-		TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="option_list_0[4]=m_set"
+		TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[${#TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[@]}]="option_list_0[4]=m_set"
 	fi
 	for str_ext_netif in $str_ns_if_list; do
 		RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$str_ext_netif $RULE_SEP $RULE_SEP NEW,ESTABLISHED ${BIC_LOCAL_NAMESERVERS}_$str_ext_netif:dst"
@@ -7748,7 +7834,7 @@ if [[ $str_ns_if_list ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW 
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS 
 else
-	log -N "No local host to ISP nameserver rules have been collected"
+	log -W "No local host to ISP nameserver rules have been collected"
 fi
 } # -------------------------------------------------------------------------
 
@@ -7766,7 +7852,6 @@ local -a RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_J
 local strERR str_ntp_servers str_ext_net str_ext_netif str_iface_ip str_ntp_host str_ntp_if_list str_setname
 local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW=(
 "table=filter"
-"template_msg='Allowing local host to NTP server(s) traffic'"
 "target[0]=ACCEPT"
 "chain[0]=$BIC_NTP_SVR_CHAIN"
 "option_list_0[0]=odev"
@@ -7794,6 +7879,7 @@ local RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP 
 if ((USE_IPSET)); then
 	TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[${#TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[@]}]="option_list_0[4]=m_set"
 fi
+log -I "Allowing local host to NTP server(s) traffic"
 for idx in ${!TIME_SERVERS[@]}; do
 	set -- ${TIME_SERVERS[idx]}
 	str_ntp_servers=${1//,/ } str_ext_net=$2
@@ -7865,7 +7951,7 @@ if ((${#RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW[@]} > 1 )); then
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_JUMPS RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS
 else
-	log -N "No local host to NTP server rules have been collected"
+	log -W "No local host to NTP server rules have been collected"
 fi
 } # -------------------------------------------------------------------------
 
@@ -7962,7 +8048,6 @@ local str_loc_net str_smtp_ips str_ext_net str_ext_netif str_loc_netif str_netad
 
 local TEMPLATE_BUILTIN_LAN_USE_SMTP_ALLOW=(
 "table=filter"
-"template_msg='Allowing subnet(s) to ISP SMTP server(s)'"
 "target[0]=ACCEPT"
 "chain[0]=$BIC_SMTP_SRV_CHAIN"
 "option_list_0[0]=idev"
@@ -7992,6 +8077,7 @@ RULEBLOCK_BUILTIN_LAN_USE_SMTP_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP $RULE_S
 if ((USE_IPSET)); then
 	TEMPLATE_BUILTIN_LAN_USE_SMTP_ALLOW[${#TEMPLATE_BUILTIN_LAN_USE_SMTP_ALLOW[@]}]="option_list_0[5]=m_set"
 fi
+log -I "Allowing subnet(s) to ISP SMTP server(s)"
 for idx in ${!ISP_SMTP[@]}; do
 	set -- ${ISP_SMTP[idx]}
 	strERR="ISP_SMTP $idx ${ISP_SMTP[idx]}"
