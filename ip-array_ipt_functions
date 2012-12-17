@@ -39,10 +39,37 @@
 # ------------------------------------------------------------------------- #
 
 val_setname() { # validate name of an ipset set
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ ${1:0:1} != : ]] || {
 	log -E "Invalid setname \`$1' - must not begin with a colon."
 	return 1
 }
+} # -------------------------------------------------------------------------
+
+val_ipset_port_spec() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+case "$1" in
+	@(tcp|sctp|udp|udplite):@(+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]])))
+		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return 1
+	;;
+	@(tcp|sctp|udp|udplite):@(+([[:alnum:]])|+([[:digit:]])))
+		val_port "${1#@(tcp|sctp|udp|udplite):}" || return 1
+	;;
+	icmp:*)
+		val_icmp_type "${1#icmp:}" || return 1
+	;;
+	+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]]))
+		val_port_range_word "$1" || return 1
+	;;
+	+([[:digit:]]):0|+([[:alnum:]]):0)
+		val_proto "${1%:0}" || return 1
+	;;
+	+([[:digit:]])|+([[:alnum:]]))
+		val_port "$1" || return 1
+	;;
+	*) log -E "Invalid entry \`$1' expecting: [proto:]port."
+		return 1
+esac
 } # -------------------------------------------------------------------------
 
 ipset_create() { # create an ipset set (cache commands)
@@ -460,9 +487,9 @@ CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set $str_type"
 
 ipset_add() { # add an entry (cache) to an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_set="$1" str_in="$2" str_cmd="-A" str_type str_in
+local str_set="$1" str_in="$2" str_entry="$2" str_cmd="-A" str_type str_in
 local strERR="adding entry to set: \`$*'"
-local str_failcmd="log -f $strERR; raise_cfg_err_count; return 0"
+local str_failcmd='eval log -f "$strERR"; raise_cfg_err_count; return 0'
 shift 2
 local arr_opts=("$@")
 if [[ $IPSET_SYNTAX = new ]]; then
@@ -541,6 +568,64 @@ case $str_type in
 				$str_failcmd
 		esac
 	;;
+	hash:ip,port|hash:net,port)
+		case "$str_in" in
+			*,*)
+				case "$str_type" in
+					hash:ip,port)
+						val_ip4_ip "${str_in%,*}" || $str_failcmd
+					;;
+					hash:net,port)
+						val_ip4_cidr_net "${str_in%,*}" || $str_failcmd
+					;;
+				esac
+				str_in="${str_in#*,}"
+				val_ipset_port_spec "$str_in" || $str_failcmd
+#				case "$str_in" in
+#					@(tcp|sctp|udp|udplite):@(+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]])))
+#						val_port_range_word "${str_in#@(tcp|sctp|udp|udplite):}" || $str_failcmd
+#					;;
+#					@(tcp|sctp|udp|udplite):@(+([[:alnum:]])|+([[:digit:]])))
+#						val_port "${str_in#@(tcp|sctp|udp|udplite):}" || $str_failcmd
+#					;;
+#					icmp:*)
+#						val_icmp_type "${str_in#icmp:}" || $str_failcmd
+#					;;
+#					+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]]))
+#						val_port_range_word "$str_in" || $str_failcmd
+#					;;
+#					+([[:digit:]]):0|+([[:alnum:]]):0)
+#						val_proto "${str_in%:0}" || $str_failcmd
+#					;;
+#					+([[:digit:]])|+([[:alnum:]]))
+#						val_port "$str_in" || $str_failcmd
+#					;;
+#					*) log -E "Invalid entry \`$str_in' expecting: [proto:]port."
+#						$str_failcmd
+#				esac
+			;;
+			*) log -E "Invalid entry \`$str_in' expecting: ip,[proto:]port."
+				$str_failcmd
+		esac
+	;;
+	hash:ip,port,ip|hash:ip,port,net)
+		case "$str_in" in
+			*,*,*)
+				case "$str_type" in
+					hash:ip,port,ip)
+						val_ip4_ip "${str_in%%,*}" || $str_failcmd
+					;;
+					hash:net,port,net)
+						val_ip4_cidr_net "${str_in##*,}" || $str_failcmd
+					;;
+				esac
+				str_in="${str_in%,*}"; str_in="${str_in#*,}"
+				val_ipset_port_spec "$str_in" || $str_failcmd
+			;;
+			*) log -E "Invalid entry \`$str_in' expecting: ip,[proto:]port."
+				$str_failcmd
+		esac
+	;;
 	setlist|list:set)
 		val_setname "$str_in" || $str_failcmd
 		lsearch "$str_in" $(show_array_column CREATED_SETS_ARRAY) || {
@@ -555,8 +640,8 @@ case $str_type in
 		return 1
 	;;
 esac
-log -e "adding to set: $str_set $str_in ${arr_opts[@]}"
-IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $str_set $str_in ${arr_opts[@]}"
+log -e "adding to set: $str_set $str_entry ${arr_opts[@]}"
+IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $str_set $str_entry ${arr_opts[@]}"
 } # -------------------------------------------------------------------------
 
 ipset_destroy() {
