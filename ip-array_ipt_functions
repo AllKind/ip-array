@@ -44,28 +44,63 @@ val_setname() { # validate name of an ipset set
 	log -E "Invalid setname \`$1' - must not begin with a colon."
 	return 1
 }
+[[ $1 != *+([[:space:]]|,)* ]] || {
+	log -E "Invalid setname \`$1' - must not contain spaces, or commas."
+	return 1
+}
 } # -------------------------------------------------------------------------
 
 val_ipset_port_spec() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_p="$1" str_r_end
 case "$1" in
-	@(tcp|sctp|udp|udplite):@(+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]])))
-		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return 1
+	@(tcp|sctp|udp|udplite):\[*+([[:alpha:]])*\]-\[*+([[:alpha:]])*\])
+		str_p="${1#@(tcp|sctp|udp|udplite):}"
+		str_r_end="${str_p##*\[}"
+		str_r_end="${str_r_end%\]}"
+		str_p="${str_p%\]*}"
+		str_p="${str_p#\[}"
+		val_port "$str_p" || return
+		val_port "$str_r_end" || return
 	;;
-	@(tcp|sctp|udp|udplite):@(+([[:alnum:]])|+([[:digit:]])))
-		val_port "${1#@(tcp|sctp|udp|udplite):}" || return 1
+	@(tcp|sctp|udp|udplite):@(+([[:word:]])-+([[:word:]])|+([[:digit:]])-+([[:digit:]])))
+		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
+	;;
+	@(tcp|sctp|udp|udplite):@(+([[:word:]])|+([[:digit:]])))
+		val_port "${1#@(tcp|sctp|udp|udplite):}" || return
+	;;
+	@(tcp|sctp|udp|udplite):\[*+([[:alpha:]])*\])
+		str_p="${1#@(tcp|sctp|udp|udplite):\[}"
+		str_p="${str_p%\]}"
+		val_port "$str_p" || return
 	;;
 	icmp:*)
-		val_icmp_type "${1#icmp:}" || return 1
+		val_icmp_type "${1#icmp:}" || return
 	;;
-	+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]]))
-		val_port_range_word "$1" || return 1
+	+([[:word:]])-+([[:word:]])|+([[:digit:]])-+([[:digit:]]))
+		val_port_range_word "$1" || return
 	;;
-	+([[:digit:]]):0|+([[:alnum:]]):0)
-		val_proto "${1%:0}" || return 1
+	+([[:word:]])-+([[:word:]]))
+		val_port_range_word "$1" || return
 	;;
-	+([[:digit:]])|+([[:alnum:]]))
-		val_port "$1" || return 1
+	\[*\]-\[*\])
+		str_r_end="${str_p##*\[}"
+		str_r_end="${str_r_end%\]}"
+		str_p="${str_p%%\]*}"
+		str_p="${str_p#\[}"
+		val_port "$str_p" || return
+		val_port "$str_r_end" || return
+	;;
+	+([[:digit:]]):0|*+([[:alpha:]])*:0)
+		val_proto "${1%:0}" || return
+	;;
+	+([[:digit:]])|+([[:word:]]))
+		val_port "$1" || return
+	;;
+	\[*+([[:alpha:]])*-*+([[:alpha:]])*\])
+		str_p="${str_p#[}"
+		str_p="${str_p%]}"
+		val_port "$str_p" || return
 	;;
 	*) log -E "Invalid entry \`$1' expecting: [proto:]port."
 		return 1
@@ -74,11 +109,12 @@ esac
 
 ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_set="$1" str_type="$2" str_create="-N"
+local str_set="$1" str_type="$2" str_create="-N" str_tmp
 shift 2
 local -a arr_opts
 local option opt_arg
 local strERR="Failed creating set \`$str_set'."
+local str_failcmd='eval log -F "$strERR"; raise_cfg_err_count; return 0'
 val_setname "$str_set" || { raise_cfg_err_count; return $ER_CONF; }
 lsearch "$str_set" $(show_array_column CREATED_SETS_ARRAY) && {
 	log -W "ipset set \`$str_set' has already been created."
@@ -86,8 +122,7 @@ lsearch "$str_set" $(show_array_column CREATED_SETS_ARRAY) && {
 }
 lsearch "$str_type" $UNSUPPORTED_SETLIST && {
 	log -E "ipset set type \`$str_type' is not supported."
-	raise_gen_err_count
-	return $ER_CONF
+	$str_failcmd
 }
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_create=create
@@ -99,41 +134,48 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						val_port_range_word "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+						case "$opt_arg" in
+							\[*\]-\[*\])
+								str_tmp="${opt_arg##*\[}"
+								str_tmp="${str_tmp%\]}"
+								opt_arg="${opt_arg%%\]*}"
+								opt_arg="${opt_arg#\[}"
+								val_port "$opt_arg_" || $str_failcmd
+								val_port "$str_tmp" || $str_failcmd
+							;;
+							*)
+								val_port_range_word "$opt_arg" || $str_failcmd
+						esac
 					else
-						val_ip4_addr "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+						val_ip4_addr "$opt_arg" || $str_failcmd
 					fi
 					shift 2
 				;;
 				netmask)
 					if [[ $str_type = bitmap:ip ]]; then
-						val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+						val_numeric "$opt_arg" || $str_failcmd
 						((opt_arg >= 1 && <= 32)) || {
 							log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
-							raise_cfg_err_count
-							return $ER_CONF
+							$str_failcmd
 						}
 						shift 2
 					else
 						log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 
 					fi
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 				;;
 			esac
 		done
@@ -144,29 +186,26 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				family)
 					if [[ $opt_arg = inet6 ]]; then
 						log -E "Option argument \`$opt_arg' is not supported."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					elif [[ $opt_arg = inet ]]; then :
 					else
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid values: inet|inet6."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					fi	
 					shift 2
 				;;
 				hashsize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				maxelem)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				netmask)
@@ -174,23 +213,20 @@ case "$str_type" in
 						hash:ip)
 							((opt_arg >= 1 && <= 32)) || {
 								log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
-								raise_cfg_err_count
-								return $ER_CONF
+								$str_failcmd
 							}
 							shift 2
 						;;
 						*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-							raise_cfg_err_count
-							return $ER_CONF
+							$str_failcmd
 					esac
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 	;;
@@ -200,21 +236,19 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				size)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				timeout)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 	;;
@@ -224,37 +258,34 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || $str_failcmd
 					str_network="--$option $opt_arg"
 					shift 2
 				;;
 				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					}
 					str_netmask="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 		if [[ $str_network ]]; then 
@@ -269,14 +300,12 @@ case "$str_type" in
 				fi
 			else
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 		fi
 		if [[ $str_netmask ]] && [[ -z $str_from || -z $str_to ]]; then
 			log -E "$strErr \`$str_type' option \`netmask' needs \`from value to value' options."
-			raise_cfg_err_count
-			return $ER_CONF
+			$str_failcmd
 		fi
 	;;
 	macipmap)
@@ -287,24 +316,23 @@ case "$str_type" in
 				from|to|network)
 					if [[ -z $opt_arg ]]; then
 						log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					fi
 				;;
 			esac
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || $str_failcmd
 					arr_opts=(--$option $opt_arg)
 					shift 2
 				;;
@@ -313,34 +341,30 @@ case "$str_type" in
 					shift
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 		if [[ $str_from && $str_to ]]; then
 			arr_opts=($str_from $str_to)
 		elif [[ $str_from && -z $str_to ]]; then
 			log -E "$strErr \`$str_type' needs \`from value to value' options."
-			raise_cfg_err_count
-			return $ER_CONF
+			$str_failcmd
 		fi
 	;;
 	portmap)
 		if (($# == 4)); then
 			if [[ $1 = from && $2 = +([[:digit:]]) && $3 = to && $4 = +([[:digit:]]) ]]; then
 				for rvar in $2 $4; do
-					val_port $rvar || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_port $rvar || $str_failcmd
 				done
 				arr_opts=(--from $2 --to $4)
 			else
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 		else
 			log -E "$strErr \`$str_type' needs \`from value to value' options."
-			raise_cfg_err_count
-			return $ER_CONF
+			$str_failcmd
 		fi
 	;;
 	iphash)
@@ -348,27 +372,25 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			case "$option" in
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				netmask)
 					((opt_arg >= 1 && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					}
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 	;;
@@ -377,23 +399,21 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 	;;
@@ -403,38 +423,36 @@ case "$str_type" in
 			option="$1" opt_arg="$2"
 			if [[ -z $opt_arg ]]; then
 				log -E "$strERR Missing value to option \`$option' for \`$str_type' set." 
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 			case "$option" in
 				from)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_from="--$option $opt_arg"
 					shift 2
 				;;
 				to)
-					val_ip4_ip "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_ip "$opt_arg" || $str_failcmd
 					str_to="--$option $opt_arg"
 					shift 2
 				;;
 				network)
-					val_ip4_cidr_net "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_ip4_cidr_net "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				hashsize|probes)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				resize)
-					val_numeric "$opt_arg" || { log -E "$strERR"; raise_cfg_err_count; return $ER_CONF; }
+					val_numeric "$opt_arg" || $str_failcmd
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 					shift 2
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 			esac
 		done
 		if [[ $str_from && $str_to ]]; then
@@ -442,8 +460,7 @@ case "$str_type" in
 		else
 			if [[ $str_from && -z $str_to ]] || [[ -z $str_from && $str_to ]]; then
 				log -E "$strErr \`$str_type' needs \`from value to value' options."
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 		fi
 	;;
@@ -461,24 +478,20 @@ case "$str_type" in
 						arr_opts=(--$1 $2)
 					else
 						log -E "$strERR Invalid value \`$2' with option \`$1' for \`$str_type' set."
-						raise_cfg_err_count
-						return $ER_CONF
+						$str_failcmd
 					fi
 				else
 					log -E "$strERR Missing value to option \`$1' for \`$str_type' set."
-					raise_cfg_err_count
-					return $ER_CONF
+					$str_failcmd
 				fi
 			else
 				log -E "$strERR Invalid option \`$1' for \`$str_type' set."
-				raise_cfg_err_count
-				return $ER_CONF
+				$str_failcmd
 			fi
 		fi
 	;;
 	*) log -E "Unknown set type \`$str_type'."
-		raise_cfg_err_count
-		return $ER_CONF
+		$str_failcmd
 esac
 log -e "creating set: \`$str_set' of type: \`$str_type'"
 IPSET_SETS_ARRAY[${#IPSET_SETS_ARRAY[@]}]="$str_create $str_set $str_type ${arr_opts[@]}"
@@ -487,9 +500,9 @@ CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set $str_type"
 
 ipset_add() { # add an entry (cache) to an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
-local str_set="$1" str_in="$2" str_entry="$2" str_cmd="-A" str_type str_in
+local str_set="$1" str_in="$2" str_entry="$2" str_cmd="-A" str_type str_in option opt_arg
 local strERR="adding entry to set: \`$*'"
-local str_failcmd='eval log -f "$strERR"; raise_cfg_err_count; return 0'
+local str_failcmd='eval log -F "$strERR"; raise_cfg_err_count; return 0'
 shift 2
 local arr_opts=("$@")
 if [[ $IPSET_SYNTAX = new ]]; then
@@ -523,16 +536,22 @@ case $str_type in
 		check_iface "${str_in#*,}" || $str_failcmd
 	;;
 	iptree)
-		val_ip4_ip "${str_in%,*}" || $str_failcmd
-		if [[ ${str_in#*,} ]]; then
-			val_numeric "${str_in#*,}" || $str_failcmd
-		fi
+		case "$str_in" in
+			*,*)
+				val_ip4_ip "${str_in%,*}" || $str_failcmd
+				val_numeric "${str_in#*,}" || $str_failcmd # timeout
+			;;
+			*) val_ip4_ip "$str_in" || $str_failcmd
+		esac
 	;;
 	iptreemap)
-		val_ip4_addr "${str_in%,*}" || $str_failcmd
-		if [[ ${str_in#*,} ]]; then
-			val_numeric "${str_in#*,}" || $str_failcmd
-		fi
+		case "$str_in" in
+			*,*)
+				val_ip4_addr "${str_in%,*}" || $str_failcmd
+				val_numeric "${str_in#*,}" || $str_failcmd # timeout
+			;;
+			*) val_ip4_addr "$str_in" || $str_failcmd
+		esac
 	;;
 	ipporthash)
 		case "$str_in" in
@@ -579,30 +598,7 @@ case $str_type in
 						val_ip4_cidr_net "${str_in%,*}" || $str_failcmd
 					;;
 				esac
-				str_in="${str_in#*,}"
-				val_ipset_port_spec "$str_in" || $str_failcmd
-#				case "$str_in" in
-#					@(tcp|sctp|udp|udplite):@(+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]])))
-#						val_port_range_word "${str_in#@(tcp|sctp|udp|udplite):}" || $str_failcmd
-#					;;
-#					@(tcp|sctp|udp|udplite):@(+([[:alnum:]])|+([[:digit:]])))
-#						val_port "${str_in#@(tcp|sctp|udp|udplite):}" || $str_failcmd
-#					;;
-#					icmp:*)
-#						val_icmp_type "${str_in#icmp:}" || $str_failcmd
-#					;;
-#					+([[:alnum:]])-+([[:alnum:]])|+([[:digit:]])-+([[:digit:]]))
-#						val_port_range_word "$str_in" || $str_failcmd
-#					;;
-#					+([[:digit:]]):0|+([[:alnum:]]):0)
-#						val_proto "${str_in%:0}" || $str_failcmd
-#					;;
-#					+([[:digit:]])|+([[:alnum:]]))
-#						val_port "$str_in" || $str_failcmd
-#					;;
-#					*) log -E "Invalid entry \`$str_in' expecting: [proto:]port."
-#						$str_failcmd
-#				esac
+				val_ipset_port_spec "${str_in#*,}" || $str_failcmd
 			;;
 			*) log -E "Invalid entry \`$str_in' expecting: ip,[proto:]port."
 				$str_failcmd
@@ -627,11 +623,23 @@ case $str_type in
 		esac
 	;;
 	setlist|list:set)
-		val_setname "$str_in" || $str_failcmd
-		lsearch "$str_in" $(show_array_column CREATED_SETS_ARRAY) || {
-			log -E "ipset set \`$str_in' has not been created."
-			$str_failcmd
-		}
+		case "$str_in" in
+			*,@(before|after),*)
+				if [[ $IPSET_SYNTAX = old ]]; then
+					str_in="${str_in/,@(before|after),/ }"
+				else
+					log -E "Expecting \`before|after' as seperate option."
+					$str_failcmd
+				fi
+			;;
+		esac
+		for str_tmp in $str_in; do
+			val_setname "$str_tmp" || $str_failcmd
+			lsearch "$str_tmp" $(show_array_column CREATED_SETS_ARRAY) || {
+				log -E "ipset set \`$str_tmp' has not been created."
+				$str_failcmd
+			}
+		done
 	;;
 	"")
 		log -U $FUNCNAME
@@ -640,6 +648,53 @@ case $str_type in
 		return 1
 	;;
 esac
+while (($#)); do # remaining options
+	option="$1" opt_arg="$2"
+	shift
+	if [[ $IPSET_SYNTAX = new ]]; then
+		case "$option" in
+			timeout)
+				val_numeric "$opt_arg" || $str_failcmd
+				shift
+			;;
+			nomatch)
+				[[ $str_type = @(hash:net|hash:net,port|hash:ip,port,net|hash:net,iface) ]] || {
+					log -E "Option \`$option' is not valid with set of type \`$str_type'."
+					$str_failcmd
+				}
+			;;
+			before|after)
+				[[ $str_type = list:set ]] || {
+					log -E "Option \`$option' is not valid with set of type \`$str_type'."
+					$str_failcmd
+				}
+				val_setname "$opt_arg" || $str_failcmd
+				lsearch "$opt_arg" $(show_array_column CREATED_SETS_ARRAY) || {
+					log -E "ipset set \`$opt_arg' has not been created."
+					$str_failcmd
+				}
+				shift
+			;;
+			-\!|-exist|-q|-quiet) : ;;
+			*) log -E "Option \`$option' is unknown."
+				$str_failcmd
+		esac
+	else
+		case "$option" in
+			-q|--quiet) : ;;
+			quiet) 
+				for opt_arg in ${!arr_opts[@]}; do
+					if [[ ${arr_opts[opt_arg]} = quiet ]]; then
+						arr_opts[opt_arg]=--quiet
+						break
+					fi
+				done
+			;;
+			*) log -E "Option \`$option' is unknown."
+				$str_failcmd
+		esac
+	fi
+done
 log -e "adding to set: $str_set $str_entry ${arr_opts[@]}"
 IPSET_ENTRIES_ARRAY[${#IPSET_ENTRIES_ARRAY[@]}]="$str_cmd $str_set $str_entry ${arr_opts[@]}"
 } # -------------------------------------------------------------------------
