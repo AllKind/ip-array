@@ -44,8 +44,8 @@ val_setname() { # validate name of an ipset set
 	log -E "Invalid setname \`$1' - must not begin with a colon."
 	return 1
 }
-[[ $1 != *+([[:space:]]|,)* ]] || {
-	log -E "Invalid setname \`$1' - must not contain spaces, or commas."
+[[ $1 != *+([[:space:]])* ]] || {
+	log -E "Invalid setname \`$1' - must not contain spaces."
 	return 1
 }
 } # -------------------------------------------------------------------------
@@ -55,13 +55,13 @@ val_ipset_port_spec() {
 local str_p="$1" str_r_end
 case "$1" in
 	@(tcp|sctp|udp|udplite):\[*+([[:alpha:]])*\]-\[*+([[:alpha:]])*\])
-		str_p="${1#@(tcp|sctp|udp|udplite):}"
-		str_r_end="${str_p##*\[}"
-		str_r_end="${str_r_end%\]}"
-		str_p="${str_p%\]*}"
-		str_p="${str_p#\[}"
-		val_port "$str_p" || return
-		val_port "$str_r_end" || return
+		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
+	;;
+	@(tcp|sctp|udp|udplite):\[*+([[:alpha:]])*\]-+([[:word:]]))
+		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
+	;;
+	@(tcp|sctp|udp|udplite):+([[:word:]])-\[*+([[:alpha:]])*\])
+		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
 	;;
 	@(tcp|sctp|udp|udplite):@(+([[:word:]])-+([[:word:]])|+([[:digit:]])-+([[:digit:]])))
 		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
@@ -83,13 +83,8 @@ case "$1" in
 	+([[:word:]])-+([[:word:]]))
 		val_port_range_word "$1" || return
 	;;
-	\[*\]-\[*\])
-		str_r_end="${str_p##*\[}"
-		str_r_end="${str_r_end%\]}"
-		str_p="${str_p%%\]*}"
-		str_p="${str_p#\[}"
-		val_port "$str_p" || return
-		val_port "$str_r_end" || return
+	\[*\]-\[*\]|\[*\]-+([[:word:]])|+([[:word:]])-\[*\])
+		val_port_range_word "$1" || return
 	;;
 	+([[:digit:]]):0|*+([[:alpha:]])*:0)
 		val_proto "${1%:0}" || return
@@ -139,18 +134,7 @@ case "$str_type" in
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						case "$opt_arg" in
-							\[*\]-\[*\])
-								str_tmp="${opt_arg##*\[}"
-								str_tmp="${str_tmp%\]}"
-								opt_arg="${opt_arg%%\]*}"
-								opt_arg="${opt_arg#\[}"
-								val_port "$opt_arg_" || $str_failcmd
-								val_port "$str_tmp" || $str_failcmd
-							;;
-							*)
-								val_port_range_word "$opt_arg" || $str_failcmd
-						esac
+						val_port_range_word "$opt_arg" || $str_failcmd
 					else
 						val_ip4_addr "$opt_arg" || $str_failcmd
 					fi
@@ -527,7 +511,7 @@ case $str_type in
 	;;
 	portmap|bitmap:port)
 		case "$str_in" in
-			*-*) val_port_range_word "$str_in" || $str_failcmd ;;
+			*-*|\[*\]-\[*\]) val_port_range_word "$str_in" || $str_failcmd ;;
 			*) val_port "$str_in" || $str_failcmd
 		esac
 	;;
@@ -1236,11 +1220,11 @@ string_negated "${str_natip}" && {
 for str_ip in ${str_natip//-/ }; do val_ip4_addr ${str_ip} || return 1; done
 } # -------------------------------------------------------------------------
 
-#val_nat_port() { # validate nat port specifications
-#[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#local nport
-#for nport in ${1//-/ }; do val_port ${nport} || return 1; done
-#} # -------------------------------------------------------------------------
+val_nat_port() { # validate nat port specifications
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local nport
+for nport in ${1//-/ }; do val_port ${nport} || return 1; done
+} # -------------------------------------------------------------------------
 
 val_port() { # validate port specifications
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
@@ -1281,6 +1265,57 @@ fi
 for m_port in ${str_m_ports#!}; do
 	val_port "$m_port" || return 1
 done
+} # -------------------------------------------------------------------------
+
+val_port_range() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_prange="$1"
+local str_failcmd='eval log -E "Invalid port-range specification: $str_prange"; return 1'
+local IFS='-'
+set -- $1
+local str_rb="$1" str_re="$2"
+unset IFS
+(($# == 2)) || $str_failcmd
+val_numeric "$str_rb" && val_numeric "$str_re" || $str_failcmd
+val_16bit "$str_rb" && val_16bit "$str_re" || $str_failcmd
+((str_rb >= str_re)) && $str_failcmd
+} # -------------------------------------------------------------------------
+
+val_port_range_word() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_prange="$1"
+local str_failcmd='eval log -E "Invalid port-range specification: $str_prange"; return 1'
+local IFS='-'
+set -- $1
+local str_rb="$1" str_re="$2"
+unset IFS
+case "$str_prange" in
+	+([[:digit:]])-+([[:digit:]]))
+		(($# == 2)) || $str_failcmd
+		val_16bit "$str_rb" && val_16bit "$str_re" || $str_failcmd
+		if ((str_rb >= str_re)); then $str_failcmd; fi
+	;;
+	\[*+([[:alpha:]])*\]-\[*+([[:alpha:]])*\])
+		str_re="${str_prange##*\[}"; str_re="${str_re%\]}"
+		str_rb="${str_prange%%\]*}"; str_rb="${str_rb#\[}"
+		lsearch "$str_rb" "${SERVICES_ARRAY[@]}" && lsearch "$str_re" "${SERVICES_ARRAY[@]}" || $str_failcmd
+	;;
+	\[*+([[:alpha:]])*\]-+([[:word:]]))
+		str_re="${str_prange##*-}"
+		str_rb="${str_prange%%\]*}"; str_rb="${str_rb#\[}"
+		lsearch "$str_rb" "${SERVICES_ARRAY[@]}" && lsearch "$str_re" "${SERVICES_ARRAY[@]}" || $str_failcmd
+	;;
+	+([[:word:]])-\[*+([[:alpha:]])*\])
+		str_re="${str_prange##*\[}"; str_re="${str_re%\]}"
+		str_rb="${str_prange%%-*}"
+		lsearch "$str_rb" "${SERVICES_ARRAY[@]}" && lsearch "$str_re" "${SERVICES_ARRAY[@]}" || $str_failcmd
+	;;
+	+([[:word:]])-+([[:word:]]))
+		(($# == 2)) || $str_failcmd
+		lsearch "$str_rb" "${SERVICES_ARRAY[@]}" && lsearch "$str_re" "${SERVICES_ARRAY[@]}" || $str_failcmd
+	;;
+	*) $str_failcmd
+esac
 } # -------------------------------------------------------------------------
 
 val_ttl() { # validate TTL manipulation values
@@ -5613,7 +5648,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			validate_nat_ip "$tmp_opt_var_value" || return 1
 		;;
 		(nat_port)
-			val_port_range "$tmp_opt_var_value" || return 1
+			val_nat_port "$tmp_opt_var_value" || return 1
 		;;
 		(nat_option)
 			case "$tmp_opt_var_value" in

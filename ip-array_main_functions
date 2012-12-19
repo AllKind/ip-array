@@ -2226,43 +2226,6 @@ case "$1" in
 esac
 } # -------------------------------------------------------------------------
 
-val_port_range() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_port
-for str_port in ${1//-/ }; do
-	case "$str_port" in
-		+([[:digit:]]))
-			if val_16bit "$str_port"; then
-				continue
-			fi
-		;;
-	esac
-   	log -E "Invalid port specification \`$str_port'."
-	return 1
-done
-} # -------------------------------------------------------------------------
-
-val_port_range_word() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_port
-for str_port in ${1//-/ }; do
-	case "$str_port" in
-		+([[:digit:]]))
-			if val_16bit "$str_port"; then
-				continue
-			fi
-		;;
-		*+([[:alpha:]])*)
-			if lsearch "$str_port" "${SERVICES_ARRAY[@]}"; then
-				continue
-			fi
-		;;
-	esac
-	log -E "Invalid port specification \`$str_port'."
-	return 1
-done
-} # -------------------------------------------------------------------------
-
 is_ifname_wcard() { # check if last letter of interface name is a '+'
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ $(show_last_char "$1") = '+' ]]
@@ -2278,8 +2241,7 @@ if ((${#ifname} < 2)); then
 else
 	local -i lastl=$((${#ifname} - 1))
 fi
-#if [[ $(show_last_char "${ifname}") = '+' ]]; then # check if last letter of interface name is a '+'
-if is_ifname_wcard "${ifname}"; then
+if is_ifname_wcard "${ifname}"; then # check if last letter of interface name is a '+'
 	if run_iproute link show | my_cut -d ':' -c '2' | lsearch_regex "${ifname:0:${lastl}}.*" &>/dev/null
 	then
 		log -N "${ifname} is not a known device, but it looks like a valid iptables interface wildcard."
