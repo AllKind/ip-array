@@ -1070,7 +1070,7 @@ validate_target() { # target name validation
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$1" in
 	ACCEPT|DROP|RETURN) return 0 ;; # catch some known
-	ECN|LOG|CLASSIFY|MARK|CONNMARK|CONNSECMARK|SECMARK|DSCP|MASQUERADE|NETMAP|\
+	CHECKSUM|ECN|LOG|CLASSIFY|MARK|CONNMARK|CONNSECMARK|SECMARK|DSCP|MASQUERADE|NETMAP|\
 	REDIRECT|REJECT|SET|DNAT|SNAT|RAWDNAT|RAWSNAT|QUEUE|NFQUEUE|TCPOPTSTRIP|TOS|TTL|TCPMSS|\
 	ULOG|NFLOG|TPROXY) # these are registered
 		if ((${1}_TGT_EXIST)); then return 0
@@ -3862,6 +3862,7 @@ case "$str_target" in
 	CONNSECMARK) str_target_msg="connsecmark" ;;
 	DROP) str_target_msg="drop" ;;
 	ECN) str_target_msg="remove-ecn" ;;
+	CHECKSUM) str_target_msg="fill-checksum" ;;
 	LOG) str_target_msg="log" ;;
 	NFLOG) str_target_msg="nflog" ;;
 	ULOG) str_target_msg="ulog" ;;
@@ -4208,7 +4209,21 @@ RULELIST_TOS[RULE_LIST_IDX]="-m tos ${str_neg}--tos $(remove_negation "${arg_lis
 MSG_LIST_TOS[RULE_LIST_IDX]="tos=${arg_list_m_tos[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
-_process_m_set() {
+_process_m_cpu() { # fill the cpu match rulelist and msglist arrays
+local str_neg=""
+string_negated "${arg_list_m_cpu[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_M_CPU[RULE_LIST_IDX]="-m cpu ${str_neg}--cpu $(remove_negation "${arg_list_m_cpu[ARG_LIST_IDX]}") "
+MSG_LIST_M_CPU[RULE_LIST_IDX]="cpu=${arg_list_m_cpu[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
+_process_m_quota() { # fill the quota match rulelist and msglist arrays
+local str_neg=""
+string_negated "${arg_list_m_quota[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_M_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "${arg_list_m_quota[ARG_LIST_IDX]}") "
+MSG_LIST_M_QUOTA[RULE_LIST_IDX]="quota=${arg_list_m_quota[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
+_process_m_set() { # fill the set match rulelist and msglist arrays
 local str_entry 
 # ugly hack to allow more than one ipset match (m_set)
 unset RULELIST_M_SET[RULE_LIST_IDX] MSG_LIST_M_SET[RULE_LIST_IDX]
@@ -4223,15 +4238,6 @@ for str_entry in ${arg_list_m_set[ARG_LIST_IDX]}; do
 		MSG_LIST_M_SET[RULE_LIST_IDX]="set=${str_entry} "
 	fi
 done
-#local str_neg=""
-#string_negated "${arg_list_m_set[ARG_LIST_IDX]}" && str_neg="! "
-#if [[ ${RULELIST_M_SET[RULE_LIST_IDX]} ]]; then
-#	RULELIST_M_SET[RULE_LIST_IDX]="${RULELIST_M_SET[RULE_LIST_IDX]}-m set ${str_neg}--match-set $(remove_negation "${arg_list_m_set[ARG_LIST_IDX]/:/ }") "
-#	MSG_LIST_M_SET[RULE_LIST_IDX]="${MSG_LIST_M_SET[RULE_LIST_IDX]}set=${arg_list_m_set[ARG_LIST_IDX]} "
-#else
-#	RULELIST_M_SET[RULE_LIST_IDX]="-m set ${str_neg}--match-set $(remove_negation "${arg_list_m_set[ARG_LIST_IDX]/:/ }") "
-#	MSG_LIST_M_SET[RULE_LIST_IDX]="set=${arg_list_m_set[ARG_LIST_IDX]} "
-#fi
 } # -------------------------------------------------------------------------
 
 _process_m_mark() { # fill the iptables mark match rulelist and msglist arrays
@@ -5478,6 +5484,14 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				val_nf_mark "${str_msk}" || return 1
 			fi
 		;;
+		(m_cpu)
+			((cpu_MOD_EXIST)) || { log -s 'cpu'; return 1; }
+			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(m_quota)
+			((quota_MOD_EXIST)) || { log -s 'quota'; return 1; }
+			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
+		;;
 		(m_dscp)
 			((dscp_MOD_EXIST)) || { log -s 'dscp'; return 1; }
 			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
@@ -5764,7 +5778,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 		esac
 
-		if [[ $str_target = @(DSCP|ECN|MARK|TCPMSS|TCPOPTSTRIP|TOS|TPROXY|TTL) && $table != mangle ]]; then # targets only valid in mangle table
+		if [[ $str_target = @(DSCP|CHECKSUM|ECN|MARK|TCPMSS|TCPOPTSTRIP|TOS|TPROXY|TTL) && $table != mangle ]]; then # targets only valid in mangle table
 			log -E "The $str_target target is only valid in the mangle table."
 			return 1
 		elif [[ $str_target = @(SECMARK|CONNSECMARK) && $table != @(mangle|security) ]]; then # targets only valid in mangle or security table
@@ -5813,6 +5827,9 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 			CONNSECMARK)
 				_val_tgtopt_set "${arg_list_t_connsecmark[ARG_LIST_IDX]}" || return 1
+			;;
+			CHECKSUM)
+				((CHECKSUM_TGT_EXIST)) || { log -t 'CHECKSUM'; return 1; }
 			;;
 			ECN)
 				((ECN_TGT_EXIST)) || { log -t 'ECN'; return 1; }
@@ -6839,6 +6856,8 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 		str_action="-g"
 	elif [[ $str_target = ECN ]]; then # target without an option that could be set
 		local RULELIST_REM_ECN[ridx]="--ecn-tcp-remove"
+	elif [[ $str_target = CHECKSUM ]]; then # target without an option that could be set
+		local RULELIST_CHECKSUM[ridx]="--checksum-fill"
 	fi
 	str_log="${PF}${MSG_LIST_TARGET[ridx]} ${MSG_LIST_TABLE[ridx]}${MSG_LIST_CHAIN[ridx]}"
 	str_cmd=""
