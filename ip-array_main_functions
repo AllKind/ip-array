@@ -467,17 +467,25 @@ demask() {
 [[ $1 = */* ]] && printf "%s\n" "${1%/*}" || printf "%s\n" "$1"
 } # -------------------------------------------------------------------------
 
-split_val() { # split separator separated values and echo the result
-#set -- ${@}
-local str
-for str in ${@}; do
-	printf "%s\n" "${str}"
-done
+split_val() {
+[[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
+local IFS="$1" str_sep="$2"
+set -- $3
+local IFS="$str_sep"
+printf "%s\n" "$*"
 } # -------------------------------------------------------------------------
+
+#split_val() { # split separator separated values and echo the result
+##set -- ${@}
+#local str
+#for str in ${@}; do
+#	printf "%s\n" "${str}"
+#done
+#} # -------------------------------------------------------------------------
 
 my_cut() {
 # show only specified columns of input, separated by an optionaly supplied IFS
-local OldIFS="$IFS" colums_to_show=1 NewIFS str_line str_output col_idx
+local OldIFS="$IFS" colums_to_show=1 NewIFS str_line str_output col_idx option
 OPTIND=1
 while getopts :d:c: option; do
 	case "$option" in
