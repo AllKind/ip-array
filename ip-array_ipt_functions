@@ -4223,6 +4223,13 @@ RULELIST_M_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "$
 MSG_LIST_M_QUOTA[RULE_LIST_IDX]="quota=${arg_list_m_quota[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
+_process_m_tcpmss() { # fill the tcpmss match rulelist and msglist arrays
+local str_neg=""
+string_negated "${arg_list_m_tcpmss[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_M_TCPMSS[RULE_LIST_IDX]="-m tcpmss ${str_neg}--mss $(remove_negation "${arg_list_m_tcpmss[ARG_LIST_IDX]}") "
+MSG_LIST_M_TCPMSS[RULE_LIST_IDX]="tcpmss=${arg_list_m_tcpmss[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
 _process_m_set() { # fill the set match rulelist and msglist arrays
 local str_entry 
 # ugly hack to allow more than one ipset match (m_set)
@@ -5492,6 +5499,14 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((quota_MOD_EXIST)) || { log -s 'quota'; return 1; }
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
+		(m_tcpmss)
+			((tcpmss_MOD_EXIST)) || { log -s 'tcpmss'; return 1; }
+			case "$tmp_opt_var_value_neg_ok" in
+				+([[:digit:]])|+([[:digit:]]):+([[:digit:]])) : ;;
+				*) log -i "$tmp_opt_var_value" "tcpmss match descriptor"
+					return 1
+			esac
+		;;
 		(m_dscp)
 			((dscp_MOD_EXIST)) || { log -s 'dscp'; return 1; }
 			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
@@ -6000,6 +6015,13 @@ fi
 if [[ ${arg_list_reject_type[ARG_LIST_IDX]} ]]; then # validation of reject type is done here, as proto could be multiply value
 	val_rej_type "${arg_list_reject_type[ARG_LIST_IDX]}" "${arg_list_proto[ARG_LIST_IDX]:-none}" || return 1
 fi
+if [[ ${arg_list_m_tcpmss[ARG_LIST_IDX]} ]]; then # validate that proto is tcp if tcpmss match is used
+	if [[ $(string_tolower ${arg_list_proto[ARG_LIST_IDX]}) = !(tcp|6) ]]; then # TODO: add checks for syn|syn/ack
+		log -E "The tcpmss match is only valid with the tcp protocol."
+		return 1
+	fi
+fi
+
 } # -------------------------------------------------------------------------
 
 _pre_multiply_rules() {
