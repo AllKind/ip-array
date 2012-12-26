@@ -4591,6 +4591,23 @@ RULELIST_LOG_OPTIONS[RULE_LIST_IDX]="${arr_logcmd[*]} "
 MSG_LIST_LOG_OPTIONS[RULE_LIST_IDX]="${arr_logmsg[*]} "
 } # -------------------------------------------------------------------------
 
+_process_rpfilter() {
+local str_opt str_msg="rpfilter"
+local -a arr_cmd=("-m rpfilter")
+for str_opt in $(split_val : ' ' "${arg_list_rpfilter[ARG_LIST_IDX]}"); do
+	case "$str_opt" in
+		rpfilter) : ;;
+		loose|validmark|accept-local|strict)
+			arr_cmd[${#arr_cmd[@]}]="--$str_opt"
+			str_msg+=":$str_opt"
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+RULELIST_RPFILTER[RULE_LIST_IDX]="${arr_cmd[*]} "
+MSG_LIST_RPFILTER[RULE_LIST_IDX]="$str_msg "
+} # -------------------------------------------------------------------------
+
 _process_nflog_group() { # fill the NFLOG netlink group rulelist and msglist arrays
 RULELIST_NFLOG_GROUP[RULE_LIST_IDX]="--nflog-group ${arg_list_nflog_group[ARG_LIST_IDX]} "
 MSG_LIST_NFLOG_GROUP[RULE_LIST_IDX]="nflog-group=${arg_list_nflog_group[ARG_LIST_IDX]} "
@@ -5109,6 +5126,23 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
+		(rpfilter)
+			((rpfilter_MOD_EXIST)) || { log -s 'rpfilter'; return 1; }
+			case "$tmp_opt_var_value" in
+				""|rpfilter) : ;;
+			+([[:graph:]])*(:+([[:graph:]])))
+					for str_var in $(split_val : ' ' "$tmp_opt_var_value"); do
+						case "$str_var" in
+							loose|validmark|accept-local|strict) : ;;
+							*) log -i "$tmp_opt_var_value" "rpfilter descriptor"
+								return 1
+						esac
+					done
+				;;
+				*) log -i "$tmp_opt_var_value" "rpfilter descriptor"
+					return 1
+			esac
+		;;
 		(fragment)
 			if [[ $(string_tolower "$tmp_opt_var_value_neg_ok") != @(f|fr|fra|frag|fragm|fragme|fragmen|fragment) ]]; then
 				log -i "$tmp_opt_var_value" "fragment descriptor"
@@ -5456,7 +5490,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(t_secmark)
 			((SECMARK_TGT_EXIST)) || { log -t 'SECMARK'; return 1; }
-			# TO DO: how to check for valid SElinux context
+			# TODO: how to check for valid SElinux context
 		;;
 		(t_connsecmark)
 			((CONNSECMARK_TGT_EXIST)) || { log -t 'CONNSECMARK'; return 1; }
@@ -5815,13 +5849,18 @@ for target_idx in ${!arg_list_target[@]}; do
 			return 1
 		fi
 
-		if [[ ${arg_list_ahspi} && ${arg_list_proto} != 51 ]]; then # if ah match is used, check for proto #51
+		if [[ ${arg_list_ahspi[ARG_LIST_IDX]} && ${arg_list_proto[ARG_LIST_IDX]} != 51 ]]; then # if ah match is used, check for proto #51
 			log -E "The ah match is only valid with protocol #51."
 			return 1
 		fi
 
-		if [[ ${arg_list_espspi} && ${arg_list_proto} != 50 ]]; then # if esp match is used, check for proto #50
+		if [[ ${arg_list_espspi[ARG_LIST_IDX]} && ${arg_list_proto[ARG_LIST_IDX]} != 50 ]]; then # if esp match is used, check for proto #50
 			log -E "The esp match is only valid with protocol #50."
+			return 1
+		fi
+
+		if [[ ${arg_list_rpfilter[ARG_LIST_IDX]} && $table != @(raw|mangle) ]]; then # rpfilter match is only valid in raw and mangle table
+			log -E "The rpfilter match is only valid in the raw or mangle table."
 			return 1
 		fi
 
