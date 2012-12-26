@@ -4291,6 +4291,30 @@ RULELIST_HELPER[RULE_LIST_IDX]="-m helper ${str_neg}--helper $(remove_negation "
 MSG_LIST_HELPER[RULE_LIST_IDX]="helper=${arg_list_helper[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
+_process_osf() { # fill the osf match rulelist and msglist arrays
+local str_neg="" str str_var str_genre str_cmd str_msg
+string_negated "${arg_list_osf[ARG_LIST_IDX]}" && str_neg="! "
+str_genre="${arg_list_osf[ARG_LIST_IDX]%%:*}"
+str_var="${arg_list_osf[ARG_LIST_IDX]#$str_genre}"
+str_var="${str_var#:}"
+while [[ $str_var ]]; do
+	str=${str_var%%:*}
+	case "$str" in
+		"") break ;;
+		log|ttl)
+			str_var=${str_var#${str}:}
+			str_cmd+="--$str ${str_var%%:*} "
+			str_msg+="osf_${str}=${str_var%%:*} "
+			str_var=${str_var#[012]}
+			str_var=${str_var#:}
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+RULELIST_OSF[RULE_LIST_IDX]="-m osf ${str_neg}--genre $(remove_negation "$str_genre") $str_cmd"
+MSG_LIST_OSF[RULE_LIST_IDX]="osf_genre=$str_genre $str_msg"
+} # -------------------------------------------------------------------------
+
 _process_owner() {
 set -- ${arg_list_owner[ARG_LIST_IDX]//:/ }
 RULELIST_OWNER[RULE_LIST_IDX]="-m owner "
@@ -4959,7 +4983,7 @@ fi
 
 _validate_option_values() { # validate the rule given values
 local -i pos_idx arg_idx
-local str_var tmp_opt_var tmp_opt_var_value tmp_opt_var_value_neg_ok
+local str str_var tmp_opt_var tmp_opt_var_value tmp_opt_var_value_neg_ok
 table_in_rule=0 target_in_rule=0 chain_in_rule=0 state_in_rule=0 multi_icmp_types=0 multi_source_ports=0
 multi_destination_ports=0 multi_protocols=0 multi_input_devices=0 multi_output_devices=0
 # if the table is not defined in the template, clear it to not reuse the value of the previous loop
@@ -5135,6 +5159,35 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					val_range "${tmp_opt_var_value_neg_ok%:*}" "${tmp_opt_var_value_neg_ok#*:}" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "length descriptor"
+					return 1
+			esac
+		;;
+		(osf)
+			((osf_MOD_EXIST)) || { log -s 'osf'; return 1; }
+			case "$tmp_opt_var_value_neg_ok" in
+				+([[:graph:]])*(:+([[:word:]]):@(0|1|2)))
+					local str="${tmp_opt_var_value_neg_ok%%:*}"
+					str_var="${tmp_opt_var_value_neg_ok#$str}"
+					str_var="${str_var#:}"
+					while [[ $str_var ]]; do
+						local str=${str_var%%:*}
+						case "$str" in
+							"") break ;;
+							log|ttl)
+								str_var=${str_var#${str}:}
+								if ! [[ ${str_var%%:*} = @(0|1|2) ]]; then
+									log -i "$tmp_opt_var_value" "osf descriptor"
+									return 1
+								fi
+								str_var=${str_var#[012]}
+								str_var=${str_var#:}
+								;;
+							*) log -i "$tmp_opt_var_value" "osf descriptor"
+								return 1
+						esac
+					done
+				;;
+				*) log -i "$tmp_opt_var_value" "osf descriptor"
 					return 1
 			esac
 		;;
@@ -5883,6 +5936,11 @@ for target_idx in ${!arg_list_target[@]}; do
 
 		if [[ ${arg_list_espspi[ARG_LIST_IDX]} && ${arg_list_proto[ARG_LIST_IDX]} != 50 ]]; then # if esp match is used, check for proto #50
 			log -E "The esp match is only valid with protocol #50."
+			return 1
+		fi
+
+		if [[ ${arg_list_osf[ARG_LIST_IDX]} && ${arg_list_proto[ARG_LIST_IDX]} != @(6|tcp) ]]; then # if osf match is used, check for proto tcp
+			log -E "The osf match is only valid with the tcp protocol."
 			return 1
 		fi
 
