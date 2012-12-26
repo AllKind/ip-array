@@ -159,6 +159,7 @@ IPARRAY_TARGETS=(
 "0 ECN mangle -s 172.32.254.255 -p tcp -j ECN --ecn-tcp-remove"
 "0 DSCP mangle -s 172.32.254.255 -j DSCP --set-dscp 0"
 "0 SET filter -j SET --add-set ${ME}_TEST_SET src"
+"0 AUDIT filter -j AUDIT --type drop"
 "0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
 "0 TTL mangle -j TTL --ttl-inc 1"
 "0 TCPMSS mangle -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
@@ -260,6 +261,7 @@ GLOBAL_TARGET_LIST=(
 "MARK SET_MARK"
 "NFQUEUE NFQUEUE"
 "SET SET_SET"
+"AUDIT AUDIT"
 )
 
 # Array with match extensions, which are only valid in certain tables

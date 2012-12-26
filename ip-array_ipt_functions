@@ -3857,6 +3857,7 @@ _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
 case "$str_target" in
 	ACCEPT) str_target_msg="accept" ;;
+	AUDIT) str_target_msg="audit" ;;
 	CLASSIFY) str_target_msg="classify" ;;
 	CONNMARK) str_target_msg="connmark" ;;
 	CONNSECMARK) str_target_msg="connsecmark" ;;
@@ -4468,9 +4469,14 @@ case "${arg_list_t_connmark[ARG_LIST_IDX]}" in
 esac
 } # -------------------------------------------------------------------------
 
+_process_audit() { # fill the AUDIT target rulelist and msglist arrays
+RULELIST_AUDIT[RULE_LIST_IDX]="--type ${arg_list_audit[ARG_LIST_IDX]} "
+MSG_LIST_AUDIT[RULE_LIST_IDX]="audit-type=${arg_list_audit[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
 _process_t_secmark() {
-RULELIST_SET_SECMARK[RULE_LIST_IDX]="--selctx ${arg_list_t_secmark[ARG_LIST_IDX]}"
-MSG_LIST_SET_SECMARK[RULE_LIST_IDX]="SEcontext=${arg_list_t_secmark[ARG_LIST_IDX]}"
+RULELIST_SET_SECMARK[RULE_LIST_IDX]="--selctx ${arg_list_t_secmark[ARG_LIST_IDX]} "
+MSG_LIST_SET_SECMARK[RULE_LIST_IDX]="SEcontext=${arg_list_t_secmark[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_t_connsecmark() {
@@ -5593,6 +5599,14 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(espspi)
 			((esp_MOD_EXIST)) || { log -s 'esp'; return 1; }
 			val_spi "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(audit)
+			((AUDIT_TGT_EXIST)) || { log -t 'AUDIT'; return 1; }
+			case "$tmp_opt_var_value" in
+				accept|drop|reject) : ;;
+				*) log -i "$tmp_opt_var_value" "AUDIT option descriptor"
+					return 1
+			esac
 		;;
 		(t_class)
 			((CLASSIFY_TGT_EXIST)) || { log -t 'CLASSIFY'; return 1; }
