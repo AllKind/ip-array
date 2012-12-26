@@ -3883,6 +3883,7 @@ case "$str_target" in
 	TCPOPTSTRIP) str_target_msg="strip-tcp-opts" ;;
 	TCPMSS) str_target_msg="set-tcpmss" ;;
 	DSCP) str_target_msg="set-dscp" ;;
+	TEE) str_target_msg="tee" ;;
 	TOS) str_target_msg="set-tos" ;;
 	TPROXY) str_target_msg="tproxy" ;;
 	TTL) str_target_msg="set-ttl" ;;
@@ -4472,6 +4473,11 @@ esac
 _process_audit() { # fill the AUDIT target rulelist and msglist arrays
 RULELIST_AUDIT[RULE_LIST_IDX]="--type ${arg_list_audit[ARG_LIST_IDX]} "
 MSG_LIST_AUDIT[RULE_LIST_IDX]="audit-type=${arg_list_audit[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
+_process_tee_gw() { # fill the TEE target rulelist and msglist arrays
+RULELIST_TEE_GW[RULE_LIST_IDX]="--gateway ${arg_list_tee_gw[ARG_LIST_IDX]} "
+MSG_LIST_TEE_GW[RULE_LIST_IDX]="tee-gateway=${arg_list_tee_gw[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_t_secmark() {
@@ -5554,6 +5560,13 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_dscp)
 			((DSCP_TGT_EXIST)) || { log -t 'DSCP'; return 1; }
 			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(tee_gw)
+			((TEE_TGT_EXIST)) || { log -t 'TEE'; return 1; }
+			val_ip4_ip "$tmp_opt_var_value" || return 1
+			if [[ $tmp_opt_var_value = 0.0.0.0 ]]; then
+				log -i "$tmp_opt_var_value" "TEE gateway descriptor"
+			fi
 		;;
 		(m_tos)
 			((tos_MOD_EXIST)) || { log -s 'tos'; return 1; }
