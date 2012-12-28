@@ -195,6 +195,7 @@ IPARRAY_MODULES=(
 "0 comment filter -m comment --comment foobar"
 "0 ttl filter -m ttl --ttl-eq 123"
 "0 cpu filter -m cpu --cpu 0"
+"0 ecn filter -m ecn --ecn-ip-ect 0"
 "0 quota filter -m quota --quota 666"
 "0 tcpmss filter -p tcp --syn -m tcpmss --mss 1500"
 "0 rpfilter mangle -m rpfilter" 
@@ -248,6 +249,7 @@ SOCKET
 M_MARK
 M_TTL
 M_CPU
+M_ECN
 M_QUOTA
 M_SET
 M_TCPMSS

@@ -4315,6 +4315,27 @@ RULELIST_OSF[RULE_LIST_IDX]="-m osf ${str_neg}--genre $(remove_negation "$str_ge
 MSG_LIST_OSF[RULE_LIST_IDX]="osf_genre=$str_genre $str_msg"
 } # -------------------------------------------------------------------------
 
+_process_m_ecn() { # fill the ecn match rulelist and msglist arrays
+set -- ${arg_list_m_ecn[ARG_LIST_IDX]//:/ }
+RULELIST_M_ECN[RULE_LIST_IDX]="-m ecn "
+MSG_LIST_M_ECN[RULE_LIST_IDX]="ecn=${arg_list_m_ecn[ARG_LIST_IDX]} "
+while (($#)); do
+	local str_neg=""
+	string_negated "$1" && str_neg="! "
+	case "$1" in
+		?(\!)ip-ect)
+			RULELIST_M_ECN[RULE_LIST_IDX]+="${str_neg}--ecn-ip-ect $2 "
+			shift 2
+		;;
+		?(\!)tcp-cwr|?(\!)tcp-ece)
+			RULELIST_M_ECN[RULE_LIST_IDX]+="${str_neg}--ecn-$(remove_negation $1) "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+} # -------------------------------------------------------------------------
+
 _process_owner() {
 set -- ${arg_list_owner[ARG_LIST_IDX]//:/ }
 RULELIST_OWNER[RULE_LIST_IDX]="-m owner "
@@ -4323,15 +4344,15 @@ while (($#)); do
 	local str_neg=""
 	string_negated "$1" && str_neg="! "
 	case "$1" in
-		?(!)uid)
+		?(\!)uid)
 			RULELIST_OWNER[RULE_LIST_IDX]+="${str_neg}--uid-owner $2 "
 			shift 2
 		;;
-		?(!)gid)
+		?(\!)gid)
 			RULELIST_OWNER[RULE_LIST_IDX]+="${str_neg}--gid-owner $2 "
 			shift 2
 		;;
-		?(!)socket)
+		?(\!)socket)
 			RULELIST_OWNER[RULE_LIST_IDX]+="${str_neg}--socket-exists "
 			shift
 		;;
@@ -5126,24 +5147,41 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
+		(m_ecn)
+			((ecn_MOD_EXIST)) || { log -s 'ecn'; return 1; }
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			check_str_unique "$*" || return 1
+			while (($#)); do
+				case "$1" in
+					?(\!)ip-ect)
+						val_numeric "$2"
+						(($2 >= 0 && $2 <=3)) || {
+							log -E "ecn-ip-ect value is out of range, expecting value of 0-3."
+							return 1
+						}
+						shift 2
+					;;
+					?(\!)@(tcp-cwr|tcp-ece))
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "ecn match descriptor"
+						return 1
+				esac
+			done
+		;;
 		(owner)
 			((owner_MOD_EXIST)) || { log -s 'owner'; return 1; }
 			set -- ${tmp_opt_var_value//:/ }
-			for str_var in uid gid socket; do
-				lsearch "$str_var" ${*/${str_var}/} && {
-					log -E "Duplicate option \`$str_var' in \`$tmp_opt_var_value'."
-					return 1
-				}
-			done
+			check_str_unique "$*" || return 1
 			while (($#)); do
 				case "$1" in
-					?(!)@(uid|gid))
+					?(\!)@(uid|gid))
 						if [[ $2 = +([[:digit:]])-+([[:digit:]]) ]]; then
 							val_range ${2/-/ } || return 1
 						fi
 						shift 2
 					;;
-					?(!)socket)
+					?(\!)socket)
 						shift
 					;;
 					*) log -i "$tmp_opt_var_value" "owner match descriptor"
