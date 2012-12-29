@@ -4379,8 +4379,13 @@ done
 } # -------------------------------------------------------------------------
 
 _process_socket() {
-RULELIST_SOCKET[RULE_LIST_IDX]="-m socket "
-MSG_LIST_SOCKET[RULE_LIST_IDX]="socket "
+if [[ ${arg_list_socket[ARG_LIST_IDX]} = transparent ]]; then
+	RULELIST_SOCKET[RULE_LIST_IDX]="-m socket --transparent "
+	MSG_LIST_SOCKET[RULE_LIST_IDX]="socket=transparent "
+else
+	RULELIST_SOCKET[RULE_LIST_IDX]="-m socket "
+	MSG_LIST_SOCKET[RULE_LIST_IDX]="socket "
+fi
 } # -------------------------------------------------------------------------
 
 _process_m_ttl() {
@@ -5572,7 +5577,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(socket)
 			((socket_MOD_EXIST)) || { log -s 'socket'; return 1; }
-			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket) ]]; then
+			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket|transparent) ]]; then
 				log -i "$tmp_opt_var_value" "socket descriptor"
 				return 1
 			fi
