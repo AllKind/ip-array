@@ -1294,8 +1294,8 @@ elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} < 4)); then
 	log -W "Kernel version is below 2.4, it probably doesn't support iptables, unless a patch is compiled into it."
 elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} == 4 && ${KERN_VER[2]:-0} < 18)); then
 	ALL_MANGLE_CHAINS_PRESENT=0
-elif ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} > 2)); then
-	log -W "Kernel version greater than 3.2. UNTESTED!"
+elif ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} > 7)); then
+	log -W "Kernel version greater than 3.7. UNTESTED!"
 elif ((${KERN_VER[0]} > 4)); then
 	log -W "Kernel version 4.0 or higher. UNTESTED!"
 fi
