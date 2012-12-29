@@ -4336,6 +4336,23 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
+_process_devgroup() { # fill the devgroup match rulelist and msglist arrays
+set -- ${arg_list_devgroup[ARG_LIST_IDX]//:/ }
+RULELIST_DEVGROUP[RULE_LIST_IDX]="-m devgroup "
+MSG_LIST_DEVGROUP[RULE_LIST_IDX]="devgroup=${arg_list_devgroup[ARG_LIST_IDX]} "
+while (($#)); do
+	local str_neg=""
+	string_negated "$1" && str_neg="! "
+	case "$1" in
+		?(\!)@(src|dst))
+			RULELIST_DEVGROUP[RULE_LIST_IDX]+="${str_neg}--$(remove_negation $1)-group $2 "
+			shift 2
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+} # -------------------------------------------------------------------------
+
 _process_owner() {
 set -- ${arg_list_owner[ARG_LIST_IDX]//:/ }
 RULELIST_OWNER[RULE_LIST_IDX]="-m owner "
@@ -5165,6 +5182,24 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						shift
 					;;
 					*) log -i "$tmp_opt_var_value" "ecn match descriptor"
+						return 1
+				esac
+			done
+		;;
+		(devgroup)
+			((devgroup_MOD_EXIST)) || { log -s 'devgroup'; return 1; }
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			check_str_unique "$*" || return 1
+			while (($#)); do
+				case "$1" in
+					?(\!)@(src|dst))
+						[[ $2 ]] || {
+							log -E "Device group name is missing."
+							return 1
+						}
+						shift 2
+					;;
+					*) log -i "$tmp_opt_var_value" "devgroup match descriptor"
 						return 1
 				esac
 			done

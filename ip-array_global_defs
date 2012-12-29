@@ -200,6 +200,7 @@ IPARRAY_MODULES=(
 "0 tcpmss filter -p tcp --syn -m tcpmss --mss 1500"
 "0 rpfilter mangle -m rpfilter" 
 "0 osf filter -p tcp -m osf --genre Linux" 
+"0 devgroup filter -m devgroup --src-group ndg0" # TODO: find an existing devgroup & support ndgconfig
 )
 
 # Array to hold the supported ipset set types
@@ -245,6 +246,7 @@ ADDRTYPE PKTTYPE
 OWNER
 OSF
 LENGTH
+DEVGROUP
 SOCKET
 M_MARK
 M_TTL
