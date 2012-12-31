@@ -1362,6 +1362,21 @@ val_32bit "$1" || {
 }
 } # -------------------------------------------------------------------------
 
+val_sctp_chunk_types() { # validate sctp protocol chunk types
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+set -- $(split_val , ' ' "$1")
+while (($#)); do
+	case "$1" in
+		DATA|ABORT|SHUT_DOWN_COMPLETE|INIT|INIT_ACK|SACK|HEARTBEAT|HEARTBEAT_ACK|SHUTDOWN|SHUTDOWN_ACK|ERROR|COOKIE_ECHO|COOKIE_ACK|ECN_ECNE|CN_CWR|ASCONF|ASCONF_ACK|FORWARD_TSN) : ;;
+		DATA:+([IUBEiube])|@(SHUT_DOWN_COMPLETE|ABORT):[Tt]) : ;;
+		*) log -E "Invalid sctp chunk type: \`$1'."
+			return 1
+	esac
+	shift
+done
+return 0
+} # -------------------------------------------------------------------------
+
 val_spi() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_spi
@@ -4353,6 +4368,20 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
+_process_sctp() { # fill the sctp match rulelist and msglist arrays
+local str_neg="" str_val="${arg_list_sctp[ARG_LIST_IDX]}" str_cmd="-m sctp --chunk-types "
+string_negated "${arg_list_sctp[ARG_LIST_IDX]}" && str_neg="! " str_val="$(remove_negation "${arg_list_sctp[ARG_LIST_IDX]}")"
+case "$str_val" in
+	@(all|any|only)?(:*))
+		str_cmd+="${str_val%%:*} "
+		str_cmd+="${str_val#*:}"
+	;;
+	*) log -U $FUNCNAME; return 1
+esac
+RULELIST_SCTP[RULE_LIST_IDX]="${str_neg}$str_cmd "
+MSG_LIST_SCTP[RULE_LIST_IDX]="sctp_chunk-type=${arg_list_sctp[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
 _process_owner() {
 set -- ${arg_list_owner[ARG_LIST_IDX]//:/ }
 RULELIST_OWNER[RULE_LIST_IDX]="-m owner "
@@ -4973,7 +5002,7 @@ local -i pos_idx del_idx
 # B: which are only valid with either tcp, or udp
 if [[ ${arg_list_sport[OPTION_LIST_IDX]} || ${arg_list_dport[OPTION_LIST_IDX]} ]]; then
 	if [[ -z ${arg_list_proto[OPTION_LIST_IDX]} ]]; then
-		log -E "Protocol is undefined. Port specifications are only valid with the tcp or udp protocol."
+		log -E "Protocol is undefined. Port specifications are only valid with the tcp, udp or sctp protocol."
 		return 1
 	else
 		# see if protocol is icmp
@@ -5347,7 +5376,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(tcp_option)
-			if ! val_numeric_quiet "$tmp_opt_var_value_neg_ok" && val_8bit "${tmp_opt_var_value_neg_ok}"; then
+			if ! val_numeric_quiet "$tmp_opt_var_value_neg_ok" && val_8bit "$tmp_opt_var_value_neg_ok"; then
 				log -i "$tmp_opt_var_value" "TCP option"
 				return 1
 			fi
@@ -5368,6 +5397,23 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			val_state "$tmp_opt_var_value_neg_ok" || return 1
 			# remember that there is a state match definition in the rule
 			state_in_rule=1
+		;;
+		(sctp)
+			((sctp_MOD_EXIST)) || { log -s 'sctp'; return 1; }
+			case "$tmp_opt_var_value_neg_ok" in
+				@(all|any|only)?(:*))
+					tmp_opt_var_value_neg_ok="${tmp_opt_var_value_neg_ok#@(all|any|only)}"
+					case "$tmp_opt_var_value_neg_ok" in
+						"") log -E "Missing sctp chunk type(s)."
+							return 1
+						;;
+						:*) val_sctp_chunk_types "${tmp_opt_var_value_neg_ok#:}" || return 1
+					;;
+					esac
+				;;
+				*) log -i "$tmp_opt_var_value" "sctp descriptor"
+					return 1
+			esac
 		;;
 		(limit)
 			((limit_MOD_EXIST)) || { log -s 'limit'; return 1; }
@@ -6209,8 +6255,8 @@ if [[ ${arg_list_sport[ARG_LIST_IDX]} || ${arg_list_dport[ARG_LIST_IDX]} ]]; the
 		log -E "Port specifications with protocol negation are not valid."
 		return 1
 	}
-	[[ $(string_tolower ${arg_list_proto[ARG_LIST_IDX]}) = !(tcp|udp|6|17) ]] && {
-		log -E "Port specifications are only valid with the tcp or udp protocol."
+	[[ $(string_tolower ${arg_list_proto[ARG_LIST_IDX]}) = !(tcp|udp|sctp|6|17|132) ]] && {
+		log -E "Port specifications are only valid with the tcp, udp or sctp protocol."
 		return 1
 	}
 fi
