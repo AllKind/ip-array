@@ -1362,6 +1362,19 @@ val_32bit "$1" || {
 }
 } # -------------------------------------------------------------------------
 
+val_dccp_types() { # validate dccp protocol  types
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+set -- $(split_val , ' ' "$1")
+while (($#)); do
+	case "$1" in
+		REQUEST|RESPONSE|DATA|ACK|DATAACK|CLOSEREQ|CLOSE|RESET|SYNC|SYNCACK|INVALID) shift ;;
+		*) log -E "Invalid dccp type: \`$1'."
+			return 1
+	esac
+done
+return 0
+} # -------------------------------------------------------------------------
+
 val_sctp_chunk_types() { # validate sctp protocol chunk types
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 set -- $(split_val , ' ' "$1")
@@ -4368,6 +4381,25 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
+_process_dccp() { # fill the dccp match rulelist and msglist arrays
+local str_neg="" str_val
+string_negated "${arg_list_dccp[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_DCCP[RULE_LIST_IDX]="-m dccp "
+MSG_LIST_DCCP[RULE_LIST_IDX]="dccp=${arg_list_dccp[ARG_LIST_IDX]} "
+case "${arg_list_dccp[ARG_LIST_IDX]}" in
+	?(\!)+([[:alpha:]])*(,+([[:alpha:]])))
+		RULELIST_DCCP[RULE_LIST_IDX]+="${str_neg}--dccp-types $(remove_negation "${arg_list_dccp[ARG_LIST_IDX]}") "
+	;;
+	?(\!)+([[:alpha:]])*(,+([[:alpha:]])):?(\!)+([[:digit:]]))
+		RULELIST_DCCP[RULE_LIST_IDX]+="${str_neg}--dccp-types $(remove_negation "${arg_list_dccp[ARG_LIST_IDX]%:*}") "
+		str_val="${arg_list_dccp[ARG_LIST_IDX]#*:}"
+		string_negated "$str_val" && str_neg="! "
+		RULELIST_DCCP[RULE_LIST_IDX]+="${str_neg}--dccp-option $(remove_negation "$str_val") "
+	;;
+		*) log -U $FUNCNAME; return 1
+esac
+} # -------------------------------------------------------------------------
+
 _process_sctp() { # fill the sctp match rulelist and msglist arrays
 local str_neg="" str_val="${arg_list_sctp[ARG_LIST_IDX]}" str_cmd="-m sctp --chunk-types "
 string_negated "${arg_list_sctp[ARG_LIST_IDX]}" && str_neg="! " str_val="$(remove_negation "${arg_list_sctp[ARG_LIST_IDX]}")"
@@ -5002,7 +5034,7 @@ local -i pos_idx del_idx
 # B: which are only valid with either tcp, or udp
 if [[ ${arg_list_sport[OPTION_LIST_IDX]} || ${arg_list_dport[OPTION_LIST_IDX]} ]]; then
 	if [[ -z ${arg_list_proto[OPTION_LIST_IDX]} ]]; then
-		log -E "Protocol is undefined. Port specifications are only valid with the tcp, udp or sctp protocol."
+		log -E "Protocol is undefined. Port specifications are only valid with the tcp, udp, dccp or sctp protocol."
 		return 1
 	else
 		# see if protocol is icmp
@@ -5397,6 +5429,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			val_state "$tmp_opt_var_value_neg_ok" || return 1
 			# remember that there is a state match definition in the rule
 			state_in_rule=1
+		;;
+		(dccp)
+			((dccp_MOD_EXIST)) || { log -s 'dccp'; return 1; }
+			case "$tmp_opt_var_value" in
+				?(\!)+([[:alpha:]])*(,+([[:alpha:]])))
+					val_dccp_types "$tmp_opt_var_value_neg_ok" || return 1
+				;;
+				?(\!)+([[:alpha:]])*(,+([[:alpha:]])):?(\!)+([[:digit:]]))
+					val_dccp_types "${tmp_opt_var_value_neg_ok%:*}" || return 1
+					str_val="${tmp_opt_var_value_neg_ok#*:}"
+					val_numeric "$(remove_negation "$str_val")" || return 1
+				;;
+				*) log -i "$tmp_opt_var_value" "dccp descriptor"
+					return 1
+			esac
 		;;
 		(sctp)
 			((sctp_MOD_EXIST)) || { log -s 'sctp'; return 1; }
@@ -6255,8 +6302,8 @@ if [[ ${arg_list_sport[ARG_LIST_IDX]} || ${arg_list_dport[ARG_LIST_IDX]} ]]; the
 		log -E "Port specifications with protocol negation are not valid."
 		return 1
 	}
-	[[ $(string_tolower ${arg_list_proto[ARG_LIST_IDX]}) = !(tcp|udp|sctp|6|17|132) ]] && {
-		log -E "Port specifications are only valid with the tcp, udp or sctp protocol."
+	[[ $(string_tolower ${arg_list_proto[ARG_LIST_IDX]}) = !(tcp|udp|dccp|sctp|6|17|33|132) ]] && {
+		log -E "Port specifications are only valid with the tcp, udp, dccp, or sctp protocol."
 		return 1
 	}
 fi
