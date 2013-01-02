@@ -4486,6 +4486,23 @@ RULELIST_PKTTYPE[RULE_LIST_IDX]="-m pkttype ${str_neg}--pkt-type $(remove_negati
 MSG_LIST_PKTTYPE[RULE_LIST_IDX]="pkt-type=${arg_list_pkttype[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
+_process_statistic() {
+local str_val str_neg=""
+string_negated "${arg_list_statistic[ARG_LIST_IDX]#*:}" && str_neg="! "
+RULELIST_STATISTIC[RULE_LIST_IDX]="-m statistic "
+MSG_LIST_STATISTIC[RULE_LIST_IDX]="statistic='${arg_list_statistic[ARG_LIST_IDX]}' "
+case "${arg_list_statistic[ARG_LIST_IDX]}" in
+	random:?(\!)probability:[0-1]?(.)+([[:digit:]]))
+		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode random ${str_neg}--probability ${arg_list_statistic[ARG_LIST_IDX]##*:} "
+	;;
+	nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]]))
+		str_val="${arg_list_statistic[ARG_LIST_IDX]%:packet*}"
+		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode nth ${str_neg}--every ${str_val#*every:} --packet ${arg_list_statistic[ARG_LIST_IDX]#*packet:} "
+	;;
+	*) log -U $FUNCNAME; return 1
+esac
+} # -------------------------------------------------------------------------
+
 _process_comment() {
 RULELIST_COMMENT[RULE_LIST_IDX]="-m comment --comment \"${arg_list_comment[ARG_LIST_IDX]}\" "
 MSG_LIST_COMMENT[RULE_LIST_IDX]="comment='${arg_list_comment[ARG_LIST_IDX]}' "
@@ -5842,6 +5859,15 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			case "$tmp_opt_var_value" in
 				accept|drop|reject) : ;;
 				*) log -i "$tmp_opt_var_value" "AUDIT option descriptor"
+					return 1
+			esac
+		;;
+		(statistic)
+			((statistic_MOD_EXIST)) || { log -s 'statistic'; return 1; }
+			case "$tmp_opt_var_value" in
+				random:?(\!)probability:[0-1]?(.)+([[:digit:]])) : ;;
+				nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]])) : ;;
+				*) log -i "$tmp_opt_var_value" "statistic descriptor"
 					return 1
 			esac
 		;;

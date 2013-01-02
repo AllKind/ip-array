@@ -203,6 +203,7 @@ IPARRAY_MODULES=(
 "0 devgroup filter -m devgroup --src-group ndg0" # TODO: find an existing devgroup & support ndgconfig
 "0 sctp filter -p sctp -m sctp --dport 80"
 "0 dccp filter -p dccp -m dccp --dport 80"
+"0 statistic filter -m statistic --mode nth --every 10"
 )
 
 # Array to hold the supported ipset set types
@@ -251,6 +252,7 @@ LENGTH
 DEVGROUP
 SOCKET
 SCTP
+STATISTIC
 DCCP
 M_MARK
 M_TTL
