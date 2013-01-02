@@ -204,6 +204,7 @@ IPARRAY_MODULES=(
 "0 sctp filter -p sctp -m sctp --dport 80"
 "0 dccp filter -p dccp -m dccp --dport 80"
 "0 statistic filter -m statistic --mode nth --every 10 --packet 0"
+"0 realm filter -m realm --realm 0"
 )
 
 # Array to hold the supported ipset set types
@@ -250,6 +251,7 @@ OWNER
 OSF
 LENGTH
 DEVGROUP
+REALM
 SOCKET
 SCTP
 STATISTIC

@@ -2599,11 +2599,33 @@ if [[ $MODS_TO_RM ]]; then
 fi
 } # -------------------------------------------------------------------------
 
+fill_realms_array() { # read named routing realms into an array
+log -w "Filling rt_realms array"
+[[ -f /etc/iproute2/rt_realms ]] || {
+log -W "/etc/iproute2/rt_realms does not exist. Named realms used with the realm match will not be supported."
+	return 0
+}
+local str
+local -i i=0
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	[[ $REPLY = *([[:space:]])#* ]] && continue
+	if [[ $REPLY = *([[:space:]])+([[:digit:]])+([[:space:]])+([[:graph:]])* ]]; then
+		str="${REPLY#*+([[:digit:]])+([[:space:]])}"
+		str="${str%#*}"
+		RT_REALMS_ARRAY[i++]="$str"
+	fi
+done </etc/iproute2/rt_realms
+((${#RT_REALMS_ARRAY[@]})) || log -W "No routing realms found"
+readonly RT_REALMS_ARRAY
+} # -------------------------------------------------------------------------
+
 fill_proto_svc_arrays() {
 # load protocols and services file (1st column, no comments) into an array
 fill_array_from_file 'PROTOCOLS_ARRAY' "$PROTOCOLS"
 fill_array_from_file 'SERVICES_ARRAY' "$SERVICES"
-[[ $DEBUG_INFO ]] && dbg_arr PROTOCOLS_ARRAY && dbg_arr SERVICES_ARRAY || :
+# load named routing realms
+fill_realms_array
+[[ $DEBUG_INFO ]] && dbg_arr PROTOCOLS_ARRAY && dbg_arr SERVICES_ARRAY  && dbg_arr RT_REALMS_ARRAY || :
 readonly PROTOCOLS_ARRAY SERVICES_ARRAY
 } # -------------------------------------------------------------------------
 
