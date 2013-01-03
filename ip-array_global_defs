@@ -160,6 +160,7 @@ IPARRAY_TARGETS=(
 "0 DSCP mangle -s 172.32.254.255 -j DSCP --set-dscp 0"
 "0 SET filter -j SET --add-set ${ME}_TEST_SET src"
 "0 AUDIT filter -j AUDIT --type drop"
+"0 IDLETIMER filter -i dummy0 -j IDLETIMER --timeout 3600 --label ${ME}_TEST_IDLETIMER"
 "0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
 "0 TEE mangle -j TEE --gateway 172.32.254.255"
 "0 TTL mangle -j TTL --ttl-inc 1"
@@ -277,6 +278,7 @@ GLOBAL_TARGET_LIST=(
 "NFQUEUE NFQUEUE"
 "SET SET_SET"
 "AUDIT AUDIT"
+"IDLETIMER IDLETIMER_OPT"
 )
 
 # Array with match extensions, which are only valid in certain tables
