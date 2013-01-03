@@ -4322,11 +4322,18 @@ RULELIST_LENGTH[RULE_LIST_IDX]="-m length ${str_neg}--length $(remove_negation "
 MSG_LIST_LENGTH[RULE_LIST_IDX]="length=${arg_list_length[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
-_process_helper() {
+_process_helper() { # fill the helper match rulelist and msglist arrays
 local str_neg=""
 string_negated "${arg_list_helper[ARG_LIST_IDX]}" && str_neg="! "
 RULELIST_HELPER[RULE_LIST_IDX]="-m helper ${str_neg}--helper $(remove_negation "${arg_list_helper[ARG_LIST_IDX]}") "
 MSG_LIST_HELPER[RULE_LIST_IDX]="helper=${arg_list_helper[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
+_process_u32() { # fill the u32 match rulelist and msglist arrays
+local str_neg=""
+string_negated "${arg_list_u32[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_U32[RULE_LIST_IDX]="-m u32 ${str_neg}--u32 \"$(remove_negation "${arg_list_u32[ARG_LIST_IDX]}")\" "
+MSG_LIST_U32[RULE_LIST_IDX]="u32='${arg_list_u32[ARG_LIST_IDX]}' "
 } # -------------------------------------------------------------------------
 
 _process_osf() { # fill the osf match rulelist and msglist arrays
@@ -6074,6 +6081,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(espspi)
 			((esp_MOD_EXIST)) || { log -s 'esp'; return 1; }
 			val_spi "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(u32)
+			((u32_MOD_EXIST)) || { log -s 'u32'; return 1; }
 		;;
 		(audit)
 			((AUDIT_TGT_EXIST)) || { log -t 'AUDIT'; return 1; }
