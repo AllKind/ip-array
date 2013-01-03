@@ -4525,6 +4525,70 @@ RULELIST_COMMENT[RULE_LIST_IDX]="-m comment --comment \"${arg_list_comment[ARG_L
 MSG_LIST_COMMENT[RULE_LIST_IDX]="comment='${arg_list_comment[ARG_LIST_IDX]}' "
 } # -------------------------------------------------------------------------
 
+_process_recent() { # fill the recent match rulelist and msglist arrays
+local str_var str_neg=""
+RULELIST_RECENT[RULE_LIST_IDX]="-m recent "
+MSG_LIST_RECENT[RULE_LIST_IDX]="recent=${arg_list_recent[ARG_LIST_IDX]} "
+string_negated "${arg_list_recent[ARG_LIST_IDX]}" && str_neg="! " && arg_list_recent[ARG_LIST_IDX]="$(remove_negation "${arg_list_recent[ARG_LIST_IDX]}")"
+case "${arg_list_recent[ARG_LIST_IDX]}" in
+	@(set|?(r)check|update|remove)*)
+		str_var="${arg_list_recent[ARG_LIST_IDX]%%:*}"
+		case "$str_var" in
+			set|update|remove|rcheck)
+				RULELIST_RECENT[RULE_LIST_IDX]+="${str_neg}--$str_var "
+			;;
+			check)
+				RULELIST_RECENT[RULE_LIST_IDX]+="${str_neg}--r$str_var "
+			;;
+			*) log -U $FUNCNAME; return 1
+		esac
+		str_var="${arg_list_recent[ARG_LIST_IDX]#@(set|?(r)check|update|remove)}"
+		if [[ ${str_var#:} ]]; then
+			set -- $(split_val : ' ' "$str_var")
+			str_var="${str_var%%:*}" # remember action
+			while (($#)); do
+				case "$1" in
+					name)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--$1 \"$2\" "
+						shift 2
+					;;
+					mask)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--$1 $2 "
+						shift 2
+					;;
+					?(r)source|src)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--rsource "
+					   	shift
+					;;
+					?(r)dest|dst)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--rdest "
+					   	shift
+					;;
+					seconds|sec)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--seconds $2 "
+						shift 2
+					;;
+					?(r)ttl)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--rttl "
+					   	shift
+					;;
+					reap)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--$1 "
+					   	shift
+					;;
+					hitcount|hit|hitcnt|cnt|count)
+						RULELIST_RECENT[RULE_LIST_IDX]+="--hitcount $2 "
+						shift 2
+					;;
+					*) log -U $FUNCNAME; return 1
+				esac
+			done
+		fi
+	;;
+	*) log -U $FUNCNAME; return 1
+esac
+} # -------------------------------------------------------------------------
+
 _process_idletimer_opt() { # fill the idletimer target rulelist and msglist arrays
 local str_ilabel str_itmout
 case "${arg_list_idletimer_opt[ARG_LIST_IDX]}" in
@@ -5562,7 +5626,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) 
-					for arg_idx in ${!tmp_pos_par_val_array[@]}; do # TO DO: DOES IT REFER TO PROTO OR CTPROTO?
+					for arg_idx in ${!tmp_pos_par_val_array[@]}; do # TODO: DOES IT REFER TO PROTO OR CTPROTO?
 						if [[ ${tmp_pos_par_val_array[pos_idx]%% *} = proto ]]; then
 							if [[ $(string_tolower "${tmp_pos_par_val_array[pos_idx]#* }") = @(gre|47) ]]; then
 								val_32bit "$tmp_opt_var_value_neg_ok" || {
@@ -5728,14 +5792,92 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(realm)
 			((realm_MOD_EXIST)) || { log -s 'realm'; return 1; }
 			case "$tmp_opt_var_value_neg_ok" in
-				+([[:digit:]]))
-				;;
-				+([[:digit:]])/+([[:digit:]]))
-				;;
+				+([[:digit:]])) : ;;
+				+([[:digit:]])/+([[:digit:]])) : ;;
 				*) val_rt_realm "$tmp_opt_var_value_neg_ok" || {
 				   	log -i "$tmp_opt_var_value" "realm descriptor"
 					return 1
 				}
+			esac
+		;;
+		(recent)
+			((recent_MOD_EXIST)) || { log -s 'recent'; return 1; }
+			case "$tmp_opt_var_value" in
+				?(\!)@(set|?(r)check|update|remove)*)
+					str_var="${tmp_opt_var_value#?(\!)@(set|?(r)check|update|remove)}"
+					if [[ ${str_var#:} ]]; then
+						set -- $(split_val : ' ' "$str_var")
+						str_var="$(remove_negation "${tmp_opt_var_value%%:*}")" # remember action
+						while (($#)); do
+							case "$1" in
+								name)
+									if [[ $2 ]]; then
+										shift 2
+									else
+										log -E "Missing name of recent list."
+										return 1
+									fi
+								;;
+								?(r)source|src|?(r)dest|dst) shift
+								;;
+								mask)
+									if [[ $2 ]]; then
+										val_ipv4_netmask "$2" || return 1
+										shift 2
+									else
+										log -E "Missing netmask of recent mask option."
+										return 1
+									fi
+								;;
+								seconds|sec)
+									if [[ $2 ]]; then
+										val_numeric "$2" || return 1
+										shift 2
+									else
+										log -E "Missing value of recent seconds option."
+										return 1
+									fi
+								;;
+								reap)
+									if lsearch seconds $(split_val : ' ' "$tmp_opt_var_value"); then
+										:
+									elif lsearch sec $(split_val : ' ' "$tmp_opt_var_value"); then
+										:
+									else
+										log -E "reap option is only valid with {seconds|sec} option."
+										return 1
+									fi
+									shift
+								;;
+								?(r)ttl)
+									if [[ $str_var != @(update|?(r)check) ]]; then
+										log -E "[r]ttl option is only valid with update or [r]check action."
+										return 1
+									fi
+									shift
+								;;
+								hitcount|hit|hitcnt|cnt|count)
+									if [[ $2 ]]; then
+										if [[ $str_var != @(update|?(r)check) ]]; then
+											log -E "hitcount option is only valid with update or [r]check action."
+											return 1
+										fi
+										val_numeric "$2" || return 1
+										shift 2
+									else
+										log -E "Missing value of recent hitcount option."
+										return 1
+									fi
+								;;
+								*) log -i "$tmp_opt_var_value" "recent descriptor"
+									return 1
+							esac
+						done
+					fi
+				;;
+				*)	log -E "recent match action is missing as first option. Expecting one of: set|update|remove|[r]check."
+				   	log -i "$tmp_opt_var_value" "recent descriptor"
+					return 1
 			esac
 		;;
 		(socket)
