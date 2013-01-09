@@ -207,7 +207,8 @@ IPARRAY_MODULES=(
 "0 statistic filter -m statistic --mode nth --every 10 --packet 0"
 "0 realm filter -m realm --realm 0"
 "0 recent filter -m recent --rcheck"
-"0 u32 filter -m u32 --u32 \"6 & 0xFF = 1\""
+"0 hashlimit filter -m hashlimit --hashlimit-name ${ME}_TEST_HASHLIMIT --hashlimit-above 1024/day"
+"0 u32 filter -m u32 --u32 6&0xFF=1"
 )
 
 # Array to hold the supported ipset set types
@@ -260,6 +261,7 @@ SOCKET
 SCTP
 STATISTIC
 DCCP
+HASHLIMIT
 U32
 M_MARK
 M_TTL

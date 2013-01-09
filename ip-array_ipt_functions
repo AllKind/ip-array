@@ -4532,6 +4532,29 @@ RULELIST_COMMENT[RULE_LIST_IDX]="-m comment --comment \"${arg_list_comment[ARG_L
 MSG_LIST_COMMENT[RULE_LIST_IDX]="comment='${arg_list_comment[ARG_LIST_IDX]}' "
 } # -------------------------------------------------------------------------
 
+_process_hashlimit() { # fill the hashlimit match rulelist and msglist arrays
+RULELIST_HASHLIMIT[RULE_LIST_IDX]="-m hashlimit "
+MSG_LIST_HASHLIMIT[RULE_LIST_IDX]="hashlimit=${arg_list_hashlimit[ARG_LIST_IDX]} "
+set -- $(split_val : ' ' "${arg_list_hashlimit[ARG_LIST_IDX]}")
+while (($#)); do
+	case "$1" in
+		name)
+			RULELIST_HASHLIMIT[RULE_LIST_IDX]+="--hashlimit-$1 \"$2\" "
+			shift 2
+		;;
+		mode|upto|above|burst|srcmask|dstmask)
+			RULELIST_HASHLIMIT[RULE_LIST_IDX]+="--hashlimit-$1 $2 "
+			shift 2
+		;;
+		gcinterval|expire|max|size)
+			RULELIST_HASHLIMIT[RULE_LIST_IDX]+="--hashlimit-htable-$1 $2 "
+			shift 2
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+} # -------------------------------------------------------------------------
+
 _process_recent() { # fill the recent match rulelist and msglist arrays
 local str_var str_neg=""
 RULELIST_RECENT[RULE_LIST_IDX]="-m recent "
@@ -5805,6 +5828,72 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				   	log -i "$tmp_opt_var_value" "realm descriptor"
 					return 1
 				}
+			esac
+		;;
+		(hashlimit)
+			((hashlimit_MOD_EXIST)) || { log -s 'hashlimit'; return 1; }
+			case "$tmp_opt_var_value" in
+				name:*:mode:@(srcip|srcport|dstip|dstport):@(upto|above):+([[:digit:]])?(/@(second|minute|hour|day))*)
+					set -- $(split_val : ' ' "$tmp_opt_var_value")
+					while (($#)); do
+						case "$1" in
+							name) # TODO: name might clash with above/upto
+								if [[ $2 ]]; then
+									shift 2
+								else
+									log -E "Missing name of hashlimit-name."
+									return 1
+								fi
+							;;
+							mode) shift 2 ;;
+							above)
+								if lsearch upto $(split_val : ' ' "$tmp_opt_var_value"); then
+									log -E "hashlimit-upto option cannot be used together with hashlimit-above option."
+									return 1
+								fi
+							   	shift 2
+							;;
+							upto)
+								if lsearch above $(split_val : ' ' "$tmp_opt_var_value"); then
+									log -E "hashlimit-upto option cannot be used together with hashlimit-above option."
+									return 1
+								fi
+							   	shift 2
+							;;
+							burst)
+								if [[ $2 ]]; then
+									val_numeric "$2" 
+									shift 2
+								else
+									log -E "Missing burst value of hashlimit-burst."
+									return 1
+								fi
+							;;
+							srcmask|dstmask)
+								if [[ $2 ]]; then
+									val_ipv4_cidr_mask "$2" 
+									shift 2
+								else
+									log -E "Missing $1 value of hashlimit-$1."
+									return 1
+								fi
+							;;
+							gcinterval|expire|max|size)
+								if [[ $2 ]]; then
+									val_numeric "$2" 
+									shift 2
+								else
+									log -E "Missing $1 value of hashlimit-htable-$1."
+									return 1
+								fi
+							;;
+							*) log -i "$tmp_opt_var_value" "hashlimit descriptor"
+								return 1
+						esac
+					done
+				;;
+				*) log -i "$tmp_opt_var_value" "hashlimit descriptor"
+					return 1
 			esac
 		;;
 		(recent)
