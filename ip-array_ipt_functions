@@ -5836,56 +5836,33 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				name:*:mode:@(srcip|srcport|dstip|dstport):@(upto|above):+([[:digit:]])?(/@(second|minute|hour|day))*)
 					set -- $(split_val : ' ' "$tmp_opt_var_value")
 					while (($#)); do
+						if [[ -z $2 ]]; then
+							log -E "Missing value of hashlimit option \`$1'."
+							return 1
+						fi
 						case "$1" in
-							name) # TODO: name might clash with above/upto
-								if [[ $2 ]]; then
-									shift 2
-								else
-									log -E "Missing name of hashlimit-name."
-									return 1
-								fi
-							;;
-							mode) shift 2 ;;
+							name|mode) shift 2 ;;
 							above)
-								if lsearch upto $(split_val : ' ' "$tmp_opt_var_value"); then
+								if lsearch upto $(split_val : ' ' "${tmp_opt_var_value#name:*:}"); then
 									log -E "hashlimit-upto option cannot be used together with hashlimit-above option."
 									return 1
 								fi
 							   	shift 2
 							;;
 							upto)
-								if lsearch above $(split_val : ' ' "$tmp_opt_var_value"); then
+								if lsearch above $(split_val : ' ' "${tmp_opt_var_value#name:*:}"); then
 									log -E "hashlimit-upto option cannot be used together with hashlimit-above option."
 									return 1
 								fi
 							   	shift 2
 							;;
-							burst)
-								if [[ $2 ]]; then
-									val_numeric "$2" 
-									shift 2
-								else
-									log -E "Missing burst value of hashlimit-burst."
-									return 1
-								fi
-							;;
 							srcmask|dstmask)
-								if [[ $2 ]]; then
-									val_ipv4_cidr_mask "$2" 
-									shift 2
-								else
-									log -E "Missing $1 value of hashlimit-$1."
-									return 1
-								fi
+								val_ipv4_cidr_mask "$2" || return 1
+								shift 2
 							;;
-							gcinterval|expire|max|size)
-								if [[ $2 ]]; then
-									val_numeric "$2" 
-									shift 2
-								else
-									log -E "Missing $1 value of hashlimit-htable-$1."
-									return 1
-								fi
+							burst|gcinterval|expire|max|size)
+								val_numeric "$2" || return 1
+								shift 2
 							;;
 							*) log -i "$tmp_opt_var_value" "hashlimit descriptor"
 								return 1
@@ -5914,8 +5891,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 										return 1
 									fi
 								;;
-								?(r)source|src|?(r)dest|dst) shift
-								;;
+								?(r)source|src|?(r)dest|dst) shift ;;
 								mask)
 									if [[ $2 ]]; then
 										val_ipv4_netmask "$2" || return 1
