@@ -5008,6 +5008,28 @@ case "${arg_list_t_tcpmss[ARG_LIST_IDX]}" in
 esac
 } # -------------------------------------------------------------------------
 
+_process_ct_opt() { # fill the CT target rulelist and msglist arrays
+local str_cmd str_msg
+set -- $(split_val : ' ' "${arg_list_ct_opt[ARG_LIST_IDX]}")
+while (($#)); do
+	case "$1" in
+		notrack)
+			str_cmd+="--notrack "
+			str_msg+="ct-notrack "
+			shift
+		;;
+		helper|ctevents|expevents|zone|timeout)
+			str_cmd+="--$1 $2 "
+			str_msg+="ct-$1=$2 "
+			shift 2
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+done
+RULELIST_CT[RULE_LIST_IDX]="${str_cmd}"
+MSG_LIST_CT[RULE_LIST_IDX]="${str_msg}"
+} # -------------------------------------------------------------------------
+
 _process_tproxy_opt() {
 local str_cmd str_msg
 set -- ${arg_list_tproxy_opt[ARG_LIST_IDX]//:/ }
@@ -5958,6 +5980,65 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				log -i "$tmp_opt_var_value" "socket descriptor"
 				return 1
 			fi
+		;;
+		(ct_opt)
+			((CT_TGT_EXIST)) || { log -t 'CT'; return 1; }
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					notrack) shift ;;
+					helper) # TODO: git list of valid helper names
+						if [[ $2 ]]; then
+							shift 2
+						else
+							log -E "Missing helper name."
+							return 1
+						fi
+					;;
+					ctevents)
+						if [[ $2 ]]; then
+							for str_var in $(split_val , ' ' "$2"); do
+								case "$str_var" in
+									new|related|destroy|reply|assured|protoinfo|helper|mark|natseqinfo|secmark) : ;;
+									*) log -i "$str_var" "ctevents descriptor"
+								esac
+							done
+							shift 2
+						else
+							log -E "Missing ctevents value."
+							return 1
+						fi
+					;;
+					expevents)
+						if [[ $2 ]]; then
+							[[ $2 = new ]] || return 1
+							shift 2
+						else
+							log -E "Missing expevents value."
+							return 1
+						fi
+					;;
+					zone)
+						if [[ $2 ]]; then
+							val_numeric "$2" || return 1
+							shift 2
+						else
+							log -E "Missing zone name."
+							return 1
+						fi
+					;;
+					timeout) # TODO: nfct support
+						if [[ $2 ]]; then
+							shift 2
+						else
+							log -E "Missing timeout policy name."
+							return 1
+						fi
+					;;
+					*) log -i "$tmp_opt_var_value" "CT value descriptor"
+						return 1
+					esac
+			done
 		;;
 		(idletimer_opt)
 			((IDLETIMER_TGT_EXIST)) || { log -t 'IDLETIMER'; return 1; }
