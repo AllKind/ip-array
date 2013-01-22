@@ -4660,9 +4660,24 @@ MSG_LIST_SET_DSCP[RULE_LIST_IDX]="set-dscp=${arg_list_t_dscp[ARG_LIST_IDX]}"
 } # -------------------------------------------------------------------------
 
 _process_t_set() {
-set -- ${arg_list_t_set[ARG_LIST_IDX]//:/ }
-local str_act="$1" str_setname="$2" str_flags="$3"
-RULELIST_SET_SET[RULE_LIST_IDX]="--${str_act}-set ${str_setname} ${str_flags}"
+local str_act str_setname str_opts str_flags="${arg_list_t_set[ARG_LIST_IDX]##*:}"
+set -- $(split_val : ' ' "${arg_list_t_set[ARG_LIST_IDX]%:*}")
+while (($#)); do
+	case "$1" in
+		add|del) str_act="$1"
+			shift
+		;;
+		exist) str_opts+="--exist "
+			shift
+		;;
+		timeout) str_opts+="--timeout $2 "
+			shift 2
+		;;
+		*) str_setname="$1"
+			shift
+	esac
+done
+RULELIST_SET_SET[RULE_LIST_IDX]="${str_opts}--${str_act}-set \"${str_setname}\" ${str_flags}"
 MSG_LIST_SET_SET[RULE_LIST_IDX]="${str_act}-set=${arg_list_t_set[ARG_LIST_IDX]#${str_act}:}"
 } # -------------------------------------------------------------------------
 
@@ -6217,8 +6232,8 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						fi
 					   	tmp_opt_var_value_neg_ok="${tmp_opt_var_value_neg_ok#nomatch:}"
 					fi
-					val_setname "${tmp_opt_var_value_neg_ok%%:*}" || return 1
-					val_set_flags "${tmp_opt_var_value_neg_ok#*:}" || return 1
+					val_setname "${tmp_opt_var_value_neg_ok%:*}" || return 1
+					val_set_flags "${tmp_opt_var_value_neg_ok##*:}" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "set match descriptor"
 					return 1
@@ -6228,6 +6243,32 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			((SET_TGT_EXIST)) || { log -t 'SET'; return 1; }
 			case "$tmp_opt_var_value" in
 				@(add|del):*:@(src|dst)*(,@(src|dst)))
+					tmp_opt_var_value="${tmp_opt_var_value#@(add|del):}"
+					set -- $(split_val : ' ' "${tmp_opt_var_value%:*:@(src|dst)*(,@(src|dst))}")
+					while (($#)); do
+						case "$1" in
+							exist)
+								tmp_opt_var_value="${tmp_opt_var_value#${1}:}"
+								shift
+							   	;;
+							timeout)
+								if [[ $2 ]]; then
+									val_numeric_quiet "$2" || {
+										log -E "SET targets timeout options value \`$2' is not numeric."
+										return 1
+									}
+								else
+									log -E "SET targets timeout options value is missing."
+									return 1
+								fi
+								tmp_opt_var_value="${tmp_opt_var_value#${1}:${2}:}"
+								shift 2
+							   	;;
+							*) log -i "$tmp_opt_var_value" "SET option descriptor"
+								return 1
+						esac
+					done
+					val_setname "${tmp_opt_var_value%:*}" || return 1
 					val_set_flags "${tmp_opt_var_value##*:}" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "SET option descriptor"
@@ -6504,16 +6545,14 @@ for target_idx in ${!arg_list_target[@]}; do
 		elif [[ $str_target = @(DNAT|SNAT|MASQUERADE|NETMAP|REDIRECT) && $table != nat ]]; then # targets only valid in nat table
 			log -E "The $str_target target is only valid in the nat table."
 			return 1
+		elif [[ $str_target = @(CT|NOTRACK) && $table != raw ]]; then # targets only valid in raw table
+			log -E "The $str_target target is only valid in the raw table."
+			return 1
 		fi
 
 		# if CONNMARK match is used with --restore-mark, check if table is mangle
 		if [[ ${arg_list_t_connmark[ARG_LIST_IDX]:-0} = restore* && $table != mangle ]]; then
 			log -E "restore-mark is only valid in the mangle table."
-			return 1
-		fi
-
-		if [[ $str_target = NOTRACK && $table != raw ]]; then # NOTRACK is only valid in raw table
-			log -E "The $str_target target is only valid in the raw table."
 			return 1
 		fi
 
@@ -6540,17 +6579,17 @@ for target_idx in ${!arg_list_target[@]}; do
 		case "$str_target" in # target dependant checks
 		# empty target params should not happen, if they are defined as mandatory variable in the template	
 		# still we check for them here for safety
+			AUDIT)
+				_val_tgtopt_set "${arg_list_audit[ARG_LIST_IDX]}" || return 1
+			;;
+			CT)
+				_val_tgtopt_set "${arg_list_ct_opt[ARG_LIST_IDX]}" || return 1
+			;;
 			CLASSIFY)
 				_val_tgtopt_set "${arg_list_t_class[ARG_LIST_IDX]}" || return 1
 			;;
-			MARK)
-				_val_tgtopt_set "${arg_list_t_mark[ARG_LIST_IDX]}" || return 1
-			;;
 			CONNMARK)
 				_val_tgtopt_set "${arg_list_t_connmark[ARG_LIST_IDX]}" || return 1
-			;;
-			SECMARK)
-				_val_tgtopt_set "${arg_list_t_secmark[ARG_LIST_IDX]}" || return 1
 			;;
 			CONNSECMARK)
 				_val_tgtopt_set "${arg_list_t_connsecmark[ARG_LIST_IDX]}" || return 1
@@ -6558,12 +6597,27 @@ for target_idx in ${!arg_list_target[@]}; do
 			CHECKSUM)
 				((CHECKSUM_TGT_EXIST)) || { log -t 'CHECKSUM'; return 1; }
 			;;
+			DSCP)
+				_val_tgtopt_set "${arg_list_t_dscp[ARG_LIST_IDX]}" || return 1
+			;;
 			ECN)
 				((ECN_TGT_EXIST)) || { log -t 'ECN'; return 1; }
 				if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|6) ]]; then
 					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
 				fi
+			;;
+			IDLETIMER)
+				_val_tgtopt_set "${arg_list_idletimer_opt[ARG_LIST_IDX]}" || return 1
+			;;
+			MARK)
+				_val_tgtopt_set "${arg_list_t_mark[ARG_LIST_IDX]}" || return 1
+			;;
+			SECMARK)
+				_val_tgtopt_set "${arg_list_t_secmark[ARG_LIST_IDX]}" || return 1
+			;;
+			SET)
+				_val_tgtopt_set "${arg_list_t_set[ARG_LIST_IDX]}" || return 1
 			;;
 			TCPMSS)
 				_val_tgtopt_set "${arg_list_t_tcpmss[ARG_LIST_IDX]}" || return 1
@@ -6583,13 +6637,19 @@ for target_idx in ${!arg_list_target[@]}; do
 					return 1
 				fi
 			;;
+			TEE)
+				_val_tgtopt_set "${arg_list_tee_gw[ARG_LIST_IDX]}" || return 1
+			;;
 			TOS)
 				_val_tgtopt_set "${arg_list_t_tos[ARG_LIST_IDX]}" || return 1
+			;;
+			TPROXY)
+				_val_tgtopt_set "${arg_list_tproxy_opt[ARG_LIST_IDX]}" || return 1
 			;;
 			TTL)
 				_val_tgtopt_set "${arg_list_t_ttl[ARG_LIST_IDX]}" || return 1
 			;;
-			DNAT|SNAT|NETMAP) # should not happen if option is defined as mandatory
+			DNAT|SNAT|NETMAP)
 				check_var_no_sep_silent "${arg_list_nat_ip[ARG_LIST_IDX]}" || {
 					log -E "No $str_target target IP address specified."
 					return 1
