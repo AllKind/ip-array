@@ -248,7 +248,7 @@ cl() { # assemble the ansi code sequence
 local -i i_bg=i_fg=0
 local str_ansi_seq=""
 if [[ -z $1 || $1 = off ]]; then
-	str_ansi_seq=(0)
+	str_ansi_seq=0
 	shift $#
 fi
 while (( $# )); do
