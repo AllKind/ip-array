@@ -830,7 +830,7 @@ val_numeric_quiet() { # silenlty check if a value is numeric
 val_range() {
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 (($1 < $2)) || {
-	log -E "Starting value \`$1' of range is not greater than end of range value \`$2'."
+	log -E "Starting value \`$1' of range is not lower than end of range value \`$2'."
 	return 1
 }
 } # -------------------------------------------------------------------------

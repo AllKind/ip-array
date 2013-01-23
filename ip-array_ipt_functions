@@ -4964,9 +4964,13 @@ case "${arg_list_nfqueue[ARG_LIST_IDX]}" in
 		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-num ${arg_list_nfqueue[ARG_LIST_IDX]} "
 		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue=${arg_list_nfqueue[ARG_LIST_IDX]} "
 	;;
-	+([[:digit:]]):+([[:digit:]])) # support --queue-balance - TO DO: check if system supports
+	+([[:digit:]]):+([[:digit:]])) # support --queue-balance - TODO: check if system supports
 		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-balance ${arg_list_nfqueue[ARG_LIST_IDX]} "
 		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue-balance=${arg_list_nfqueue[ARG_LIST_IDX]} "
+	;;
+	bypass)
+		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-bypass "
+		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue-bypass "
 	;;
 	*) log -U $FUNCNAME; return 1
 esac
@@ -5398,15 +5402,16 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						return 1
 					fi
 				;;
-				+([[:digit:]]):+([[:digit:]])) # support --queue-balance - TO DO: check if system supports
-					for arg_idx in ${tmp_opt_var_value/:/ }; do
-						if ! val_16bit "${arg_idx}"; then
-							log -i "${arg_idx}" "queue number"
+			+([[:digit:]]):?(+([[:digit:]]))) # support --queue-balance - TODO: check if system supports
+				for arg_idx in $(split_val : ' ' "${tmp_opt_var_value}"); do
+						if ! val_16bit "$arg_idx"; then
+							log -i "$arg_idx" "queue number"
 							return 1
 						fi
 					done
 					val_range "${tmp_opt_var_value%:*}" "${tmp_opt_var_value#*:}" || return 1
 				;;
+				bypass) : ;; # support --queue-bypass - TODO: check if system supports
 				*) log -i "$tmp_opt_var_value" "nfqueue descriptor"
 					return 1
 			esac
