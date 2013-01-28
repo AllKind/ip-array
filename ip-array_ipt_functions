@@ -119,6 +119,10 @@ lsearch "$str_type" $UNSUPPORTED_SETLIST && {
 	log -E "ipset set type \`$str_type' is not supported."
 	$str_failcmd
 }
+if ((${#CREATED_SETS_ARRAY[@]} == $MAX_SETS)); then
+	log -E "The maximum amount of sets that can be created ($MAX_SETS) has been reached."
+	$str_failcmd
+fi
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_create=create
 fi
@@ -5403,7 +5407,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					fi
 				;;
 			+([[:digit:]]):?(+([[:digit:]]))) # support --queue-balance - TODO: check if system supports
-				for arg_idx in $(split_val : ' ' "${tmp_opt_var_value}"); do
+					for arg_idx in $(split_val : ' ' "${tmp_opt_var_value}"); do
 						if ! val_16bit "$arg_idx"; then
 							log -i "$arg_idx" "queue number"
 							return 1
