@@ -131,8 +131,6 @@ dry-run                    No acting mode. Commands are not applied.
 diff-last-activated        Compare active iptables ruleset with a saved rule listing.
 save                       Save active iptables rules to file using iptables-save.
 restore                    Restore a previously saved iptables rules using iptables-restore.
-save-known-good            Save active iptables rules to known-good file using iptables-save.
-                           It will be used, if \`RESTORE_ON_START' is enabled.
 prepare-restore-on-start   Prepare quick start scripts (modprobe, proc, tc, iptables).
                            Those will be loaded, if \`RESTORE_ON_START' is enabled.
 save-commands              Save all commands (modprobe, proc, tc, iptables) to file.
@@ -210,8 +208,8 @@ case "$MAIN_ARG" in
 		(($#)) || usage # if there isn't a second arg, show usage
 	;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|\
-	restart|restore|save|save-known-good|save-commands|save-modprobe-commands|\
-	save-proc-commands|save-iptables-commands|save-tc-commands|save-shaping-commands|\
+	restart|restore|save|save-commands|save-modprobe-commands|save-proc-commands|\
+	save-iptables-commands|save-tc-commands|save-shaping-commands|\
 	show|start|stop|test|tc-start|tc-stop|version)
 		shift
 	;;

@@ -4352,7 +4352,6 @@ case "$MAIN_ARG" in
 	save) mode_msg="saved active ruleset" ;;
 	restore) mode_msg="restored ruleset" ;;
 	save-commands) mode_msg="saved commands" ;;
-	save-known-good) mode_msg="saved known good iptables commands" ;;
 	save-iptables-commands) mode_msg="saved iptables commands" ;;
 	save-modprobe-commands) mode_msg="saved modprobe commands" ;;
 	save-proc-commands) mode_msg="saved proc commands" ;;
@@ -4677,142 +4676,28 @@ case "$1" in
 		fi
 		common_end
 	;;
-	PREPARE_QUICKSTART)
-	# prepare quick-start scripts
-		set_placeholder || return
-		set_global_log_params || return
-		common_start || return
-		handle_network_data || return
-		
-		log -T "Preparing known-good modprobe script"
-		MODE='SAVE-MODPROBE-COMMANDS'
-		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
-		module_handling || return
-		apply_rules || return
-		MODULE_CMD_ARRAY=()
-
-		log -T "Preparing known-good /proc settings script"
-		MODE='SAVE-PROC-COMMANDS'
-		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
-		set_sysctl || return
-		apply_rules || return
-		PROC_CMD_ARRAY=()
-
-		log -T "Preparing known-good traffic control script"
-		MODE='SAVE-TC-COMMANDS'
-		RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
-		set_tc_mode
-		load_tc_ruleblocks || return	
-		remove_qdiscs
-		enable_traffic_shaping
-		apply_rules || return
-		TC_CMD_ARRAY=()
-
-		log -T "Preparing known-good iptables ruleset"
-		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
-			ipt_save "$KNOWN_GOOD_RULES" || return
-		else
-			RULESETFILE="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
-			MODE='SAVE-IPT-COMMANDS'
-			compatibility_check || return
-			ipt_mode_run || return
-			all_chains_creation || return
-			load_all_ipt_rulefiles || return
-			traffic_shaping_marks || return
-			create_jump_tree 'jumps' || return
-			state_allow_chains || return
-			apply_final_rule || return
-			apply_rules || return
-		fi
-		ips_save "$KNOWN_GOOD_IPSET_RULES" || return
-
-		MODE='PREPARE_QUICKSTART'
-		minimal_end
+	PREPARE_QUICKSTART) # prepare quick-start (known-good) script
+		MODE="SAVE-COMMANDS"
+		RULESETFILE="${RULESETFILE:=$KNOWN_GOOD_RULESET}" # could be defined by cmdline-save-file
+		run_main "SAVE-COMMANDS" || return
 	;;
 	RESTORE_ON_START)
-	# quick-start - load previously saved known-good scripts
+	# quick-start - load previously saved known-good script
 		start_msg
-#		MODE='START'
-		((EXEC_COMMANDS)) || log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
+		((EXEC_COMMANDS)) || \
+			log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
 		EXEC_COMMANDS=1
 		load_pro_epilog_scripts 'prolog'
-		if ! ((NO_MODPROBE)); then
-			rvar="${SAVE_DIR}/${KNOWN_GOOD_MODPROBES}"
-			if [[ -r $rvar ]]; then
-				log -N "Loading known good modprobe commands."
-				if "$SHELL" -- "$rvar"; then
-					log -e "Sucessfully restored module settings from: $rvar."
-				else
-					cmd_err_count 'misc' "$SHELL -- $rvar"
-				fi
+		rvar="${SAVE_DIR}/${KNOWN_GOOD_RULESET}"
+		if [[ -r $rvar ]]; then
+			log -T "Loading known good ruleset"
+			if "$SHELL" -- "$rvar"; then
+				log -N "Sucessfully restored ruleset from: $rvar."
 			else
-				log -N "No modprobe script found."
+				log -E "Failed restoring ruleset from: \`$rvar'."
+				# TODO: ipt isn't the actually correct err category
+				cmd_err_count 'ipt' "$SHELL -- $rvar"
 			fi
-		else
-			log -N "Modprobing is disabled by configuration."
-		fi
-		if ((USE_IPSET)); then
-			set_default_policies_immediate || return
-			flushdel_tables_immediate || return
-			allow_loopback_immediate
-			allow_admin_connection
-			log -N "Loading known good ipset commands."
-			ips_restore "$KNOWN_GOOD_IPSET_RULES" || {
-				log -E "Failed restoring saved ipset script."
-				raise_gen_err_count
-			}
-		fi
-		log -N "Loading known good iptables commands."
-		if [[ $GEN_FORMAT = ipt ]] && ((IPTSAVE_FAILS == 0)); then
-			ipt_restore "${KNOWN_GOOD_RULES}" || {
-				log -E "Failed restoring saved iptables rules from script."
-				raise_gen_err_count
-			}
-		else
-			rvar="${SAVE_DIR}/${KNOWN_GOOD_RULES}"
-			if [[ -r $rvar ]]; then
-				if "$SHELL" -- "$rvar"; then
-					log -e "Sucessfully restored iptables rules from: $rvar."
-				else
-					log -E "Failed restoring saved iptables rules from script."
-					cmd_err_count 'misc' "$SHELL -- $rvar"
-				fi
-			else
-				log -N "No iptables script found."
-			fi
-		fi
-		if ((ENABLE_TC_SHAPING)); then
-			rvar="${SAVE_DIR}/${KNOWN_GOOD_TRAFFIC_CONTROL}"
-			if [[ -r $rvar ]]; then
-				log -N "Loading known good traffic shaping commands."
-				if "$SHELL" -- "$rvar"; then
-					log -e "Sucessfully restored traffic control rules from: $rvar."
-				else
-					log -E "Failed restoring saved tc rules from script."
-					cmd_err_count 'misc' "$SHELL -- $rvar"
-				fi
-			else
-				log -N "No traffic shaping script found."
-			fi
-		else
-			log -N "Traffic shaping is disabled by configuration."
-		fi
-		# /proc settings at last, as filesystem may not be fully populated before
-		if ! ((NO_PROC)); then
-			rvar="${SAVE_DIR}/${KNOWN_GOOD_PROC_SET}"
-			if [[ -r $rvar ]]; then
-				log -N "Loading known good /proc settings."
-				if "$SHELL" -- "$rvar"; then
-					log -e "Sucessfully restored /proc settings from: $rvar."
-				else
-					log -E "Failed restoring saved /proc rules from script."
-					cmd_err_count 'misc' "$SHELL -- $rvar"
-				fi
-			else
-				log -N "No /proc settings script found."
-			fi
-		else
-			log -N "/proc settings are disabled by configuration."
 		fi
 		common_end
 	;;
@@ -4836,13 +4721,8 @@ case "$1" in
 	;;
 	SAVE)
 		start_msg
-		if [[ $MAIN_ARG = save-known-good ]]; then
-			ipt_save "$KNOWN_GOOD_RULES" || return
-			ips_save "$KNOWN_GOOD_IPSET_RULES" || return
-		else
-			ipt_save "$SAVE_FILE" || return
-			ips_save "$IPSET_SAVE_FILE" || return
-		fi
+		ipt_save "$SAVE_FILE" || return
+		ips_save "$IPSET_SAVE_FILE" || return
 		minimal_end
 	;;
 	SAVE-IPT-COMMANDS)
