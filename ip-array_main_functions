@@ -830,7 +830,7 @@ val_numeric_quiet() { # silenlty check if a value is numeric
 val_range() {
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 (($1 < $2)) || {
-	log -E "Starting value \`$1' of range is not greater than end of range value \`$2'."
+	log -E "Starting value \`$1' of range is not lower than end of range value \`$2'."
 	return 1
 }
 } # -------------------------------------------------------------------------
@@ -1001,12 +1001,12 @@ append_array "${insert_arr}" "${append_arr}"
 $($copy_array "${insert_arr}" "${append_arr}")
 } # -------------------------------------------------------------------------
 
-dbg_arr() {
+dbg_arr() { # print array for debugging purposes
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local -i dbg_idx
+local dbg_idx
 pr_sbanner "DEBUG ARRAY: $1"
 for dbg_idx in $(arr_indicies $1); do
-	eval 'printf "%s[%s]: %s\n" "'${1}'" "'${dbg_idx}'" "${'${1}'['${dbg_idx}']}"'
+	eval 'printf "%s[%s]: %s\n" "'$1'" "'$dbg_idx'" "${'$1'['$dbg_idx']}"'
 done
 pr_sepstr
 } # -------------------------------------------------------------------------

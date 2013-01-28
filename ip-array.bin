@@ -150,7 +150,7 @@ declare -i SHOW_PUBFUNC_LIST=0
 declare STR_PUBFUNC_NAME
 
 # skeleton variables
-declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
+declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR SHARE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
 declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_file \
@@ -230,6 +230,7 @@ CONFIG SAVE_FILE IPSET_SAVE_FILE RULESETFILE DIFF_FILE
 RESTORE_ON_START
 KNOWN_GOOD_RULES KNOWN_GOOD_IPSET_RULES KNOWN_GOOD_MODPROBES KNOWN_GOOD_PROC_SET KNOWN_GOOD_TRAFFIC_CONTROL
 GEN_FORMAT
+MAX_SETS
 IPTSAVE_FAILS
 SYNTAX_CHECK
 RELOAD_TIME
@@ -430,6 +431,15 @@ declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ips
 
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
 declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error
+
+# save if match extensions exist or not
+if ((BASH_VERSINFO[0] < 4)); then
+	declare -a ARR_MATCH_EXIST
+	declare -a ARR_TARGET_EXIST
+else
+	declare -A ARR_MATCH_EXIST
+	declare -A ARR_TARGET_EXIST
+fi
 
 # template, ruleblock names
 declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY
@@ -1330,6 +1340,7 @@ set_env
 : ${SAVE_FILE:=iptables_ruleset.save}
 : ${IPSET_SAVE_FILE:=ipset_ruleset.save}
 : ${USE_IPSET:=0}
+: ${MAX_SETS:=256}
 : ${GEN_FORMAT:=cmd}
 : ${RULESETFILE:=${me}_commands.bash}
 : ${IPTSAVE_FAILS:=0}
@@ -1430,8 +1441,8 @@ check_dirs BASE_DIR CONFIG_DIR HELP_DIR LIB_DIR LOCK_DIR RULE_DIR SCRIPT_DIR \
 
 # make important variables readonly
 readonly MAIN_CONFIG RUNMODE CONFIG_DIR RULEBLOCK_DIR RULE_DIR SCRIPT_DIR \
-	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR LOCK_DIR SERVICES PROTOCOLS \
-	BASE_DIR CONFIG GEN_FORMAT IPTSAVE_FAILS RELOAD_TIME USE_IPSET
+	TEMPLATE_DIR SAVE_DIR HELP_DIR LIB_DIR LOCK_DIR SHARE_DIR SERVICES PROTOCOLS \
+	BASE_DIR CONFIG GEN_FORMAT IPTSAVE_FAILS RELOAD_TIME USE_IPSET MAX_SETS
 
 # -------------------------------------------------------------------------
 # global variables
