@@ -150,7 +150,7 @@ declare -i SHOW_PUBFUNC_LIST=0
 declare STR_PUBFUNC_NAME
 
 # skeleton variables
-declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR HELP_DIR AUTOSAVE_FILE
+declare MAIN_CONFIG RUNMODE CONF_DIR CONFIG_DIR RULEBLOCK_DIR LOCK_DIR RULE_DIR SCRIPT_DIR TEMPLATE_DIR SAVE_DIR SHARE_DIR HELP_DIR AUTOSAVE_FILE
 
 # command line options
 declare cmdline_def_file cmdline_conf_file cmdline_save_file cmdline_ipset_save_file \
@@ -431,6 +431,15 @@ declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ips
 
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
 declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error
+
+# save if match extensions exist or not
+if ((BASH_VERSINFO[0] < 4)); then
+	declare -a ARR_MATCH_EXIST
+	declare -a ARR_TARGET_EXIST
+else
+	declare -A ARR_MATCH_EXIST
+	declare -A ARR_TARGET_EXIST
+fi
 
 # template, ruleblock names
 declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY

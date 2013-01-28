@@ -1421,11 +1421,7 @@ fi
 
 val_set_flags() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-oIFS="$IFS"
-IFS=,
-set -- $1
-IFS="$oIFS"
-if (($# > 6)); then
+if (( $(members_in_string $(split_val , ' ' "$1") ) > 6)); then
 	log -E "A maximum of 6 set flags can be specified."
 	return 1
 fi
@@ -1439,11 +1435,17 @@ shift 3
 [[ $DEBUG_INFO ]] && str_dn=""
 log -e "${PF}checking for $ttarget target"
 if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
-	set_var ${ttarget}_TGT_EXIST 1 # target exists, set according variable to 1
+	if ((BASH_VERSINFO[0] < 4)); then
+		ARR_TARGET_EXIST[${#ARR_TARGET_EXIST[@]}]="$2"
+	else
+		ARR_TARGET_EXIST[$ttarget]=1
+	fi
 #	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
 	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
-	set_var ${ttarget}_TGT_EXIST 0 # target does not exist, set according variable to 0
+	if ((BASH_VERSINFO[0] >= 4)); then
+		ARR_TARGET_EXIST[$ttarget]=0
+	fi
 	if ((mandatory == 1)); then
 		log -E "iptables target \`$ttarget' does not exist."
 		return $ER_FAIL
@@ -1451,7 +1453,6 @@ else
 		log -W "iptables target \`$ttarget' does not exist."
 	fi
 fi
-readonly ${ttarget}_TGT_EXIST
 } # -------------------------------------------------------------------------
 
 val_ipt_mod() { # validate existence of iptables modules
@@ -1462,11 +1463,17 @@ shift 3
 [[ $DEBUG_INFO ]] && str_dn=""
 log -e "${PF}checking for $tmod extension"
 if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
-	set_var "${tmod}_MOD_EXIST" 1 # module exists, set according variable to 1
+	if ((BASH_VERSINFO[0] < 4)); then
+		ARR_MATCH_EXIST[${#ARR_MATCH_EXIST[@]}]="$2"
+	else
+		ARR_MATCH_EXIST[$tmod]=1
+	fi
 #	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
 	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
-	set_var "${tmod}_MOD_EXIST" 0 # module does not exist, set according variable to 0
+	if ((BASH_VERSINFO[0] >= 4)); then
+		ARR_MATCH_EXIST[$tmod]=0
+	fi
 	if ((mandatory == 1)); then
 		log -E "iptables module \`$tmod' does not exist."
 		return $ER_FAIL
@@ -1474,7 +1481,6 @@ else
 		log -W "iptables module \`$tmod' does not exist."
 	fi
 fi
-readonly ${tmod}_MOD_EXIST
 } # -------------------------------------------------------------------------
 
 check_ipt_targets() { # check for iptables targets, which are used by IP-Array
@@ -1484,8 +1490,11 @@ if ((NO_IPT_COMPAT_CHECK)); then
 	log -w "Not performing checks for iptables targets"
 	for t_idx in ${!IPARRAY_TARGETS[@]}; do
 		set -- ${IPARRAY_TARGETS[t_idx]}
-		set_var "${2}_TGT_EXIST" 1
-		readonly "${2}_TGT_EXIST"
+		if ((BASH_VERSINFO[0] < 4)); then
+			ARR_TARGET_EXIST[${#ARR_TARGET_EXIST[@]}]="$2"
+		else
+			ARR_TARGET_EXIST[$2]=1
+		fi
 	done
 else
 	log -I "Checking for iptables targets"
@@ -1493,6 +1502,8 @@ else
 		val_ipt_tgt ${IPARRAY_TARGETS[t_idx]} || return
 	done
 fi
+readonly ARR_TARGET_EXIST
+[[ $DEBUG_INFO ]] && dbg_arr ARR_TARGET_EXIST || :
 } # -------------------------------------------------------------------------
 
 check_ipt_modules() { # check for iptables match extension modules, which are used by IP-Array
@@ -1502,14 +1513,49 @@ if ((NO_IPT_COMPAT_CHECK)); then
 	log -w "Not performing checks for iptables match extensions"
 	for m_idx in ${!IPARRAY_MODULES[@]}; do
 		set -- ${IPARRAY_MODULES[m_idx]}
-		set_var "${2}_MOD_EXIST" 1
-		readonly "${2}_MOD_EXIST"
+		if ((BASH_VERSINFO[0] < 4)); then
+			ARR_MATCH_EXIST[${#ARR_MATCH_EXIST[@]}]="$2"
+		else
+			ARR_MATCH_EXIST[$2]=1
+		fi
 	done
 else
 	log -I "Checking for iptables match extension"
 	for m_idx in ${!IPARRAY_MODULES[@]}; do
 		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return
 	done
+fi
+readonly ARR_MATCH_EXIST 
+[[ $DEBUG_INFO ]] && dbg_arr ARR_MATCH_EXIST || :
+} # -------------------------------------------------------------------------
+
+check_match_exist() { # check if a match has been registered existing or not
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+if ((BASH_VERSINFO[0] < 4)); then
+	if ! lsearch $1 ${ARR_MATCH_EXIST[@]}; then
+		log -s $1
+		return 1
+	fi
+else
+	if ! (( ${ARR_MATCH_EXIST[$1]:-0} == 1 )); then
+		log -s $1
+		return 1
+	fi
+fi
+} # -------------------------------------------------------------------------
+
+check_tgt_exist() { # check if a target has been registered existing or not
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+if ((BASH_VERSINFO[0] < 4)); then
+	if ! lsearch $1 ${ARR_TARGET_EXIST[@]}; then
+		log -t $1
+		return 1
+	fi
+else
+	if ! (( ${ARR_TARGET_EXIST[$1]:-0} == 1 )); then
+		log -t $1
+		return 1
+	fi
 fi
 } # -------------------------------------------------------------------------
 
