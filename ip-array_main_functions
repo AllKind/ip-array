@@ -1589,6 +1589,22 @@ case "$1" in
 esac
 } # -------------------------------------------------------------------------
 
+check_match_exist() { # check if a match has been registered existing or not
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+if ! (($1_MOD_EXIST)); then
+	log -s $1
+   	return 1
+fi
+} # -------------------------------------------------------------------------
+
+check_tgt_exist() { # check if a target has been registered existing or not
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+if ! (($1_TGT_EXIST)); then
+	log -s $1
+   	return 1
+fi
+} # -------------------------------------------------------------------------
+
 restore_module_state() { # try to restore initial (remembered) module state
 ((${#MOD_STATE_ARRAY[@]})) || {
 	log -v 'MOD_STATE_ARRAY'

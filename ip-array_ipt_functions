@@ -1077,7 +1077,7 @@ case "$1" in
 	CHECKSUM|ECN|LOG|CLASSIFY|MARK|CONNMARK|CONNSECMARK|SECMARK|DSCP|MASQUERADE|NETMAP|\
 	REDIRECT|REJECT|SET|DNAT|SNAT|RAWDNAT|RAWSNAT|QUEUE|NFQUEUE|TCPOPTSTRIP|TOS|TTL|TCPMSS|\
 	ULOG|NFLOG|TPROXY) # these are registered
-		if ((${1}_TGT_EXIST)); then return 0
+		if check_tgt_exist $1; then return 0
 		else
 			log -t "$1"
 			return 1
@@ -1261,7 +1261,7 @@ done
 val_multi_ports() { # validate a multiport port definition string
 #local m_port str_m_ports="$(IFS=, split_val ${@})"
 local m_port str_m_ports="${@//,/ }"
-if ((multiport_MOD_EXIST)); then
+if check_match_exist multiport; then
 	check_multi_negation_first_allowed $str_m_ports || return 1
 else
 	check_multi_negation $str_m_ports || return 1
@@ -5389,16 +5389,16 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			else
 				val_ip4_addr "$tmp_opt_var_value_neg_ok" || return 1
 				if [[ ${IPSTRING} = IPRANGE ]]; then
-					((iprange_MOD_EXIST)) || { log -s 'iprange'; return 1; }
+					check_match_exist iprange || return
 				fi
 			fi
 		;;
 		(mac)
-			((mac_MOD_EXIST)) || { log -s 'mac'; return 1; }
+			check_match_exist mac || return
 			val_mac "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(nfqueue)
-			((NFQUEUE_TGT_EXIST)) || { log -t 'NFQUEUE'; return 1; }
+			check_tgt_exist NFQUEUE || return
 			case "$tmp_opt_var_value" in
 				+([[:digit:]]))
 					if ! val_16bit "$tmp_opt_var_value"; then
@@ -5421,7 +5421,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(helper)
-			((helper_MOD_EXIST)) || { log -s 'helper'; return 1; }
+			check_match_exist helper || return
 			case "$tmp_opt_var_value" in
 				+([[:word:]])) : ;;
 				+([[:word:]])-*)
@@ -5432,7 +5432,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(m_ecn)
-			((ecn_MOD_EXIST)) || { log -s 'ecn'; return 1; }
+			check_match_exist ecn || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
 			check_str_unique "$*" || return 1
 			while (($#)); do
@@ -5454,7 +5454,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			done
 		;;
 		(devgroup)
-			((devgroup_MOD_EXIST)) || { log -s 'devgroup'; return 1; }
+			check_match_exist devgroup || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
 			check_str_unique "$*" || return 1
 			while (($#)); do
@@ -5472,7 +5472,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			done
 		;;
 		(owner)
-			((owner_MOD_EXIST)) || { log -s 'owner'; return 1; }
+			check_match_exist owner || return
 			set -- ${tmp_opt_var_value//:/ }
 			check_str_unique "$*" || return 1
 			while (($#)); do
@@ -5492,7 +5492,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			done
 		;;
 		(length)
-			((length_MOD_EXIST)) || { log -s 'length'; return 1; }
+			check_match_exist length || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) : ;;
 				+([[:digit:]]):+([[:digit:]]))
@@ -5503,7 +5503,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(osf)
-			((osf_MOD_EXIST)) || { log -s 'osf'; return 1; }
+			check_match_exist osf || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:graph:]])*(:+([[:word:]]):@(0|1|2)))
 					local str="${tmp_opt_var_value_neg_ok%%:*}"
@@ -5532,7 +5532,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(rpfilter)
-			((rpfilter_MOD_EXIST)) || { log -s 'rpfilter'; return 1; }
+			check_match_exist rpfilter || return
 			case "$tmp_opt_var_value" in
 				""|rpfilter) : ;;
 			+([[:graph:]])*(:+([[:graph:]])))
@@ -5568,7 +5568,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			local -i multi_count=$(IFS=, members_in_string $tmp_opt_var_value)
 			if ((multi_count > 1)); then
 				# if the system does not support the multiport match, save data for later processing
-				if ((multiport_MOD_EXIST == 0)); then
+				if ! check_match_exist multiport; then
 					case "$tmp_opt_var" in
 						(sport)
 							multi_source_ports=1
@@ -5626,13 +5626,13 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(state)
-			((state_MOD_EXIST)) || { log -s 'state'; return 1; }
+			check_match_exist state || return
 			val_state "$tmp_opt_var_value_neg_ok" || return 1
 			# remember that there is a state match definition in the rule
 			state_in_rule=1
 		;;
 		(dccp)
-			((dccp_MOD_EXIST)) || { log -s 'dccp'; return 1; }
+			check_match_exist dccp || return
 			case "$tmp_opt_var_value" in
 				?(\!)+([[:alpha:]])*(,+([[:alpha:]])))
 					val_dccp_types "$tmp_opt_var_value_neg_ok" || return 1
@@ -5647,7 +5647,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(sctp)
-			((sctp_MOD_EXIST)) || { log -s 'sctp'; return 1; }
+			check_match_exist sctp || return
 			case "$tmp_opt_var_value_neg_ok" in
 				@(all|any|only)?(:*))
 					tmp_opt_var_value_neg_ok="${tmp_opt_var_value_neg_ok#@(all|any|only)}"
@@ -5664,22 +5664,22 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(limit)
-			((limit_MOD_EXIST)) || { log -s 'limit'; return 1; }
+			check_match_exist limit || return
 			val_limit "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(limit_burst)
-			((limit_MOD_EXIST)) || { log -s 'limit'; return 1; }
+			check_match_exist limit || return
 			val_limit_burst "$tmp_opt_var_value" || return 1
 		;;
 		(connbytes)
-			((connbytes_MOD_EXIST)) || { log -s 'connbytes'; return 1; }
+			check_match_exist connbytes || return
 			[[ $tmp_opt_var_value_neg_ok = @(original|reply|both):@(packets|bytes|avgpkt):+([[:digit:]])?(:+([[:digit:]])) ]] || {
 				log -i "$tmp_opt_var_value" "connbytes descriptor"
 				return 1
 			}
 		;;
 		(connlimit)
-			((connlimit_MOD_EXIST)) || { log -s 'connlimit'; return 1; }
+			check_match_exist connlimit || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])|+([[:digit:]])/+([[:digit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "connlimit descriptor"
@@ -5687,7 +5687,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ctstate)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
 				NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT) : ;;
 				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
@@ -5695,15 +5695,15 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ctproto)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			val_proto "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(ctorigsrc|ctorigdst|ctreplsrc|ctrepldst)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			val_ipv4_addr_no_range "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) 
 					for arg_idx in ${!tmp_pos_par_val_array[@]}; do # TODO: DOES IT REFER TO PROTO OR CTPROTO?
@@ -5724,7 +5724,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ctstatus)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
 				NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) : ;;
 				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
@@ -5732,7 +5732,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ctexpire)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) : ;;
 				+([[:digit:]]):+([[:digit:]]))
@@ -5747,25 +5747,25 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ctdir)
-			((conntrack_MOD_EXIST)) || { log -s 'conntrack'; return 1; }
+			check_match_exist conntrack || return
 			[[ $tmp_opt_var_value = @(ORIGINAL|REPLY) ]] || {
 				log -E "Invalid value \`$tmp_opt_var_value' for \`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
 				return 1
 			}
 		;;
 		(log_level)
-			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
+			check_tgt_exist LOG || return
 			val_loglevel "$tmp_opt_var_value" || return 1
 		;;
 		(log_prefix)
-			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
+			check_tgt_exist LOG || return
 			if ((${#tmp_opt_var_value} > 28)); then
 				log -E "Log prefix value \`$tmp_opt_var_value' longer then 28 characters."
 				return 1
 			fi
 		;;
 		(log_options)
-			((LOG_TGT_EXIST)) || { log -t 'LOG'; return 1; }
+			check_tgt_exist LOG || return
 			for str_var in ${tmp_opt_var_value//,/ }; do
 #			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 				[[ $str_var = @(log_tcp_seq|log_tcp_opt|log_ip_opt|log_uid) ]] || {
@@ -5775,7 +5775,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			done
 		;;
 		(nflog_group)
-			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
+			check_tgt_exist NFLOG || return
 			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
 					val_32bit_off1 "$tmp_opt_var_value" || {
@@ -5788,28 +5788,28 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(nflog_prefix)
-			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
+			check_tgt_exist NFLOG || return
 			if ((${#tmp_opt_var_value} > 63)); then
 				log -E "NFLOG prefix value \`$tmp_opt_var_value' longer then 63 characters."
 				return 1
 			fi
 		;;
 		(nflog_range)
-			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
+			check_tgt_exist NFLOG || return
 			val_numeric_quiet "$tmp_opt_var_value" || {
 				log -i "$tmp_opt_var_value" "NFLOG byte size descriptor"
 				return 1
 			}
 		;;
 		(nflog_thresh)
-			((NFLOG_TGT_EXIST)) || { log -t 'NFLOG'; return 1; }
+			check_tgt_exist NFLOG || return
 			val_numeric_quiet "$tmp_opt_var_value" || {
 				log -i "$tmp_opt_var_value" "NFLOG threshold size descriptor"
 				return 1
 			}
 		;;
 		(ulog_group)
-			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
+			check_tgt_exist ULOG || return
 			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
 					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 32)) || {
@@ -5822,21 +5822,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(ulog_prefix)
-			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
+			check_tgt_exist ULOG || return
 			if ((${#tmp_opt_var_value} > 31)); then
 				log -E "ULOG prefix value \`$tmp_opt_var_value' longer then 31 characters."
 				return 1
 			fi
 		;;
 		(ulog_range)
-			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
+			check_tgt_exist ULOG || return
 			val_numeric_quiet "$tmp_opt_var_value" || {
 				log -i "$tmp_opt_var_value" "ULOG byte size descriptor"
 				return 1
 			}
 		;;
 		(ulog_thresh)
-			((ULOG_TGT_EXIST)) || { log -t 'ULOG'; return 1; }
+			check_tgt_exist ULOG || return
 			case "$tmp_opt_var_value" in
 				+([[:digit:]])) 
 					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 50)) || {
@@ -5849,7 +5849,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(addrtype)
-			((addrtype_MOD_EXIST)) || { log -s 'addrtype'; return 1; }
+			check_match_exist addrtype || return
 			case "${tmp_opt_var_value_neg_ok%:*}" in
 				src|dst) : ;;
 				*) log -i "$tmp_opt_var_value" "addrtype descriptor."
@@ -5862,7 +5862,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(pkttype)
-			((pkttype_MOD_EXIST)) || { log -s 'pkttype'; return 1; }
+			check_match_exist pkttype || return
 			case "$tmp_opt_var_value_neg_ok" in
 				unicast|broadcast|multicast) : ;;
 				*) log -i "$tmp_opt_var_value" "pkttype descriptor"
@@ -5870,7 +5870,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(realm)
-			((realm_MOD_EXIST)) || { log -s 'realm'; return 1; }
+			check_match_exist realm || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])) : ;;
 				+([[:digit:]])/+([[:digit:]])) : ;;
@@ -5881,7 +5881,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(hashlimit)
-			((hashlimit_MOD_EXIST)) || { log -s 'hashlimit'; return 1; }
+			check_match_exist hashlimit || return
 			case "$tmp_opt_var_value" in
 				name:*:mode:@(srcip|srcport|dstip|dstport):@(upto|above):+([[:digit:]])?(/@(second|minute|hour|day))*)
 					set -- $(split_val : ' ' "$tmp_opt_var_value")
@@ -5924,7 +5924,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(recent)
-			((recent_MOD_EXIST)) || { log -s 'recent'; return 1; }
+			check_match_exist recent || return
 			case "$tmp_opt_var_value" in
 				?(\!)@(set|?(r)check|update|remove)*)
 					str_var="${tmp_opt_var_value#?(\!)@(set|?(r)check|update|remove)}"
@@ -6003,14 +6003,14 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(socket)
-			((socket_MOD_EXIST)) || { log -s 'socket'; return 1; }
+			check_match_exist socket || return
 			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket|transparent) ]]; then
 				log -i "$tmp_opt_var_value" "socket descriptor"
 				return 1
 			fi
 		;;
 		(ct_opt)
-			((CT_TGT_EXIST)) || { log -t 'CT'; return 1; }
+			check_tgt_exist CT || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
 			while (($#)); do
 				case "$1" in
@@ -6069,7 +6069,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			done
 		;;
 		(idletimer_opt)
-			((IDLETIMER_TGT_EXIST)) || { log -t 'IDLETIMER'; return 1; }
+			check_tgt_exist IDLETIMER || return
 			case "$tmp_opt_var_value" in
 				label:*:timeout:+([[:digit:]])|timeout:+([[:digit:]]):label:*)
 					case "$tmp_opt_var_value" in
@@ -6095,7 +6095,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(t_mark)
-			((MARK_TGT_EXIST)) || { log -t 'MARK'; return 1; }
+			check_tgt_exist MARK || return
 			case "$tmp_opt_var_value" in
 				?(@(set|xset):)?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
 				@(and|or|xor):?(0x)+([[:xdigit:]])) : ;;
@@ -6117,7 +6117,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(t_connmark)
-			((CONNMARK_TGT_EXIST)) || { log -t 'CONNMARK'; return 1; }
+			check_tgt_exist CONNMARK || return
 			case "$tmp_opt_var_value" in
 				@(save|restore)?(:?(0x)*([[:xdigit:]]))?(/?(0x)+([[:xdigit:]]))) : ;;
 				@(set|xset):?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
@@ -6144,18 +6144,18 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(t_secmark)
-			((SECMARK_TGT_EXIST)) || { log -t 'SECMARK'; return 1; }
+			check_tgt_exist SECMARK || return
 			# TODO: how to check for valid SElinux context
 		;;
 		(t_connsecmark)
-			((CONNSECMARK_TGT_EXIST)) || { log -t 'CONNSECMARK'; return 1; }
+			check_tgt_exist CONNSECMARK || return
 			[[ $tmp_opt_var_value = @(s|sa|sav|save|r|re|res|rest|resto|restore) ]] || {
 				log -i "$tmp_opt_var_value" "CONNSECMARK option descriptor"
 				return 1
 			}
 		;;
 		(m_mark)
-			((mark_MOD_EXIST)) || { log -s 'mark'; return 1; }
+			check_match_exist mark || return
 			case "$tmp_opt_var_value_neg_ok" in
 				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "mark match descriptor"
@@ -6168,7 +6168,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(m_connmark)
-			((connmark_MOD_EXIST)) || { log -s 'connmark'; return 1; }
+			check_match_exist connmark || return
 			case "$tmp_opt_var_value_neg_ok" in
 				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "connmark match descriptor"
@@ -6181,15 +6181,15 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 		;;
 		(m_cpu)
-			((cpu_MOD_EXIST)) || { log -s 'cpu'; return 1; }
+			check_match_exist cpu || return
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(m_quota)
-			((quota_MOD_EXIST)) || { log -s 'quota'; return 1; }
+			check_match_exist quota || return
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(m_tcpmss)
-			((tcpmss_MOD_EXIST)) || { log -s 'tcpmss'; return 1; }
+			check_match_exist tcpmss || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])|+([[:digit:]]):+([[:digit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "tcpmss match descriptor"
@@ -6197,22 +6197,22 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(m_dscp)
-			((dscp_MOD_EXIST)) || { log -s 'dscp'; return 1; }
+			check_match_exist dscp || return
 			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(t_dscp)
-			((DSCP_TGT_EXIST)) || { log -t 'DSCP'; return 1; }
+			check_tgt_exist DSCP || return
 			val_dscp "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(tee_gw)
-			((TEE_TGT_EXIST)) || { log -t 'TEE'; return 1; }
+			check_tgt_exist TEE || return
 			val_ip4_ip "$tmp_opt_var_value" || return 1
 			if [[ $tmp_opt_var_value = 0.0.0.0 ]]; then
 				log -i "$tmp_opt_var_value" "TEE gateway descriptor"
 			fi
 		;;
 		(m_tos)
-			((tos_MOD_EXIST)) || { log -s 'tos'; return 1; }
+			check_match_exist tos || return
 			case "$tmp_opt_var_value_neg_ok" in
 				+([[:digit:]])|?(0x)+([[:xdigit:]])|+([[:word:]])-+([[:word:]]))
 					val_tos "$tmp_opt_var_value_neg_ok" || return 1
@@ -6229,7 +6229,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(m_set)
-			((set_MOD_EXIST)) || { log -s 'set'; return 1; }
+			check_match_exist set || return
 			case "$tmp_opt_var_value_neg_ok" in
 				?(nomatch:)*:@(src|dst)*(,@(src|dst)))
 					if [[ $tmp_opt_var_value_neg_ok = nomatch:* ]]; then
@@ -6249,54 +6249,58 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(t_set)
-			((SET_TGT_EXIST)) || { log -t 'SET'; return 1; }
+			check_tgt_exist SET || return
 			case "$tmp_opt_var_value" in
 				@(add|del):*:@(src|dst)*(,@(src|dst)))
-					tmp_opt_var_value="${tmp_opt_var_value#@(add|del):}"
-					set -- $(split_val : ' ' "${tmp_opt_var_value%:*:@(src|dst)*(,@(src|dst))}")
-					while (($#)); do
-						case "$1" in
-							exist)
-								tmp_opt_var_value="${tmp_opt_var_value#${1}:}"
-								shift
-							   	;;
-							timeout)
-								if [[ $2 ]]; then
-									val_numeric_quiet "$2" || {
-										log -E "SET targets timeout options value \`$2' is not numeric."
+					str_var="${tmp_opt_var_value##*:}" # flags
+					tmp_opt_var_value="${tmp_opt_var_value#@(add|del):}" # remove command
+					tmp_opt_var_value="${tmp_opt_var_value%:@(src|dst)*(,@(src|dst))}" # remove flags
+					if [[ $tmp_opt_var_value = *:* ]]; then
+						set -- $(split_val : ' ' "${tmp_opt_var_value%:*}")
+						while (($#)); do
+							case "$1" in
+								exist)
+									tmp_opt_var_value="${tmp_opt_var_value#${1}:}"
+									shift
+									;;
+								timeout)
+									if [[ $2 ]]; then
+										val_numeric_quiet "$2" || {
+											log -E "SET targets timeout options value \`$2' is not numeric."
+											return 1
+										}
+									else
+										log -E "SET targets timeout options value is missing."
 										return 1
-									}
-								else
-									log -E "SET targets timeout options value is missing."
+									fi
+									tmp_opt_var_value="${tmp_opt_var_value#${1}:${2}:}"
+									shift 2
+									;;
+								*) log -i "$tmp_opt_var_value" "SET option descriptor"
 									return 1
-								fi
-								tmp_opt_var_value="${tmp_opt_var_value#${1}:${2}:}"
-								shift 2
-							   	;;
-							*) log -i "$tmp_opt_var_value" "SET option descriptor"
-								return 1
-						esac
-					done
-					val_setname "${tmp_opt_var_value%:*}" || return 1
-					val_set_flags "${tmp_opt_var_value##*:}" || return 1
+							esac
+						done
+					fi
+					val_setname "$tmp_opt_var_value" || return 1
+					val_set_flags "$str_var" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "SET option descriptor"
 					return 1
 			esac
 		;;
 		(ahspi)
-			((ah_MOD_EXIST)) || { log -s 'ah'; return 1; }
+			check_match_exist ah || return
 			val_spi "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(espspi)
-			((esp_MOD_EXIST)) || { log -s 'esp'; return 1; }
+			check_match_exist esp || return
 			val_spi "$tmp_opt_var_value_neg_ok" || return 1
 		;;
 		(u32)
-			((u32_MOD_EXIST)) || { log -s 'u32'; return 1; }
+			check_match_exist u32 || return
 		;;
 		(audit)
-			((AUDIT_TGT_EXIST)) || { log -t 'AUDIT'; return 1; }
+			check_tgt_exist AUDIT || return
 			case "$tmp_opt_var_value" in
 				accept|drop|reject) : ;;
 				*) log -i "$tmp_opt_var_value" "AUDIT option descriptor"
@@ -6304,7 +6308,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(statistic)
-			((statistic_MOD_EXIST)) || { log -s 'statistic'; return 1; }
+			check_match_exist statistic || return
 			case "$tmp_opt_var_value" in
 				random:?(\!)probability:[0-1]?(.)+([[:digit:]])) : ;;
 				nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]])) : ;;
@@ -6313,7 +6317,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(t_class)
-			((CLASSIFY_TGT_EXIST)) || { log -t 'CLASSIFY'; return 1; }
+			check_tgt_exist CLASSIFY || return
 			case "$tmp_opt_var_value" in
 				?(0x)+([[:xdigit:]])| ?(0x)+([[:xdigit:]]):?(0x)+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "class"
@@ -6321,7 +6325,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(t_tos)
-			((TOS_TGT_EXIST)) || { log -t 'TOS'; return 1; }
+			check_tgt_exist TOS || return
 			case "$tmp_opt_var_value" in
 				+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0x+([[:xdigit:]]))
 					val_tos "$tmp_opt_var_value" || return 1
@@ -6341,7 +6345,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(t_tcpmss)
-			((TCPMSS_TGT_EXIST)) || { log -t 'TCPMSS'; return 1; }
+			check_tgt_exist TCPMSS || return
 			case "$tmp_opt_var_value" in
 				pmtu|+([[:digit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "TCPMSS option descriptor"
@@ -6349,7 +6353,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(tproxy_opt)
-			((TPROXY_TGT_EXIST)) || { log -t 'TPROXY'; return 1; }
+			check_tgt_exist TPROXY || return
 			local -i tproxy_port_opt_set=0
 			set -- ${tmp_opt_var_value//:/ }
 			while (($#)); do
@@ -6404,7 +6408,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			}
 		;;
 		(tcpoptstrip)
-			((TCPOPTSTRIP_TGT_EXIST)) || { log -t 'TCPOPTSTRIP'; return 1; }
+			check_tgt_exist TCPOPTSTRIP || return
 			for str_var in ${tmp_opt_var_value//,/ }; do
 #			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 				case "$str_var" in
@@ -6462,10 +6466,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_ttl|m_ttl)
 			case "$tmp_opt_var" in
 				m_ttl)
-					((ttl_MOD_EXIST)) || { log -s 'ttl'; return 1; }
+					check_match_exist ttl || return
 				;;
 				t_ttl)
-					((TTL_TGT_EXIST)) || { log -t 'TTL'; return 1; }
+					check_tgt_exist TTL || return
 				;;
 			esac
 			case "$tmp_opt_var_value" in
@@ -6483,10 +6487,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		(reject_type) # to be verified in _post_multiply_checks
-			((REJECT_TGT_EXIST)) || { log -t 'REJECT'; return 1; }
+			check_tgt_exist REJECT || return
 		;;
 		(comment)
-			((comment_MOD_EXIST)) || { log -s 'comment'; return 1; }
+			check_match_exist comment || return
 			if ((${#tmp_opt_var_value} > 256)); then
 				log -E "Comment is longer than 256 characters: \`$tmp_opt_var_value'."
 				return 1
@@ -6604,13 +6608,13 @@ for target_idx in ${!arg_list_target[@]}; do
 				_val_tgtopt_set "${arg_list_t_connsecmark[ARG_LIST_IDX]}" || return 1
 			;;
 			CHECKSUM)
-				((CHECKSUM_TGT_EXIST)) || { log -t 'CHECKSUM'; return 1; }
+				check_tgt_exist CHECKSUM || return
 			;;
 			DSCP)
 				_val_tgtopt_set "${arg_list_t_dscp[ARG_LIST_IDX]}" || return 1
 			;;
 			ECN)
-				((ECN_TGT_EXIST)) || { log -t 'ECN'; return 1; }
+				check_tgt_exist ECN || return
 				if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|6) ]]; then
 					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
