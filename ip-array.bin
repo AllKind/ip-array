@@ -895,11 +895,11 @@ local f_name="$1"
 for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
 	set -- ${PUBLIC_FUNCTION_LIST[idx]}
 	if [[ $1 = $f_name ]]; then
-		[[ -r ${HELP_DIR}/${f_name}.txt ]] || {
-			err_msg "\`${HELP_DIR}/${f_name}.txt' does not exist"
+		[[ -r ${HELP_DIR}/public_functions/${f_name}.txt ]] || {
+			err_msg "\`${HELP_DIR}/public_functions/${f_name}.txt' does not exist"
 			return $ER_NOEX
 		}
-		"$CAT" "${HELP_DIR}/${f_name}.txt" || return 1
+		"$CAT" "${HELP_DIR}/public_functions/${f_name}.txt" || return 1
 		return 0
 	fi
 done

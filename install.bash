@@ -195,6 +195,7 @@ create_dirs "${DATAROOTDIR}/${ME}/"{scripts,template_repo.d} \
 	"${DOCDIR}/${ME}/"{docbook,examples,html} \
 	"${MANDIR}/"{man5,man8}
 create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/"{save.d,help.d,stable,test}
+create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/help.d/"{ipt_args,public_functions}
 create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,templates.d}
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
 
@@ -205,7 +206,8 @@ install_dir -m 0640 conf.d/rules.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/rules.d"
 install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/templates.d"
 
 install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
-install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d"
+install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d/public_functions"
+install_dir -m 0644 help.d/ipt_args/*.txt "${DATAROOTDIR}/${ME}/help.d/ipt_args"
 install_dir -m 0644 help.d/docbook/* "${DOCDIR}/${ME}/docbook"
 install_dir -m 0644 help.d/examples/* "${DOCDIR}/${ME}/examples"
 install_dir -m 0644 help.d/html/* "${DOCDIR}/${ME}/html"
