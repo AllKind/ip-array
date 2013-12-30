@@ -620,17 +620,16 @@ Options:
 -co, --color 0|1           Enable or disable coloured output.
 -ui, --use-ipset 0|1       Enable or disable builtin usage of ipset.
 -o, --set-option assignment [...]
-                           Override variables of the main config file (i.e. -o ENABLE_NAT=0).
+                           Override variables of the main config file i.e. ENABLE_NAT=0.
 -gf, --gen-format type     Generate commands in iptables-save format, or as command list.
                            Available types: \`cmd' (=default), \`ipt'.
 -rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
                            This option is only valid with the \`test' parameter.
--sc, --show-config [type] [...]
-                           Select type of information to show. Types: all,
-                           main (=default), defaults, targets, matches, rules,
-                           ruleblocks[:RB_NAME[,...]], templates[:TEMPL_NAME[,...]],
-                           ipt_args, ansi_codes, colors.
+-sc, --show-config [type] [...]   Select type of information to show. Types: all,
+                           main[:NAME[,...]] (=default), defaults[:NAME[,...]],
+                           targets, matches, rules, ruleblocks[:RB_NAME[,...]],
+                           templates[:TEMPL_NAME[,...]], ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -1219,7 +1218,7 @@ while (($#)); do
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
-				@(ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
+				@(defaults|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
 					cmdline_show_conf+="$opt_arg "
 				;;
 				*) pr_err "Unknown argument \`$opt_arg' to option \`$option'."

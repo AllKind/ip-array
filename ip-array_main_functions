@@ -4536,7 +4536,7 @@ fi
 } # -------------------------------------------------------------------------
 
 run_main() {
-local str_opt
+local str_opt str_x
 case "$1" in
 	RESTART|SAVE-COMMANDS|START)
 	# All of these modes use all IP-Array features
@@ -4801,7 +4801,7 @@ case "$1" in
 			case "$rvar" in
 				ansi_codes) cl_list ;;
 				colors) cl_show ;;
-				defaults)
+				defaults) # show list of defaults
 					pr_banner "Starting dump of defaults configuration:"
 					for i in ${!IPARRAY_PROGRAMS[@]}; do
 						dn2 declare -p "${IPARRAY_PROGRAMS[i]%%+([[:space:]])*}" || continue
@@ -4811,12 +4811,36 @@ case "$1" in
 					done
 					pr_banner "End of defaults configuration summary"
 				;;
-				main)
+				defaults:+([[:word:]])*(,+([[:word:]]))) # show selected (cmdline) defaults
+					str_opt="${rvar#defaults:}"
+					pr_banner "Starting dump of defaults configuration:"
+					for str_opt in ${str_opt//,/ }; do
+						for str_x in $(show_array_column IPARRAY_PROGRAMS; show_array_column DEFAULTS_LIST); do
+							if [[ $str_x = $str_opt ]]; then
+								dn2 declare -p "$str_x"
+							fi
+						done
+					done
+					pr_banner "End of defaults configuration dump"
+				;;
+				main) # show list of main config variables
 					pr_banner "Starting dump of main configuration:"
 					for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 						dn2 declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" || continue
 					done
 					pr_banner "End of main configuration summary"
+				;;
+			main:+([[:word:]])*(,+([[:word:]]))) # show list of selected (cmdline) main config variables
+					str_opt="${rvar#main:}"
+					pr_banner "Starting dump of main configuration:"
+					for str_opt in ${str_opt//,/ }; do
+						for str_x in $(show_array_column CONFIG_ENTRY_ARRAY); do
+							if [[ $str_x = $str_opt ]]; then
+								dn2 declare -p "$str_x"
+							fi
+						done
+					done
+					pr_banner "End of main configuration dump"
 				;;
 				targets)
 					pr_banner "Starting dump of supported targets:"
@@ -4844,7 +4868,7 @@ case "$1" in
 						log -W "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES does not exist. Ruleblocks must first be parsed."
 					fi
 				;;
-				ruleblocks:+([[:word:]])*(,+([[:word:]])))
+				ruleblocks:+([[:word:]])*(,+([[:word:]]))) # show selected (cmdline) ruleblocks
 					str_opt="${rvar#ruleblocks:}"
 					load_configs || return
 					load_all_ruleblocks || return
@@ -4870,7 +4894,7 @@ case "$1" in
 						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
 					fi
 				;;
-				templates:+([[:word:]])*(,+([[:word:]])))
+				templates:+([[:word:]])*(,+([[:word:]]))) # show selected (cmdline) templates
 					str_opt="${rvar#templates:}"
 					load_configs || return
 					load_all_templates || return
