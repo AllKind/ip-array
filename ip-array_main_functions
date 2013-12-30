@@ -4536,6 +4536,7 @@ fi
 } # -------------------------------------------------------------------------
 
 run_main() {
+local str_opt
 case "$1" in
 	RESTART|SAVE-COMMANDS|START)
 	# All of these modes use all IP-Array features
@@ -4843,6 +4844,21 @@ case "$1" in
 						log -W "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES does not exist. Ruleblocks must first be parsed."
 					fi
 				;;
+				ruleblocks:+([[:word:]])*(,+([[:word:]])))
+					str_opt="${rvar#ruleblocks:}"
+					load_configs || return
+					load_all_ruleblocks || return
+					if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
+						pr_banner "Starting dump of ruleblocks:"
+						set -- ${str_opt//,/ }
+						for str_opt; do
+							pr_str $str_opt | dump_arr
+						done
+						pr_banner "End of ruleblock dump"
+					else
+						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
+					fi
+				;;
 				templates)
 					load_configs || return
 					load_all_templates || return
@@ -4854,6 +4870,21 @@ case "$1" in
 						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
 					fi
 				;;
+				templates:+([[:word:]])*(,+([[:word:]])))
+					str_opt="${rvar#templates:}"
+					load_configs || return
+					load_all_templates || return
+					if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+						pr_banner "Starting template dump:"
+						set -- ${str_opt//,/ }
+						for str_opt; do
+							pr_str $str_opt | dump_arr
+						done
+						pr_banner "End of template dump"
+					else
+						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
+					fi
+					;;
 				rules)
 					load_configs || return
 					load_all_ipt_rulefiles || return

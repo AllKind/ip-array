@@ -74,7 +74,7 @@ LC_ALL='C'
 
 # about me
 readonly ME me=ip-array
-declare -r VERSION=([0]=0 [1]=5 [2]=91 [3]="bleeding-edge")	# Version
+declare -r VERSION=([0]=0 [1]=5 [2]=91 [3]="-bleeding-edge")	# Version
 declare -r STR_VERSION="v.${VERSION[0]}.$(printf "%.2d" ${VERSION[1]}).$(printf "%.2d" ${VERSION[2]})${VERSION[3]}"
 
 declare -r MAIN_ARG="$1"
@@ -629,7 +629,8 @@ Options:
 -sc, --show-config [type] [...]
                            Select type of information to show. Types: all,
                            main (=default), defaults, targets, matches, rules,
-                           ruleblocks, templates, ipt_args, ansi_codes, colors.
+                           ruleblocks[:RB_NAME[,...]], templates[:TEMPL_NAME[,...]],
+                           ipt_args, ansi_codes, colors.
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -1216,6 +1217,9 @@ while (($#)); do
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
+					cmdline_show_conf+="$opt_arg "
+				;;
+				@(ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
 					cmdline_show_conf+="$opt_arg "
 				;;
 				*) pr_err "Unknown argument \`$opt_arg' to option \`$option'."
