@@ -180,10 +180,11 @@ Options:
                            Available types: \`cmd' (=default), \`ipt'.
 -rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
--sc, --show-config [type] [...]   Select type of information to show. Types: all,
-                           main[:NAME[,...]] (=default), defaults[:NAME[,...]],
-                           targets, matches, rules, ruleblocks[:RB_NAME[,...]],
-                           templates[:TEMPL_NAME[,...]], ipt_args, ansi_codes, colors.
+-sc, --show-config [type] [...]   Select type of information to show.
+                           Types: all, ansi_codes, colors, defaults[:NAME[,...]],
+                           main[:NAME[,...]] (=default), targets, matches, rules,
+                           ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
+                           templates[:NAME[,...]].
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -266,7 +267,7 @@ while (($#)); do
 				all|main|defaults|targets|matches|rules|ruleblocks|templates|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
-				@(defaults|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
+				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
 					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
