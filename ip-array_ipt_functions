@@ -598,15 +598,17 @@ case $str_type in
 				case "$str_type" in
 					hash:ip,port,ip)
 						val_ip4_ip "${str_in%%,*}" || $str_failcmd
+						val_ip4_ip "${str_in##*,}" || $str_failcmd
 					;;
-					hash:net,port,net)
+					hash:ip,port,net)
+						val_ip4_ip "${str_in%%,*}" || $str_failcmd
 						val_ip4_cidr_net "${str_in##*,}" || $str_failcmd
 					;;
 				esac
 				str_in="${str_in%,*}"; str_in="${str_in#*,}"
 				val_ipset_port_spec "$str_in" || $str_failcmd
 			;;
-			*) log -E "Invalid entry \`$str_in' expecting: ip,[proto:]port."
+			*) log -E "Invalid entry \`$str_in' expecting: ip,[proto:]port,[ip|net]."
 				$str_failcmd
 		esac
 	;;
