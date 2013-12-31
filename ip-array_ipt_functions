@@ -177,6 +177,30 @@ case "$str_type" in
 				$str_failcmd
 			fi
 			case "$option" in
+				comment)
+					# ipset -ge v6.20 has comment flag
+					if ((IPSET_VERSION[0] < 6)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					else
+						if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 20)); then
+							log -E "Option \`$option' is not supported: ipset version is too old."
+							$str_failcmd
+						fi
+					fi
+				;;
+				counters)
+					# ipset -ge v6.19 has counters flag
+					if ((IPSET_VERSION[0] < 6)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					else
+						if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 19)); then
+							log -E "Option \`$option' is not supported: ipset version is too old."
+							$str_failcmd
+						fi
+					fi
+				;;
 				family)
 					if [[ $opt_arg = inet6 ]]; then
 						log -E "Option argument \`$opt_arg' is not supported."
@@ -647,12 +671,36 @@ while (($#)); do # remaining options
 	shift
 	if [[ $IPSET_SYNTAX = new ]]; then
 		case "$option" in
+			comment)
+				# ipset -ge v6.20 has comment flag
+				if ((IPSET_VERSION[0] < 6)); then
+					log -E "Option \`$option' is not supported: ipset version is too old."
+					$str_failcmd
+				else
+					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 20)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					fi
+				fi
+			;;
+			counters)
+				# ipset -ge v6.19 has counters flag
+				if ((IPSET_VERSION[0] < 6)); then
+					log -E "Option \`$option' is not supported: ipset version is too old."
+					$str_failcmd
+				else
+					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 19)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					fi
+				fi
+			;;
 			timeout)
 				val_numeric "$opt_arg" || $str_failcmd
 				shift
 			;;
 			nomatch)
-				[[ $str_type = @(hash:net|hash:net,port|hash:ip,port,net|hash:net,iface) ]] || {
+				[[ $str_type = @(hash:net|hash:net,port|hash:ip,port,net|hash:net,iface|hash:net,port,net) ]] || {
 					log -E "Option \`$option' is not valid with set of type \`$str_type'."
 					$str_failcmd
 				}
@@ -772,6 +820,11 @@ local str_typename str_create="-N" str_destroy="-X" str_dn="dn"
 if dn run_ipset list; then
 	IPSET_SYNTAX=new
 	str_create="create" str_destroy="destroy"
+	IPSET_VERSION="$(run_ipset version)"
+	IPSET_VERSION="${IPSET_VERSION#ipset v}"
+	IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
+	read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
+	[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || return 1
 fi
 case "$1" in
 	create)
