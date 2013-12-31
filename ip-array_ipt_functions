@@ -815,16 +815,20 @@ test_ipset() {
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 [[ ${IPSET} && -x ${IPSET} ]] || return 0
 local -i idx
-local str_typename str_create="-N" str_destroy="-X" str_dn="dn"
+local str_typename str_create="-N" str_destroy="-X" str_opt="ipmap --network 192.168.0.0/24" str_dn="dn"
 [[ $DEBUG_INFO ]] && str_dn=""
 if dn run_ipset list; then
 	IPSET_SYNTAX=new
-	str_create="create" str_destroy="destroy"
+	str_create="create" str_destroy="destroy" str_opt="hash:ip"
 	IPSET_VERSION="$(run_ipset version)"
 	IPSET_VERSION="${IPSET_VERSION#ipset v}"
 	IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
 	read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
-	[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || return 1
+	[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
+		log -f "retrieving ipset version"
+		return $ER_FAIL
+	}
+	readonly IPSET_VERSION
 fi
 case "$1" in
 	create)
@@ -834,6 +838,13 @@ case "$1" in
 				set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
 				str_typename=$1
 				shift
+				if ((IPSET_VERSION[0] >= 6)) && [[ $str_typename != *:* ]]; then
+					UNSUPPORTED_SETLIST+=" $str_typename"
+					continue
+				elif ((IPSET_VERSION[0] < 6)) && [[ $str_typename = *:* ]]; then
+					UNSUPPORTED_SETLIST+=" $str_typename"
+					continue
+				fi
 				log -e "${PF}checking $str_typename set"
 				if $str_dn run_ipset $str_create ${ME}_TEST_SET $str_typename $@; then
 					$str_dn run_ipset $str_destroy ${ME}_TEST_SET
@@ -845,8 +856,8 @@ case "$1" in
 			readonly UNSUPPORTED_SETLIST
 		fi
 		log -w "creating ipset test set"
-		$str_dn run_ipset $str_create ${ME}_TEST_SET ipmap --network 192.168.0.0/24 || {
-			log -f "creating test set: ${ME}_TEST_SET ipmap --network 192.168.0.0/24"
+		$str_dn run_ipset $str_create ${ME}_TEST_SET $str_opt || {
+			log -f "creating test set: ${ME}_TEST_SET $str_opt"
 		}
 	;;
 	delete)
