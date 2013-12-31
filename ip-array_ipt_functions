@@ -168,7 +168,7 @@ case "$str_type" in
 			esac
 		done
 	;;
-	hash:ip|hash:net|hash:ip,port|hash:net,port|hash:ip,port,ip|hash:ip,port,net|hash:net,iface)
+	hash:ip|hash:net|hash:ip,port|hash:net,port|hash:ip,port,ip|hash:ip,port,net|hash:net,iface|hash:net,port,net)
 		local -a arr_opts=("$@")
 		while (($#)); do
 			option="$1" opt_arg="$2"
