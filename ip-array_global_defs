@@ -234,6 +234,7 @@ IPARRAY_IPSET_SETTYPE_LIST=(
 "hash:net,port"
 "hash:ip,port,ip"
 "hash:ip,port,net"
+"hash:net,port,net"
 "hash:net,iface"
 "list:set"
 )
