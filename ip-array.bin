@@ -123,7 +123,7 @@ declare -ar ARR_MODNAMES_MAP=(
 # IP-Array function and definition files
 declare -r GLOBAL_DEFS="${me}_global_defs"
 declare -r IPARRAY_MAIN_FUNCTIONS="${me}_main_functions"
-declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions"
+declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions ${me}_ipset_functions"
 declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
 declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS"
 

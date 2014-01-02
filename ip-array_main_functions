@@ -623,7 +623,7 @@ tmp="${tmp//\\/\\\\}"
 #if [[ ${tmp} = *"'"* ]]; then
 #	 tmp="${tmp//\'/}"
 #fi
-#tmp="${tmp//\´/}"
+#tmp="${tmp//\Â´/}"
 #tmp="${tmp//>/\\>}"
 #set +x
 printf "%s\n" "${tmp}"
@@ -637,7 +637,7 @@ local tmp="${!s_var}"
 tmp="${tmp//\'/}"
 #tmp="${tmp//\`/}"
 #tmp="${tmp//\\/\\\\}"
-##tmp="${tmp//\´/}"
+##tmp="${tmp//\Â´/}"
 ##tmp="${tmp//\\/\\\\}"
 tmp="${tmp//\\/}"
 tmp="${tmp//\"/\\\"}"
@@ -1387,7 +1387,7 @@ then
 	str_job="${str_job%% *}"
 	readonly AT_JOB="$str_job"
 	val_numeric "$AT_JOB" || {
-		log -E "Unknown error. \´AT_JOB' variable does not contain the expected data."
+		log -E "Unknown error. \Â´AT_JOB' variable does not contain the expected data."
 		return $ER_FAIL
 	}
 	[[ $DEBUG_INFO ]] && {
