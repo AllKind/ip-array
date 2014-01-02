@@ -178,7 +178,7 @@ fi
 
 # check for install bin
 command -v install &>/dev/null || {
-	printf "Unable to find the \`install' binary in \$PATH."
+	printf "Unable to find the \`install' binary in \$PATH.\n"
    	exit 1
 }
 
