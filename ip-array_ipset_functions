@@ -817,21 +817,21 @@ test_ipset() {
 local -i idx
 local str_typename str_create="-N" str_destroy="-X" str_opt="ipmap --network 192.168.0.0/24" str_dn="dn"
 [[ $DEBUG_INFO ]] && str_dn=""
-if dn run_ipset list; then
-	IPSET_SYNTAX=new
-	str_create="create" str_destroy="destroy" str_opt="hash:ip"
-	IPSET_VERSION="$(run_ipset version)"
-	IPSET_VERSION="${IPSET_VERSION#ipset v}"
-	IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
-	read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
-	[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
-		log -f "retrieving ipset version"
-		return $ER_FAIL
-	}
-	readonly IPSET_VERSION
-fi
 case "$1" in
 	create)
+		if dn run_ipset list; then
+			IPSET_SYNTAX=new
+			str_create="create" str_destroy="destroy" str_opt="hash:ip"
+			IPSET_VERSION="$(run_ipset version)"
+			IPSET_VERSION="${IPSET_VERSION#ipset v}"
+			IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
+			read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
+			[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
+				log -f "retrieving ipset version"
+				return $ER_FAIL
+			}
+			readonly IPSET_VERSION
+		fi
 		if ((USE_IPSET)); then
 			log -I "Checking for ipset set types"
 			for idx in ${!IPARRAY_IPSET_SETTYPE_LIST[@]}; do
