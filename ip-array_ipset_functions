@@ -52,7 +52,7 @@ val_setname() { # validate name of an ipset set
 
 val_ipset_port_spec() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_p="$1" str_r_end
+local str_p="$1"
 case "$1" in
 	@(tcp|sctp|udp|udplite):\[*+([[:alpha:]])*\]-\[*+([[:alpha:]])*\])
 		val_port_range_word "${1#@(tcp|sctp|udp|udplite):}" || return
