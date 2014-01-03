@@ -695,7 +695,7 @@ while (($#)); do # remaining options
 					fi
 				fi
 			;;
-			counters)
+			bytes|packets)
 				# ipset -ge v6.19 has counters flag
 				if ((IPSET_VERSION[0] < 6)); then
 					log -E "Option \`$option' is not supported: ipset version is too old."
@@ -706,6 +706,8 @@ while (($#)); do # remaining options
 						$str_failcmd
 					fi
 				fi
+				val_numeric "$opt_arg" || $str_failcmd
+				shift
 			;;
 			timeout)
 				val_numeric "$opt_arg" || $str_failcmd
