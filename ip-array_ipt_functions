@@ -766,6 +766,11 @@ else
 fi
 } # -------------------------------------------------------------------------
 
+check_set_exist() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+lsearch "$1" $(show_array_column CREATED_SETS_ARRAY)
+} # -------------------------------------------------------------------------
+
 # ------------------------------------------------------------------------- #
 # ACTION FUNCTIONS
 # ------------------------------------------------------------------------- #
@@ -5492,7 +5497,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(m_set)
 			check_match_exist set || return
-			ipset_check_set_exist "${tmp_opt_var_value_neg_ok%:*}" || {
+			check_set_exist "${tmp_opt_var_value_neg_ok%:*}" || {
 				log -E "The set \`${tmp_opt_var_value_neg_ok%:*}' has not been created."
 				return 1
 			}
@@ -5546,7 +5551,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							esac
 						done
 					fi
-					ipset_check_set_exist "${tmp_opt_var_value%:*}" || {
+					check_set_exist "${tmp_opt_var_value%:*}" || {
 						log -E "The set \`${tmp_opt_var_value%:*}' has not been created."
 						return 1
 					}

@@ -102,11 +102,6 @@ case "$1" in
 esac
 } # -------------------------------------------------------------------------
 
-ipset_check_set_exist() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-lsearch "$1" $(show_array_column CREATED_SETS_ARRAY)
-} # -------------------------------------------------------------------------
-
 ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 ((USE_IPSET)) || {
@@ -120,7 +115,7 @@ local option opt_arg
 local strERR="Failed creating set \`$str_set'."
 local str_failcmd='eval log -F "$strERR"; raise_cfg_err_count; return 0'
 val_setname "$str_set" || { raise_cfg_err_count; return $ER_CONF; }
-ipset_check_set_exist "$str_set" && {
+check_set_exist "$str_set" && {
 	log -W "ipset set \`$str_set' has already been created."
 	return 0
 }
@@ -533,7 +528,7 @@ local arr_opts=("$@")
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=add
 fi
-ipset_check_set_exist "$str_set" || {
+check_set_exist "$str_set" || {
 	log -E "ipset set \`$str_set' has not been created."
 	$str_failcmd
 }
@@ -665,7 +660,7 @@ case $str_type in
 			;;
 		esac
 		for str_tmp in $str_in; do
-			ipset_check_set_exist "$str_tmp" || {
+			check_set_exist "$str_tmp" || {
 				log -E "ipset set \`$str_tmp' has not been created."
 				$str_failcmd
 			}
@@ -722,7 +717,7 @@ while (($#)); do # remaining options
 					log -E "Option \`$option' is not valid with set of type \`$str_type'."
 					$str_failcmd
 				}
-				ipset_check_set_exist "$opt_arg" || {
+				check_set_exist "$opt_arg" || {
 					log -E "ipset set \`$opt_arg' has not been created."
 					$str_failcmd
 				}
