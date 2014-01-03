@@ -142,7 +142,12 @@ case "$str_type" in
 			case "$option" in
 				range)
 					if [[ $str_type = bitmap:port ]]; then
-						val_port_range_word "$opt_arg" || $str_failcmd
+						if ((IPSET_VERSION[0] > 6)) || ((IPSET_VERSION[0] = 6 && IPSET_VERSION[1] >= 20)); then
+							# ipset versions greater or equal to 6.20 allow proto:port specification
+							val_ipset_port_spec "$opt_arg" || $str_failcmd
+						else
+							val_port_range_word "$opt_arg" || $str_failcmd
+						fi
 					else
 						val_ip4_addr "$opt_arg" || $str_failcmd
 					fi
