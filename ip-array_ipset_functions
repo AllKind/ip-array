@@ -811,39 +811,65 @@ val_setname "$str_set" || return
 run_ipset $str_cmd "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
+ipset_version_check() {
+local str_typename
+log -e "Checking for ipset version"
+if ! [[ $IPSET && -x $IPSET ]]; then
+	USE_IPSET=0
+	return 0
+else
+	if dn run_ipset list; then
+		IPSET_SYNTAX=new
+		IPSET_VERSION="$(run_ipset version)"
+		IPSET_VERSION="${IPSET_VERSION#ipset v}"
+		IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
+		read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
+		[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
+			log -f "retrieving ipset version"
+			return $ER_FAIL
+		}
+		readonly IPSET_VERSION
+	else
+		ISET_SYNTAX=old
+	fi
+	for str_typename in $(show_array_column IPARRAY_IPSET_SETTYPE_LIST); do
+		if ((IPSET_VERSION[0] >= 6)) && [[ $str_typename != *:* ]]; then
+			log -w "Adding \`$str_typename' set type to list of unsupported set types."
+			UNSUPPORTED_SETLIST+=" $str_typename"
+			continue
+		elif ((IPSET_VERSION[0] < 6)) && [[ $str_typename = *:* ]]; then
+			log -w "Adding \`$str_typename' set type to list of unsupported set types."
+			UNSUPPORTED_SETLIST+=" $str_typename"
+			continue
+		fi
+	done
+	if ((NO_IPT_COMPAT_CHECK)); then
+	   readonly UNSUPPORTED_SETLIST
+   fi
+fi
+} # -------------------------------------------------------------------------
+
 test_ipset() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${IPSET} && -x ${IPSET} ]] || { USE_IPSET=0; return 0; }
+[[ ${IPSET} && -x ${IPSET} ]] || return 0
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
 local -i idx
 local str_typename str_create="-N" str_destroy="-X" str_opt="ipmap --network 192.168.0.0/24" str_dn="dn"
 [[ $DEBUG_INFO ]] && str_dn=""
+if [[ $IPSET_SYNTAX = new ]]; then
+	str_create="create" str_destroy="destroy" str_opt="hash:ip"
+fi
 case "$1" in
 	create)
-		if dn run_ipset list; then
-			IPSET_SYNTAX=new
-			str_create="create" str_destroy="destroy" str_opt="hash:ip"
-			IPSET_VERSION="$(run_ipset version)"
-			IPSET_VERSION="${IPSET_VERSION#ipset v}"
-			IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
-			read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
-			[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
-				log -f "retrieving ipset version"
-				return $ER_FAIL
-			}
-			readonly IPSET_VERSION
-		fi
 		if ((USE_IPSET)); then
 			log -I "Checking for ipset set types"
 			for idx in ${!IPARRAY_IPSET_SETTYPE_LIST[@]}; do
 				set -- ${IPARRAY_IPSET_SETTYPE_LIST[idx]}
-				str_typename=$1
+				str_typename="$1"
 				shift
 				if ((IPSET_VERSION[0] >= 6)) && [[ $str_typename != *:* ]]; then
-					UNSUPPORTED_SETLIST+=" $str_typename"
 					continue
 				elif ((IPSET_VERSION[0] < 6)) && [[ $str_typename = *:* ]]; then
-					UNSUPPORTED_SETLIST+=" $str_typename"
 					continue
 				fi
 				log -e "${PF}checking $str_typename set"

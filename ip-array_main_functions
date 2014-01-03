@@ -4450,6 +4450,7 @@ compatibility_check() { # check for tables targets and extensions
 check_raw_table
 check_rawpost_table
 check_security_table
+ipset_version_check || return
 if ((EXEC_COMMANDS == 0 && NO_IPT_COMPAT_CHECK == 0)); then
 	mutex_on || return
 fi
