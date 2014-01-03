@@ -203,8 +203,8 @@ declare NO_OUTPUT_MSG	# Stores the message to display, when no additional OUTPUT
 declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
 declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types
-declare MODULE_RESTORE_FILE="${me}_modprobe_commands_$PID"
-declare PROC_RESTORE_FILE="${me}_proc_commands_$PID"	# files to save modprobe and /proc commands to
+declare MODULE_RESTORE_FILE="${me}_modprobe_restore_commands-pid-$PID"
+declare PROC_RESTORE_FILE="${me}_proc_restore_commands-pid-$PID"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i IPA_DID_LOCK=0	# Did we turn on mutex?
