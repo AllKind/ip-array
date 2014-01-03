@@ -467,6 +467,8 @@ CONFIG_ENTRY_ARRAY=(
 "MODULE_DIR print 1"
 "MODULES_TO_LOAD print 0"
 "MODS_TO_RM print 0"
+# ipset
+"IPSET_RULES print 0 check_str_unique \${IPSET}"
 # filter
 "ENABLE_FILTER bool 0"
 "FILTER_RULES print 0 check_str_unique \${FILTER_RULES}"

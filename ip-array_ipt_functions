@@ -3086,6 +3086,14 @@ elif [[ $MODE != PARSE-XML ]]; then # if we don't just parse, load rules
 fi
 } # -------------------------------------------------------------------------
 
+load_ipset_rules() { # Load the ipset rule files
+if ((USE_IPSET)); then
+	for rvar in ${IPSET_RULES}; do
+		load_rule_file "$rvar" || return
+	done
+fi
+} # -------------------------------------------------------------------------
+
 load_filter_rules() { # Load the filter table rule files
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULES}; do
@@ -3136,6 +3144,7 @@ fi
 
 load_all_ipt_rulefiles() { # load all rule files
 log -T "Loading rule files"
+load_ipset_rules || return
 load_raw_rules || return
 load_rawpost_rules || return
 load_mangle_rules || return
