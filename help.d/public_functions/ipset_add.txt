@@ -6,7 +6,7 @@ Description:
 	Add an entry to an ipset set.
 
 Usage:
-	ipset_add set-name entry
+	ipset_add set-name entry options
 
 Example:
-	ipset_add foo 10.0.1.1
+	ipset_add foo 10.0.1.1 -exist
