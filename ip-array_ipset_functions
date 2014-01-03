@@ -40,7 +40,7 @@
 
 val_setname() { # validate name of an ipset set
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-[[ ${1:0:1} != : ]] || {
+[[ ${1:0:1} = : && $IPSET_SYNTAX = old ]] && {
 	log -E "Invalid setname \`$1' - must not begin with a colon."
 	return 1
 }
@@ -104,6 +104,10 @@ esac
 
 ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+((USE_IPSET)) || {
+	log -W "ipset usage is disabled. set creation command will be ignored."
+	return 0
+}
 local str_set="$1" str_type="$2" str_create="-N" str_tmp
 shift 2
 local -a arr_opts
@@ -512,6 +516,10 @@ CREATED_SETS_ARRAY[${#CREATED_SETS_ARRAY[@]}]="$str_set $str_type"
 
 ipset_add() { # add an entry (cache) to an ipset set
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
+((USE_IPSET)) || {
+	log -W "ipset usage is disabled. ipset commands will be ignored."
+	return 0
+}
 local str_set="$1" str_in="$2" str_entry="$2" str_cmd="-A" str_type str_in option opt_arg
 local strERR="adding entry to set: \`$*'"
 local str_failcmd='eval log -F "$strERR"; raise_cfg_err_count; return 0'
@@ -821,17 +829,19 @@ else
 	if dn run_ipset list; then
 		IPSET_SYNTAX=new
 		IPSET_VERSION="$(run_ipset version)"
-		IPSET_VERSION="${IPSET_VERSION#ipset v}"
-		IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
-		read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
-		[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
-			log -f "retrieving ipset version"
-			return $ER_FAIL
-		}
-		readonly IPSET_VERSION
 	else
 		ISET_SYNTAX=old
+		IPSET_VERSION="$(run_ipset --version)"
 	fi
+	IPSET_VERSION="${IPSET_VERSION#ipset v}"
+	IPSET_VERSION="${IPSET_VERSION%,+([[:blank:]])protocol*}"
+	read -a IPSET_VERSION <<< ${IPSET_VERSION//./ }
+	[[ ${IPSET_VERSION[0]} = +([[:digit:]]) ]] || {
+		log -f "retrieving ipset version"
+		return $ER_FAIL
+	}
+	readonly IPSET_VERSION
+	[[ $DEBUG_INFO ]] && dbg_arr IPSET_VERSION
 	for str_typename in $(show_array_column IPARRAY_IPSET_SETTYPE_LIST); do
 		if ((IPSET_VERSION[0] >= 6)) && [[ $str_typename != *:* ]]; then
 			log -w "Adding \`$str_typename' set type to list of unsupported set types."
@@ -872,7 +882,7 @@ case "$1" in
 				elif ((IPSET_VERSION[0] < 6)) && [[ $str_typename = *:* ]]; then
 					continue
 				fi
-				log -e "${PF}checking $str_typename set"
+				log -e "${PF}checking for $str_typename type"
 				if $str_dn run_ipset $str_create ${ME}_TEST_SET $str_typename $@; then
 					$str_dn run_ipset $str_destroy ${ME}_TEST_SET
 				else
@@ -882,18 +892,20 @@ case "$1" in
 			done
 			readonly UNSUPPORTED_SETLIST
 		fi
+		# to make the test for the set match and SET target available,
+		# we don't honour USE_IPSET here.
 		log -w "creating ipset test set"
 		$str_dn run_ipset $str_create ${ME}_TEST_SET $str_opt || {
 			log -f "creating test set: ${ME}_TEST_SET $str_opt"
 		}
 	;;
 	delete)
-		if ((IPSET_VERSION[0])); then
-			log -w "deleting ipset test set"
-			$str_dn run_ipset $str_destroy ${ME}_TEST_SET || {
-				log -f "deleting test set: \`${ME}_TEST_SET'"
-			}
-		fi
+#		if ((IPSET_VERSION[0])); then # commented out as we bail out in version check
+		log -w "deleting ipset test set"
+		$str_dn run_ipset $str_destroy ${ME}_TEST_SET || {
+			log -f "deleting test set: \`${ME}_TEST_SET'"
+		}
+#		fi
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
