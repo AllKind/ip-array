@@ -1,0 +1,16 @@
+dport:	Name(s) of the destination port(s)
+	Equivalent to --dport|--destination-port.
+	Multiple ports can be entered by separating the names with a comma (,).
+	In that case negation is not valid.  Except the multiport match
+	is available, which will invert the whole match.
+	If the multiport match is available a maximum of 15 ports can be enterd.
+	If icmp is used as protocol, the value of dport will be
+	interpreted as icmp_type.
+
+	Examples:
+		dport=22
+		dport=ftp,ssh,1234
+		dport=!23
+		dport=!31337,12345
+
+

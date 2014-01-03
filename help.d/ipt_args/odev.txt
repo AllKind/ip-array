@@ -1,2 +1,11 @@
-odev:	name of the outgoing interface.
+odev:	Name(s) of the input interface(s)
 	Equivalent to -o|--out-interface.
+	Multiple devices can be entered by separating the names with a comma (,).
+	In that case negation is not valid.
+
+	Examples:
+		odev=eth0
+		odev=eth0,eth1
+		odev=eth+
+		odev=!eth0
+

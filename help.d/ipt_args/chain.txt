@@ -1,0 +1,7 @@
+chain: 	Name(s) of the chain(s).
+	Multiple chains can be entered by separating the names with a comma (,).
+
+	Examples:
+		chain=INPUT
+		chain=MY_CHAIN_1,MY_CHAIN_2
+

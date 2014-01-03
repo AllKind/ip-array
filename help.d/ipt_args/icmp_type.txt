@@ -1,0 +1,13 @@
+icmp_type:	Name(s) of the ICMP types(s), or numeric type or type/code.
+	Equivalent to --icmp-type.
+	Multiple types can be entered by separating the names with a comma (,).
+	In that case negation is not valid.
+	If icmp is used as protocol, the value of dport or sport will be
+	interpreted as icmp_type.
+
+	Examples:
+		icmp_type=8
+		icmp_type=!echo-request
+		icmp_type=ping,pong
+		icmp_type=3/0
+
