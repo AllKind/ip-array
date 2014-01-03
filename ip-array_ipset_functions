@@ -812,8 +812,9 @@ run_ipset $str_cmd "$str_set" "$str_entry"
 } # -------------------------------------------------------------------------
 
 test_ipset() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+[[ ${IPSET} && -x ${IPSET} ]] || { USE_IPSET=0; return 0; }
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
-[[ ${IPSET} && -x ${IPSET} ]] || return 0
 local -i idx
 local str_typename str_create="-N" str_destroy="-X" str_opt="ipmap --network 192.168.0.0/24" str_dn="dn"
 [[ $DEBUG_INFO ]] && str_dn=""
@@ -861,10 +862,12 @@ case "$1" in
 		}
 	;;
 	delete)
-		log -w "deleting ipset test set"
-		$str_dn run_ipset $str_destroy ${ME}_TEST_SET || {
-			log -f "deleting test set: \`${ME}_TEST_SET'"
-		}
+		if ((IPSET_VERSION[0])); then
+			log -w "deleting ipset test set"
+			$str_dn run_ipset $str_destroy ${ME}_TEST_SET || {
+				log -f "deleting test set: \`${ME}_TEST_SET'"
+			}
+		fi
 	;;
 	*) log -o "$1" $FUNCNAME; return 1
 esac
