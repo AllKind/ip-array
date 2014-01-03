@@ -5492,6 +5492,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(m_set)
 			check_match_exist set || return
+			ipset_check_set_exist "${tmp_opt_var_value_neg_ok%:*}" || {
+				log -E "The set \`${tmp_opt_var_value_neg_ok%:*}' has not been created."
+				return 1
+			}
 			case "$tmp_opt_var_value_neg_ok" in
 				?(nomatch:)*:@(src|dst)*(,@(src|dst)))
 					if [[ $tmp_opt_var_value_neg_ok = nomatch:* ]]; then
@@ -5503,7 +5507,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						fi
 					   	tmp_opt_var_value_neg_ok="${tmp_opt_var_value_neg_ok#nomatch:}"
 					fi
-					val_setname "${tmp_opt_var_value_neg_ok%:*}" || return 1
 					val_set_flags "${tmp_opt_var_value_neg_ok##*:}" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "set match descriptor"
@@ -5543,7 +5546,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							esac
 						done
 					fi
-					val_setname "$tmp_opt_var_value" || return 1
+					ipset_check_set_exist "${tmp_opt_var_value%:*}" || {
+						log -E "The set \`${tmp_opt_var_value%:*}' has not been created."
+						return 1
+					}
 					val_set_flags "$str_var" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "SET option descriptor"

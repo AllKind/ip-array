@@ -102,6 +102,11 @@ case "$1" in
 esac
 } # -------------------------------------------------------------------------
 
+ipset_check_set_exist() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+lsearch "$1" $(show_array_column CREATED_SETS_ARRAY)
+} # -------------------------------------------------------------------------
+
 ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 ((USE_IPSET)) || {
@@ -115,7 +120,7 @@ local option opt_arg
 local strERR="Failed creating set \`$str_set'."
 local str_failcmd='eval log -F "$strERR"; raise_cfg_err_count; return 0'
 val_setname "$str_set" || { raise_cfg_err_count; return $ER_CONF; }
-lsearch "$str_set" $(show_array_column CREATED_SETS_ARRAY) && {
+ipset_check_set_exist "$str_set" && {
 	log -W "ipset set \`$str_set' has already been created."
 	return 0
 }
@@ -528,11 +533,11 @@ local arr_opts=("$@")
 if [[ $IPSET_SYNTAX = new ]]; then
 	str_cmd=add
 fi
-val_setname "$str_set" || $str_failcmd
-str_type=$(printf "%s\n" "${CREATED_SETS_ARRAY[@]}" | lsearch_echo "$str_set") || {
+ipset_check_set_exist "$str_set" || {
 	log -E "ipset set \`$str_set' has not been created."
 	$str_failcmd
 }
+str_type=$(printf "%s\n" "${CREATED_SETS_ARRAY[@]}" | lsearch_echo "$str_set")
 str_type=${str_type#$str_set }
 case $str_type in
 	ipmap|bitmap:ip|iphash|hash:ip)
@@ -660,8 +665,7 @@ case $str_type in
 			;;
 		esac
 		for str_tmp in $str_in; do
-			val_setname "$str_tmp" || $str_failcmd
-			lsearch "$str_tmp" $(show_array_column CREATED_SETS_ARRAY) || {
+			ipset_check_set_exist "$str_tmp" || {
 				log -E "ipset set \`$str_tmp' has not been created."
 				$str_failcmd
 			}
@@ -718,8 +722,7 @@ while (($#)); do # remaining options
 					log -E "Option \`$option' is not valid with set of type \`$str_type'."
 					$str_failcmd
 				}
-				val_setname "$opt_arg" || $str_failcmd
-				lsearch "$opt_arg" $(show_array_column CREATED_SETS_ARRAY) || {
+				ipset_check_set_exist "$opt_arg" || {
 					log -E "ipset set \`$opt_arg' has not been created."
 					$str_failcmd
 				}
