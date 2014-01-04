@@ -1,0 +1,7 @@
+state:	state match specification.
+	Equivalent to `-m state --state'.
+
+	Examples:
+		state=NEW
+		state=ESTABLISHED,RELATED
+

@@ -1,0 +1,9 @@
+realm:	realm match specification.
+	Equivalent to `-m realm --realm'.
+
+	Synopsis: [!]value[/mask] | [!]real-name
+
+	Examples:
+		realm=7
+		realm=!my_named_realm
+

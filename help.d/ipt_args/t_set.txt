@@ -1,0 +1,11 @@
+t_set:	SET target specification.
+
+	Synopsis: (add|del):[option:[opt_arg:][...]]setname:(dst|src)[,...]
+		options:
+			exist
+			timeout:value
+
+	Examples:
+		t_set=add:SET-A:dst
+		t_set=add:exist:timeout:1024:SET-A:dst,src
+
