@@ -4831,7 +4831,7 @@ case "$1" in
 					done
 					pr_banner "End of main configuration summary"
 				;;
-			main:+([[:word:]])*(,+([[:word:]]))) # show list of selected (cmdline) main config variables
+				main:+([[:word:]])*(,+([[:word:]]))) # show list of selected (cmdline) main config variables
 					str_opt="${rvar#main:}"
 					pr_banner "Starting dump of main configuration:"
 					for str_opt in ${str_opt//,/ }; do
@@ -4852,6 +4852,35 @@ case "$1" in
 					pr_banner "Starting dump of supported iptables matches:"
 					show_array_column IPARRAY_MODULES 2 | run_sort
 					pr_banner "End of supported iptables matches summary."
+				;;
+				public_functions)
+					pr_banner "Starting dump of public functions:"
+					for idx in ${!PUBLIC_FUNCTION_LIST[@]}; do
+						set -- ${PUBLIC_FUNCTION_LIST[idx]}
+						str_opt="$1"
+						shift
+						printf "%s:\n\t%s" "$str_opt" "$*"; echo
+					done
+					pr_banner "End of public function list."
+				;;
+				public_functions:*)
+					str_opt="${rvar#public_functions:}"
+					pr_banner "Starting dump of public functions:"
+					for str_opt in ${str_opt//,/ }; do
+						for str_x in $(show_array_column PUBLIC_FUNCTION_LIST); do
+							if [[ $str_opt = $str_x ]]; then
+								[[ -r ${HELP_DIR}/public_functions/${str_x}.txt ]] || {
+									err_msg "\`${HELP_DIR}/public_functions/${str_x}.txt' does not exist"
+									return $ER_NOEX
+								}
+								"$CAT" "${HELP_DIR}/public_functions/${str_x}.txt" || return 1
+								continue 2
+							fi
+						done
+						err_msg "Unknown public function name \`$str_opt'."
+						return $ER_USE
+					done
+					pr_banner "End of public function list."
 				;;
 				ipt_args)
 					pr_banner "Starting dump of iptables arguments:"

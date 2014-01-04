@@ -184,13 +184,10 @@ Options:
                            Types: all, ansi_codes, colors, defaults[:NAME[,...]],
                            main[:NAME[,...]] (=default), targets, matches, rules,
                            ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
-                           templates[:NAME[,...]].
+                           templates[:NAME[,...]], public_functions[:NAME[,...]].
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
--PF, --public-functions [function name]
-                           Only available with the \`help' parameter.
-                           List public functions, or show help about one of them.
 --                         Stop further options processing.
 \nParameters, options and their arguments must be separated by whitespace.\n
 "
@@ -257,17 +254,16 @@ while (($#)); do
 			esac
 		;;
 		# could be 1 arg
-		-PF|--public-functions)
-			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
-			[[ $opt_arg = +([[:word:]]) ]] && ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg" || continue
-		;;
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|rules|ruleblocks|templates|ipt_args|ansi_codes|colors)
+				all|main|defaults|targets|matches|rules|ruleblocks|templates|public_functions|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				public_functions:*)
 					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				*) continue
