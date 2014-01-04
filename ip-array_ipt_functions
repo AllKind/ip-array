@@ -3542,21 +3542,53 @@ MSG_LIST_M_TCPMSS[RULE_LIST_IDX]="tcpmss=${arg_list_m_tcpmss[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_m_set() { # fill the set match rulelist and msglist arrays
-local str_entry 
+local str_entry str_neg=""
+local -a arr_tmp
 # ugly hack to allow more than one ipset match (m_set)
 unset RULELIST_M_SET[RULE_LIST_IDX] MSG_LIST_M_SET[RULE_LIST_IDX]
 for str_entry in ${arg_list_m_set[ARG_LIST_IDX]}; do
-	local str_neg="" str_nomatch="" rvar="$str_entry"
-	string_negated "$str_entry" && str_neg="! " && rvar="$(remove_negation "$str_entry")"
-	if [[ $rvar = nomatch:* ]]; then
-		str_nomatch="--return--nomatch "
-		rvar="${rvar#nomatch:}"
-	fi
+	set -- $(split_val : ' ' "$str_entry")
+	str_neg="" arr_tmp=()
+	string_negated "$1" && str_neg="! "
+	arr_tmp[${#arr_tmp[@]}]="-m set ${str_neg}--match-set $(remove_negation "$1") $2"
+	shift 2
+	while (($#)); do
+		case "$1" in
+			nomatch)
+				arr_tmp[${#arr_tmp[@]}]="--return-nomatch"
+				shift
+			;;
+			?(\!)counters|?(\!)subcounters)
+				str_neg=""
+				string_negated "$1" && str_neg="! "
+				arr_tmp[${#arr_tmp[@]}]="${str_neg}--update-$(remove_negation "$1")"
+				shift
+			;;
+			bytes|packets)
+				str_neg=""
+				string_negated "$2" && str_neg="! "
+				case "$2" in
+					(?(\!)+([[:digit:]]))
+						arr_tmp[${#arr_tmp[@]}]="${str_neg}--${1}-eq $(remove_negation $2)"
+					;;
+					("+"+([[:digit:]]))
+						arr_tmp[${#arr_tmp[@]}]="--${1}-gt ${2#\+}"
+					;;
+					("-"+([[:digit:]]))
+						arr_tmp[${#arr_tmp[@]}]="--${1}-lt ${2#\-}"
+					;;
+					*) log -U $FUNCNAME; return 1
+				esac
+				shift 2
+			;;
+			*) log -U $FUNCNAME; return 1
+		esac
+	done
 	if [[ ${RULELIST_M_SET[RULE_LIST_IDX]} ]]; then
-		RULELIST_M_SET[RULE_LIST_IDX]="${RULELIST_M_SET[RULE_LIST_IDX]}-m set ${str_nomatch}${str_neg}--match-set ${rvar/:/ } "
+		RULELIST_M_SET[RULE_LIST_IDX]="${RULELIST_M_SET[RULE_LIST_IDX]}${arr_tmp[@]} "
 		MSG_LIST_M_SET[RULE_LIST_IDX]="${MSG_LIST_M_SET[RULE_LIST_IDX]}set=${str_entry} "
 	else
-		RULELIST_M_SET[RULE_LIST_IDX]="-m set ${str_nomatch}${str_neg}--match-set ${rvar/:/ } "
+		RULELIST_M_SET[RULE_LIST_IDX]="${arr_tmp[@]} "
 		MSG_LIST_M_SET[RULE_LIST_IDX]="set=${str_entry} "
 	fi
 done
@@ -5497,22 +5529,61 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(m_set)
 			check_match_exist set || return
-			check_set_exist "${tmp_opt_var_value_neg_ok%:*}" || {
-				log -E "The set \`${tmp_opt_var_value_neg_ok%:*}' has not been created."
-				return 1
-			}
 			case "$tmp_opt_var_value_neg_ok" in
-				?(nomatch:)*:@(src|dst)*(,@(src|dst)))
-					if [[ $tmp_opt_var_value_neg_ok = nomatch:* ]]; then
-						if ((KERN_VER[0] < 3)); then
-							log -E "--return-nomatch option is not supported. Kernel version is too low."
-							return 1
-						elif ((KERN_VER[0] == 3 && KERN_VER[1] < 7)); then
-							log -W "Kernel version is below 3.7, --return-nomatch option is not supported, unless it has been patch in."
-						fi
-					   	tmp_opt_var_value_neg_ok="${tmp_opt_var_value_neg_ok#nomatch:}"
-					fi
-					val_set_flags "${tmp_opt_var_value_neg_ok##*:}" || return 1
+				*:@(src|dst)*(,@(src|dst))*(:*))
+					local str_setn="${tmp_opt_var_value_neg_ok%%:*}"
+					local str_flags="${tmp_opt_var_value_neg_ok#${str_setn}:}"
+					local str_flags="${str_flags%%:*}"
+					local str_opts="${tmp_opt_var_value_neg_ok#*${str_flags}?(:)}"
+					local str_setn="${str_setn#\!}"
+					check_set_exist "$str_setn" || {
+						log -E "The set \`$str_setn' has not been created."
+						return 1
+					}
+					val_set_flags "$str_flags" || return 1
+					set -- ${str_opts//:/ }
+					while (($#)); do
+						case "$1" in
+							nomatch|?(\!)counters|?(\!)subcounters)
+								if [[ $1 = nomatch ]]; then
+									if ((KERN_VER[0] < 3)); then
+										log -E "--return-nomatch option is not supported. Kernel version is too low."
+										return 1
+									elif ((KERN_VER[0] == 3 && KERN_VER[1] < 7)); then
+										log -W "Kernel version is below 3.7, --return-nomatch option is not supported, unless it has been patch in."
+									fi
+								elif [[ $1 = ?(\!)@(counters|subcounters) ]]; then
+									if ((KERN_VER[0] < 3)); then
+										log -E "--update-${1#\!} option is not supported. Kernel version is too low."
+										return 1
+									elif ((KERN_VER[0] == 3 && KERN_VER[1] < 10)); then
+										log -W "Kernel version is below 3.10, --update-${1#\!} option is not supported, unless it has been patch in."
+									fi
+								fi
+								shift
+							;;
+							bytes|packets)
+								if ((KERN_VER[0] < 3)); then
+									log -E "--${1}-xx option is not supported. Kernel version is too low."
+									return 1
+								elif ((KERN_VER[0] == 3 && KERN_VER[1] < 10)); then
+									log -W "Kernel version is below 3.10, --${1}-xx option is not supported, unless it has been patch in."
+								fi
+								if [[ $2 = @(?(\!)+([[:digit:]])|"+"+([[:digit:]])|"-"+([[:digit:]])) ]]; then
+									val_numeric_quiet "${2#@(\!|\+|-)}" || {
+										log -E "set match $1 options value \`${2#@(\!|\+|-)}' is not numeric."
+										return 1
+									}
+								else
+									log -E "Illegal value for $1 option: \`$2'"
+									return 1
+								fi
+								shift 2
+							;;
+							*) log -i "$1" "set match descriptor"
+								return 1
+						esac
+					done
 				;;
 				*) log -i "$tmp_opt_var_value" "set match descriptor"
 					return 1
