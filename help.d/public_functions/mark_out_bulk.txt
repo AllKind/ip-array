@@ -1,6 +1,5 @@
 
-Name:
-	mark_out_bulk
+Name: mark_out_bulk
 
 Description:
 	Mark (set iptables marks) OUTPUT traffic to be pushed into the bulk qdisc.

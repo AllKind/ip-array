@@ -1,6 +1,5 @@
 
-Name:
-	ipset_create
+Name: ipset_create
 
 Description:
 	Add an ipset set.

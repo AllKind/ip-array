@@ -1,6 +1,5 @@
 
-Name:
-	add_rule
+Name: add_rule
 
 Description:
 	Add an iptables rule to the command queue (array).

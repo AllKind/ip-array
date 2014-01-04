@@ -1,6 +1,5 @@
 
-Name:
-	enable_ipsec
+Name: enable_ipsec
 
 Description:
 	Collect IPSEC related traffic into the automatically created ipsec-chain.

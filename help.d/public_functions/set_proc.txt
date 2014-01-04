@@ -1,6 +1,5 @@
 
-Name:
-	set_proc
+Name: set_proc
 
 Description:
 	Set a configuration value in the `/proc' filesystem.

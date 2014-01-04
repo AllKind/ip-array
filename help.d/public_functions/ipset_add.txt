@@ -1,6 +1,5 @@
 
-Name:
-	ipset_add
+Name: ipset_add
 
 Description:
 	Add an entry to an ipset set.

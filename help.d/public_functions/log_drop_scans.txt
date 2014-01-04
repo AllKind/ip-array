@@ -1,6 +1,5 @@
 
-Name:
-	log_drop_scans
+Name: log_drop_scans
 
 Description:
 	Globally LOG and/or DROP (nmap) scans.

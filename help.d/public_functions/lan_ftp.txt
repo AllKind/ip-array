@@ -1,6 +1,5 @@
 
-Name:
-	lan_ftp
+Name: lan_ftp
 
 Description:
 	Permit forwarded FTP traffic from certain LAN(s). - Requires `ALLOW_LAN_FTP' variable to be configured.

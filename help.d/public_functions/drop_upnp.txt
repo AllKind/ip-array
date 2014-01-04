@@ -1,6 +1,5 @@
 
-Name:
-	drop_upnp
+Name: drop_upnp
 
 Description:
 	Drop UPNP (Universal Plug & Play) broadcast on certain interfaces.

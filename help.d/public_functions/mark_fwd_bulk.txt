@@ -1,6 +1,5 @@
 
-Name:
-	mark_fwd_bulk
+Name: mark_fwd_bulk
 
 Description:
 	Mark (set iptables marks) forwarding traffic to be pushed into the bulk qdisc.

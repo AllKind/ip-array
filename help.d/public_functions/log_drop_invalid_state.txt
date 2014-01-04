@@ -1,6 +1,5 @@
 
-Name:
-	log_drop_invalid_state
+Name: log_drop_invalid_state
 
 Description:
 	Globally log and/or drop packets in invalid state.

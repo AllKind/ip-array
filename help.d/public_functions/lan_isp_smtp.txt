@@ -1,6 +1,5 @@
 
-Name:
-	lan_isp_smtp
+Name: lan_isp_smtp
 
 Description:
 	Permit forwarded SMTP traffic from LAN(s) to remote ISP mailservers.

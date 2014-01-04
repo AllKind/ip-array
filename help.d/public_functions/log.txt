@@ -1,6 +1,5 @@
 
-Name:
-	log
+Name: log
 
 Description:
 	IP-Array messaging to stdout/stderr and/or syslog.

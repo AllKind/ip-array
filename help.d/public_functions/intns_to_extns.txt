@@ -1,6 +1,5 @@
 
-Name:
-	intns_to_extns
+Name: intns_to_extns
 
 Description:
 	Permit forwarded DNS (TCP & UDP) traffic from local nameservers to remote ISP nameservers.

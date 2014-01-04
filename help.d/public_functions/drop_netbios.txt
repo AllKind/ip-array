@@ -1,6 +1,5 @@
 
-Name:
-	drop_netbios
+Name: drop_netbios
 
 Description:
 	Drop NetBios broadcast on certain interfaces.

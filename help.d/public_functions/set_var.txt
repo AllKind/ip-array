@@ -1,6 +1,5 @@
 
-Name:
-	set_var
+Name: set_var
 
 Description:
 	Set a variable to value.

@@ -1,6 +1,5 @@
 
-Name:
-	create_chain
+Name: create_chain
 	
 Description:
 	Create an iptables chain (add command to the command queue).

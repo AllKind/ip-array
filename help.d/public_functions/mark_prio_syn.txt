@@ -1,6 +1,5 @@
 
-Name:
-	mark_prio_syn
+Name: mark_prio_syn
 
 Description:
 	Mark (set iptables marks) forwarding SYN packets to be priorized.

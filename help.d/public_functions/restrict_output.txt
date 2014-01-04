@@ -1,6 +1,5 @@
 
-Name:
-	restrict_output
+Name: restrict_output
 
 Description:
 	Handle restrictions of the OUTPUT chain (locally generated traffic).

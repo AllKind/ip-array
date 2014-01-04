@@ -1,6 +1,5 @@
 
-Name:
-	delete_chain
+Name: delete_chain
 
 Description:
 	Delete (flush first) an iptables chain (add command to the command queue).

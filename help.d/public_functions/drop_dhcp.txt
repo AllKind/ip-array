@@ -1,6 +1,5 @@
 
-Name:
-	drop_dhcp
+Name: drop_dhcp
 
 Description:
 	Drop DHCP broadcast on certain interfaces.

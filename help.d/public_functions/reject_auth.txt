@@ -1,6 +1,5 @@
 
-Name:
-	reject_auth
+Name: reject_auth
 
 Description:
 	Reject INPUT AUTH (TCP port 113) traffic on certain interfaces.
