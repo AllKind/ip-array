@@ -1,4 +1,4 @@
-realm:	realm match specification.
+realm: realm match specification.
 	Equivalent to `-m realm --realm'.
 
 	Synopsis: [!]value[/mask] | [!]real-name

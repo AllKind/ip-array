@@ -1,4 +1,4 @@
-sport:	Name(s) of the source port(s)
+sport: Name(s) of the source port(s)
 	Equivalent to --sport|--source-port.
 	Multiple ports can be entered by separating the names with a comma (,).
 	In that case negation is not valid.  Except the multiport match

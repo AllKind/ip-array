@@ -1,4 +1,4 @@
-comment:	Comment of the comment match.
+comment: Comment of the comment match.
 
 	Example:
 		comment="My smart comment"

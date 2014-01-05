@@ -1,0 +1,10 @@
+espspi: esp match.
+	Eqivalent to `-m esp --espspi'.
+
+	Synopsis: [!]spi[:spi]
+
+	Examples:
+		espspi=1
+		espspi=1:2
+		espspi=!1
+

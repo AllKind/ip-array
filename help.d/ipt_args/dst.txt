@@ -1,4 +1,4 @@
-dst:	Destination address specification.
+dst: Destination address specification.
 		Equivalent to -d|--destination.
 		In addition to IP addresses network names
 		or ip-range definitions can be used.
@@ -8,5 +8,4 @@ dst:	Destination address specification.
 		dst=10.0.0.0/16
 		dst=!MY_NETWORK
 		dst=10.0.0.1-10.0.0.127
-
 

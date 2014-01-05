@@ -1,4 +1,4 @@
-m_cpu:	cpu match specification.
+m_cpu: cpu match specification.
 	Equivalent to `-m cpu --cpu'.
 
 	Examples:

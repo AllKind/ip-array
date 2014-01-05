@@ -1,0 +1,6 @@
+reject_type: REJECT target type specification.
+	Equivalent to `-j REJECT --reject-with'.
+
+	Example:
+		reject_type=tcp-reset
+

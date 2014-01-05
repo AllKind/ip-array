@@ -1,2 +1,2 @@
-table:	name of the iptables table (i.e. filter)
+table: name of the iptables table (i.e. filter)
 

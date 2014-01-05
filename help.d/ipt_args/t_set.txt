@@ -1,4 +1,4 @@
-t_set:	SET target specification.
+t_set: SET target specification.
 
 	Synopsis: (add|del):[option:[opt_arg:][...]]setname:(dst|src)[,...]
 		options:

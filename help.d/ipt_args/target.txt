@@ -1,4 +1,4 @@
-target: 	Name(s) of the target(s).
+target: Name(s) of the target(s).
 	Multiple targets can be entered by separating the names with a comma (,).
 	To specify an empty target use the value `empty'.
 	To goto (--goto) to a target chain, instead of jumping, use the prefix `goto:'.

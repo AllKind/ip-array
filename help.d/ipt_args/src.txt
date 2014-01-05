@@ -1,4 +1,4 @@
-src:	Source address specification.
+src: Source address specification.
 		Equivalent to -s|--source.
 		In addition to IP addresses network names
 		or ip-range definitions can be used.

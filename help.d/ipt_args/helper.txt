@@ -1,4 +1,4 @@
-helper:	Name of the netfilter conntrack helper.
+helper: Name of the netfilter conntrack helper.
 
 	Examples:
 		helper=ftp

@@ -1,0 +1,5 @@
+tee_gw: TEE target gateway specification.
+
+	Example:
+		tee_gw=10.0.0.1
+

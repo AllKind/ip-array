@@ -1,4 +1,4 @@
-chain: 	Name(s) of the chain(s).
+chain: Name(s) of the chain(s).
 	Multiple chains can be entered by separating the names with a comma (,).
 
 	Examples:

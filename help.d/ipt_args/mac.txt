@@ -1,4 +1,4 @@
-mac:	MAC address specification.
+mac: MAC address specification.
 	Eqivalent to -m mac --mac-source.
 
 	Example:

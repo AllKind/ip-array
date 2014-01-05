@@ -1,4 +1,4 @@
-m_set:	set match specification.
+m_set: set match specification.
 	This argument can be used two times to match on more than one set.
 
 	Synopsis: [!]setname:(dst|src)[,...]:option:[opt_arg:][...]

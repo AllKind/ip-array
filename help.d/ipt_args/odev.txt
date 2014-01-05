@@ -1,4 +1,4 @@
-odev:	Name(s) of the input interface(s)
+odev: Name(s) of the input interface(s)
 	Equivalent to -o|--out-interface.
 	Multiple devices can be entered by separating the names with a comma (,).
 	In that case negation is not valid.
