@@ -3832,7 +3832,7 @@ case "${arg_list_statistic[ARG_LIST_IDX]}" in
 	;;
 	nth:?(\!)every:+([[:digit:]]))
 		str_val="${arg_list_statistic[ARG_LIST_IDX]}"
-		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode nth ${str_neg}--every ${str_val#*every:} "
+		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode nth ${str_neg}--every ${str_val#*every:} --packet 0 "
 	;;
 	nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]]))
 		str_val="${arg_list_statistic[ARG_LIST_IDX]%:packet*}"
