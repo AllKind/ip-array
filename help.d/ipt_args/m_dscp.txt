@@ -1,0 +1,11 @@
+m_dscp: dscp match specification.
+
+	Synopsis:
+		[!]DiffServ_class
+		[!]value
+
+	Examples:
+		m_dscp=BE
+		m_dscp=!CS1
+		m_dscp=62
+

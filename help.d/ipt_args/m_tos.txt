@@ -1,0 +1,11 @@
+m_tos: tos match specification.
+
+	Synopsis:
+		[!]symbol (not case sensitive)
+		[!]value[/mask]
+
+	Examples:
+		m_tos=minimize-delay
+		m_tos=!0
+		m_tos=0x10/0xFA
+
