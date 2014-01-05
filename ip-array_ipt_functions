@@ -4270,21 +4270,32 @@ MSG_LIST_ULOG_THRESH[RULE_LIST_IDX]="ulog-qthresh=${arg_list_ulog_thresh[ARG_LIS
 } # -------------------------------------------------------------------------
 
 _process_nfqueue() {
-case "${arg_list_nfqueue[ARG_LIST_IDX]}" in
-	+([[:digit:]]))
-		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-num ${arg_list_nfqueue[ARG_LIST_IDX]} "
-		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue=${arg_list_nfqueue[ARG_LIST_IDX]} "
-	;;
-	+([[:digit:]]):+([[:digit:]])) # support --queue-balance - TODO: check if system supports
-		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-balance ${arg_list_nfqueue[ARG_LIST_IDX]} "
-		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue-balance=${arg_list_nfqueue[ARG_LIST_IDX]} "
-	;;
-	bypass)
-		RULELIST_NFQUEUE[RULE_LIST_IDX]="--queue-bypass "
-		MSG_LIST_NFQUEUE[RULE_LIST_IDX]="queue-bypass "
-	;;
-	*) log -U $FUNCNAME; return 1
-esac
+local str_cmd str_msg
+set -- $(split_val : ' ' "${arg_list_nfqueue[ARG_LIST_IDX]}")
+while (($#)); do
+	case "$1" in
+		+([[:digit:]]))
+			str_cmd="--queue-num $1 "
+			str_msg="queue=$1 "
+		;;
+		+([[:digit:]])-+([[:digit:]]))
+			str_cmd="--queue-balance ${1/-/:} "
+			str_msg="queue-balance=${1/-/:} "
+		;;
+		bypass)
+			str_cmd+="--queue-bypass "
+			str_msg+="queue-bypass "
+		;;
+		cpu-fanout)
+			str_cmd+="--queue-cpu-fanout "
+			str_msg+="queue-cpu-fanout "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_NFQUEUE[RULE_LIST_IDX]="$str_cmd "
+MSG_LIST_NFQUEUE[RULE_LIST_IDX]="$str_msg "
 } # -------------------------------------------------------------------------
 
 _process_t_class() {
@@ -4707,25 +4718,39 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(nfqueue)
 			check_tgt_exist NFQUEUE || return
 			case "$tmp_opt_var_value" in
-				+([[:digit:]]))
-					if ! val_16bit "$tmp_opt_var_value"; then
-						log -i "$tmp_opt_var_value" "queue number"
-						return 1
-					fi
-				;;
-			+([[:digit:]]):?(+([[:digit:]]))) # support --queue-balance - TODO: check if system supports
-					for arg_idx in $(split_val : ' ' "${tmp_opt_var_value}"); do
-						if ! val_16bit "$arg_idx"; then
-							log -i "$arg_idx" "queue number"
-							return 1
-						fi
-					done
-					val_range "${tmp_opt_var_value%:*}" "${tmp_opt_var_value#*:}" || return 1
-				;;
-				bypass) : ;; # support --queue-bypass - TODO: check if system supports
+				@(+([[:digit:]])|+([[:digit:]])-+([[:digit:]]))*(:+([![:digit:]]))) : ;;
 				*) log -i "$tmp_opt_var_value" "nfqueue descriptor"
 					return 1
 			esac
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					+([[:digit:]]))
+						if ! val_16bit "$1"; then
+							log -i "$1" "queue number"
+							return 1
+						fi
+					;;
+					+([[:digit:]])-?(+([[:digit:]]))) # support --queue-balance - TODO: check if system supports
+						for arg_idx in $(split_val - ' ' "$1"); do
+							if ! val_16bit "$arg_idx"; then
+								log -i "$arg_idx" "queue number"
+								return 1
+							fi
+						done
+						val_range "${1%-*}" "${1#*-}" || return 1
+					;;
+					bypass|cpu-fanout) # support --queue-bypass --cpu-fanout - TODO: check if system supports
+						if [[ $1 = cpu-fanout && $tmp_opt_var_value != +([[:digit:]])-+([[:digit:]])* ]]; then
+							log -E "The cpu-fanout option requires a range of queues."
+							return 1
+						fi
+					;;
+					*) log -i "$tmp_opt_var_value" "nfqueue descriptor"
+						return 1
+				esac
+				shift
+			done
 		;;
 		(helper)
 			check_match_exist helper || return
