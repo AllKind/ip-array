@@ -4731,7 +4731,11 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							return 1
 						fi
 					;;
-					+([[:digit:]])-?(+([[:digit:]]))) # support --queue-balance - TODO: check if system supports
+					+([[:digit:]])-?(+([[:digit:]]))) # support --queue-balance
+						if ((KERN_VER[0] == 2 && KERN_VER[1] == 6 && KERN_VER[2] < 31)); then
+							log -W "The --queue-balance option is available since kernel 2.6.31.\
+								Your kernel version may not support it - unless it was patched into it."
+						fi
 						for arg_idx in $(split_val - ' ' "$1"); do
 							if ! val_16bit "$arg_idx"; then
 								log -i "$arg_idx" "queue number"
@@ -4740,8 +4744,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						done
 						val_range "${1%-*}" "${1#*-}" || return 1
 					;;
-					bypass|cpu-fanout) # support --queue-bypass --cpu-fanout - TODO: check if system supports
-						if [[ $1 = cpu-fanout && $tmp_opt_var_value != +([[:digit:]])-+([[:digit:]])* ]]; then
+					bypass) # --queue-bypass
+						if ((KERN_VER[0] == 2 && KERN_VER[1] == 6 && KERN_VER[2] < 39)); then
+							log -W "The --queue-bypass option is available since kernel 2.6.39.\
+								Your kernel version may not support it - unless it was patched into it."
+						fi
+					;;
+					cpu-fanout) # --cpu-fanout - TODO: check if system supports
+						if ((KERN_VER[0] == 2)); then
+							log -E "The --queue-bypass option is available since kernel 3.10."
+							return 1
+						elif ((KERN_VER[0] == 3 && KERN_VER[1] < 10)); then
+							log -W "The --queue-bypass option is available since kernel 3.10.
+								Your kernel version may not support it - unless it was patched into it."
+						fi
+						if [[ $tmp_opt_var_value != +([[:digit:]])-+([[:digit:]])* ]]; then
 							log -E "The cpu-fanout option requires a range of queues."
 							return 1
 						fi
