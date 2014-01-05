@@ -1,0 +1,7 @@
+connlimit: connlimit match specification.
+
+	Synopsis: value[/mask]
+
+	Example:
+		connlimit=12
+

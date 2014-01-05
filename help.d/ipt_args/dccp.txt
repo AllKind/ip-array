@@ -1,0 +1,11 @@
+dccp: dccp match specification.
+
+	Synopsis: [!]type[,type...]:[!]value
+		type  := DCCP packet type
+		value := DCCP option
+
+	Examples:
+		m_dccp=REQUEST
+		m_dccp=REQUEST,RESPONSE
+		m_dccp=REQUEST,RESPONSE:!1
+

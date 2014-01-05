@@ -1,0 +1,10 @@
+sctp: sctp match specification.
+	Equivalent to `-m sctp --chunk-types'.
+
+	Synopsis: [!](all|any|only)[:flags]
+
+	Examples:
+		m_sctp=INIT_ACK
+		m_sctp=DATA:i
+		m_sctp=ABORT:T
+

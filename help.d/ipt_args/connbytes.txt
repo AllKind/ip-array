@@ -1,0 +1,12 @@
+connbytes: connbytes match specification.
+
+Synopsis:
+	[!](original|reply|both):(packets|bytes|avgpkt):value[:value]
+		original|reply|both sets --connbytes-dir.
+		packets|bytes|avgpkt sets --connbytes-mode.
+		The `!' inverts the value of --connbytes.
+
+Examples:
+	connbytes=original:packets:1024
+	connbytes=!reply:bytes:1:1024
+
