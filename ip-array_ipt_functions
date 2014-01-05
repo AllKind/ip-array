@@ -3767,6 +3767,9 @@ _process_socket() {
 if [[ ${arg_list_socket[ARG_LIST_IDX]} = transparent ]]; then
 	RULELIST_SOCKET[RULE_LIST_IDX]="-m socket --transparent "
 	MSG_LIST_SOCKET[RULE_LIST_IDX]="socket=transparent "
+elif [[ ${arg_list_socket[ARG_LIST_IDX]} = nowildcard ]]; then
+	RULELIST_SOCKET[RULE_LIST_IDX]="-m socket --nowildcard "
+	MSG_LIST_SOCKET[RULE_LIST_IDX]="socket=nowildcard "
 else
 	RULELIST_SOCKET[RULE_LIST_IDX]="-m socket "
 	MSG_LIST_SOCKET[RULE_LIST_IDX]="socket "
@@ -3774,24 +3777,25 @@ fi
 } # -------------------------------------------------------------------------
 
 _process_m_ttl() {
-local ttl_val="${arg_list_m_ttl[ARG_LIST_IDX]}" ttl_msg str_ttl
-case "${ttl_val}" in
-	(+([[:digit:]]))
-		ttl_msg="ttl=${ttl_val}"
-		str_ttl="--ttl-eq ${ttl_val}"
+local ttl_val="${arg_list_m_ttl[ARG_LIST_IDX]}" ttl_msg str_ttl str_neg=""
+string_negated "$ttl_val" && str_neg="! "
+case "$ttl_val" in
+	?(\!)+([[:digit:]]))
+		ttl_msg="ttl=$ttl_val"
+		str_ttl="${str_neg}--ttl-eq $(remove_negation $ttl_val)"
 	;;
-	("+"+([[:digit:]]))
-		ttl_msg="ttl>${ttl_val/+/}"
-		str_ttl="--ttl-gt ${ttl_val/+/}"
+	"+"+([[:digit:]]))
+		ttl_msg="ttl>${ttl_val#+}"
+		str_ttl="--ttl-gt ${ttl_val#+}"
 	;;
-	("-"+([[:digit:]]))
-		ttl_msg="ttl<${ttl_val/-/}"
-		str_ttl="--ttl-lt ${ttl_val/-/}"
+	"-"+([[:digit:]]))
+		ttl_msg="ttl<${ttl_val#-}"
+		str_ttl="--ttl-lt ${ttl_val#-}"
 	;;
 	*) log -U $FUNCNAME; return 1
 esac
-RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl ${str_ttl} "
-MSG_LIST_M_TTL[RULE_LIST_IDX]="${ttl_msg} "
+RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl $str_ttl "
+MSG_LIST_M_TTL[RULE_LIST_IDX]="$ttl_msg "
 } # -------------------------------------------------------------------------
 
 _process_addrtype() { # fill the iptables addrtype match rulelist and msglist arrays
@@ -3823,8 +3827,12 @@ string_negated "${arg_list_statistic[ARG_LIST_IDX]#*:}" && str_neg="! "
 RULELIST_STATISTIC[RULE_LIST_IDX]="-m statistic "
 MSG_LIST_STATISTIC[RULE_LIST_IDX]="statistic='${arg_list_statistic[ARG_LIST_IDX]}' "
 case "${arg_list_statistic[ARG_LIST_IDX]}" in
-	random:?(\!)probability:[0-1]?(.)+([[:digit:]]))
+	random:?(\!)probability:[0-1]?(.+([[:digit:]])))
 		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode random ${str_neg}--probability ${arg_list_statistic[ARG_LIST_IDX]##*:} "
+	;;
+	nth:?(\!)every:+([[:digit:]]))
+		str_val="${arg_list_statistic[ARG_LIST_IDX]}"
+		RULELIST_STATISTIC[RULE_LIST_IDX]+="--mode nth ${str_neg}--every ${str_val#*every:} "
 	;;
 	nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]]))
 		str_val="${arg_list_statistic[ARG_LIST_IDX]%:packet*}"
@@ -5303,7 +5311,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(socket)
 			check_match_exist socket || return
-			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket|transparent) ]]; then
+			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket|transparent|nowildcard) ]]; then
 				log -i "$tmp_opt_var_value" "socket descriptor"
 				return 1
 			fi
@@ -5654,8 +5662,8 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(statistic)
 			check_match_exist statistic || return
 			case "$tmp_opt_var_value" in
-				random:?(\!)probability:[0-1]?(.)+([[:digit:]])) : ;;
-				nth:?(\!)every:+([[:digit:]]):packet:+([[:digit:]])) : ;;
+				random:?(\!)probability:[0-1]?(.+([[:digit:]]))) : ;;
+				nth:?(\!)every:+([[:digit:]])?(:packet:+([[:digit:]]))) : ;;
 				*) log -i "$tmp_opt_var_value" "statistic descriptor"
 					return 1
 			esac
@@ -5817,14 +5825,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				;;
 			esac
 			case "$tmp_opt_var_value" in
-				(+([[:digit:]]))
-					val_ttl $tmp_opt_var_value || return 1
+				(?(\!)+([[:digit:]]))
+					case "$tmp_opt_var" in
+						m_ttl)
+							val_ttl ${tmp_opt_var_value#\!} || return 1
+						;;
+						t_ttl)
+							val_ttl $tmp_opt_var_value || return 1
+						;;
+					esac
 				;;
 				("+"+([[:digit:]]))
-					val_ttl ${tmp_opt_var_value/+/} || return 1
+					val_ttl ${tmp_opt_var_value#+} || return 1
 				;;
 				("-"+([[:digit:]]))
-					val_ttl ${tmp_opt_var_value/-/} || return 1 
+					val_ttl ${tmp_opt_var_value#-} || return 1 
 				;;
 				(*) log -E "Illegal TTL value \`$tmp_opt_var_value'"
 					return 1
