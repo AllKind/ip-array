@@ -3527,11 +3527,11 @@ RULELIST_M_CPU[RULE_LIST_IDX]="-m cpu ${str_neg}--cpu $(remove_negation "${arg_l
 MSG_LIST_M_CPU[RULE_LIST_IDX]="cpu=${arg_list_m_cpu[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
-_process_m_quota() { # fill the quota match rulelist and msglist arrays
+_process_quota() { # fill the quota match rulelist and msglist arrays
 local str_neg=""
-string_negated "${arg_list_m_quota[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "${arg_list_m_quota[ARG_LIST_IDX]}") "
-MSG_LIST_M_QUOTA[RULE_LIST_IDX]="quota=${arg_list_m_quota[ARG_LIST_IDX]} "
+string_negated "${arg_list_quota[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_M_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "${arg_list_quota[ARG_LIST_IDX]}") "
+MSG_LIST_M_QUOTA[RULE_LIST_IDX]="quota=${arg_list_quota[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_m_tcpmss() { # fill the tcpmss match rulelist and msglist arrays
@@ -3934,19 +3934,19 @@ case "${arg_list_recent[ARG_LIST_IDX]}" in
 esac
 } # -------------------------------------------------------------------------
 
-_process_idletimer_opt() { # fill the idletimer target rulelist and msglist arrays
+_process_idletimer() { # fill the idletimer target rulelist and msglist arrays
 local str_ilabel str_itmout
-case "${arg_list_idletimer_opt[ARG_LIST_IDX]}" in
+case "${arg_list_idletimer[ARG_LIST_IDX]}" in
 	label:*:timeout:+([[:digit:]])|timeout:+([[:digit:]]):label:*)
-		case "${arg_list_idletimer_opt[ARG_LIST_IDX]}" in
+		case "${arg_list_idletimer[ARG_LIST_IDX]}" in
 			label:*:timeout:+([[:digit:]]))
-				str_ilabel="${arg_list_idletimer_opt[ARG_LIST_IDX]%:timeout:*}"
+				str_ilabel="${arg_list_idletimer[ARG_LIST_IDX]%:timeout:*}"
 				str_ilabel="${str_ilabel#label:}"
-				str_itmout="${arg_list_idletimer_opt[ARG_LIST_IDX]#*:timeout:}"
+				str_itmout="${arg_list_idletimer[ARG_LIST_IDX]#*:timeout:}"
 			;;
 			timeout:+([[:digit:]]):label:*)
-				str_ilabel="${arg_list_idletimer_opt[ARG_LIST_IDX]#*:label:}"
-				str_itmout="${arg_list_idletimer_opt[ARG_LIST_IDX]%:label:*}"
+				str_ilabel="${arg_list_idletimer[ARG_LIST_IDX]#*:label:}"
+				str_itmout="${arg_list_idletimer[ARG_LIST_IDX]%:label:*}"
 				str_itmout="${str_itmout#timeout:}"
 			;;
 		esac
@@ -4218,7 +4218,7 @@ local -a arr_cmd=("-m rpfilter")
 for str_opt in $(split_val : ' ' "${arg_list_rpfilter[ARG_LIST_IDX]}"); do
 	case "$str_opt" in
 		rpfilter) : ;;
-		loose|validmark|accept-local|strict)
+		loose|validmark|accept-local|invert)
 			arr_cmd[${#arr_cmd[@]}]="--$str_opt"
 			str_msg+=":$str_opt"
 		;;
@@ -4884,10 +4884,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			check_match_exist rpfilter || return
 			case "$tmp_opt_var_value" in
 				""|rpfilter) : ;;
-			+([[:graph:]])*(:+([[:graph:]])))
+				+([[:graph:]])*(:+([[:graph:]])))
 					for str_var in $(split_val : ' ' "$tmp_opt_var_value"); do
 						case "$str_var" in
-							loose|validmark|accept-local|strict) : ;;
+							loose|validmark|accept-local|invert) : ;;
 							*) log -i "$tmp_opt_var_value" "rpfilter descriptor"
 								return 1
 						esac
@@ -5417,7 +5417,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					esac
 			done
 		;;
-		(idletimer_opt)
+		(idletimer)
 			check_tgt_exist IDLETIMER || return
 			case "$tmp_opt_var_value" in
 				label:*:timeout:+([[:digit:]])|timeout:+([[:digit:]]):label:*)
@@ -5533,7 +5533,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			check_match_exist cpu || return
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
-		(m_quota)
+		(quota)
 			check_match_exist quota || return
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
@@ -6022,7 +6022,7 @@ for target_idx in ${!arg_list_target[@]}; do
 				fi
 			;;
 			IDLETIMER)
-				_val_tgtopt_set "${arg_list_idletimer_opt[ARG_LIST_IDX]}" || return 1
+				_val_tgtopt_set "${arg_list_idletimer[ARG_LIST_IDX]}" || return 1
 			;;
 			MARK)
 				_val_tgtopt_set "${arg_list_t_mark[ARG_LIST_IDX]}" || return 1

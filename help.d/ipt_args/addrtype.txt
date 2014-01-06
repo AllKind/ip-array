@@ -1,0 +1,8 @@
+addrtype: addrtype match specification.
+
+	Synopsis: [!](dst|src):type
+
+	Examples:
+		addrtype=dst:BROADCAST
+		addrtype=!src:LOCAL
+

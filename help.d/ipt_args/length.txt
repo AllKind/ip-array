@@ -1,0 +1,8 @@
+length: length match.
+
+	Synopsis: [!]value[:value]
+
+	Examples:
+		length=12
+		length=!12-16
+

@@ -1,0 +1,11 @@
+tcpoptstrip: TCPOPTSTRIP target.
+
+	Synopsis: option[,option...]
+		options:
+			value from 2-255
+			any of: wscale|mss|sack-permitted|sack|timestamp|md5
+
+	Examples:
+		tcpoptstrip=2
+		tcpoptstrip=wscale,mss
+

@@ -1,0 +1,11 @@
+rpfilter: rpfilter match specification.
+
+	Synopsis: [option][:...]
+		options:
+			rpfilter (placeholder for no options)
+			loose|validmark|accept-local|invert
+
+	Examples:
+		rpfilter=rpfilter
+		rpfilter=loose:accept-local
+

@@ -1,0 +1,17 @@
+recent: recent match specification.
+
+	Synopsis:
+		[!]ACTION[:option[:opt_arg]][:...]
+			ACTION := set|check|rcheck|update|remove (check=rcheck)
+		options:
+			name
+			mask
+			seconds|sec (synonyms)
+			rttl|ttl (synonyms)
+			hitcount|hit|hitcnt|cnt|count (synonyms)
+			reap
+
+	Examples:
+		recent=set:name:foo
+		recent=rckeck:foo:sec:60:hit:5:ttl
+

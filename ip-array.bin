@@ -271,7 +271,7 @@ m_set
 m_tos
 m_cpu
 m_ecn
-m_quota
+quota
 m_tcpmss
 m_ttl
 devgroup
@@ -291,7 +291,7 @@ tcpoptstrip
 tproxy_opt
 audit
 ct_opt
-idletimer_opt
+idletimer
 comment
 )
 
