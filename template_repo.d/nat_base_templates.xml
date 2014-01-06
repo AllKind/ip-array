@@ -4,21 +4,6 @@
 
 <ip_array_root name="iptables_templates" syntax_version="0.1">
 
-	<template name="BT_NAT_IP_PORT">
-		<option_list_0>
-			nat_ip
-			nat_port
-		</option_list_0>
-	</template>
-
-	<template name="BT_NAT_IP_PORT_OPTION">
-		<option_list_0>
-			nat_ip
-			nat_port
-			nat_option
-		</option_list_0>
-	</template>
-
 	<template name="BT_NAT_DNAT_PREROUTING">
 		<table> nat </table>
 		<target> DNAT </target>

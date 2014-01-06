@@ -19,15 +19,15 @@
 		5: source port
 		6: destination port
 		7: nat ip address
-		Mandatory options: raw nat ip address
+		Mandatory options: rawnat ip address
 		-->
 		<template_msg> ${ADDMSG} RAWSNAT rules in POSTROUTING chain </template_msg>
-		<mandatory_vars> nat_ip </mandatory_vars>
+		<mandatory_vars> nat_opt </mandatory_vars>
 		<load_template>
 			BT_RAWSNAT_POSTROUTING
 			BT_BASIC_MATCH_SET_EGRESS
 		</load_template>
-		<option_list_0> nat_ip </option_list_0>
+		<option_list_0> nat_opt </option_list_0>
 	</template>
 
 </ip_array_root>
