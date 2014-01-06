@@ -6,7 +6,7 @@ dport: Name(s) of the destination port(s)
 	is available, which will invert the whole match.
 	If the multiport match is available a maximum of 15 ports can be enterd.
 	If multiple ports were entered and `dport' contains the same value,
-	the multiport match with the `--ports' option will be used. 
+	the multiport match with the `--ports' option will be used.
 	If icmp is used as protocol, the value of dport will be
 	interpreted as icmp_type.
 

@@ -3667,10 +3667,10 @@ RULELIST_OSF[RULE_LIST_IDX]="-m osf ${str_neg}--genre $(remove_negation "$str_ge
 MSG_LIST_OSF[RULE_LIST_IDX]="osf_genre=$str_genre $str_msg"
 } # -------------------------------------------------------------------------
 
-_process_m_ecn() { # fill the ecn match rulelist and msglist arrays
-set -- ${arg_list_m_ecn[ARG_LIST_IDX]//:/ }
+_process_ecn() { # fill the ecn match rulelist and msglist arrays
+set -- ${arg_list_ecn[ARG_LIST_IDX]//:/ }
 RULELIST_M_ECN[RULE_LIST_IDX]="-m ecn "
-MSG_LIST_M_ECN[RULE_LIST_IDX]="ecn=${arg_list_m_ecn[ARG_LIST_IDX]} "
+MSG_LIST_M_ECN[RULE_LIST_IDX]="ecn=${arg_list_ecn[ARG_LIST_IDX]} "
 while (($#)); do
 	local str_neg=""
 	string_negated "$1" && str_neg="! "
@@ -4780,7 +4780,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
-		(m_ecn)
+		(ecn)
 			check_match_exist ecn || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
 			check_str_unique "$*" || return 1

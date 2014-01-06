@@ -1,0 +1,15 @@
+ecn: ecn match specification.
+	The ECN target is also supported,
+	but it only has one option without an argument.
+	Thus the use of it implies the usage of the option.
+
+	Synopsis: [!]option[:opt_arg][:...]
+		options:
+			[!]ip-ect 0-3
+			[!]tcp-cwr
+			[!]tcp-ece
+
+	Examples:
+		ecn=ip-ect:0
+		ecn=!tcp-cwr:!tcp-ece
+			
