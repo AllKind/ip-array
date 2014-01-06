@@ -5835,7 +5835,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(tcpoptstrip)
 			check_tgt_exist TCPOPTSTRIP || return
 			for str_var in ${tmp_opt_var_value//,/ }; do
-#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 				case "$str_var" in
 					+([[:digit:]]))
 						if val_bool_bin "$str_var"; then
@@ -5854,12 +5853,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				esac
 			done
 		;;
-#		(nat_ip)
-#			validate_nat_ip "$tmp_opt_var_value" || return 1
-#		;;
-#		(nat_port)
-#			val_nat_port "$tmp_opt_var_value" || return 1
-#		;;
 		(nat_opt)
 			set -- ${tmp_opt_var_value//:/ }
 			while (($#)); do
