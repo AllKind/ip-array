@@ -652,7 +652,7 @@ lsearch() { # search word in list
 local str_search="$1"
 shift
 while (($#)); do
-	[[ ${str_search} = $1 ]] && return
+	[[ $str_search = $1 ]] && return
 	shift
 done
 return 1
@@ -660,11 +660,11 @@ return 1
 
 lsearch_lines() { # search for a given word in std input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+local str_search="$1"
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	while (($#)); do
-		[[ ${str_search} = $1 ]] && return
+		[[ $str_search = $1 ]] && return
 		shift
 	done
 done
@@ -673,13 +673,13 @@ return 1
 
 lsearch_echo() { # search for the first occurence of a given word in input and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+local str_search="$1" str_input
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = $1 ]] && {
-			printf "%s\n" "${str_input}"
+		[[ $str_search = $1 ]] && {
+			printf "%s\n" "$str_input"
 			return 0
 		}
 		shift
@@ -690,64 +690,63 @@ return 1
 
 lsearch_echo_multiline() { # search for a given word in input (multi line) and echo it back
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+local str_search="$1" str_input
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = $1 ]] && {
-			printf "%s\n" "${str_input}"
+		[[ $str_search = $1 ]] && {
+			printf "%s\n" "$str_input"
 			break
 		}
 		shift
 	done
 done
-#return 1
 } # -------------------------------------------------------------------------
 
 lsearch_echo_reverse() { # show only the part of the input, which does not contain 'word'
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line str_input
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+local str_search="$1" str_input
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ ${str_search} = $1 ]] && continue 2
+		[[ $str_search = $1 ]] && continue 2
 		shift
 	done
-	printf "%s\n" "${str_input}"
+	printf "%s\n" "$str_input"
 done
 } # -------------------------------------------------------------------------
 
 lsearch_echo_reverse_single() { # search for a given word, remove first occurence, print rest
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line str_input
+local str_search="$1" str_input
 local -i found_str=0
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	while (($#)); do
-		[[ ${str_search} = $1 ]] && ((found_str == 0)) && {
+		[[ $str_search = $1 ]] && ((found_str == 0)) && {
 			found_str=1
 			shift
 			continue
 		}
-		if [[ -z ${str_input} ]]; then
+		if [[ -z $str_input ]]; then
 			str_input="$1"
 		else
 			str_input+=" $1"
 		fi
 		shift
 	done
-	printf "%s\n" "${str_input}"
+	printf "%s\n" "$str_input"
 done
 } # -------------------------------------------------------------------------
 
 lsearch_regex() { # perform a regex search in input
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	[[ ${str_line} =~ ${str_search} ]] && {
-		printf "%s\n" "${str_line}"
+local str_search="$1"
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	[[ $REPLY =~ $str_search ]] && {
+		printf "%s\n" "$REPLY"
 		return 0
 	}
 done
@@ -756,11 +755,11 @@ return 1
 
 lsearch_regex_echo_object() { # perform a regex search in input and print result
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local str_search="$1" str_line
-while read -r -u 0 -t $GLOBAL_READ_TIMEOUT str_line; do
-	set -- ${str_line}
+local str_search="$1"
+while read -r -t $GLOBAL_READ_TIMEOUT; do
+	set -- $REPLY
 	while (($#)); do
-		[[ $1 =~ ${str_search} ]] && {
+		[[ $1 =~ $str_search ]] && {
 			printf "%s\n" "$1"
 			return 0
 		}
