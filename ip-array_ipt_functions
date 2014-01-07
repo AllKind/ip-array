@@ -1135,15 +1135,6 @@ if ((MANGLE_CHAINS_PRESENT == 0)); then
 fi
 } # -------------------------------------------------------------------------
 
-check_mark_syntax() {
-((NO_IPT_COMPAT_CHECK == 0)) || return 0
-if dn run_ipt -nL $BIC_TEST_CHAIN; then
-	log -w "Checking for --set-mark syntax"
-	dn run_ipt -A $BIC_TEST_CHAIN -j MARK --set-mark 0x1 || NEW_MARK_SYNTAX=0
-	readonly NEW_MARK_SYNTAX
-fi
-} # -------------------------------------------------------------------------
-
 check_raw_table() {
 ((ENABLE_RAW == 0)) && {
 	RAW_TABLE_PRESENT=0
@@ -3604,18 +3595,16 @@ done
 } # -------------------------------------------------------------------------
 
 _process_m_mark() { # fill the iptables mark match rulelist and msglist arrays
-local str_neg="" str_m="--mark"
-((NEW_MARK_SYNTAX)) && str_m="--set-mark"
+local str_neg=""
 string_negated "${arg_list_m_mark[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_MARK[RULE_LIST_IDX]="-m mark ${str_neg}$str_m $(remove_negation "${arg_list_m_mark[ARG_LIST_IDX]}") "
+RULELIST_M_MARK[RULE_LIST_IDX]="-m mark ${str_neg}--mark $(remove_negation "${arg_list_m_mark[ARG_LIST_IDX]}") "
 MSG_LIST_M_MARK[RULE_LIST_IDX]="mark=${arg_list_m_mark[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_m_connmark() { # fill the iptables connmark match rulelist and msglist arrays
-local str_neg="" str_m="--mark"
-((NEW_MARK_SYNTAX)) && str_m="--set-mark"
+local str_neg=""
 string_negated "${arg_list_m_connmark[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_CONNMARK[RULE_LIST_IDX]="-m mark ${str_neg}$str_m $(remove_negation "${arg_list_m_connmark[ARG_LIST_IDX]}") "
+RULELIST_M_CONNMARK[RULE_LIST_IDX]="-m mark ${str_neg}--mark $(remove_negation "${arg_list_m_connmark[ARG_LIST_IDX]}") "
 MSG_LIST_M_CONNMARK[RULE_LIST_IDX]="mark=${arg_list_m_connmark[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
