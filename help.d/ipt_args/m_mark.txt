@@ -1,0 +1,9 @@
+m_mark: mark match specification.
+
+	Synopsis: value[/mask]
+
+	Examples:
+		m_mark=0xF1
+		m_mark=
+		m_mark=
+

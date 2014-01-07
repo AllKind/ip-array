@@ -1,0 +1,4 @@
+u32: u32 match.
+	No difference to the original iptables syntax.
+	The string needs to be quoted if it contains spaces.
+

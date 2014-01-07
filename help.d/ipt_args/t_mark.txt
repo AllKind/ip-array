@@ -1,0 +1,10 @@
+t_mark: MARK target specification.
+
+	Synopsis:
+		(set|xset):value[/mask]
+		(and|or|xor):value
+
+	Examples:
+		t_mark=set:0x10
+		t_mark=and:8
+
