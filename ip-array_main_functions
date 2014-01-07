@@ -4455,6 +4455,7 @@ if ((EXEC_COMMANDS == 0 && NO_IPT_COMPAT_CHECK == 0)); then
 fi
 test_chain create || return
 test_ipset create || return
+check_mark_syntax
 check_ipt_targets || return
 check_ipt_modules || return
 test_chain delete

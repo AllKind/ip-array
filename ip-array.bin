@@ -203,9 +203,12 @@ declare MODULE_RESTORE_FILE="${me}_modprobe_restore_commands-pid-$PID"
 declare PROC_RESTORE_FILE="${me}_proc_restore_commands-pid-$PID"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
+declare -i NEW_MARK_SYNTAX=1	# use --mark or --set-mark
 declare -i IPA_DID_LOCK=0	# Did we turn on mutex?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
 declare IPT_RULE_LIST_PARAM="-S"	# Switch to use for iptables rule diff
+
+# ipset
 declare IPSET_SYNTAX=old	# depending on ipset version use different syntax
 declare -a IPSET_VERSION=( 0 )
 

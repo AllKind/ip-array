@@ -150,7 +150,7 @@ IPARRAY_TARGETS=(
 "0 NETMAP nat -d 172.32.254.0/24 -j NETMAP --to 172.32.253.0/24"
 "0 REDIRECT nat -s 172.32.254.255 -j REDIRECT"
 "0 MASQUERADE nat -s 172.32.254.255 -j MASQUERADE"
-"0 MARK mangle -s 172.32.254.255 -j MARK --set-mark 1234"
+"0 MARK mangle -s 172.32.254.255 -j MARK --$( ((NEW_MARK_SYNTAX)) && printf 'set-mark' || printf 'mark') 1234"
 "0 SECMARK mangle -s 172.32.254.255 -j SECMARK --selctx system_r:unconfined_t:s0"
 "0 CONNMARK mangle -s 172.32.254.255 -j CONNMARK --set-mark 1234"
 "0 CONNSECMARK mangle -s 172.32.254.255 -j CONNSECMARK --save"
