@@ -489,7 +489,7 @@ unset IFS
 (($# == 2)) || $str_failcmd
 val_numeric "$str_rb" && val_numeric "$str_re" || $str_failcmd
 val_16bit "$str_rb" && val_16bit "$str_re" || $str_failcmd
-((str_rb >= str_re)) && $str_failcmd
+if ((str_rb >= str_re)); then $str_failcmd; fi
 } # -------------------------------------------------------------------------
 
 val_port_range_word() {
@@ -3366,93 +3366,41 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-_process_ctstate() {
-local str_neg=""
-string_negated "${arg_list_ctstate[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTSTATE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstate $(remove_negation "${arg_list_ctstate[ARG_LIST_IDX]}") "
-MSG_LIST_CTSTATE[RULE_LIST_IDX]="ctstate=${arg_list_ctstate[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctproto() {
-local str_neg=""
-string_negated "${arg_list_ctproto[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTPROTO[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctproto $(remove_negation "${arg_list_ctproto[ARG_LIST_IDX]}") "
-MSG_LIST_CTPROTO[RULE_LIST_IDX]="ctproto=${arg_list_ctproto[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctorigsrc() {
-local str_neg=""
-string_negated "${arg_list_ctorigsrc[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrc $(remove_negation "${arg_list_ctorigsrc[ARG_LIST_IDX]}") "
-MSG_LIST_CTORIGSRC[RULE_LIST_IDX]="ctorigsrc=${arg_list_ctorigsrc[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctorigdst() {
-local str_neg=""
-string_negated "${arg_list_ctorigdst[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdst $(remove_negation "${arg_list_ctorigdst[ARG_LIST_IDX]}") "
-MSG_LIST_CTORIGDST[RULE_LIST_IDX]="ctorigdst=${arg_list_ctorigdst[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctreplsrc() {
-local str_neg=""
-string_negated "${arg_list_ctreplsrc[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLSRC[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrc $(remove_negation "${arg_list_ctreplsrc[ARG_LIST_IDX]}") "
-MSG_LIST_CTREPLSRC[RULE_LIST_IDX]="ctreplsrc=${arg_list_ctreplsrc[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctrepldst() {
-local str_neg=""
-string_negated "${arg_list_ctrepldst[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLDST[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldst $(remove_negation "${arg_list_ctrepldst[ARG_LIST_IDX]}") "
-MSG_LIST_CTREPLDST[RULE_LIST_IDX]="ctrepldst=${arg_list_ctrepldst[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctorigsrcport() {
-local str_neg=""
-string_negated "${arg_list_ctorigsrcport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigsrcport $(remove_negation "${arg_list_ctorigsrcport[ARG_LIST_IDX]}") "
-MSG_LIST_CTORIGSRCPORT[RULE_LIST_IDX]="ctorigsrcport=${arg_list_ctorigsrcport[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctorigdstport() {
-local str_neg=""
-string_negated "${arg_list_ctorigdstport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTORIGDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctorigdstport $(remove_negation "${arg_list_ctorigdstport[ARG_LIST_IDX]}") "
-MSG_LIST_CTORIGDSTPORT[RULE_LIST_IDX]="ctorigdstport=${arg_list_ctorigdstport[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctreplsrcport() {
-local str_neg=""
-string_negated "${arg_list_ctreplsrcport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLSRCPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctreplsrcport $(remove_negation "${arg_list_ctreplsrcport[ARG_LIST_IDX]}") "
-MSG_LIST_CTREPLSRCPORT[RULE_LIST_IDX]="ctreplsrcport=${arg_list_ctreplsrcport[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctrepldstport() {
-local str_neg=""
-string_negated "${arg_list_ctrepldstport[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTREPLDSTPORT[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctrepldstport $(remove_negation "${arg_list_ctrepldstport[ARG_LIST_IDX]}") "
-MSG_LIST_CTREPLDSTPORT[RULE_LIST_IDX]="ctrepldstport=${arg_list_ctrepldstport[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctstatus() {
-local str_neg=""
-string_negated "${arg_list_ctstatus[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTSTATUS[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctstatus $(remove_negation "${arg_list_ctstatus[ARG_LIST_IDX]}") "
-MSG_LIST_CTSTATUS[RULE_LIST_IDX]="ctstatus=${arg_list_ctstatus[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctexpire() {
-local str_neg=""
-string_negated "${arg_list_ctexpire[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_CTEXPIRE[RULE_LIST_IDX]="-m conntrack ${str_neg}--ctexpire $(remove_negation "${arg_list_ctexpire[ARG_LIST_IDX]}") "
-MSG_LIST_CTEXPIRE[RULE_LIST_IDX]="ctexpire=${arg_list_ctexpire[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ctdir() {
-RULELIST_CTDIR[RULE_LIST_IDX]="-m conntrack --ctdir ${arg_list_ctdir[ARG_LIST_IDX]} "
-MSG_LIST_CTDIR[RULE_LIST_IDX]="ctdir=${arg_list_ctdir[ARG_LIST_IDX]} "
+_process_conntrack() { # fill the conntrack match rulelist and msglist arrays
+local str_neg="" str_cmd str_msg str_var str_o
+set -- ${arg_list_conntrack[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	str_neg="" str_var="$1" str_o="$2" str_mo="$2"
+	string_negated "$str_o" && str_neg="! " && str_o="$(remove_negation "$str_o")"
+	case "$str_var" in
+		dir|state|proto|origsrc|origdst|replsrc|repldst|status)
+			str_cmd+="${str_neg}--ct$str_var $str_o "
+			str_msg+="ct${str_var}=$str_mo "
+		;;
+		origsrcport|origdstport|replsrcport|repldstport)
+			if [[ $str_o = *\[*\]-* ]]; then
+				str_o="${str_o/\]-\[/:}"
+				str_o="${str_o//@(\[|\])/}"
+			elif [[ $str_o = \[*\] ]]; then
+				str_o="${str_o//@(\[|\])/}"
+			elif [[ $str_o = *-* ]]; then
+				str_o="${str_o/-/:}"
+			fi
+			str_mo="$str_o"
+			[[ $str_neg ]] && str_mo="!$str_mo"
+			str_cmd+="${str_neg}--ct$str_var $str_o "
+			str_msg+="ct${str_var}=$str_mo "
+		;;
+		expire)
+			str_cmd+="${str_neg}--ct$str_var ${2/-/:} "
+			str_msg+="ct${str_var}=$str_mo "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift 2
+done
+RULELIST_CONNTRACK[RULE_LIST_IDX]="-m conntrack $str_cmd"
+MSG_LIST_CONNTRACK[RULE_LIST_IDX]="conntrack: $str_msg"
 } # -------------------------------------------------------------------------
 
 _process_limit() { # fill the limit match rulelist and msglist arrays
@@ -5066,72 +5014,104 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
-		(ctstate)
+		(conntrack)
 			check_match_exist conntrack || return
-			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
-				NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT) : ;;
-				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
-					return 1
-			esac
-		;;
-		(ctproto)
-			check_match_exist conntrack || return
-			val_proto "$tmp_opt_var_value_neg_ok" || return 1
-		;;
-		(ctorigsrc|ctorigdst|ctreplsrc|ctrepldst)
-			check_match_exist conntrack || return
-			val_ipv4_addr_no_range "$tmp_opt_var_value_neg_ok" || return 1
-		;;
-		(ctorigsrcport|ctorigdstport|ctreplsrcport|ctrepldstport)
-			check_match_exist conntrack || return
-			case "$tmp_opt_var_value_neg_ok" in
-				+([[:digit:]])) 
-					for arg_idx in ${!tmp_pos_par_val_array[@]}; do # TODO: DOES IT REFER TO PROTO OR CTPROTO?
-						if [[ ${tmp_pos_par_val_array[pos_idx]%% *} = proto ]]; then
-							if [[ $(string_tolower "${tmp_pos_par_val_array[pos_idx]#* }") = @(gre|47) ]]; then
-								val_32bit "$tmp_opt_var_value_neg_ok" || {
-									log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do str_var=""
+				case "$1" in
+					dir|state|proto|origsrcport|origdstport|replsrcport|repldstport|origsrc|origdst|replsrc|repldst|expire|status)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+					;;
+				esac
+				[[ $2 ]] && str_var="$(remove_negation "$2")"
+				case "$1" in
+					dir)
+						[[ $2 = @(ORIGINAL|REPLY) ]] || {
+							log -E "Invalid value \`$2' for \`$1' of\`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
+							return 1
+						}
+					;;
+					state)
+						for str in ${str_var//,/ }; do
+							case "$(string_toupper "$str")" in
+								NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT) : ;;
+								*) log -i "$2" "for option \`$1' in \`$tmp_opt_var' descriptor"
+									return 1
+							esac
+						done
+					;;
+					proto)
+						val_proto "$str_var" || return 1
+					;;
+					origsrcport|origdstport|replsrcport|repldstport)
+						case "$str_var" in
+							+([[:digit:]]))
+								if [[ $(string_tolower "$tmp_opt_var_value") = *ctproto:@(gre|47)* ]]; then
+									val_32bit "$str_var" || {
+										log -i "$2" "for option \`$1' in \`$tmp_opt_var' descriptor"
+										return 1
+									}
+								else
+									for pos_idx in ${!tmp_pos_par_val_array[@]}; do # TODO: DOES IT REFER TO PROTO OR CTPROTO?
+										if [[ ${tmp_pos_par_val_array[pos_idx]%% *} = proto ]]; then
+											if [[ $(string_tolower "${tmp_pos_par_val_array[pos_idx]#* }") = @(gre|47) ]]; then
+												val_32bit "$str_var" || {
+													log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
+													return 1
+												}
+											else
+												val_port "$str_var" || return 1
+											fi
+											break
+										fi
+									done
+								fi
+							;;
+							+([[:digit:]])-+([[:digit:]]))
+								val_port_range "$str_var" || return 1
+							;;
+							*\[*\]-*) # range has square brackets
+								val_port_range_word "$str_var" || return 1
+							;;
+							\[*-*\]) # has square brackets
+								val_port "${str_var//@(\[|\])/}" || return 1
+							;;
+							*-*) # range
+								val_port_range_word "$str_var" || return 1
+							;;
+							*) val_port "$str_var" || return 1
+						esac
+					;;
+					?(\!)@(origsrc|origdst|replsrc|repldst))
+						val_ipv4_addr_no_range "$2" || return 1
+					;;
+					?(\!)status)
+						case "$(string_toupper "$2")" in
+							NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) : ;;
+							*) log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
+								return 1
+						esac
+					;;
+					?(\!)expire)
+						case "$2" in
+							+([[:digit:]])) : ;;
+							+([[:digit:]])-+([[:digit:]]))
+								val_range ${2/-/ } || {
+									log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
 									return 1
 								}
-							else
-								val_port "$tmp_opt_var_value_neg_ok" || return 1
-							fi
-							break
-						fi
-					done
-				;;
-				*) val_port "$tmp_opt_var_value_neg_ok" || return 1
-			esac
-		;;
-		(ctstatus)
-			check_match_exist conntrack || return
-			case "$(string_toupper "$tmp_opt_var_value_neg_ok")" in
-				NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) : ;;
-				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
-					return 1
-			esac
-		;;
-		(ctexpire)
-			check_match_exist conntrack || return
-			case "$tmp_opt_var_value_neg_ok" in
-				+([[:digit:]])) : ;;
-				+([[:digit:]]):+([[:digit:]]))
-					set -- ${tmp_opt_var_value_neg_ok/:/ }
-					(($2 >= $1)) || {
-						log -E "$tmp_opt_var min. range value \`$1' greater than max. range value \`$2'."
-						return 1
-					}
-				;;
-				*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
-					return 1
-			esac
-		;;
-		(ctdir)
-			check_match_exist conntrack || return
-			[[ $tmp_opt_var_value = @(ORIGINAL|REPLY) ]] || {
-				log -E "Invalid value \`$tmp_opt_var_value' for \`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
-				return 1
-			}
+							;;
+							*) log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
+								return 1
+						esac
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
+				esac
+				shift 2
+			done
 		;;
 		(log_level)
 			check_tgt_exist LOG || return
