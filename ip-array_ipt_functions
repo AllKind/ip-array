@@ -3373,7 +3373,11 @@ while (($#)); do
 	str_neg="" str_var="$1" str_o="$2" str_mo="$2"
 	string_negated "$str_o" && str_neg="! " && str_o="$(remove_negation "$str_o")"
 	case "$str_var" in
-		dir|state|proto|origsrc|origdst|replsrc|repldst|status)
+		state|status)
+			str_cmd+="${str_neg}--ct$str_var $(string_toupper $str_o) "
+			str_msg+="ct${str_var}=$(string_toupper $str_mo) "
+		;;
+		dir|proto|origsrc|origdst|replsrc|repldst)
 			str_cmd+="${str_neg}--ct$str_var $str_o "
 			str_msg+="ct${str_var}=$str_mo "
 		;;
@@ -5029,7 +5033,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				[[ $2 ]] && str_var="$(remove_negation "$2")"
 				case "$1" in
 					dir)
-						[[ $2 = @(ORIGINAL|REPLY) ]] || {
+						[[ $str_var = @(ORIGINAL|REPLY) ]] || {
 							log -E "Invalid value \`$2' for \`$1' of\`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
 							return 1
 						}
@@ -5085,22 +5089,23 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							*) val_port "$str_var" || return 1
 						esac
 					;;
-					?(\!)@(origsrc|origdst|replsrc|repldst))
-						val_ipv4_addr_no_range "$2" || return 1
+					origsrc|origdst|replsrc|repldst)
+						val_ipv4_addr_no_range "$str_var" || return 1
 					;;
-					?(\!)status)
-						case "$(string_toupper "$2")" in
-							NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) : ;;
-							*) log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
+					status)
+						for str in ${str_var//,/ }; do
+							if ! [[ "$(string_toupper "$str")" = @(NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED) ]]; then
+								log -i "$2" "for option \`$1' in \`$tmp_opt_var' descriptor"
 								return 1
-						esac
+							fi
+						done
 					;;
-					?(\!)expire)
-						case "$2" in
+					expire)
+						case "$str_var" in
 							+([[:digit:]])) : ;;
 							+([[:digit:]])-+([[:digit:]]))
-								val_range ${2/-/ } || {
-									log -i "$2" "for option \`$str_var' in \`$tmp_opt_var' descriptor"
+								val_range ${str_var/-/ } || {
+									log -i "$2" "for option \`$1' in \`$tmp_opt_var' descriptor"
 									return 1
 								}
 							;;
