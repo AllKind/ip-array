@@ -3467,11 +3467,11 @@ RULELIST_TOS[RULE_LIST_IDX]="-m tos ${str_neg}--tos $(remove_negation "${arg_lis
 MSG_LIST_TOS[RULE_LIST_IDX]="tos=${arg_list_m_tos[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
-_process_m_cpu() { # fill the cpu match rulelist and msglist arrays
+_process_cpu() { # fill the cpu match rulelist and msglist arrays
 local str_neg=""
-string_negated "${arg_list_m_cpu[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_CPU[RULE_LIST_IDX]="-m cpu ${str_neg}--cpu $(remove_negation "${arg_list_m_cpu[ARG_LIST_IDX]}") "
-MSG_LIST_M_CPU[RULE_LIST_IDX]="cpu=${arg_list_m_cpu[ARG_LIST_IDX]} "
+string_negated "${arg_list_cpu[ARG_LIST_IDX]}" && str_neg="! "
+RULELIST_CPU[RULE_LIST_IDX]="-m cpu ${str_neg}--cpu $(remove_negation "${arg_list_cpu[ARG_LIST_IDX]}") "
+MSG_LIST_CPU[RULE_LIST_IDX]="cpu=${arg_list_cpu[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_quota() { # fill the quota match rulelist and msglist arrays
@@ -5523,7 +5523,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				val_nf_mark "${str_msk}" || return 1
 			fi
 		;;
-		(m_cpu)
+		(cpu)
 			check_match_exist cpu || return
 			val_numeric "$tmp_opt_var_value_neg_ok" || return 1
 		;;
