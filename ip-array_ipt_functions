@@ -3408,19 +3408,14 @@ MSG_LIST_CONNTRACK[RULE_LIST_IDX]="conntrack: $str_msg"
 } # -------------------------------------------------------------------------
 
 _process_limit() { # fill the limit match rulelist and msglist arrays
-local str_neg=""
+local str_neg="" str_cmd="" str_msg=""
 string_negated "${arg_list_limit[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_LIMIT[RULE_LIST_IDX]="-m limit ${str_neg}--limit $(remove_negation "${arg_list_limit[ARG_LIST_IDX]}") "
-MSG_LIST_LIMIT[RULE_LIST_IDX]="limit=${arg_list_limit[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_limit_burst() { # fill the limit match burst rulelist and msglist arrays
-if [[ -z ${arg_list_limit[ARG_LIST_IDX]} ]]; then
-	RULELIST_LIMIT[RULE_LIST_IDX]="-m limit "
-	MSG_LIST_LIMIT[RULE_LIST_IDX]="limit=default "
-fi
-RULELIST_LIMIT_BURST[RULE_LIST_IDX]="--limit-burst ${arg_list_limit_burst[ARG_LIST_IDX]} "
-MSG_LIST_LIMIT_BURST[RULE_LIST_IDX]="burst=${arg_list_limit_burst[ARG_LIST_IDX]} "
+set -- $(remove_negation "${arg_list_limit[ARG_LIST_IDX]//:/ }")
+str_cmd="-m limit ${str_neg}--limit $1 "
+str_msg="limit=${arg_list_limit[ARG_LIST_IDX]} "
+[[ $2 ]] && str_cmd+="--limit-burst $3 "
+RULELIST_LIMIT[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_LIMIT[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_connbytes() {
@@ -4958,11 +4953,21 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(limit)
 			check_match_exist limit || return
-			val_limit "$tmp_opt_var_value_neg_ok" || return 1
-		;;
-		(limit_burst)
-			check_match_exist limit || return
-			val_limit_burst "$tmp_opt_var_value" || return 1
+			set -- $(split_val : ' ' "$tmp_opt_var_value_neg_ok")
+			val_limit "$1" || return 1
+			if [[ $2 ]]; then
+				if [[ $2 = burst ]]; then
+					if [[ $3 ]]; then
+						val_limit_burst "$3" || return 1
+					else
+						log -E "Value for \`$2' option is missing in \`$tmp_opt_var' descriptor."
+						return 1
+					fi
+				else
+					log -E "Invalid value \`$2' for \`$tmp_opt_var' descriptor. Valid is: burst."
+					return 1
+				fi
+			fi
 		;;
 		(connbytes)
 			check_match_exist connbytes || return
@@ -4995,7 +5000,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				case "$1" in
 					dir)
 						[[ $str_var = @(ORIGINAL|REPLY) ]] || {
-							log -E "Invalid value \`$2' for \`$1' of\`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
+							log -E "Invalid value \`$2' for \`$1' of \`$tmp_opt_var' descriptor. Valid content is: ORIGINAL or REPLY."
 							return 1
 						}
 					;;
@@ -7613,8 +7618,7 @@ local TEMPLATE_BUILTIN_LOG_DROP_SCANS=(
 "option_list_0[2]=tcp_flags"
 "option_list_0[3]=log_prefix"
 "option_list_0[4]=log_level=${GLOBAL_LOGLEVL}"
-"option_list_0[5]=limit=${GLOBAL_LOGLIMIT}"
-"option_list_0[6]=limit_burst=${GLOBAL_BURSTLIMIT}"
+"option_list_0[5]=limit=${GLOBAL_LOGLIMIT}:burst:${GLOBAL_BURSTLIMIT}"
 "always_use_0[0]=proto=tcp"
 "template_msg='Adding TCP scan rules'"
 )
@@ -7697,9 +7701,8 @@ local TEMPLATE_BUILTIN_LOG_INVALID_STATE=(
 "option_list_0[0]=chain"
 "option_list_0[1]=log_prefix"
 "always_use_0[0]=state=INVALID"
-"always_use_0[1]=limit=${GLOBAL_LOGLIMIT}"
-"always_use_0[2]=limit_burst=${GLOBAL_BURSTLIMIT}"
-"always_use_0[3]=log_level=${GLOBAL_LOGLEVL}"
+"always_use_0[1]=limit=${GLOBAL_LOGLIMIT}:burst:${GLOBAL_BURSTLIMIT}"
+"always_use_0[2]=log_level=${GLOBAL_LOGLEVL}"
 )
 local -a RULEBLOCK_BUILTIN_LOG_INVALID_STATE
 if ((LOG_INVALID && BLOCK_INVALID)); then
@@ -7784,9 +7787,8 @@ local TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP=(
 "option_list_0[2]=log_prefix"
 "always_use_0[0]=proto=tcp"
 "always_use_0[1]=state=NEW"
-"always_use_0[2]=limit=${GLOBAL_LOGLIMIT}"
-"always_use_0[3]=limit_burst=${GLOBAL_BURSTLIMIT}"
-"always_use_0[4]=log_level=${GLOBAL_LOGLEVL}"
+"always_use_0[2]=limit=${GLOBAL_LOGLIMIT}:burst:${GLOBAL_BURSTLIMIT}"
+"always_use_0[3]=log_level=${GLOBAL_LOGLEVL}"
 )
 local -a RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 # first syn ack
@@ -9077,10 +9079,9 @@ local TEMPLATE_BUILTIN_FINAL_RULE=(
 "option_list_0[0]=target"
 "option_list_0[1]=chain"
 "option_list_0[2]=limit"
-"option_list_0[3]=limit_burst"
-"option_list_0[4]=log_level"
-"option_list_0[5]=log_prefix"
-"option_list_0[6]=log_options"
+"option_list_0[3]=log_level"
+"option_list_0[4]=log_prefix"
+"option_list_0[5]=log_options"
 "template_msg='Creating final rule entries'"
 )
 local -a RULEBLOCK_BUILTIN_FINAL_RULE
@@ -9093,7 +9094,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 	fi
 	case "${str_action}" in
 		log)
-			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit} ${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_pol}${str_chain}: ${str_log_options}"
+			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit}:burst:${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_pol}${str_chain}: ${str_log_options}"
 		
 		;;
 		drop|reject)
@@ -9101,7 +9102,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 		;;
 		logdrop|logreject)
 			str_tmp_act=$(string_toupper ${str_action/log/})
-			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit} ${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_tmp_act}_${str_chain}: ${str_log_options}"
+			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit}:burst:${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_tmp_act}_${str_chain}: ${str_log_options}"
 			if [[ ${str_action} = logdrop && ${str_pol} = DROP_ ]]; then
 				log -N "Policy for ${str_chain} already is set to DROP, not applying additional final drop rule."
 			else

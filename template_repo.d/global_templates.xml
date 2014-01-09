@@ -143,9 +143,8 @@
 		10: destination port
 		11: state
 		12: limit limit
-		13: limit burst
-		14: log level
-		15: log prefix
+		13: log level
+		14: log prefix
 		Mandatory options: table, target, chain
 		-->
 		<mandatory_vars> table,target,chain </mandatory_vars>
@@ -172,10 +171,9 @@
 		10: destination port
 		11: state
 		12: limit limit
-		13: limit burst
-		14: log level
-		15: log prefix
-		16: log options
+		13: log level
+		14: log prefix
+		15: log options
 		Mandatory options: table, target, chain
 		-->
 		<mandatory_vars> table,target,chain </mandatory_vars>

@@ -20,7 +20,6 @@
 		6: destination port
 		7: state
 		8: limit limit
-		9: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC INPUT allow rules </template_msg>
@@ -47,7 +46,6 @@
 		6: destination port
 		7: state
 		8: limit limit
-		9: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC OUTPUT allow rules </template_msg>
@@ -75,7 +73,6 @@
 		7: destination port
 		8: state
 		9: limit limit
-		10: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC FORWARD allow rules </template_msg>
@@ -103,7 +100,6 @@
 		6: destination port
 		7: state
 		8: limit limit
-		9: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC INPUT block rules </template_msg>
@@ -130,7 +126,6 @@
 		6: destination port
 		7: state
 		8: limit limit
-		9: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC OUTPUT block rules </template_msg>
@@ -158,7 +153,6 @@
 		7: destination port
 		8: state
 		9: limit limit
-		10: limit burst
 		-->
 		<chain> ${ipsec_chain} </chain>
 		<template_msg> ${ADDMSG} custom IPSEC FORWARD block rules </template_msg>

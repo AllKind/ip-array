@@ -447,9 +447,8 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
+		9: log level
+		10: log prefix
 		Mandatory options: input device
 		-->
 		<template_msg> ${ADDMSG} stateful INPUT - minimal log options enabled - LOG rules </template_msg>
@@ -477,10 +476,9 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
-		12: log options
+		9: log level
+		10: log prefix
+		11: log options
 		Mandatory options: input device
 		-->
 		<template_msg> ${ADDMSG} stateful INPUT - all log options enabled - LOG rules </template_msg>
@@ -510,9 +508,8 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
+		9: log level
+		10: log prefix
 		Mandatory options: input device
 		-->
 		<template_msg>
@@ -542,9 +539,8 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
+		9: log level
+		10: log prefix
 		Mandatory options: input device
 		-->
 		<template_msg>
@@ -574,10 +570,9 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
-		12: reject type
+		9: log level
+		10: log prefix
+		11: reject type
 		Mandatory options: input device
 		-->
 		<template_msg>
@@ -608,9 +603,8 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
+		9: log level
+		10: log prefix
 		Mandatory options: input device
 		-->
 		<template_msg>
@@ -714,9 +708,8 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
+		9: log level
+		10: log prefix
 		Mandatory options: output device
 		-->
 		<template_msg>
@@ -746,10 +739,9 @@
 		6: destination port
 		7: state
 		8: limit
-		9: limit burst
-		10: log level
-		11: log prefix
-		12: log options
+		9: log level
+		10: log prefix
+		11: log options
 		Mandatory options: output device
 		-->
 		<template_msg>
@@ -1105,9 +1097,8 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
+		10: log level
+		11: log prefix
 		Mandatory options: input device, output device
 		-->
 		<template_msg>
@@ -1138,10 +1129,9 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
-		13: log options
+		10: log level
+		11: log prefix
+		12: log options
 		Mandatory options: input device, output device
 		-->
 		<template_msg>
@@ -1174,9 +1164,8 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
+		10: log level
+		11: log prefix
 		Mandatory options: input device, output device
 		-->
 		<template_msg>
@@ -1207,9 +1196,8 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
+		10: log level
+		11: log prefix
 		Mandatory options: input device, output device
 		-->
 		<template_msg>
@@ -1240,10 +1228,9 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
-		13: reject type
+		10: log level
+		11: log prefix
+		12: reject type
 		Mandatory options: input device, output device
 		-->
 		<template_msg>
@@ -1275,9 +1262,8 @@
 		7: destination port
 		8: state
 		9: limit
-		10: limit burst
-		11: log level
-		12: log prefix
+		10: log level
+		11: log prefix
 		Mandatory options: input device, output device
 		-->
 		<template_msg>

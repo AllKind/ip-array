@@ -165,7 +165,7 @@
 	
 	<template name="BT_LIMIT_BURST">
 		<!-- Limit and burst -->
-		<option_list_0> limit limit_burst </option_list_0>
+		<option_list_0> limit </option_list_0>
 	</template>
 	
 	<template name="BT_PROTO_STATE_LIMIT">
@@ -270,8 +270,8 @@
 -->
 	<!-- Limit and burst -->
 	<template name="BT_LIMIT_BURST_REVERSED">
-		<load_template> BT_LIMIT_BURST </load_template>
-		<option_list_1> limit limit_burst </option_list_1>
+		<option_list_0> limit </option_list_0>
+		<option_list_1> limit </option_list_1>
 	</template>
 
 	<!-- Basic match sets -->
