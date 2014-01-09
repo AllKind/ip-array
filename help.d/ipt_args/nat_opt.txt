@@ -1,5 +1,6 @@
 nat_opt: NAT options specification.
-	To be used with the targets: DNAT, SNAT, MASQUERADE, NETMAP and REDIRET.
+	To be used with the targets: DNAT, SNAT, MASQUERADE, NETMAP, REDIRET,
+	RAWDNAT, RAWSNAT.
 
 	Synopsis:
 		option[:opt_arg][:...]

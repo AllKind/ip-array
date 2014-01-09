@@ -1,0 +1,8 @@
+log_prefix: log message specification.
+	To be used with the targets LOG, NFLOG, ULOG.
+
+	Synopsis: log_message
+
+	Example:
+		log_prefix="DROP INPUT"
+

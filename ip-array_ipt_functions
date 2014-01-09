@@ -732,7 +732,7 @@ else
 		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return
 	done
 fi
-readonly ARR_MATCH_EXIST 
+readonly ARR_MATCH_EXIST
 [[ $DEBUG_INFO ]] && dbg_arr ARR_MATCH_EXIST || :
 } # -------------------------------------------------------------------------
 
@@ -1376,7 +1376,7 @@ done
 } # -------------------------------------------------------------------------
 
 set_output_rule_mode() {
-# disable additional output rules, if either output policy is ACCEPT, 
+# disable additional output rules, if either output policy is ACCEPT,
 # or RESTRICT_OUTPUT is 0, IFBOUND or IPBOUND
 case "${RESTRICT_OUTPUT:=0}" in
 	(IFBOUND|IPBOUND)
@@ -2657,7 +2657,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	# if template provides the reverse_mode option, see if reverse mode is 'reverse' or 'mirror'
 	if [[ ${reverse_mode} ]]; then
 		case "$(string_tolower "${reverse_mode}")" in
-			reverse) # option is reverse, check for valid option_list_1 
+			reverse) # option is reverse, check for valid option_list_1
 				if ((${#option_list_1[@]})); then
 					check_array_unique_assignement 'option_list_1' || {
 						raise_cfg_err_count
@@ -4060,47 +4060,6 @@ case "${arg_list_t_connsecmark[ARG_LIST_IDX]}" in
 esac
 } # -------------------------------------------------------------------------
 
-#_process_nat_ip() { # fill the nat ip address rulelist and msglist arrays
-#case "$str_target" in
-#	SNAT)
-#		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-source ${arg_list_nat_ip[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATsrc=${arg_list_nat_ip[ARG_LIST_IDX]} "
-#	;;
-#	DNAT)
-#		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-destination ${arg_list_nat_ip[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATdst=${arg_list_nat_ip[ARG_LIST_IDX]} "
-#	;;
-#	NETMAP)
-#		RULELIST_NAT_IP[RULE_LIST_IDX]="--to ${arg_list_nat_ip[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATdst=${arg_list_nat_ip[ARG_LIST_IDX]} "
-#	;;
-#	RAWSNAT)
-#		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-source ${arg_list_nat_ip[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATsrc=${arg_list_nat_ip[ARG_LIST_IDX]} "
-#	;;
-#	RAWDNAT)
-#		RULELIST_NAT_IP[RULE_LIST_IDX]="--to-destination ${arg_list_nat_ip[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_IP[RULE_LIST_IDX]="NATdst=${arg_list_nat_ip[ARG_LIST_IDX]} "
-#	;;
-#	*) log -i "$str_target" 'an iptables target'
-#		return 1
-#esac
-#} # -------------------------------------------------------------------------
-#
-#_process_nat_port() { # fill the nat port address rulelist and msglist arrays
-#case "$str_target" in
-#	MASQUERADE|REDIRECT)
-#		case "$(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}")" in # only valid with tcp or udp
-#			(tcp|udp|6|17)
-#				RULELIST_NAT_PORT[RULE_LIST_IDX]="--to-ports ${arg_list_nat_port[ARG_LIST_IDX]/:/} "
-#			;;
-#		esac
-#	;;
-#	*) RULELIST_NAT_PORT[RULE_LIST_IDX]=":${arg_list_nat_port[ARG_LIST_IDX]} "
-#esac
-#MSG_LIST_NAT_PORT[RULE_LIST_IDX]="NATport=${arg_list_nat_port[ARG_LIST_IDX]} "
-#} # -------------------------------------------------------------------------
-
 _process_nat_opt() {
 local str_opts="" str_addr="" str_p=""
 set -- $(split_val : ' ' "${arg_list_nat_opt[ARG_LIST_IDX]}")
@@ -4133,13 +4092,6 @@ elif [[ $str_addr ]]; then
 fi
 RULELIST_NAT_OPTION[RULE_LIST_IDX]="$str_opts"
 MSG_LIST_NAT_OPTION[RULE_LIST_IDX]="NAT-option=${arg_list_nat_opt[ARG_LIST_IDX]}"
-#case "${arg_list_nat_opt[ARG_LIST_IDX]}" in
-#	random|persistent)
-#		RULELIST_NAT_OPTION[RULE_LIST_IDX]="--${arg_list_nat_opt[ARG_LIST_IDX]}"
-#		MSG_LIST_NAT_OPTION[RULE_LIST_IDX]="NAToption=${arg_list_nat_opt[ARG_LIST_IDX]}"
-#	;;
-#	*) log -U $FUNCNAME; return 1
-#esac
 } # -------------------------------------------------------------------------
 
 _process_reject_type() { # fill the reject type rulelist and msglist arrays
@@ -4153,9 +4105,22 @@ RULELIST_LOG_LEVEL[RULE_LIST_IDX]="--log-level ${arg_list_log_level[ARG_LIST_IDX
 MSG_LIST_LOG_LEVEL[RULE_LIST_IDX]="level=${arg_list_log_level[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
-_process_log_prefix() { # fill the logprefix rulelist and msglist arrays
-RULELIST_LOG_PREFIX[RULE_LIST_IDX]="--log-prefix \"${arg_list_log_prefix[ARG_LIST_IDX]} \" "
-MSG_LIST_LOG_PREFIX[RULE_LIST_IDX]="prefix='${arg_list_log_prefix[ARG_LIST_IDX]} ' "
+_process_log_prefix() { # fill the log_prefix rulelist and msglist arrays
+case "$str_target" in
+	LOG)
+		RULELIST_LOG_PREFIX[RULE_LIST_IDX]="--log-prefix \"${arg_list_log_prefix[ARG_LIST_IDX]} \" "
+		MSG_LIST_LOG_PREFIX[RULE_LIST_IDX]="log_prefix='${arg_list_log_prefix[ARG_LIST_IDX]} ' "
+	;;
+	NFLOG)
+		RULELIST_LOG_PREFIX[RULE_LIST_IDX]="--nflog-prefix \"${arg_list_log_prefix[ARG_LIST_IDX]} \" "
+		MSG_LIST_LOG_PREFIX[RULE_LIST_IDX]="nflog_prefix='${arg_list_log_prefix[ARG_LIST_IDX]} ' "
+	;;
+	ULOG)
+		RULELIST_LOG_PREFIX[RULE_LIST_IDX]="--ulog-prefix \"${arg_list_log_prefix[ARG_LIST_IDX]} \" "
+		MSG_LIST_LOG_PREFIX[RULE_LIST_IDX]="ulog_prefix='${arg_list_log_prefix[ARG_LIST_IDX]} ' "
+	;;
+	*) log -U $FUNCNAME; return 1
+esac
 } # -------------------------------------------------------------------------
 
 _process_log_options() {
@@ -4212,44 +4177,42 @@ RULELIST_RPFILTER[RULE_LIST_IDX]="${arr_cmd[*]} "
 MSG_LIST_RPFILTER[RULE_LIST_IDX]="$str_msg "
 } # -------------------------------------------------------------------------
 
-_process_nflog_group() { # fill the NFLOG netlink group rulelist and msglist arrays
-RULELIST_NFLOG_GROUP[RULE_LIST_IDX]="--nflog-group ${arg_list_nflog_group[ARG_LIST_IDX]} "
-MSG_LIST_NFLOG_GROUP[RULE_LIST_IDX]="nflog-group=${arg_list_nflog_group[ARG_LIST_IDX]} "
+_process_nflog_opt() { # fill the NFLOG options rulelist and msglist arrays
+local str_cmd="" str_msg=""
+set -- $(split_val : ' ' "${arg_list_nflog_opt[ARG_LIST_IDX]}")
+while (($#)); do
+	case "$1" in
+		group) str_cmd+="--nflog-group $2 "  str_msg+="nflog-${1}=$2 "
+		;;
+		range) str_cmd+="--nflog-range $2 " str_msg+="nflog-${1}=$2 "
+		;;
+		thresh) str_cmd+="--nflog-threshold $2 " str_msg+="nflog-${1}=$2 "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift 2
+done
+RULELIST_NFLOG_OPT[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_NFLOG_OPT[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
-_process_nflog_prefix() { # fill the NFLOG prefix rulelist and msglist arrays
-RULELIST_NFLOG_PREFIX[RULE_LIST_IDX]="--nflog-prefix \"${arg_list_nflog_prefix[ARG_LIST_IDX]} \" "
-MSG_LIST_NFLOG_PREFIX[RULE_LIST_IDX]="nflog-prefix='${arg_list_nflog_prefix[ARG_LIST_IDX]} ' "
-} # -------------------------------------------------------------------------
-
-_process_nflog_range() { # fill the NFLOG copy to userspsace byte range rulelist and msglist arrays
-RULELIST_NFLOG_RANGE[RULE_LIST_IDX]="--nflog-range ${arg_list_nflog_range[ARG_LIST_IDX]} "
-MSG_LIST_NFLOG_RANGE[RULE_LIST_IDX]="nflog-range=${arg_list_nflog_range[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_nflog_thresh() { # fill the ULOG queue threshold size rulelist and msglist arrays
-RULELIST_NFLOG_THRESH[RULE_LIST_IDX]="--nflog-threshold ${arg_list_nflog_thresh[ARG_LIST_IDX]} "
-MSG_LIST_NFLOG_THRESH[RULE_LIST_IDX]="nflog-thresh=${arg_list_nflog_thresh[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ulog_group() { # fill the ULOG netlink group rulelist and msglist arrays
-RULELIST_ULOG_GROUP[RULE_LIST_IDX]="--ulog-nlgroup ${arg_list_ulog_group[ARG_LIST_IDX]} "
-MSG_LIST_ULOG_GROUP[RULE_LIST_IDX]="nlgroup=${arg_list_ulog_group[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ulog_prefix() { # fill the ULOG prefix rulelist and msglist arrays
-RULELIST_ULOG_PREFIX[RULE_LIST_IDX]="--ulog-prefix \"${arg_list_ulog_prefix[ARG_LIST_IDX]} \" "
-MSG_LIST_ULOG_PREFIX[RULE_LIST_IDX]="ulog-prefix='${arg_list_ulog_prefix[ARG_LIST_IDX]} ' "
-} # -------------------------------------------------------------------------
-
-_process_ulog_range() { # fill the ULOG copy to userspsace byte range rulelist and msglist arrays
-RULELIST_ULOG_RANGE[RULE_LIST_IDX]="--ulog-cprange ${arg_list_ulog_range[ARG_LIST_IDX]} "
-MSG_LIST_ULOG_RANGE[RULE_LIST_IDX]="cprange=${arg_list_ulog_range[ARG_LIST_IDX]} "
-} # -------------------------------------------------------------------------
-
-_process_ulog_thresh() { # fill the ULOG queue threshold size rulelist and msglist arrays
-RULELIST_ULOG_THRESH[RULE_LIST_IDX]="--ulog-qthreshold ${arg_list_ulog_thresh[ARG_LIST_IDX]} "
-MSG_LIST_ULOG_THRESH[RULE_LIST_IDX]="ulog-qthresh=${arg_list_ulog_thresh[ARG_LIST_IDX]} "
+_process_ulog_opt() { # fill the ULOG options rulelist and msglist arrays
+local str_cmd="" str_msg=""
+set -- $(split_val : ' ' "${arg_list_ulog_opt[ARG_LIST_IDX]}")
+while (($#)); do
+	case "$1" in
+		group) str_cmd+="--ulog-group $2 "  str_msg+="ulog-${1}=$2 "
+		;;
+		range) str_cmd+="--ulog-range $2 " str_msg+="ulog-${1}=$2 "
+		;;
+		thresh) str_cmd+="--ulog-threshold $2 " str_msg+="ulog-${1}=$2 "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift 2
+done
+RULELIST_ULOG_OPT[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_ULOG_OPT[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_nfqueue() {
@@ -4529,7 +4492,7 @@ _pre_process_checks() {
 # run rule sanity checks before running the _process* functions.
 # These checks do not require that the target or the chain is known.
 local -i pos_idx del_idx
-# check if there are port definitions, 
+# check if there are port definitions,
 # A: if protocol is icmp, assume the port definition is meant as icmp_type,
 # set according values to reflect the changes
 # B: which are only valid with either tcp, or udp
@@ -4620,7 +4583,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					overwrites entry \`${arr_tmp_targets[*]}' from template."
 			}
 			arg_list_target=()
-#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 			for str_var in ${tmp_opt_var_value//,/ }; do
 				validate_target "$str_var" || return 1
 				arg_list_target[${#arg_list_target[@]}]="$str_var"
@@ -4640,7 +4602,6 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			fi
 			arg_list_chain=()
 			arg_idx=0
-#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 			for str_var in  ${tmp_opt_var_value//,/ }; do
 				val_userdef_chain_target "$str_var" || return 1
 				arg_list_chain[${#arg_list_chain[@]}]="$str_var"
@@ -5122,96 +5083,108 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			check_tgt_exist LOG || return
 			val_loglevel "$tmp_opt_var_value" || return 1
 		;;
-		(log_prefix)
-			check_tgt_exist LOG || return
-			if ((${#tmp_opt_var_value} > 28)); then
-				log -E "Log prefix value \`$tmp_opt_var_value' longer then 28 characters."
-				return 1
-			fi
+		(log_prefix) :
 		;;
 		(log_options)
 			check_tgt_exist LOG || return
 			for str_var in ${tmp_opt_var_value//,/ }; do
-#			for str_var in $(IFS=, split_val $tmp_opt_var_value); do
 				[[ $str_var = @(log_tcp_seq|log_tcp_opt|log_ip_opt|log_uid) ]] || {
 					log -E "Invalid value \`$str_var' in \`$tmp_opt_var_value' for \`$tmp_opt_var'."
 					return 1
 				}
 			done
 		;;
-		(nflog_group)
+		(nflog_opt)
 			check_tgt_exist NFLOG || return
-			case "$tmp_opt_var_value" in
-				+([[:digit:]])) 
-					val_32bit_off1 "$tmp_opt_var_value" || {
-						log -E "NFLOG netlink group value is out of range. Allowed range: 1-4294967295."
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			case "$1" in
+				group|range|thresh)
+					[[ $2 ]] || {
+						log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
 						return 1
 					}
 				;;
-				*) log -i "$tmp_opt_var_value" "NFLOG netlink group descriptor"
-					return 1
 			esac
-		;;
-		(nflog_prefix)
-			check_tgt_exist NFLOG || return
-			if ((${#tmp_opt_var_value} > 63)); then
-				log -E "NFLOG prefix value \`$tmp_opt_var_value' longer then 63 characters."
-				return 1
-			fi
-		;;
-		(nflog_range)
-			check_tgt_exist NFLOG || return
-			val_numeric_quiet "$tmp_opt_var_value" || {
-				log -i "$tmp_opt_var_value" "NFLOG byte size descriptor"
-				return 1
-			}
-		;;
-		(nflog_thresh)
-			check_tgt_exist NFLOG || return
-			val_numeric_quiet "$tmp_opt_var_value" || {
-				log -i "$tmp_opt_var_value" "NFLOG threshold size descriptor"
-				return 1
-			}
-		;;
-		(ulog_group)
-			check_tgt_exist ULOG || return
-			case "$tmp_opt_var_value" in
-				+([[:digit:]])) 
-					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 32)) || {
-						log -E "ULOG netlink group value is out of range. Allowed range: 1-32."
-						return 1
-					}
-				;;
-				*) log -i "$tmp_opt_var_value" "ULOG netlink group descriptor"
-					return 1
-			esac
-		;;
-		(ulog_prefix)
-			check_tgt_exist ULOG || return
-			if ((${#tmp_opt_var_value} > 31)); then
-				log -E "ULOG prefix value \`$tmp_opt_var_value' longer then 31 characters."
-				return 1
-			fi
-		;;
-		(ulog_range)
-			check_tgt_exist ULOG || return
-			val_numeric_quiet "$tmp_opt_var_value" || {
-				log -i "$tmp_opt_var_value" "ULOG byte size descriptor"
-				return 1
-			}
-		;;
-		(ulog_thresh)
-			check_tgt_exist ULOG || return
-			case "$tmp_opt_var_value" in
-				+([[:digit:]])) 
-					((tmp_opt_var_value >= 1 || tmp_opt_var_value <= 50)) || {
-						log -E "ULOG queue threshold value is out of range. Allowed range: 1-50."
-						return 1
-					}
+			while (($#)); do
+				case "$1" in
+					group)
+						case "$2" in
+							+([[:digit:]]))
+								val_32bit_off1 "$2" || {
+									log -E "NFLOG netlink group value \`$2' is out of range. Allowed range: 1-4294967295."
+									return 1
+								}
+							;;
+							*) log -i "$tmp_opt_var_value" "NFLOG logging group descriptor"
+								return 1
+						esac
 					;;
-				*) log -i "$tmp_opt_var_value" "ULOG queue threshold descriptor"
-					return 1
+					range)
+						val_numeric_quiet "$2" || {
+							log -i "$2" "NFLOG byte size descriptor"
+							return 1
+						}
+					;;
+					thresh)
+						val_numeric_quiet "$2" || {
+							log -i "$2" "NFLOG threshold size descriptor"
+							return 1
+						}
+					;;
+					*) log -i "$tmp_opt_var_value" "NFLOG options descriptor. Unknown option: \`$1'."
+						return 1
+					esac
+				shift 2
+			done
+		;;
+		(ulog_opt)
+			check_tgt_exist ULOG || return
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			case "$1" in
+				group|range|thresh)
+					[[ $2 ]] || {
+						log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+						return 1
+					}
+				;;
 			esac
+			while (($#)); do
+				case "$1" in
+					group)
+						case "$2" in
+							+([[:digit:]]))
+								(($2>= 1 || $2<= 32)) || {
+									log -E "ULOG netlink group value \`$2' is out of range. Allowed range: 1-32."
+									return 1
+								}
+							;;
+							*) log -i "$2" "ULOG netlink group descriptor"
+								return 1
+						esac
+					;;
+					range)
+						val_numeric_quiet "$2" || {
+							log -i "$2" "ULOG byte size descriptor"
+							return 1
+						}
+					;;
+					thresh)
+						case "$2" in
+							+([[:digit:]]))
+								(($2>= 1 || $2<= 50)) || {
+									log -E "ULOG queue threshold value \`$2' is out of range. Allowed range: 1-50."
+									return 1
+								}
+								;;
+								*) log -i "$2" "ULOG threshold size descriptor"
+								return 1
+						esac
+					;;
+					*) log -i "$tmp_opt_var_value" "ULOG options descriptor. Unknown option: \`$1'. "
+						return 1
+					esac
+				shift 2
+			done
 		;;
 		(addrtype)
 			check_match_exist addrtype || return
@@ -5912,7 +5885,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					val_ttl ${tmp_opt_var_value#+} || return 1
 				;;
 				("-"+([[:digit:]]))
-					val_ttl ${tmp_opt_var_value#-} || return 1 
+					val_ttl ${tmp_opt_var_value#-} || return 1
 				;;
 				(*) log -E "Illegal TTL value \`$tmp_opt_var_value'"
 					return 1
@@ -5965,7 +5938,7 @@ for target_idx in ${!arg_list_target[@]}; do
 	ARG_LIST_IDX=0 # reset arg_list counter on each loop
 	local str_target="${arg_list_target[target_idx]}"
 	for ((chain_idx=0; chain_idx<${#arg_list_chain[@]} && chain_idx<=chain_max; chain_idx++)); do
-		
+
 		case "${arg_list_chain[chain_idx]}" in
 			INPUT|PREROUTING)
 				if [[ ${arg_list_odev[ARG_LIST_IDX]} ]]; then
@@ -5993,6 +5966,33 @@ for target_idx in ${!arg_list_target[@]}; do
 		elif [[ $str_target = @(CT|NOTRACK) && $table != raw ]]; then # targets only valid in raw table
 			log -E "The $str_target target is only valid in the raw table."
 			return 1
+		elif [[ $str_target = LOG && ${arg_list_log_prefix[ARG_LIST_IDX]} ]]; then # we know the target by now, we can validate the log prefix
+			check_tgt_exist LOG || {
+				log -t "$str_target"
+				return 1
+			}
+			if ((${#arg_list_log_prefix[ARG_LIST_IDX]} > 28)); then
+				log -E "Log prefix value \`${#arg_list_log_prefix[ARG_LIST_IDX]}' is longer then 28 characters."
+				return 1
+			fi
+		elif [[ $str_target = NFLOG && ${arg_list_log_prefix[ARG_LIST_IDX]} ]]; then # we know the target by now, we can validate the log prefix
+			check_tgt_exist NFLOG || {
+				log -t "$str_target"
+				return 1
+			}
+			if ((${#arg_list_log_prefix[ARG_LIST_IDX]} > 63)); then
+				log -E "NFLOG prefix value \`${#arg_list_log_prefix[ARG_LIST_IDX]}' is longer then 63 characters."
+				return 1
+			fi
+		elif [[ $str_target = ULOG && ${arg_list_log_prefix[ARG_LIST_IDX]} ]]; then # we know the target by now, we can validate the log prefix
+			check_tgt_exist ULOG || {
+				log -t "$str_target"
+				return 1
+			}
+			if ((${#arg_list_log_prefix[ARG_LIST_IDX]} > 31)); then
+				log -E "ULOG prefix value \`${#arg_list_log_prefix[ARG_LIST_IDX]}' is longer then 31 characters."
+				return 1
+			fi
 		fi
 
 		# if CONNMARK match is used with --restore-mark, check if table is mangle
@@ -6022,7 +6022,7 @@ for target_idx in ${!arg_list_target[@]}; do
 		fi
 
 		case "$str_target" in # target dependant checks
-		# empty target params should not happen, if they are defined as mandatory variable in the template	
+		# empty target params should not happen, if they are defined as mandatory variable in the template
 		# still we check for them here for safety
 			AUDIT)
 				_val_tgtopt_set "${arg_list_audit[ARG_LIST_IDX]}" || return 1
@@ -6094,8 +6094,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			TTL)
 				_val_tgtopt_set "${arg_list_t_ttl[ARG_LIST_IDX]}" || return 1
 			;;
-			DNAT|SNAT|NETMAP)
-#				check_var_no_sep_silent "${arg_list_nat_ip[ARG_LIST_IDX]}" || {
+			DNAT|SNAT|NETMAP|RAWDNAT|RAWSNAT)
 				[[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *addr:?* ]] || {
 					log -E "No $str_target target IP address specified."
 					return 1
@@ -6120,8 +6119,7 @@ for target_idx in ${!arg_list_target[@]}; do
 						fi
 					fi
 				fi
-				
-#				if [[ ${arg_list_nat_port[ARG_LIST_IDX]} ]]; then # if a nat port is defined
+			
 				if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *port:?* ]]; then # if a nat port is defined
 					check_var_no_sep_silent "${arg_list_proto[ARG_LIST_IDX]}" || {
 						log -E "Protocol not defined, port specifications with $str_target are only valid with tcp or udp."
@@ -6158,15 +6156,15 @@ for target_idx in ${!arg_list_target[@]}; do
 					log -E "There is no connection tracking available in $table table."
 					return 1
 				fi
-				local str_state
-				for str_state in ctstate ctproto ctorigsrc ctorigdst ctreplsrc ctrepldst ctorigsrcport \
-					ctorigdstport ctreplsrcport ctrepldstport ctstatus ctexpire ctdir
-				do
-					if var_defined_silent "arg_list_${str_state}[${ARG_LIST_IDX}]"; then
-						log -E "There is no connection tracking available in $table table."
-						return 1
-					fi
-				done
+#				local str_state
+#				for str_state in ctstate ctproto ctorigsrc ctorigdst ctreplsrc ctrepldst ctorigsrcport \
+#					ctorigdstport ctreplsrcport ctrepldstport ctstatus ctexpire ctdir
+#				do
+#					if var_defined_silent "arg_list_${str_state}[${ARG_LIST_IDX}]"; then
+#						log -E "There is no connection tracking available in $table table."
+#						return 1
+#					fi
+#				done
 			;;
 		esac
 		((++RULE_LIST_IDX))
@@ -6215,7 +6213,7 @@ case "$table" in
 						log -E "Port specifications with $str_target are only valid with tcp or udp."
 						return 1
 					fi
-				fi	
+				fi
 			;;
 		esac
 	;;
@@ -6680,7 +6678,7 @@ else  # no matching network, looking for matching interfaces
 						if ((JUMP_TREE[3] == 0)); then # use interface+netname
 							new_target_chain="${str_in_dev}${IF_CON}${str_out_dev}" # as alias are present, if_to_if chain matches
 						else
-							log -W "Input device \`${str_in_dev}' and output device \`${str_out_dev}' are known, 
+							log -W "Input device \`${str_in_dev}' and output device \`${str_out_dev}' are known,
 								but no address is not matching a known network, cannot set chain for \`${str_target_chain}'."
 							return 0
 						fi
@@ -6996,7 +6994,7 @@ for target_idx in ${!arg_list_target[@]}; do
 			_process_target
 			_process_chain
 
-			if [[ $str_target = goto:* ]]; then # remove goto: prefix for the _process_$option functions 
+			if [[ $str_target = goto:* ]]; then # remove goto: prefix for the _process_$option functions
 				str_target="${str_target#goto:}"
 			fi
 			# copy the option list array to a temp array, so 'eval' is not needed
@@ -7103,7 +7101,7 @@ for ridx in ${!RULELIST_TARGET[@]}; do
 	fi
 	str_log="${PF}${MSG_LIST_TARGET[ridx]} ${MSG_LIST_TABLE[ridx]}${MSG_LIST_CHAIN[ridx]}"
 	str_cmd=""
-	
+
 	__compose_ipt_cmdstring
 
 	# log the generated message
@@ -7332,7 +7330,7 @@ if ((${#always_use_0[@]})); then
 				if [[ ${always_use_1[opt_idx]#+([[:word:]])=} != emtpy ]]; then
 					arr_alw_use_pos_p[${#arr_alw_use_pos_p[@]}]="${always_use_1[opt_idx]#+([[:word:]])=}"
 				else
-					log -E "Configuration error in template \`${target_template}'. 
+					log -E "Configuration error in template \`${target_template}'.
 						\`always_use_0[${opt_idx}]' and \`always_use_1[${opt_idx}]' are set to \`empty'."
 					blacklist_template "${target_template}"
 					raise_cfg_err_count
@@ -7350,10 +7348,10 @@ if ((${#always_use_0[@]})); then
 		fi
 	done
 	[[ $DEBUG_INFO ]] && dbg_arr "arr_alw_use_pos_p"
-	insert_array 'always_use_0' 'option_list_0'	
+	insert_array 'always_use_0' 'option_list_0'
 	if ((second_optionlist == 1)); then
 		if ((${#always_use_1[@]})); then
-			insert_array 'always_use_1' 'option_list_1'	
+			insert_array 'always_use_1' 'option_list_1'
 		fi
 	fi
 fi
@@ -7455,7 +7453,7 @@ for tmp_arr_idx in ${!arr_tmp_ruleblock[@]}; do
 		}
 		# as referenced above, the option list values can now be read.
 		# the gathered information is saved into arrays for later processing.
-		_read_option_list "${arr_user_pos_p[@]}" || { 
+		_read_option_list "${arr_user_pos_p[@]}" || {
 			log -E "Configuration error in template: \`${target_template}'."
 			blacklist_template "${target_template}"
 			raise_cfg_err_count
@@ -7579,12 +7577,12 @@ elif [[ ${ADMIN_CONNECTION} ]]; then
 	set -- ${ADMIN_CONNECTION}
 	local admin_src=$1 admin_dst=$2 admin_dst_port=$3
 	for str_addr in "${admin_src}" "${admin_dst}"; do
-		val_ip4_addr "${str_addr}" || { 
+		val_ip4_addr "${str_addr}" || {
 			log -E "Unable to allow administrative connection."
 			return 0
 		}
 	done
-	val_port "${admin_dst_port}" || { 
+	val_port "${admin_dst_port}" || {
 		log -E "Unable to allow administrative connection."
 		return 0
 	}
@@ -8267,8 +8265,8 @@ if [[ $str_ns_if_list ]] && ((${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[
 	((REVERSE_INPUT_RULES_REQUIRED == 0)) && unset RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[0]
 	create_chain filter "$BIC_LOCAL_NAMESERVERS"
 	RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[${#RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS[@]}]=$(build_list ',' "$str_ns_if_list")
-	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW 
-	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS 
+	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW
+	process_ipt_ruleblock TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS
 else
 	log -W "No local host to ISP nameserver rules have been collected"
 fi
@@ -9096,7 +9094,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 	case "${str_action}" in
 		log)
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit} ${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_pol}${str_chain}: ${str_log_options}"
-			
+		
 		;;
 		drop|reject)
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="$(string_toupper ${str_action}) ${str_chain}"
