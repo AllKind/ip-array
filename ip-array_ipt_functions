@@ -5041,15 +5041,24 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 								fi
 							;;
 							+([[:digit:]])-+([[:digit:]]))
+								if ((KERN_VER[0] == 2 && KERN_VER[1] == 6 && KERN_VER[2] < 39)); then
+									log -W "Kernel version is below 2.6.39 Port range matching for the conntrack match is not supported, unless patch in."
+								fi
 								val_port_range "$str_var" || return 1
 							;;
 							*\[*\]-*) # range has square brackets
+								if ((KERN_VER[0] == 2 && KERN_VER[1] == 6 && KERN_VER[2] < 39)); then
+									log -W "Kernel version is below 2.6.39 Port range matching for the conntrack match is not supported, unless patch in."
+								fi
 								val_port_range_word "$str_var" || return 1
 							;;
 							\[*-*\]) # has square brackets
 								val_port "${str_var//@(\[|\])/}" || return 1
 							;;
 							*-*) # range
+								if ((KERN_VER[0] == 2 && KERN_VER[1] == 6 && KERN_VER[2] < 39)); then
+									log -W "Kernel version is below 2.6.39 Port range matching for the conntrack match is not supported, unless patch in."
+								fi
 								val_port_range_word "$str_var" || return 1
 							;;
 							*) val_port "$str_var" || return 1
