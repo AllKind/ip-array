@@ -508,7 +508,7 @@
 		+ mangle table
 		+ TCPMSS target
 		+ protocol = tcp
-		+ tcp flags = SYN,RST SYN
+		+ tcp syn match
 		Resulting ruleblock structure:
 		1: chain (OUTPUT / FORWARD)
 		2: output device
@@ -526,7 +526,7 @@
 		</option_list_0>
 		<always_use_0>
 			proto=tcp
-			tcp_syn=syn
+			tcp_opt=syn
 		</always_use_0>
 	</template>
 

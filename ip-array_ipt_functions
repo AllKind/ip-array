@@ -540,8 +540,7 @@ fi
 
 val_tcp_flags() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-set -- ${1/:/ }
-#local str_mask="$(IFS=, split_val $1)" str_comp="$(IFS=, split_val $2)" str_flag
+set -- ${1/-/ }
 local str_mask="${1//,/ }" str_comp="${2//,/ }" str_flag
 check_str_unique "${str_mask}" || return 1
 check_str_unique "${str_comp}" || return 1
@@ -3336,25 +3335,34 @@ else
 fi
 } # -------------------------------------------------------------------------
 
-_process_tcp_flags() {
-local str_tflags="${arg_list_tcp_flags[ARG_LIST_IDX]/:/ }" str_neg=""
-string_negated "${str_tflags}" && str_neg="! "
-RULELIST_TCP_FLAGS[RULE_LIST_IDX]="-m tcp ${str_neg}--tcp-flags $(remove_negation "${str_tflags}") "
-MSG_LIST_TCP_FLAGS[RULE_LIST_IDX]="tcp-flags=${str_tflags} "
-} # -------------------------------------------------------------------------
-
-_process_tcp_syn() {
-local str_neg=""
-string_negated "${arg_list_tcp_syn[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_TCP_SYN[RULE_LIST_IDX]="-m tcp ${str_neg}--syn "
-MSG_LIST_TCP_SYN[RULE_LIST_IDX]="${str_neg/ /}syn "
-} # -------------------------------------------------------------------------
-
-_process_tcp_option() {
-local str_neg=""
-string_negated "${arg_list_tcp_option[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_TCP_OPTION[RULE_LIST_IDX]="-m tcp ${str_neg}--tcp-option $(remove_negation "${arg_list_tcp_option[ARG_LIST_IDX]}") "
-MSG_LIST_TCP_OPTION[RULE_LIST_IDX]="tcp-option=${arg_list_tcp_option[ARG_LIST_IDX]}"
+_process_tcp_opt() { # fill the tcp option rulelist and msglist arrays
+local str_neg="" str_cmd="-m tcp " str_msg=""
+set -- ${arg_list_tcp_opt[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		?(\!)@(s|sy|syn))
+			string_negated "$1" && str_neg="! "
+			str_cmd+="${str_neg}--syn "
+			str_msg+="${str_neg% }syn "
+		;;
+		o|op|opt)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--tcp-option $(remove_negation "$2") "
+			str_msg+="tcp-option=$2 "
+			shift
+		;;
+		f|fl|fla|flag|flags)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--tcp-flags $(remove_negation "${2/-/ }") "
+			str_msg+="tcp-flags=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_TCP_OPT[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_TCP_OPT[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_icmp_type() { # fill the icmp types rulelist and msglist arrays
@@ -3491,8 +3499,8 @@ MSG_LIST_CPU[RULE_LIST_IDX]="cpu=${arg_list_cpu[ARG_LIST_IDX]} "
 _process_quota() { # fill the quota match rulelist and msglist arrays
 local str_neg=""
 string_negated "${arg_list_quota[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_M_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "${arg_list_quota[ARG_LIST_IDX]}") "
-MSG_LIST_M_QUOTA[RULE_LIST_IDX]="quota=${arg_list_quota[ARG_LIST_IDX]} "
+RULELIST_QUOTA[RULE_LIST_IDX]="-m quota ${str_neg}--quota $(remove_negation "${arg_list_quota[ARG_LIST_IDX]}") "
+MSG_LIST_QUOTA[RULE_LIST_IDX]="quota=${arg_list_quota[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
 _process_m_tcpmss() { # fill the tcpmss match rulelist and msglist arrays
@@ -4551,7 +4559,7 @@ if [[ ${arg_list_connlimit[OPTION_LIST_IDX]} ]]; then
 		log -E "Connlimit is only valid with tcp."
 		return 1
 	}
-	if ! [[ $(string_tolower "${arg_list_tcp_syn[OPTION_LIST_IDX]:-0}") = @(s|sy|syn) || ${arg_list_tcp_flags[OPTION_LIST_IDX]} = FIN,SYN,RST,ACK:SYN ]]; then
+	if ! [[ "${arg_list_tcp_opt[OPTION_LIST_IDX]}" = *@(s|sy|syn)* || ${arg_list_tcp_opt[OPTION_LIST_IDX]} = *@(o|op|opt):FIN,SYN,RST,ACK-SYN* ]]; then
 		log -E "Connlimit is only valid with tcp SYN."
 		return 1
 	fi
@@ -4907,29 +4915,43 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				val_port "$tmp_opt_var_value_neg_ok" || return 1
 			fi
 		;;
-		(tcp_flags)
-			case "$tmp_opt_var_value_neg_ok" in
-				+(+([[:alpha:]])?(,)):+(+([[:alpha:]])?(,)))
-					val_tcp_flags "$tmp_opt_var_value_neg_ok" || {
-						log -i "$tmp_opt_var_value" "TCP flag descriptor"
+		(tcp_opt)
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do str_var="${2#\!}"
+				case "$1" in
+					?(\!)@(s|sy|syn)) : ;;
+					o|op|opt)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+						if ! val_numeric_quiet "$str_var" && val_8bit "$str_var"; then
+							log -i "$2" "TCP option"
+							return 1
+						fi
+						shift
+					;;
+					f|fl|fla|flag|flags)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+						if [[ $str_var = +(+([[:alpha:]])?(,))-+(+([[:alpha:]])?(,)) ]]; then
+								val_tcp_flags "$str_var" || {
+									log -i "$2" "TCP flag descriptor in \`$tmp_opt_var_value'"
+									return 1
+								}
+						else
+							log -i "$2" "TCP flag descriptor in \`$tmp_opt_var_value'"
+							return 1
+						fi
+						shift
+					;;
+					*) log -i "$1" "option in \`$tmp_opt_var_value' of \`$tmp_opt_var'"
 						return 1
-					}
-				;;
-				*) log -i "$tmp_opt_var_value" "TCP flag descriptor"
-					return 1
-			esac
-		;;
-		(tcp_syn)
-			if [[ $(string_tolower "$tmp_opt_var_value_neg_ok") != @(s|sy|syn) ]]; then
-				log -i "$tmp_opt_var_value" "TCP SYN description"
-				return 1
-			fi
-		;;
-		(tcp_option)
-			if ! val_numeric_quiet "$tmp_opt_var_value_neg_ok" && val_8bit "$tmp_opt_var_value_neg_ok"; then
-				log -i "$tmp_opt_var_value" "TCP option"
-				return 1
-			fi
+				esac
+			shift
+			done
 		;;
 		(icmp_type)
 			# check if there are multiple icmp types
@@ -6113,7 +6135,7 @@ for target_idx in ${!arg_list_target[@]}; do
 					log -E "The $str_target target is only valid with the tcp protocol."
 					return 1
 				}
-				[[ $(string_tolower "${arg_list_tcp_syn[ARG_LIST_IDX]:-_}") = @(s|sy|syn) || ${arg_list_tcp_flags[ARG_LIST_IDX]} = FIN,SYN,RST,ACK:SYN ]] || {
+				[[ "${arg_list_tcp_opt[ARG_LIST_IDX]}" = *@(s|sy|syn)* || ${arg_list_tcp_opt[ARG_LIST_IDX]} = *@(o|op|opt):FIN,SYN,RST,ACK-SYN* ]] || {
 					log -E "The $str_target target is only valid with tcp SYN packets."
 					return 1
 				}
@@ -7653,7 +7675,7 @@ local TEMPLATE_BUILTIN_LOG_DROP_SCANS=(
 "table=filter"
 "option_list_0[0]=chain"
 "option_list_0[1]=target"
-"option_list_0[2]=tcp_flags"
+"option_list_0[2]=tcp_opt"
 "option_list_0[3]=log_prefix"
 "option_list_0[4]=log_level=${GLOBAL_LOGLEVL}"
 "option_list_0[5]=limit=${GLOBAL_LOGLIMIT}:burst:${GLOBAL_BURSTLIMIT}"
@@ -7665,7 +7687,7 @@ for idx in ${!PORTSCAN_ARRRAY[@]}; do
 	set -- ${PORTSCAN_ARRRAY[idx]}
 	local sname=$1 print_name=${1//_/ }
 	shift
-	local stcpf=$(build_list ':' "$*") # tcp-flags
+	local stcpf=$(build_list '-' "$*") # tcp-flags
 	local logscan=$(subst_var LOG_${sname}) # substitute each scan name with the according LOG variable.
 	local dropscan=$(subst_var DROP_${sname}) # substitute each scan name with the according DROP variable.
 	if ((logscan == 1)); then # LOG scan
@@ -7674,10 +7696,10 @@ for idx in ${!PORTSCAN_ARRRAY[@]}; do
 		else
 			str_lpfix="${LOG_PREFIX}"
 		fi
-		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} LOG ${stcpf} ${str_lpfix}${sname/Stealth/}_SCAN: $RULE_SEP $RULE_SEP ${RULE_SEP}"
+		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} LOG flags:${stcpf} ${str_lpfix}${sname/Stealth/}_SCAN: $RULE_SEP $RULE_SEP ${RULE_SEP}"
 	fi
 	if ((dropscan == 1)); then # DROP scan
-		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} DROP ${stcpf}"
+		RULEBLOCK_BUILTIN_LOG_DROP_SCANS[${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]}]="${BIC_SCANS_CHAIN} DROP flags:${stcpf}"
 	fi
 done
 if ((${#RULEBLOCK_BUILTIN_LOG_DROP_SCANS[@]})); then
@@ -7820,9 +7842,8 @@ local TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP=(
 "target[0]=LOG"
 "chain[0]=${BIC_BAD_TCP_PACKETS}"
 "template_msg='Logging illegal TCP packets'"
-"option_list_0[0]=tcp_flags"
-"option_list_0[1]=tcp_syn"
-"option_list_0[2]=log_prefix"
+"option_list_0[0]=tcp_opt"
+"option_list_0[1]=log_prefix"
 "always_use_0[0]=proto=tcp"
 "always_use_0[1]=state=NEW"
 "always_use_0[2]=limit=${GLOBAL_LOGLIMIT}:burst:${GLOBAL_BURSTLIMIT}"
@@ -7830,9 +7851,9 @@ local TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP=(
 )
 local -a RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 # first syn ack
-RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="SYN,ACK:SYN,ACK $RULE_SEP ${str_lpfix}SYNACK:"
+RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="flags:SYN,ACK-SYN,ACK ${str_lpfix}SYNACK:"
 # then state new !syn
-RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="$RULE_SEP !syn ${str_lpfix}NEW-not-SYN:"
+RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="!syn ${str_lpfix}NEW-not-SYN:"
 ((jt_mode == 1)) && jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 ((jt_mode == 0)) || jump_tree_on
@@ -7850,18 +7871,17 @@ local TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP=(
 "chain[0]=${BIC_BAD_TCP_PACKETS}"
 "template_msg='Blocking illegal TCP packets'"
 "option_list_0[0]=target"
-"option_list_0[1]=tcp_flags"
-"option_list_0[2]=tcp_syn"
-"option_list_0[3]=reject_type"
+"option_list_0[1]=tcp_opt"
+"option_list_0[2]=reject_type"
 "always_use_0[0]=proto=tcp"
 "always_use_0[1]=state=NEW"
 )
 local -a RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
 # first syn ack
 #  TO DO: use drop or reject?
-RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="REJECT SYN,ACK:SYN,ACK $RULE_SEP tcp-reset"
+RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="REJECT flags:SYN,ACK-SYN,ACK tcp-reset"
 # then state new !syn
-RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="DROP $RULE_SEP !syn"
+RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="DROP !syn"
 ((jt_mode == 1)) && jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
 ((jt_mode == 0)) || jump_tree_on

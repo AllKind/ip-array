@@ -155,7 +155,7 @@
 	</template>
 	
 	<template name="BT_TCP_OPTIONS_ALL">
-		<option_list_0> tcp_flags tcp_syn tcp_option </option_list_0>
+		<option_list_0> tcp_opt </option_list_0>
 	</template>
 
 	<template name="BT_PROTO_SRC_DST_PORT_AND_STATE">

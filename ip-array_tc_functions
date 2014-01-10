@@ -316,7 +316,7 @@ local TEMPLATE_BUILTIN_MARK_PRIO_SYN=(
 "option_list_0[0]=odev"
 "option_list_0[1]=t_mark"
 "always_use_0[0]=proto=tcp"
-"always_use_0[1]=tcp_syn=syn"
+"always_use_0[1]=tcp_opt=syn"
 "template_msg='Prioritizing TCP SYN packets'"
 )
 local -a RULEBLOCK_BUILTIN_MARK_PRIO_SYN
