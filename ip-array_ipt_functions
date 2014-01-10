@@ -3211,11 +3211,25 @@ RULELIST_CHAIN[RULE_LIST_IDX]="${str_target_chain}"
 MSG_LIST_CHAIN[RULE_LIST_IDX]="chain=${str_target_chain} "
 } # -------------------------------------------------------------------------
 
-_process_fragment() {
+_process_core() { # fill the core commands (fragment,counters) rulelist and msglist arrays
 local str_neg=""
-string_negated "${arg_list_fragment[ARG_LIST_IDX]}" && str_neg="! "
-RULELIST_FRAGMENT[RULE_LIST_IDX]="${str_neg}-f "
-MSG_LIST_FRAGMENT[RULE_LIST_IDX]="${str_neg% }fragments "
+set -- ${arg_list_core[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case $(string_tolower "$1") in
+		?(\!)@(f|fr|fra|frag|fragm|fragme|fragmen|fragment))
+			string_negated "$1" && str_neg="! "
+			RULELIST_CORE[RULE_LIST_IDX]+="${str_neg}-f "
+			MSG_LIST_CORE[RULE_LIST_IDX]+="${str_neg% }fragments "
+		;;
+		c|co|cou|coun|count|counte|counter|counters)
+			RULELIST_CORE[RULE_LIST_IDX]+="-c ${2/,/ } "
+			MSG_LIST_CORE[RULE_LIST_IDX]+="counters=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
 } # -------------------------------------------------------------------------
 
 _process_idev() { # fill the input device rulelist and msglist arrays
@@ -4836,11 +4850,26 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
-		(fragment)
-			if [[ $(string_tolower "$tmp_opt_var_value_neg_ok") != @(f|fr|fra|frag|fragm|fragme|fragmen|fragment) ]]; then
-				log -i "$tmp_opt_var_value" "fragment descriptor"
-				return 1
-			fi
+		(core)
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case $(string_tolower "$1") in
+					?(\!)@(f|fr|fra|frag|fragm|fragme|fragmen|fragment)) : ;;
+					c|co|cou|coun|count|counte|counter|counters)
+						[[ $2 ]] || {
+							log -E "counters option is missing the packets,bytes value."
+							return 1
+						}
+						[[ $2 = +([[:digit:]]),+([[:digit:]]) ]] || {
+							log -i "$2" "counters value in core descriptor."
+							return 1
+						}
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "core descriptor"
+				esac
+				shift
+			done
 		;;
 		(proto)
 			if (($(IFS=, members_in_string $tmp_opt_var_value) > 1)); then

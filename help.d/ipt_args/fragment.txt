@@ -1,7 +1,0 @@
-fragment: Equals -f|--fragment option of iptables.
-	Valid values: f|fr|fra|frag|fragm|fragme|fragmen|fragment
-
-	Examples:
-		fragment=f
-		fragment=frag
-

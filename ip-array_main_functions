@@ -4291,7 +4291,6 @@ case "$MODE" in # act according to runtime mode
 				fi
 			fi
 		fi
-#cmd_err_count ipt "TEST ERROR"
 	;;
 esac
 } # -------------------------------------------------------------------------

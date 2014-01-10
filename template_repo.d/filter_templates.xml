@@ -12,18 +12,24 @@
 		Resulting ruleblock structure:
 		1: target
 		2: chain
-		3: fragment
+		3: core
 		4: input device
 		5: output device
 		6: source address
 		7: destination address
-		Mandatory options: target, chain, fragment
+		Mandatory options: target, chain, core
 		-->
 		<template_msg> ${ADDMSG} generic fragments handling rules </template_msg>
-		<mandatory_vars> target,chain,fragment </mandatory_vars>
+		<mandatory_vars> target,chain,core </mandatory_vars>
 		<table> filter </table>
 		<load_template> BT_TARGET_AND_CHAIN </load_template>
-		<option_list_0> fragment idev odev src dst </option_list_0>
+		<option_list_0>
+			core=fragment
+			idev
+			odev
+			src
+			dst
+		</option_list_0>
 	</template>
 
 	<template name="TEMPLATE_GENERIC_CT_HELPER">

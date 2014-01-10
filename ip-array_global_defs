@@ -241,7 +241,7 @@ IPARRAY_IPSET_SETTYPE_LIST=(
 
 # Array with match extensions, which are available in all tables
 GLOBAL_MATCH_LIST=(
-FRAGMENT
+CORE
 IDEV ODEV
 MAC SRC DST
 PROTO
