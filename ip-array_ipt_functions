@@ -41,67 +41,87 @@
 
 val_ip4_addr() { # validate IPv4 addresses
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local range_ip str_ip_addr="$1"
+local str_regex="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 IPSTRING=""
-case "${str_ip_addr}" in
-	# IP string is global shortcut
-	(0/0 | 0.0.0.0/0)
-		IPSTRING="IPNET"
-		return 0
-	;;
-	# IP string is single IP
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		val_oct_range ${str_ip_addr//./ } || {
-			log -E "IP address \`${str_ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPADDR"
-	;;
-	# IP string is IP/CIDR Mask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
-		local ip_addr="${str_ip_addr%/*}"
-		local mask="${str_ip_addr#*/}"
-		val_oct_range ${ip_addr//./ } || {
-			log -E "IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		val_ipv4_cidr_mask "${mask}" || {
-			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPNET"
-	;;
-	# IP string is IP/Netmask
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		local ip_addr="${str_ip_addr%/*}"
-		local mask="${str_ip_addr#*/}"
-		val_oct_range ${ip_addr//./ } || {
-			log -E "IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		val_ipv4_netmask "${mask}" || {
-			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
-			return 1
-		}
-		IPSTRING="IPNETMASK"
-	;;
-	# IP string is IP-range
-	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		for range_ip in ${str_ip_addr/-/ }; do
-			val_oct_range ${range_ip//./ } || {
-				log -E "IP range \`${range_ip}' is not valid."
-				return 1
-			}
-		done
-	    if (($(decodeaddr ${str_ip_addr%-*}) > $(decodeaddr ${str_ip_addr#*-}))); then
-			log -E "IP range \`${range_ip}' is not valid."
-			return 1
-	    fi
-		IPSTRING="IPRANGE"
-	;;
-	(*) log -E "IPv4 address specification \`${str_ip_addr}' is not valid."
+if [[ $1 = 0/0 ]]; then
+	IPSTRING="IPNET"
+elif [[ $1 =~ ^${str_regex}$ ]]; then
+	IPSTRING="IPADDR"
+elif [[ $1 =~ ^${str_regex}(/([3][0-2]|[1-2]?[0-9]))?$ ]]; then
+	IPSTRING="IPNET"
+elif [[ $1 =~ ^${str_regex}/${str_regex}$ ]]; then
+	IPSTRING="IPNETMASK"
+elif [[ $1 =~ ^${str_regex}-${str_regex}$ ]]; then
+	if (($(decodeaddr ${1%-*}) > $(decodeaddr ${1#*-}))); then
+		log -E "IP range \`$1' is not valid."
 		return 1
-esac
+	fi
+	IPSTRING="IPRANGE"
+else
+	log -E "IPv4 address specification \`$1' is not valid."
+	return 1
+fi
+return 0
+
+#case "${str_ip_addr}" in
+#	# IP string is global shortcut
+#	(0/0 | 0.0.0.0/0)
+#		IPSTRING="IPNET"
+#		return 0
+#	;;
+#	# IP string is single IP
+#	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+#		val_oct_range ${str_ip_addr//./ } || {
+#			log -E "IP address \`${str_ip_addr}' is not valid."
+#			return 1
+#		}
+#		IPSTRING="IPADDR"
+#	;;
+#	# IP string is IP/CIDR Mask
+#	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
+#		local ip_addr="${str_ip_addr%/*}"
+#		local mask="${str_ip_addr#*/}"
+#		val_oct_range ${ip_addr//./ } || {
+#			log -E "IP address \`${ip_addr}' is not valid."
+#			return 1
+#		}
+#		val_ipv4_cidr_mask "${mask}" || {
+#			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+#			return 1
+#		}
+#		IPSTRING="IPNET"
+#	;;
+#	# IP string is IP/Netmask
+#	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+#		local ip_addr="${str_ip_addr%/*}"
+#		local mask="${str_ip_addr#*/}"
+#		val_oct_range ${ip_addr//./ } || {
+#			log -E "IP address \`${ip_addr}' is not valid."
+#			return 1
+#		}
+#		val_ipv4_netmask "${mask}" || {
+#			log -E "Netmask \`${mask}' of IP address \`${ip_addr}' is not valid."
+#			return 1
+#		}
+#		IPSTRING="IPNETMASK"
+#	;;
+#	# IP string is IP-range
+#	(+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+#		for range_ip in ${str_ip_addr/-/ }; do
+#			val_oct_range ${range_ip//./ } || {
+#				log -E "IP range \`${range_ip}' is not valid."
+#				return 1
+#			}
+#		done
+#	    if (($(decodeaddr ${str_ip_addr%-*}) > $(decodeaddr ${str_ip_addr#*-}))); then
+#			log -E "IP range \`${range_ip}' is not valid."
+#			return 1
+#	    fi
+#		IPSTRING="IPRANGE"
+#	;;
+#	(*) log -E "IPv4 address specification \`${str_ip_addr}' is not valid."
+#		return 1
+#esac
 } # -------------------------------------------------------------------------
 
 classify_ip4_addr() { # classify IPv4 addresses
