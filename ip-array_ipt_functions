@@ -4792,6 +4792,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			esac
 		;;
 		ipvs)
+			arg_idx=0
 			check_match_exist ipvs || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
 			while (($#)); do str_var="${2#\!}"
@@ -4800,7 +4801,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 				fi
 				case "$1" in
-					?(\!)ipvs) : ;;
+					?(\!)ipvs) arg_idx=1 ;;
 					addr)
 						val_ipv4_addr_no_range "$str_var" || return 1
 						shift
@@ -4830,6 +4831,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				esac
 				shift
 			done
+			((arg_idx)) || {
+				log -E "The \`ipvs' option is required."
+				return 1
+			}
 		;;
 		(ecn)
 			check_match_exist ecn || return
