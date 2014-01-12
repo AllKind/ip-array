@@ -185,6 +185,7 @@ IPARRAY_MODULES=(
 "0 length filter -m length --length 32"
 "0 owner filter -m owner --uid-owner 666"
 "0 addrtype filter -m addrtype --dst-type BROADCAST"
+"0 bpf filter -m bpf --bytecode '4,48 0 0 9,21 0 1 6,6 0 0 1,6 0 0 0'"
 "0 pkttype filter -m pkttype --pkt-type broadcast"
 "0 socket filter -m socket"
 "0 connbytes filter -p tcp -m connbytes --connbytes 1:10 --connbytes-dir both --connbytes-mode packets"
@@ -254,6 +255,7 @@ CONNBYTES
 AHSPI ESPSPI
 ADDRTYPE PKTTYPE
 OWNER
+BPF
 OSF
 LENGTH
 DEVGROUP

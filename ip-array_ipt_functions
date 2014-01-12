@@ -3803,6 +3803,11 @@ RULELIST_PKTTYPE[RULE_LIST_IDX]="-m pkttype ${str_neg}--pkt-type $(remove_negati
 MSG_LIST_PKTTYPE[RULE_LIST_IDX]="pkt-type=${arg_list_pkttype[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 
+_process_bpf() { # fill the bpf match rulelist and msglist arrays
+RULELIST_BPF[RULE_LIST_IDX]="-m bpf --bytecode \"${arg_list_bpf[ARG_LIST_IDX]}\" "
+MSG_LIST_BPF[RULE_LIST_IDX]="bpf_code=\"${arg_list_bpf[ARG_LIST_IDX]}\" "
+} # -------------------------------------------------------------------------
+
 _process_realm() { # fill the realm match rulelist and msglist arrays
 local str_neg=""
 string_negated "${arg_list_realm[ARG_LIST_IDX]}" && str_neg="! "
@@ -5291,6 +5296,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				*) log -i "$tmp_opt_var_value" "pkttype descriptor"
 					return 1
 			esac
+		;;
+		(bpf)
+			check_match_exist bpf || return
 		;;
 		(realm)
 			check_match_exist realm || return
