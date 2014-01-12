@@ -3656,6 +3656,31 @@ RULELIST_OSF[RULE_LIST_IDX]="-m osf ${str_neg}--genre $(remove_negation "$str_ge
 MSG_LIST_OSF[RULE_LIST_IDX]="osf_genre=$str_genre $str_msg"
 } # -------------------------------------------------------------------------
 
+_process_ipvs() { # fill the ipvs match rulelist and msglist arrays
+local str_neg="" str_cmd="-m ipvs " str_msg=""
+set -- ${arg_list_ipvs[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case "$1" in
+		?(\!)ipvs)
+			string_negated "$1" && str_neg="! "
+			str_cmd+="${str_neg}--$(remove_negation $1) "
+			str_msg+="$1 "
+		;;
+		addr|dir|method|proto|port|portctl)
+			str_var="$2"
+			string_negated "$2" && str_neg="! " && str_var="${2#\!}"
+			str_cmd+="${str_neg}--v$1 $str_var "
+			str_msg+="v$1=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_IPVS[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_IPVS[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_ecn() { # fill the ecn match rulelist and msglist arrays
 set -- ${arg_list_ecn[ARG_LIST_IDX]//:/ }
 RULELIST_M_ECN[RULE_LIST_IDX]="-m ecn "
@@ -4766,6 +4791,46 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					return 1
 			esac
 		;;
+		ipvs)
+			check_match_exist ipvs || return
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do str_var="${2#\!}"
+				if [[ $1 = @(addr|dir|method|proto|port|portctl) && -z $2 ]]; then
+					log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+					return 1
+				fi
+				case "$1" in
+					?(\!)ipvs) : ;;
+					addr)
+						val_ipv4_addr_no_range "$str_var" || return 1
+						shift
+					;;
+					dir)
+						[[ $2 = @(ORIGINAL|REPLY) ]] || {
+							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
+						}
+						shift
+					;;
+					method)
+						[[ $2 = @(GATE|IPIP|MASQ) ]] || {
+							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
+						}
+						shift
+					;;
+					port|portctl)
+						val_port "$str_var" || return 1
+						shift
+					;;
+					proto)
+						val_proto "$str_var" || return 1
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var match descriptor"
+						return 1
+				esac
+				shift
+			done
+		;;
 		(ecn)
 			check_match_exist ecn || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
@@ -4783,7 +4848,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					?(\!)@(tcp-cwr|tcp-ece))
 						shift
 					;;
-					*) log -i "$tmp_opt_var_value" "ecn match descriptor"
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var match descriptor"
 						return 1
 				esac
 			done
