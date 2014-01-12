@@ -2171,56 +2171,85 @@ done
 
 val_ip4_ip() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$1" in
-	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		val_oct_range ${1//./ } && return 0
-	;;
-esac
-log -E "IP address \`$1' is not valid."
-return 1
+local str_regex="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+if ! [[ $1 =~ ^${str_regex}$ ]]; then
+	log -E "IP address \`$1' is not valid."
+	return 1
+fi
+return 0
+#case "$1" in
+#	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+#		val_oct_range ${1//./ } && return 0
+#	;;
+#esac
+#log -E "IP address \`$1' is not valid."
+#return 1
 } # -------------------------------------------------------------------------
 
 val_ip4_cidr_net() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-case "$1" in
-	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
-		local ip_addr="${1%/*}" mask="${1#*/}"
-		val_oct_range ${ip_addr//./ } || {
-			log -E "IP address \`$ip_addr' is not valid."
-			return 1
-		}
-		val_ipv4_cidr_mask "$mask" || {
-			log -E "Netmask \`$mask' of address \`$ip_addr' is not valid."
-			return 1
-		}
-		if ((mask == 32)); then
-			log -E "Netmask \`$mask' is a host mask - need /0-31."
-			return 1
-		fi
-	;;
-	*) log -E "Network address \`$1' is not valid."
+local str_regex="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+if [[ $1 = 0/0 ]]; then
+	return 0
+elif [[ $1 =~ ^${str_regex}(/([3][0-2]|[1-2]?[0-9]))?$ ]]; then
+	if ((${BASH_REMATCH[5]} == 32)); then
+		log -E "Netmask \`${BASH_REMATCH[5]}' is a host mask - need /0-31."
 		return 1
-esac
+	fi
+else
+	log -E "Network address \`$1' is not valid."
+	return 1
+fi
+return 0
+
+#case "$1" in
+#	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])/+([[:digit:]]))
+#		local ip_addr="${1%/*}" mask="${1#*/}"
+#		val_oct_range ${ip_addr//./ } || {
+#			log -E "IP address \`$ip_addr' is not valid."
+#			return 1
+#		}
+#		val_ipv4_cidr_mask "$mask" || {
+#			log -E "Netmask \`$mask' of address \`$ip_addr' is not valid."
+#			return 1
+#		}
+#		if ((mask == 32)); then
+#			log -E "Netmask \`$mask' is a host mask - need /0-31."
+#			return 1
+#		fi
+#	;;
+#	*) log -E "Network address \`$1' is not valid."
+#		return 1
+#esac
 } # -------------------------------------------------------------------------
 
 val_ip4_range() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local range_ip
-case "$1" in
-	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
-		for range_ip in ${1/-/ }; do
-			val_oct_range ${range_ip//./ } || {
-#				log -E "IP range \`${range_ip}' is not valid."
-				return 1
-			}
-		done
-	    if (($(decodeaddr ${1%-*}) > $(decodeaddr ${1#*-}))); then
-#			log -E "IP range \`${range_ip}' is not valid."
-			return 1
-	    fi
-	;;
-	*) return 1
-esac
+local str_regex="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+if [[ $1 =~ ^${str_regex}-${str_regex}$ ]]; then
+	if (($(decodeaddr ${1%-*}) > $(decodeaddr ${1#*-}))); then
+		return 1
+	fi
+else
+	return 1
+fi
+return 0
+#local range_ip
+#case "$1" in
+#	+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])-+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]]))
+#		for range_ip in ${1/-/ }; do
+#			val_oct_range ${range_ip//./ } || {
+##				log -E "IP range \`${range_ip}' is not valid."
+#				return 1
+#			}
+#		done
+#	    if (($(decodeaddr ${1%-*}) > $(decodeaddr ${1#*-}))); then
+##			log -E "IP range \`${range_ip}' is not valid."
+#			return 1
+#	    fi
+#	;;
+#	*) return 1
+#esac
 } # -------------------------------------------------------------------------
 
 val_mac() { # validate MAC addresses
