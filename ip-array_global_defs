@@ -208,6 +208,7 @@ IPARRAY_MODULES=(
 "0 sctp filter -p sctp -m sctp --dport 80"
 "0 dccp filter -p dccp -m dccp --dport 80"
 "0 statistic filter -m statistic --mode nth --every 10 --packet 0"
+"0 physdev filter -m physdev --physdev-is-in"
 "0 realm filter -m realm --realm 0"
 "0 recent filter -m recent --rcheck"
 "0 string filter -m string --algo bm --string foo"
@@ -261,6 +262,7 @@ BPF
 OSF
 LENGTH
 DEVGROUP
+PHYSDEV
 REALM
 RECENT
 SOCKET

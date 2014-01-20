@@ -1,0 +1,14 @@
+physdev: physdev match specification.
+
+	Synopsis: option:opt_arg[:...]
+		options:
+		physdev-in     [!]ifname
+		physdev-out    [!]ifname
+		[!]is-in
+		[!]is-out
+		[!]is-bridged
+
+	Examples:
+		physdev=physdev-in:eth0
+		physdev=physdev-in:!eth0:!is-in
+

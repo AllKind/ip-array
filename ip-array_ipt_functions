@@ -3756,6 +3756,30 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
+_process_physdev() { # fill the physdev match rulelist and msglist arrays
+local str_neg="" str_cmd="-m physdev " str_msg=""
+set -- ${arg_list_physdev[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		physdev-in|physdev-out)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--$1 $(remove_negation "$2") "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		?(\!)@(is-in|is-out|is-bridged))
+			string_negated "$1" && str_neg="! "
+			str_cmd+="${str_neg}--$(remove_negation "$1") "
+			str_msg+="${str_neg% }physdev-$(remove_negation "$1") "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_PHYSDEV[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_PHYSDEV[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_dccp() { # fill the dccp match rulelist and msglist arrays
 local str_neg="" str_val
 string_negated "${arg_list_dccp[ARG_LIST_IDX]}" && str_neg="! "
@@ -5294,15 +5318,15 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(nflog_opt)
 			check_tgt_exist NFLOG || return
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
-			case "$1" in
-				group|range|thresh)
-					[[ $2 ]] || {
-						log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
-						return 1
-					}
-				;;
-			esac
 			while (($#)); do
+				case "$1" in
+					group|range|thresh)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+					;;
+				esac
 				case "$1" in
 					group)
 						case "$2" in
@@ -5403,6 +5427,26 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				*) log -i "$tmp_opt_var_value" "pkttype descriptor"
 					return 1
 			esac
+		;;
+		(physdev)
+			check_match_exist physdev || return
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					physdev-in|physdev-out)
+						[[ $2 ]] || {
+							log -E "Value for option \`$1' is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+						val_ifname $(remove_negation "$2") || return 1
+						shift
+					;;
+					?(\!)@(is-in|is-out|is-bridged)) : ;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var options descriptor. Unknown option: \`$1'."
+						return 1
+					esac
+				shift
+			done
 		;;
 		(bpf)
 			check_match_exist bpf || return
