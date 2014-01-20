@@ -210,6 +210,7 @@ IPARRAY_MODULES=(
 "0 statistic filter -m statistic --mode nth --every 10 --packet 0"
 "0 realm filter -m realm --realm 0"
 "0 recent filter -m recent --rcheck"
+"0 string filter -m string --algo bm --string foo"
 "0 hashlimit filter -m hashlimit --hashlimit-name ${ME}_TEST_HASHLIMIT --hashlimit-above 1024/day"
 "0 u32 filter -m u32 --u32 6&0xFF=1"
 )
@@ -264,6 +265,7 @@ REALM
 RECENT
 SOCKET
 SCTP
+STRING
 STATISTIC
 DCCP
 HASHLIMIT

@@ -3081,7 +3081,6 @@ if ((parse_files == 1)); then
 		}
 	fi
 	exec 7> "$parsed_file"
-#	printf "%s\n\n" '#!/bin/bash' >&7
 	printf '#!%s\n\n' "$SHELL" >&7
 	xml_parser 'rules' < "${rule_file}" || {
 		exec 7>&-
@@ -3353,6 +3352,44 @@ else
 	RULELIST_DPORT[RULE_LIST_IDX]="-m ${arg_list_proto[ARG_LIST_IDX]} ${str_neg}--dport $(remove_negation "${arg_list_dport[ARG_LIST_IDX]}") "
 	MSG_LIST_DPORT[RULE_LIST_IDX]="dport=${arg_list_dport[ARG_LIST_IDX]} "
 fi
+} # -------------------------------------------------------------------------
+
+_process_string() { # fill the string match rulelist and msglist arrays
+local str_neg="" str_cmd="-m string " str_msg=""
+str_alg="${arg_list_string[ARG_LIST_IDX]#algo:}"
+str_alg="${str_alg%%:*}"
+str_cmd+="--algo $str_alg "
+str_msg+="algo=$str_alg "
+str_string="${arg_list_string[ARG_LIST_IDX]#*string:}"
+str_from="${arg_list_string[ARG_LIST_IDX]%"$str_string"}"
+str_from="${str_from#algo:*:}"
+if [[ $str_from = *from:+([[:digit:]])* ]]; then
+	str_from="${str_from#*from:}"
+	str_from="${str_from%%:*}"
+	str_cmd+="--from $str_from "
+	str_msg+="from=$str_from "
+fi
+str_to="${arg_list_string[ARG_LIST_IDX]%"$str_string"}"
+str_to="${str_to#algo:*:}"
+if [[ $str_to = *to:+([[:digit:]])* ]]; then
+	str_to="${str_to#*to:}"
+	str_to="${str_to%%:*}"
+	str_cmd+="--to $str_to "
+	str_msg+="to=$str_to "
+fi
+if [[ ${arg_list_string[ARG_LIST_IDX]%"$str_string"} = *:\!?(hex-)string: ]]; then
+	str_neg="! "
+fi
+if [[ ${arg_list_string[ARG_LIST_IDX]%"$str_string"} = *:hex-string: ]]; then
+	str_string="${str_string//-/|}"
+	str_cmd+="${str_neg}--hex-string '$str_string' "
+	str_msg+="${str_neg% }hex-string='$str_string' "
+else
+	str_cmd+="${str_neg}--string \"$str_string\" "
+	str_msg+="${str_neg% }string=\"$str_string\" "
+fi
+RULELIST_STRING[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_STRING[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_tcp_opt() { # fill the tcp option rulelist and msglist arrays
@@ -5507,6 +5544,13 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			check_match_exist socket || return
 			if [[ $(string_tolower "$tmp_opt_var_value") != @(s|so|soc|sock|socke|socket|transparent|nowildcard) ]]; then
 				log -i "$tmp_opt_var_value" "socket descriptor"
+				return 1
+			fi
+		;;
+		(string)
+			check_match_exist string || return
+			if [[ $tmp_opt_var_value != algo:@(bm|kmp):?(from:+([[:digit:]]):)?(to:+([[:digit:]]):)?(\!)?(hex-)string:* ]]; then
+				log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
 				return 1
 			fi
 		;;
