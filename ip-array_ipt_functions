@@ -3756,6 +3756,27 @@ while (($#)); do
 done
 } # -------------------------------------------------------------------------
 
+_process_cluster() { # fill the cluster match rulelist and msglist arrays
+local str_neg="" str_cmd="-m cluster " str_msg=""
+set -- ${arg_list_cluster[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		local-node|local-nodemask)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--cluster-$1 $(remove_negation "$2") "
+		;;
+		hash-seed|total-nodes)
+			str_cmd+="--cluster-$1 $2 "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	str_msg+="cluster-$1=$2 "
+	shift 2
+done
+RULELIST_CLUSTER[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_CLUSTER[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_physdev() { # fill the physdev match rulelist and msglist arrays
 local str_neg="" str_cmd="-m physdev " str_msg=""
 set -- ${arg_list_physdev[ARG_LIST_IDX]//:/ }
@@ -5427,6 +5448,33 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				*) log -i "$tmp_opt_var_value" "pkttype descriptor"
 					return 1
 			esac
+		;;
+		(cluster)
+			check_match_exist cluster || return
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				[[ $2 ]] || {
+					log -E "Value for option \`$1' is missing in \`$tmp_opt_var' descriptor."
+					return 1
+				}
+				case "$1" in
+					local-node|local-nodemask)
+						val_numeric $(remove_negation "$2") || return 1
+					;;
+					hash-seed)
+						[[ $2 = 0x+([[:xdigit:]]) ]] || {
+							log -E "Value \`$2' is not in hexadecimal."
+							return 1
+						}
+					;;
+					total-nodes)
+						val_numeric "$2" || return 1
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var options descriptor. Unknown option: \`$1'."
+						return 1
+				esac
+				shift 2
+			done
 		;;
 		(physdev)
 			check_match_exist physdev || return

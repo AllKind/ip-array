@@ -180,6 +180,7 @@ IPARRAY_MODULES=(
 "0 multiport filter -p tcp -m multiport --ports 65333,65335"
 "0 iprange filter -m iprange --src-range 127.127.127.1-127.127.127.2"
 "0 ah filter -p 51 -m ah --ahspi 1"
+"0 cluster mangle -m cluster --cluster-total-nodes 2 --cluster-local-node 1 --cluster-hash-seed 0xdeadbeef"
 "0 esp filter -p 50 -m esp --espspi 1"
 "0 helper filter -m helper --helper ftp"
 "0 length filter -m length --length 32"
@@ -301,7 +302,7 @@ GLOBAL_TARGET_LIST=(
 # format: table-name[,...] match-name[,...]
 TABLE_DEPEND_MATCH_LIST=(
 "filter,security CONNTRACK,M_CONNMARK,CONNLIMIT,HELPER"
-"mangle CONNTRACK,M_CONNMARK,HELPER,RPFILTER"
+"mangle CONNTRACK,M_CONNMARK,HELPER,RPFILTER,CLUSTER"
 "nat M_CONNMARK,CONNTRACK,HELPER"
 "raw RPFILTER"
 )
