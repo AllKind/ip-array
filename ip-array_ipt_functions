@@ -4683,7 +4683,6 @@ fi
 if [[ ${arg_list_icmp_type[OPTION_LIST_IDX]} && $(string_tolower "${arg_list_proto[OPTION_LIST_IDX]:-0}") != @(icmp|1) ]]; then
 	log -E "ICMP types are specified, but protocol is not icmp."
 	return 1
-#	}
 fi
 # if connlimit match is used, check if protocol is tcp and syn packets are selected
 if [[ ${arg_list_connlimit[OPTION_LIST_IDX]} ]]; then
@@ -4695,6 +4694,11 @@ if [[ ${arg_list_connlimit[OPTION_LIST_IDX]} ]]; then
 		log -E "Connlimit is only valid with tcp SYN."
 		return 1
 	fi
+fi
+# if the cluster match is used, check if table is mangle
+if [[ ${arg_list_cluster[OPTION_LIST_IDX]} && $table != mangle ]]; then
+	log -E "The cluster match is only valid in the mangle table."
+	return 1
 fi
 } # -------------------------------------------------------------------------
 
