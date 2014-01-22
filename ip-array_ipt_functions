@@ -1076,6 +1076,36 @@ done < "$IP_TABLES_NAMES"
 END_OF_FUNC
 } # -------------------------------------------------------------------------
 
+run_nfacct() {
+"${NFACCT:-/usr/sbin/nfacct}" "$@"
+} # -------------------------------------------------------------------------
+
+test_nfacct() { # create / delete an nfacct test object
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+((NO_IPT_COMPAT_CHECK == 0)) || return 0
+[[ -x $NFACCT ]] || return 0
+case "$1" in
+	create)
+		log -w "creating test nfacct object"
+		if dn run_nfacct get ${me}_test_nfacct_obj; then
+			log -W "nfacct object \`${me}_test_nfacct_obj' already exists"
+			return 0
+		fi
+		dn run_nfacct add ${me}_test_nfacct_obj || {
+			log -f "creating test nfacct object \`${me}_test_nfacct_obj'"
+		}
+	;;
+	delete)
+		log -w "deleting test nfacct object"
+		dn run_nfacct del ${me}_test_nfacct_obj || {
+			log -f "deleting test nfacct object \`${me}_test_nfacct_obj'"
+		}
+	;;
+	*) log -o "$1" $FUNCNAME
+		return 1
+esac
+} # -------------------------------------------------------------------------
+
 test_chain() { # create / delete an iptables testing chain
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 ((NO_IPT_COMPAT_CHECK == 0)) || return 0
@@ -3777,6 +3807,11 @@ RULELIST_CLUSTER[RULE_LIST_IDX]="$str_cmd"
 MSG_LIST_CLUSTER[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
+_process_nfacct() { # fill the nfacct match rulelist and msglist arrays
+RULELIST_NFACCT[RULE_LIST_IDX]="-m nfacct --nfacct-name ${arg_list_nfacct[ARG_LIST_IDX]} "
+MSG_LIST_NFACCT[RULE_LIST_IDX]="nfacct=${arg_list_nfacct[ARG_LIST_IDX]} "
+} # -------------------------------------------------------------------------
+
 _process_physdev() { # fill the physdev match rulelist and msglist arrays
 local str_neg="" str_cmd="-m physdev " str_msg=""
 set -- ${arg_list_physdev[ARG_LIST_IDX]//:/ }
@@ -4876,6 +4911,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				*) log -i "$tmp_opt_var_value" "conntrack helper descriptor"
 					return 1
 			esac
+		;;
+		nfacct)
+			check_match_exist nfacct || return
 		;;
 		ipvs)
 			arg_idx=0
