@@ -1290,19 +1290,21 @@ END_OF_FUNC
 } # -------------------------------------------------------------------------
 
 nfacct_del_objects() { # remove all existing nfacct objects
-((EXEC_COMMANDS)) || return 0
 local x
 log -I "Deleting nfacct accounting objects."
 while read -r; do
 	x="${REPLY#*\}+([[:blank:]])=+([[:blank:]])}"
 	x="${x%;}"
 	log -w "deleting nfacct object: $x"
-	run_nfacct del "$x" || {
-		log -f "deleting nfacct object \`$x'"
-		cmd_err_count ipt
+	if [[ $MODE = START ]] && ((EXEC_COMMANDS)); then
+		run_nfacct del "$x" || {
+			log -f "deleting nfacct object \`$x'"
+			cmd_err_count ipt
 
-	}
-#	NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="del '$x'"
+		}
+	else
+		NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="del '$x'"
+	fi
 done < <(dn2 run_nfacct list)
 } # -------------------------------------------------------------------------
 
