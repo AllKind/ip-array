@@ -205,6 +205,7 @@ declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i IPA_DID_LOCK=0	# Did we turn on mutex?
 declare -i RAW_TABLE_PRESENT=RAWPOST_TABLE_PRESENT=SECURITY_TABLE_PRESENT=ALL_MANGLE_CHAINS_PRESENT=1
+declare -i GOT_NFACCT=1	# do we have the nfacct binary?
 declare IPT_RULE_LIST_PARAM="-S"	# Switch to use for iptables rule diff
 declare IPSET_SYNTAX=old	# depending on ipset version use different syntax
 declare -a IPSET_VERSION=( 0 )

@@ -1268,6 +1268,11 @@ fill_array 'NFACCT_OBJ_MAP'
 	return 0
 }
 [[ $DEBUG_INFO ]] && dbg_arr 'NFACCT_OBJ_MAP' || :
+((GOT_NFACCT)) || {
+	log -E "Cannot create nfacct objects. nfacct support is disabled."
+	raise_cfg_err_count
+	return 0
+}
 log -I "Creating nfacct accounting objects."
 for idx in ${!NFACCT_OBJ_MAP[@]}; do
 	log -e "creating nfacct object: ${NFACCT_OBJ_MAP[idx]}"
@@ -1291,6 +1296,11 @@ END_OF_FUNC
 
 nfacct_del_objects() { # remove all existing nfacct objects
 local x
+(dn run_nfacct list || exit 1) || {
+	log -N "Cannot list nfacct objects. Disabling nfacct support."
+	GOT_NFACCT=0
+	return 0
+}
 log -I "Deleting nfacct accounting objects."
 while read -r; do
 	x="${REPLY#*\}+([[:blank:]])=+([[:blank:]])}"
@@ -1310,6 +1320,11 @@ done < <(dn2 run_nfacct list)
 
 nfacct_add() { # add a nfacct accounting object
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+((GOT_NFACCT)) || {
+	log -E "Cannot create nfacct objects. nfacct support is disabled."
+	raise_cfg_err_count
+	return 0
+}
 log -e "creating nfacct object: $1"
 NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="add '$1'"
 } # -------------------------------------------------------------------------
