@@ -553,6 +553,7 @@ CONFIG_ENTRY_ARRAY=(
 "KNOWN_TRAFFIC_MAP print 0"
 "POLICY_MAP print 1"
 "FINAL_RULE_MAP print 0"
+"NFACCT_OBJ_MAP print 0 check_str_unique \$NFACCT_OBJ_MAP"
 # chains
 "JUMP_TREE print 0"
 "JUMP_TREE_CHAINS_CREATE_ALL bool 0"

@@ -410,6 +410,7 @@ declare -a IPT_FLUSH_ARRAY	# Array to cache the iptables chain flushing commands
 declare -a IPT_CCHAIN_ARRAY	# Array to cache the iptables chain creation commands
 declare -a TC_CMD_ARRAY		# Array to cache the tc commands
 declare -a PROC_CMD_ARRAY	# Array to cache the sysctl commands
+declare -a NFACCT_CMD_ARRAY	# Array to cache the nfacct commands
 # arrays for each iptables table
 declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ipset commands
@@ -457,6 +458,7 @@ CMD_NAMES_ARRAY=(
 "IPSET_CMD_ARRAY ipset ipset commands"
 "IPSET_SETS_ARRAY ipset ipset set creation commands"
 "IPSET_ENTRIES_ARRAY ipset ipset entries commands"
+"NFACCT_CMD_ARRAY nfacct nfacct commands"
 )
 
 # Array to hold the program definitions that are mandatory for IP-Array
@@ -1463,27 +1465,27 @@ case "$MAIN_ARG" in
 	;;
 	save-commands) # save all commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-COMMANDS'
+		MODE='SAVE-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-modprobe-commands) # save modprobe commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-MODPROBE-COMMANDS'
+		MODE='SAVE-MODPROBE-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-proc-commands) # save proc commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-PROC-COMMANDS'
+		MODE='SAVE-PROC-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-iptables-commands) # save iptables commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-IPT-COMMANDS'
+		MODE='SAVE-IPT-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-tc-commands) # save tc commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-TC-COMMANDS'
+		MODE='SAVE-TC-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-shaping-commands) # save tc and iptables mangle table (mark) commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-SHAPING-COMMANDS'
+		MODE='SAVE-SHAPING-COMMANDS' EXEC_COMMANDS=0
 	;;
 	show)
 		[[ $cmdline_show_conf ]] || cmdline_show_conf='main'

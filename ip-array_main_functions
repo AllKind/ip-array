@@ -2581,7 +2581,7 @@ else
 fi
 ((VERBOSE >= 7)) && printf "PID: %d\nParameters: %s\n" $PID "$PARAMS"
 syslog $LOG_FACILITY notice "Initializing $ME $STR_VERSION - MODE: $MODE - Parameters: $PARAMS"
-if ((EXEC_COMMANDS == 0)) && [[ $MODE != @(RESTORE_ON_START|SHOW) ]]; then
+if ((EXEC_COMMANDS == 0)) && [[ $MODE != @(RESTORE_ON_START|SHOW|SAVE-*) ]]; then
 	log -T "Dry-run - Not executing generated commands!"
 fi
 } # -------------------------------------------------------------------------
@@ -3816,6 +3816,11 @@ case "$cmd_arr" in
 			printf '"$MODPROBE" %s\n' "${MODULE_CMD_ARRAY[idx]}" >>"$str_rs_file"
 		done
 	;;
+	(NFACCT_CMD_ARRAY)
+		for idx in ${!NFACCT_CMD_ARRAY[@]}; do
+			printf '"$NFACCT" %s\n' "${NFACCT_CMD_ARRAY[idx]}" >>"$str_rs_file"
+		done
+	;;
 esac
 } # -------------------------------------------------------------------------
 
@@ -3825,6 +3830,17 @@ save_ipset_command_array() { # save the ipset commands (-gf = cmd)
 if arr_populated IPSET_CMD_ARRAY; then
 	save_command_array IPSET_CMD_ARRAY "$1" || return
 fi
+} # -------------------------------------------------------------------------
+
+nfacct_save_ruleset() { # save generated nfacct commands to file
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local -i idx
+local str_rfile="$1"
+printf '# nfacct commands\n' >>"$str_rfile"
+for idx in ${!NFACCT_CMD_ARRAY[@]}; do
+	printf '"$NFACCT" %s\n' "${NFACCT_CMD_ARRAY[idx]}" >>"$str_rfile"
+done
+printf "\n" >>"$str_rfile"
 } # -------------------------------------------------------------------------
 
 ipset_save_ruleset() { # save generated ipset commands to file
@@ -3950,6 +3966,7 @@ if [[ $MODE = @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 	if ((USE_IPSET)); then
 		construct_assignment IPSET >>"$str_rfile"
 	fi
+	arr_populated 'NFACCT_CMD_ARRAY' && construct_assignment NFACCT >>"$str_rfile"
 fi
 if [[ $MODE = @(SAVE-COMMANDS|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 	arr_populated 'TC_CMD_ARRAY' && {
@@ -3961,8 +3978,9 @@ fi
 # act according to runtime mode
 case "$MODE" in
 	(SAVE-COMMANDS) # save all commands
+		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
+		arr_populated 'NFACCT_CMD_ARRAY' && nfacct_del_objects_pubsave >>"$str_rfile"
 		if [[ $GEN_FORMAT = ipt ]]; then
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
 			arr_populated 'MODULE_CMD_ARRAY' && { save_command_array MODULE_CMD_ARRAY "$str_rfile" || return; }
 			if ((USE_IPSET)); then
 				header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
@@ -3971,13 +3989,26 @@ case "$MODE" in
 				header_heredoc_ipsrest "$str_rfile" "ipset ruleset"
 				ipset_save_ruleset "$str_rfile" || return
 				footer_heredoc "$str_rfile"
+				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+				nfacct_save_ruleset "$str_rfile" || return
 				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 				iptsave_rulesets "$str_rfile" rules || return
 				footer_heredoc "$str_rfile"
 			else
-				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
-				iptsave_rulesets "$str_rfile" || return
-				footer_heredoc "$str_rfile"
+				if arr_populated NFACCT_CMD_ARRAY; then
+					header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
+					iptsave_rulesets "$str_rfile" policy || return
+					footer_heredoc "$str_rfile"
+					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+					nfacct_save_ruleset "$str_rfile" || return
+					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
+					iptsave_rulesets "$str_rfile" rules || return
+					footer_heredoc "$str_rfile"
+				else
+					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
+					iptsave_rulesets "$str_rfile" || return
+					footer_heredoc "$str_rfile"
+				fi
 			fi
 			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
@@ -3987,12 +4018,12 @@ case "$MODE" in
 			done
 		elif [[ $GEN_FORMAT = cmd ]]; then
 			show_flush_del_pub_save >>"$str_rfile"
-			arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
 			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
 			save_command_array IPT_POL_ARRAY "$str_rfile" || return
 			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
+			printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
 			save_ipset_command_array "$str_rfile" || return
-			for cmd_array in IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
+			for cmd_array in NFACCT_CMD_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
 			do
 				if arr_populated $cmd_array; then
@@ -4003,6 +4034,7 @@ case "$MODE" in
 		fi
 	;;
 	(SAVE-IPT-COMMANDS) # save iptables commands only
+		arr_populated 'NFACCT_CMD_ARRAY' && nfacct_del_objects_pubsave >>"$str_rfile"
 		if [[ $GEN_FORMAT = ipt ]]; then
 			if ((USE_IPSET)); then
 				header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
@@ -4011,20 +4043,34 @@ case "$MODE" in
 				header_heredoc_ipsrest "$str_rfile" "ipset ruleset"
 				ipset_save_ruleset "$str_rfile" || return
 				footer_heredoc "$str_rfile"
+				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+				nfacct_save_ruleset "$str_rfile" || return
 				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 				iptsave_rulesets "$str_rfile" rules || return
 				footer_heredoc "$str_rfile"
 			else
-				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
-				iptsave_rulesets "$str_rfile" || return
-				footer_heredoc "$str_rfile"
+				if arr_populated NFACCT_CMD_ARRAY; then
+					header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
+					iptsave_rulesets "$str_rfile" policy || return
+					footer_heredoc "$str_rfile"
+					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+					nfacct_save_ruleset "$str_rfile" || return
+					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
+					iptsave_rulesets "$str_rfile" rules || return
+					footer_heredoc "$str_rfile"
+				else
+					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
+					iptsave_rulesets "$str_rfile" || return
+					footer_heredoc "$str_rfile"
+				fi
 			fi
 		elif [[ $GEN_FORMAT = cmd ]]; then
 			show_flush_del_pub_save >>"$str_rfile"
 			save_command_array IPT_POL_ARRAY "$str_rfile" || return
 			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
+			printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
 			save_ipset_command_array "$str_rfile" || return
-			for cmd_array in IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
+			for cmd_array in NFACCT_CMD_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 			do
 				if arr_populated $cmd_array; then
@@ -4091,19 +4137,6 @@ fi
 } # -------------------------------------------------------------------------
 
 apply_rules() { # apply or save commands form the various command holding arrays
-#IPSET_SETS_ARRAY=(
-#"-N foo iphash"
-#"-N bar nethash"
-#"-N fox ipmap --network 1.1.3.0/16"
-#)
-#IPSET_ENTRIES_ARRAY=(
-#"-A foo 1.1.1.1"
-#"-A bar 1.1.2.0/24"
-#"-A foo 1.1.1.2"
-#"-A fox 1.1.3.1"
-#"-A bar 1.1.4.0/24"
-#"-A fox 1.1.3.2"
-#)
 local str_arr_name
 local -i work_arr_sum i
 ((${#CMD_NAMES_ARRAY[@]})) || { # use array names from command names array
@@ -4163,7 +4196,7 @@ case "$MODE" in # act according to runtime mode
 			append_array IPT_CMD_ARRAY $str_arr_name
 		done
 		if [[ $DEBUG_INFO ]]; then
-			for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY; do
+			for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY NFACCT_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY; do
 				dbg_arr $str_arr_name
 			done
 		fi
@@ -4232,6 +4265,10 @@ case "$MODE" in # act according to runtime mode
 #				done
 					fi
 				fi
+				for i in ${!NFACCT_CMD_ARRAY[@]}; do
+					eval set -- "${NFACCT_CMD_ARRAY[i]}"
+					run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
+				done
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval set -- "${IPT_CMD_ARRAY[i]}"
 					"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
@@ -4520,7 +4557,7 @@ load_configs || return
 fill_proto_svc_arrays || return
 } # -------------------------------------------------------------------------
 
-ipt_mode_run() { # complete iptables loading prerun
+ipt_mode_run() { # complete iptables loading
 set_chain_classification || return
 load_policy_map || return $ER_FAIL
 get_output_policy || return $ER_FAIL
@@ -4533,6 +4570,9 @@ load_all_ruleblocks || return
 set_global_policies || return
 flushdel_tables || return
 allow_loopback || return
+log -S "Removing existing and adding new nfacct objects"
+nfacct_del_objects || return
+read_nfacct_obj_map || return
 } # -------------------------------------------------------------------------
 
 tc_mode_run() { # tc Mode only actions

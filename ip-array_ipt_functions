@@ -1246,8 +1246,8 @@ fill_final_rule_map() { # fill FINAL_RULE_MAP array
 log -w "Loading FINAL_RULE_MAP"
 fill_array 'FINAL_RULE_MAP'
 ((${#FINAL_RULE_MAP[@]})) || {
-log -u 'FINAL_RULE_MAP'
-return 0
+	log -u 'FINAL_RULE_MAP'
+	return 0
 }
 [[ $DEBUG_INFO ]] && dbg_arr 'FINAL_RULE_MAP' || :
 check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
@@ -1256,6 +1256,54 @@ check_str_unique $(show_array_column 'FINAL_RULE_MAP') || {
 	return 0
 }
 readonly FINAL_RULE_MAP
+} # -------------------------------------------------------------------------
+
+read_nfacct_obj_map() { # fill NFACCT_OBJ_MAP array and create nfacct objects
+[[ ${NFACCT_OBJ_MAP} ]] || return 0
+local -i idx
+log -w "Loading NFACCT_OBJ_MAP"
+fill_array 'NFACCT_OBJ_MAP'
+((${#NFACCT_OBJ_MAP[@]})) || {
+	log -u 'NFACCT_OBJ_MAP'
+	return 0
+}
+[[ $DEBUG_INFO ]] && dbg_arr 'NFACCT_OBJ_MAP' || :
+log -I "Creating nfacct accounting objects."
+for idx in ${!NFACCT_OBJ_MAP[@]}; do
+	log -e "creating nfacct object: ${NFACCT_OBJ_MAP[idx]}"
+	NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="add '${NFACCT_OBJ_MAP[idx]}'"
+done
+} # -------------------------------------------------------------------------
+
+nfacct_del_objects_pubsave() { # remove all existing nfacct objects - save function to file
+"$CAT" <<'END_OF_FUNC'
+
+nfacct_del_objects() {
+"$NFACCT" list | while read -r; do
+	x="${REPLY#*\}+([[:blank:]])=+([[:blank:]])}"
+	x="${x%;}"
+	"$NFACCT" del "$x"
+done
+}
+
+END_OF_FUNC
+} # -------------------------------------------------------------------------
+
+nfacct_del_objects() { # remove all existing nfacct objects
+((EXEC_COMMANDS)) || return 0
+local x
+log -I "Deleting nfacct accounting objects."
+while read -r; do
+	x="${REPLY#*\}+([[:blank:]])=+([[:blank:]])}"
+	x="${x%;}"
+	log -w "deleting nfacct object: $x"
+	run_nfacct del "$x" || {
+		log -f "deleting nfacct object \`$x'"
+		cmd_err_count ipt
+
+	}
+#	NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="del '$x'"
+done < <(dn2 run_nfacct list)
 } # -------------------------------------------------------------------------
 
 set_chain_classification() {
