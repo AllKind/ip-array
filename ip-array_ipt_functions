@@ -1306,6 +1306,12 @@ while read -r; do
 done < <(dn2 run_nfacct list)
 } # -------------------------------------------------------------------------
 
+nfacct_add() { # add a nfacct accounting object
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+log -e "creating nfacct object: $1"
+NFACCT_CMD_ARRAY[${#NFACCT_CMD_ARRAY[@]}]="add '$1'"
+} # -------------------------------------------------------------------------
+
 set_chain_classification() {
 local str_mode str_tables str_tbl
 JUMP_TREE=$(string_tolower "${JUMP_TREE:-none}")

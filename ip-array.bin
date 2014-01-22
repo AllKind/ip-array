@@ -513,6 +513,7 @@ PUBLIC_FUNCTION_LIST=(
 "mark_prio_syn Priorize SYN packets"
 "mark_out_bulk Mark OUTPUT bulk traffic"
 "mark_fwd_bulk Mark FORWARD bulk traffic"
+"nfacct_add Add a nfacct accounting object"
 )
 
 # -------------------------------------------------------------------------

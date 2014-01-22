@@ -1,0 +1,13 @@
+
+Name: nfacct_add
+
+Description:
+	Add a nfacct accounting object.
+
+Usage:
+	nfacct_add name
+
+Examples:
+	nfacct_add foo
+	nfacct_add "obj with spaces"
+
