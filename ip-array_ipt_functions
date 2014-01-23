@@ -6715,6 +6715,23 @@ for target_idx in ${!arg_list_target[@]}; do
 #				done
 			;;
 		esac
+		# options checks
+		if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} ]]; then
+			if [[ $table != nat ]]; then
+				log -E "The option \`nat_opt' is only valid in the nat table."
+				return 1
+			fi
+			if [[ $str_target != @(DNAT|SNAT|NETMAP|REDIRECT|RAWDNAT|RAWSNAT) ]]; then
+				log -E "The option \`nat_opt' is only valid with the following targets: DNAT|SNAT|NETMAP|REDIRECT|RAWDNAT|RAWSNAT."
+				return 1
+			fi
+		fi
+		if [[ ${arg_list_ct_opt[ARG_LIST_IDX]} ]]; then
+			if [[ $table != raw ]]; then
+				log -E "The option \`ct_opt' is only valid in the raw table."
+				return 1
+			fi
+		fi
 		((++RULE_LIST_IDX))
 		((++ARG_LIST_IDX))
 	done
