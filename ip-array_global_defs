@@ -197,6 +197,7 @@ IPARRAY_MODULES=(
 "0 tos filter -m tos --tos Minimize-Delay"
 "0 mark filter -m mark --mark 1234"
 "0 nfacct filter -m nfacct --nfacct-name ${me}_test_nfacct_obj"
+"0 policy filter -m policy --dir out --pol none --mode transport"
 "0 connmark filter -m connmark --mark 1234"
 "0 comment filter -m comment --comment foobar"
 "0 ttl filter -m ttl --ttl-eq 123"
@@ -265,6 +266,7 @@ OSF
 LENGTH
 DEVGROUP
 PHYSDEV
+POLICY
 NFACCT
 REALM
 RECENT

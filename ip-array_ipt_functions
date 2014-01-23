@@ -4000,6 +4000,31 @@ RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl $str_ttl "
 MSG_LIST_M_TTL[RULE_LIST_IDX]="$ttl_msg "
 } # -------------------------------------------------------------------------
 
+_process_policy() { # fill the policy match rulelist and msglist arrays
+local str_neg="" str_cmd="-m policy " str_msg="policy=${arg_list_policy[ARG_LIST_IDX]} "
+set -- ${arg_list_policy[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		dir|pol)
+			str_cmd+="--$1 $2 "
+			shift
+		;;
+		strict|next)
+			str_cmd+="--$1 "
+		;;
+		reqid|spi|proto|mode|tunnel-src|tunnel-dst)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--${1} $(remove_negation "$2") "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_POLICY[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_POLICY[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_addrtype() { # fill the iptables addrtype match rulelist and msglist arrays
 local str_neg="" str_cmd="-m addrtype " str_msg="addrtype="
 set -- ${arg_list_addrtype[ARG_LIST_IDX]//:/ }
@@ -5780,6 +5805,81 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				   	log -i "$tmp_opt_var_value" "recent descriptor"
 					return 1
 			esac
+		;;
+		(policy)
+			check_match_exist policy || return
+			if [[ $tmp_opt_var_value != *dir:* ]]; then
+				log -E "The \`dir' option of the $tmp_opt_var match is mandatory."
+				return 1
+			fi
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					dir|pol|reqid|spi|mode|proto|tunnel-src|tunnel-dst)
+						[[ $(remove_negation "$2") ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+					;;
+				esac
+				case "$1" in
+					dir)
+						if [[ $2 != @(in|out) ]]; then
+							log -i "$2" "$1 option of $tmp_opt_var descriptor. Must be one of: in|out."
+							return 1
+						fi
+						shift
+					;;
+					pol)
+						if [[ $2 != @(ipsec|none) ]]; then
+							log -i "$2" "$1 option of $tmp_opt_var descriptor. Must be one of: ipsec|none."
+							return 1
+						fi
+						shift
+					;;
+					reqid)
+						val_numeric $(remove_negation "$2") || return 1
+						shift
+					;;
+					spi)
+						val_spi $(remove_negation "$2") || return 1 # TODO: no range allowed?!
+						shift
+					;;
+					mode)
+						if [[ $(remove_negation "$2") != @(tunnel|transport) ]]; then
+							log -i "$2" "$1 option of $tmp_opt_var descriptor. Must be one of: tunnel|transport. "
+							return 1
+						fi
+						shift
+					;;
+					proto)
+						if [[ $(remove_negation "$2") != @(ah|esp|ipcomp) ]]; then
+							log -i "$2" "$1 option of $tmp_opt_var descriptor. Must be one of: ah|esp|ipcomp."
+							return 1
+						fi
+						shift
+					;;
+					tunnel-src|tunnel-dst)
+						val_ipv4_addr_no_range $(remove_negation "$2") || return 1
+						if [[ $tmp_opt_var_value != *mode:@(tunnel|\!transport)* ]]; then
+							log -E "Option \`$1' can only be used together with \`mode:tunnel'."
+							return 1
+						fi
+						shift
+					;;
+					strict) :
+					;;
+					next)
+						lsearch "strict" $(split_val : ' ' "$tmp_opt_var_value") || {
+							log -E "Option \`$1' can only be used together with \`strict'."
+							return 1
+						}
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var options descriptor. Unknown option: \`$1'."
+						return 1
+				esac
+				shift
+			done
 		;;
 		(socket)
 			check_match_exist socket || return
