@@ -6721,7 +6721,7 @@ for target_idx in ${!arg_list_target[@]}; do
 				log -E "The option \`nat_opt' is only valid in the nat table."
 				return 1
 			fi
-			if [[ $str_target != @(DNAT|SNAT|NETMAP|REDIRECT|RAWDNAT|RAWSNAT) ]]; then
+			if [[ $str_target != @(DNAT|SNAT|MASQUERADE|NETMAP|REDIRECT|RAWDNAT|RAWSNAT) ]]; then
 				log -E "The option \`nat_opt' is only valid with the following targets: DNAT|SNAT|NETMAP|REDIRECT|RAWDNAT|RAWSNAT."
 				return 1
 			fi
