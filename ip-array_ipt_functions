@@ -4001,12 +4001,30 @@ MSG_LIST_M_TTL[RULE_LIST_IDX]="$ttl_msg "
 } # -------------------------------------------------------------------------
 
 _process_addrtype() { # fill the iptables addrtype match rulelist and msglist arrays
-local str_neg=""
-string_negated "${arg_list_addrtype[ARG_LIST_IDX]}" && str_neg="! "
-set -- ${arg_list_addrtype[ARG_LIST_IDX]/:/ }
-local str_addr=$(remove_negation "$1") str_atype="$2"
-RULELIST_PKTTYPE[RULE_LIST_IDX]="-m addrtype ${str_neg}--${str_addr}-type ${str_atype} "
-MSG_LIST_PKTTYPE[RULE_LIST_IDX]="${str_addr}-addrtype=${str_atype} "
+local str_neg="" str_cmd="-m addrtype " str_msg="addrtype="
+set -- ${arg_list_addrtype[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		limit-in)
+			str_cmd+="--limit-iface-in "
+			str_msg+="limit-iface-in "
+		;;
+		limit-out)
+			str_cmd+="--limit-iface-out "
+			str_msg+="limit-iface-out "
+		;;
+		src|dst)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--${1}-type $(string_toupper $(remove_negation "$2") ) "
+			str_msg+="${1}-type:$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_PKTTYPE[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_PKTTYPE[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_pkttype() { # fill the iptables pkttype  match rulelist and msglist arrays
@@ -5543,16 +5561,38 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		;;
 		(addrtype)
 			check_match_exist addrtype || return
-			case "${tmp_opt_var_value_neg_ok%:*}" in
-				src|dst) : ;;
-				*) log -i "$tmp_opt_var_value" "addrtype descriptor."
-					return 1
-			esac
-			case "${tmp_opt_var_value_neg_ok#*:}" in
-				UNSPEC|UNICAST|LOCAL|BROADCAST|ANYCAST|MULTICAST|BLACKHOLE|UNREACHABLE|PROHIBIT|THROW|NAT|XRESOLVE) : ;;
-				*) log -i "$tmp_opt_var_value" "addrtype descriptor"
-					return 1
-			esac
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					limit-in)
+						if lsearch "limit-out" $(split_val : ' ' "$tmp_opt_var_value"); then
+							log -E "limit-in option cannot be used together with limit-out option."
+							return 1
+						fi
+					;;
+					limit-out)
+						if lsearch "limit-in" $(split_val : ' ' "$tmp_opt_var_value"); then
+							log -E "limit-in option cannot be used together with limit-out option."
+							return 1
+						fi
+					;;
+					src|dst)
+						[[ $2 ]] || {
+							log -E "Value for option \`$1' is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+						if [[ $(string_toupper "$(remove_negation "$2")" ) != @(UNSPEC|UNICAST|LOCAL|BROADCAST|ANYCAST|MULTICAST|BLACKHOLE|UNREACHABLE|PROHIBIT|THROW|NAT|XRESOLVE) ]]
+						then
+							log -i "$2" "$tmp_opt_var descriptor"
+							return 1
+						fi
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var options descriptor. Unknown option: \`$1'."
+						return 1
+				esac
+				shift
+			done
 		;;
 		(pkttype)
 			check_match_exist pkttype || return

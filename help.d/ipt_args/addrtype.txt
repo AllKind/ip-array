@@ -1,8 +1,11 @@
 addrtype: addrtype match specification.
 
-	Synopsis: [!](dst|src):type
+	Synopsis: option[:opt_arg][:...]
+		options:
+		dst|src   [!]type (types can be written non case sensitive)
+		limit-in|limit-out
 
 	Examples:
 		addrtype=dst:BROADCAST
-		addrtype=!src:LOCAL
+		addrtype=src:!local:limit-in
 
