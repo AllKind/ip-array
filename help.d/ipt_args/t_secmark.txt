@@ -1,4 +1,4 @@
 t_secmark: SECMARK target specification.
 
-	Synopsis: security_context
+    Synopsis: security_context
 

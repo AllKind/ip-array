@@ -1,10 +1,10 @@
 ahspi: ah match.
-	Eqivalent to `-m ah --ahspi'.
+    Eqivalent to `-m ah --ahspi'.
 
-	Synopsis: [!]spi[:spi]
+    Synopsis: [!]spi[:spi]
 
-	Examples:
-		ahspi=1
-		ahspi=1:2
-		ahspi=!1
+    Examples:
+        ahspi=1
+        ahspi=1:2
+        ahspi=!1
 

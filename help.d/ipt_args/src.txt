@@ -1,11 +1,11 @@
 src: Source address specification.
-		Equivalent to -s|--source.
-		In addition to IP addresses network names
-		or ip-range definitions can be used.
+        Equivalent to -s|--source.
+        In addition to IP addresses network names
+        or ip-range definitions can be used.
 
-	Examples:
-		src=10.0.0.1
-		src=10.0.0.0/16
-		src=!MY_NETWORK
-		src=10.0.0.1-10.0.0.127
+    Examples:
+        src=10.0.0.1
+        src=10.0.0.0/16
+        src=!MY_NETWORK
+        src=10.0.0.1-10.0.0.127
 

@@ -1,18 +1,18 @@
 string: string match specification.
 
-	Synopsis: option:opt_arg[:...]
-		options:
-		algo      bm-kmp
-		[from]    value
-		[to]      value
-		[!]string        string
-		[!]hex-string    string (use `-' instead of `|')
+    Synopsis: option:opt_arg[:...]
+        options:
+        algo      bm-kmp
+        [from]    value
+        [to]      value
+        [!]string        string
+        [!]hex-string    string (use `-' instead of `|')
 
-		Order of options is fixed:
-		algo [,from] [,to] [hex-]string
+        Order of options is fixed:
+        algo [,from] [,to] [hex-]string
 
-	Examples:
-		string="algo:bm:string:GET /index.html"
-		string="algo:bm:!string:GET /index.html"
-		string="algo:kmp:from:40:to:57:hex-string:-03-www-09-nf-03-org-00-"
+    Examples:
+        string="algo:bm:string:GET /index.html"
+        string="algo:bm:!string:GET /index.html"
+        string="algo:kmp:from:40:to:57:hex-string:-03-www-09-nf-03-org-00-"
 

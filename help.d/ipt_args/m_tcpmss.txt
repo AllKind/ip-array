@@ -1,8 +1,8 @@
 m_tcpmss: tcpmss match specification.
 
-	Synopsis: [!]value[:value]
+    Synopsis: [!]value[:value]
 
-	Examples:
-		m_tcpmss=1400
-		m_tcpmss=!1400:1536
+    Examples:
+        m_tcpmss=1400
+        m_tcpmss=!1400:1536
 

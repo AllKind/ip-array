@@ -1,8 +1,8 @@
 pkttype: pkttype match specification.
 
-	Synopsis: [!]unicast|broadcast|multicast
+    Synopsis: [!]unicast|broadcast|multicast
 
-	Examples:
-		pkttype=broadcast
-		pkttype=!unicast
+    Examples:
+        pkttype=broadcast
+        pkttype=!unicast
 

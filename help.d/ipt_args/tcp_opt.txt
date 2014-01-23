@@ -1,13 +1,13 @@
 tcp_opt: options of the tcp match.
 
-	Synopsis: optioin[:opt_arg][:...]
-		options:
-		[!]s[yn]
-		o[pt]   [!]value
-		f[lags] [!]examflags-existflags
+    Synopsis: optioin[:opt_arg][:...]
+        options:
+        [!]s[yn]
+        o[pt]   [!]value
+        f[lags] [!]examflags-existflags
 
-	Examples:
-		tcp_opt=syn
-		tcp_opt=!s
-		tcp_opt=flags:SYN,RST,ACK,FIN-SYN
+    Examples:
+        tcp_opt=syn
+        tcp_opt=!s
+        tcp_opt=flags:SYN,RST,ACK,FIN-SYN
 

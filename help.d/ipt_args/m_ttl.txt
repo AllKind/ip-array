@@ -1,11 +1,11 @@
 m_ttl: ttl match specification.
 
-	Synopsis: [!|+|-]value
-		+ := greater then (--ttl-gt)
-		- := lower then (--ttl-lt)
+    Synopsis: [!|+|-]value
+        + := greater then (--ttl-gt)
+        - := lower then (--ttl-lt)
 
-	Examples:
-		m_ttl=63
-		m_ttl=!63
-		m_ttl=-63
+    Examples:
+        m_ttl=63
+        m_ttl=!63
+        m_ttl=-63
 

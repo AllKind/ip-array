@@ -1,20 +1,20 @@
 nat_opt: NAT options specification.
-	To be used with the targets: DNAT, SNAT, MASQUERADE, NETMAP, REDIRET,
-	RAWDNAT, RAWSNAT.
+    To be used with the targets: DNAT, SNAT, MASQUERADE, NETMAP, REDIRET,
+    RAWDNAT, RAWSNAT.
 
-	Synopsis:
-		option[:opt_arg][:...]
-		options:
-			addr address (only NETMAP)
-			daddr destination-address
-			saddr source-address
-			port value[-value]
-			random
-			persistent
+    Synopsis:
+        option[:opt_arg][:...]
+        options:
+            addr address (only NETMAP)
+            daddr destination-address
+            saddr source-address
+            port value[-value]
+            random
+            persistent
 
-	Examples:
-		nat_opt=daddr:10.0.0.1
-		nat_opt=saddr:10.0.0.1:port:3-9
-		nat_opt=port:666:random
-		nat_opt=addr:10.0.0.0/24
+    Examples:
+        nat_opt=daddr:10.0.0.1
+        nat_opt=saddr:10.0.0.1:port:3-9
+        nat_opt=port:666:random
+        nat_opt=addr:10.0.0.0/24
 

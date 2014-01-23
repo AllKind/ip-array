@@ -1,6 +1,6 @@
 mac: MAC address specification.
-	Eqivalent to -m mac --mac-source.
+    Eqivalent to -m mac --mac-source.
 
-	Example:
-		mac=AA:BB:CC:DD:EE:FF
+    Example:
+        mac=AA:BB:CC:DD:EE:FF
 

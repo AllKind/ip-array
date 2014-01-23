@@ -1,10 +1,10 @@
 log_level: Logging level for the LOG target.
 
-	Synopsis: value|name
-		value := 0-7
-		name  := alert|crit|debug|emerg|err|info|notice|warning
+    Synopsis: value|name
+        value := 0-7
+        name  := alert|crit|debug|emerg|err|info|notice|warning
 
-	Examples:
-		log_level=1
-		log_level=warn
+    Examples:
+        log_level=1
+        log_level=warn
 

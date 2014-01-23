@@ -1,7 +1,7 @@
 nfacct: nfacct match object name.
 
-	Synopsis: name_of_accounting_object
+    Synopsis: name_of_accounting_object
 
-	Example:
-		nfacct=foobar
+    Example:
+        nfacct=foobar
 

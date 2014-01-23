@@ -1,13 +1,13 @@
 tproxy_opt: TPROXY target specification.
 
-	Synopsis: option:opt_arg[:...]
-		options:
-			port port
-			ip   addr
-			mark value[/mask]
+    Synopsis: option:opt_arg[:...]
+        options:
+            port port
+            ip   addr
+            mark value[/mask]
 
-	Examples:
-		tproxy_opt:port:1234
-		tproxy_opt:port:1234:ip:10.0.0.1
-		tproxy_opt:port:1234:ip:10.0.0.1:mark:0xBEEF
+    Examples:
+        tproxy_opt:port:1234
+        tproxy_opt:port:1234:ip:10.0.0.1
+        tproxy_opt:port:1234:ip:10.0.0.1:mark:0xBEEF
 

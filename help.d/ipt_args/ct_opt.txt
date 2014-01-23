@@ -1,17 +1,17 @@
 ct_opt: CT target specification.
-	Only valid in the raw table.
+    Only valid in the raw table.
 
-	Synopsis: option[:opt_arg][:...]
-		options:
-			notrack
-			helper    ct_helper
-			ctevents  event
-			expevents event (new is the only available)
-			zone      zone_num
-			timeout   timeout_policy
-		event := new|related|destroy|reply|assured|protoinfo|helper|mark|natseqinfo|secmark
+    Synopsis: option[:opt_arg][:...]
+        options:
+            notrack
+            helper    ct_helper
+            ctevents  event
+            expevents event (new is the only available)
+            zone      zone_num
+            timeout   timeout_policy
+        event := new|related|destroy|reply|assured|protoinfo|helper|mark|natseqinfo|secmark
 
-	Examples:
-		ct_opt=notrack
-		ct_opt=helper:ftp:zone:3
+    Examples:
+        ct_opt=notrack
+        ct_opt=helper:ftp:zone:3
 

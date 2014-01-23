@@ -1,11 +1,11 @@
 socket: socket match.
-	Valid values are (not case sensitive):
-	s|so|soc|sock|socke|socket|nowildcard|transparent
-	transparent equals `-m socket --transparent'.
-	nowildcard equals `-m socket --nowildcard'.
+    Valid values are (not case sensitive):
+    s|so|soc|sock|socke|socket|nowildcard|transparent
+    transparent equals `-m socket --transparent'.
+    nowildcard equals `-m socket --nowildcard'.
 
-	Examples:
-		socket=s
-		socket=socket
-		socket=transparent
+    Examples:
+        socket=s
+        socket=socket
+        socket=transparent
 

@@ -1,12 +1,12 @@
 nfqueue: NFQUEUE target specification.
 
-	Synopsis: value[-value][:option]
-		value[:bypass]
-		value-value[:bypass][:cpu-fanout]
+    Synopsis: value[-value][:option]
+        value[:bypass]
+        value-value[:bypass][:cpu-fanout]
 
-	Examples:
-		nfqueue=1
-		nfqueue=1-3
-		nfqueue=1:bypass
-		nfqueue=1-3:bypass:cpu-fanout
+    Examples:
+        nfqueue=1
+        nfqueue=1-3
+        nfqueue=1:bypass
+        nfqueue=1-3:bypass:cpu-fanout
 

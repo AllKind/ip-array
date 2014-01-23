@@ -1,11 +1,11 @@
 idev: Name(s) of the input interface(s)
-	Equivalent to -i|--in-interface.
-	Multiple devices can be entered by separating the names with a comma (,).
-	In that case negation is not valid.
+    Equivalent to -i|--in-interface.
+    Multiple devices can be entered by separating the names with a comma (,).
+    In that case negation is not valid.
 
-	Examples:
-		idev=eth0
-		idev=eth0,eth1
-		idev=eth+
-		idev=!eth0
+    Examples:
+        idev=eth0
+        idev=eth0,eth1
+        idev=eth+
+        idev=!eth0
 

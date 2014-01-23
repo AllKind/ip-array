@@ -1,12 +1,12 @@
 t_tos: TOS target specification.
 
-	Synopsis:
-		symbol (--set-tos symbol (not case sensitive))
-		value[/mask] (--set-tos)
-		and|or|xor:value
+    Synopsis:
+        symbol (--set-tos symbol (not case sensitive))
+        value[/mask] (--set-tos)
+        and|or|xor:value
 
-	Examples:
-		t_tos=minimize-delay
-		t_tos=0
-		t_tos=0x10/0xFA
+    Examples:
+        t_tos=minimize-delay
+        t_tos=0
+        t_tos=0x10/0xFA
 

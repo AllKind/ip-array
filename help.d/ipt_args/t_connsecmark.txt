@@ -1,8 +1,8 @@
 t_connsecmark: CONNSECMARK target.
 
-	Synopsis: s[ave]|r[estore]
+    Synopsis: s[ave]|r[estore]
 
-	Examples:
-		t_connsecmark=save
-		t_connsecmark=s    (equals the above)
+    Examples:
+        t_connsecmark=save
+        t_connsecmark=s    (equals the above)
 

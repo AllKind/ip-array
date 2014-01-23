@@ -1,8 +1,8 @@
 devgroup: devgroup match specification.
 
-	Synopsis: [!](dst|src):devgroup
+    Synopsis: [!](dst|src):devgroup
 
-	Examples:
-		devgroup=dst:ndg0
-		devgroup=!src:ndg0
+    Examples:
+        devgroup=dst:ndg0
+        devgroup=!src:ndg0
 

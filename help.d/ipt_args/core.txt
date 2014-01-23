@@ -1,13 +1,13 @@
 core: fragment and counters.
 
-	Synopsis: [!]option[:opt_arg]
-		options:
-		[!]f[ragment]   (Equals -f|--fragment option of iptables)
-		c[ounters] packets,bytes
+    Synopsis: [!]option[:opt_arg]
+        options:
+        [!]f[ragment]   (Equals -f|--fragment option of iptables)
+        c[ounters] packets,bytes
 
-	Examples:
-		core=fragment
-		core=!frag
-		core=f:counters:1,2
-		core=c:1,2
+    Examples:
+        core=fragment
+        core=!frag
+        core=f:counters:1,2
+        core=c:1,2
 

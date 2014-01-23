@@ -1,11 +1,11 @@
 target: Name(s) of the target(s).
-	Multiple targets can be entered by separating the names with a comma (,).
-	To specify an empty target use the value `empty'.
-	To goto (--goto) to a target chain, instead of jumping, use the prefix `goto:'.
+    Multiple targets can be entered by separating the names with a comma (,).
+    To specify an empty target use the value `empty'.
+    To goto (--goto) to a target chain, instead of jumping, use the prefix `goto:'.
 
-	Examples:
-		target=ACCEPT
-		target=t_mark,ACCEPT
-		target=empty
-		target=goto:MY_CHAIN
+    Examples:
+        target=ACCEPT
+        target=t_mark,ACCEPT
+        target=empty
+        target=goto:MY_CHAIN
 

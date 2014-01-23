@@ -1,11 +1,11 @@
 osf: osf match specification.
 
-	Synopsis: [!]genre[:option:value][...]
-		options:
-			log:(0|1|2)
-			ttl:(0|1|2)
+    Synopsis: [!]genre[:option:value][...]
+        options:
+            log:(0|1|2)
+            ttl:(0|1|2)
 
-	Examples:
-		osf=!Windows
-		osf=Linux:log:2
+    Examples:
+        osf=!Windows
+        osf=Linux:log:2
 

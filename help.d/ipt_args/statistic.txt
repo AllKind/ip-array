@@ -1,11 +1,11 @@
 statistic: statistic match specification.
 
-	Synopsis:
-		random:[!]probability:value
-		nth:[!]every:value[:packet:value]
+    Synopsis:
+        random:[!]probability:value
+        nth:[!]every:value[:packet:value]
 
-	Examples:
-		statistic=random:probability:0.7
-		statistic=nth:every:4:packet:1
-		statistic=nth:!every:4
+    Examples:
+        statistic=random:probability:0.7
+        statistic=nth:every:4:packet:1
+        statistic=nth:!every:4
 

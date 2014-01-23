@@ -1,30 +1,30 @@
 conntrack: conntrack match specification.
 
-	Synopsis: option:opt_arg[:...]
-		options:
-		dir     [!]ORIGINAL|REPLY
-		state   [!]NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT[,...]
-		           The states can also be written with lower case letters.
-		proto   [!]protocol (number or name from /etc/protocols)
-		origsrcport    [!]port
-		origdstport    [!]port
-		replsrcport    [!]port
-		repldstport    [!]port
-		origsrc    [!]address[/mask]
-		origdst    [!]address[/mask]
-		replsrc    [!]address[/mask]
-		repldst    [!]address[/mask]
-		expire     [!]value[-value]
-		status     [!]NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED[,...]
-		           The states can also be written with lower case letters.
-		port := value[-value] | name[-name] | [name-w-hyphen]{-[name-w-hyphen]}
-			port names containing a hyphen (`-') must be enclosed within
-			square brackets (`[]').
+    Synopsis: option:opt_arg[:...]
+        options:
+        dir     [!]ORIGINAL|REPLY
+        state   [!]NEW|ESTABLISHED|RELATED|INVALID|UNTRACKED|SNAT|DNAT[,...]
+                   The states can also be written with lower case letters.
+        proto   [!]protocol (number or name from /etc/protocols)
+        origsrcport    [!]port
+        origdstport    [!]port
+        replsrcport    [!]port
+        repldstport    [!]port
+        origsrc    [!]address[/mask]
+        origdst    [!]address[/mask]
+        replsrc    [!]address[/mask]
+        repldst    [!]address[/mask]
+        expire     [!]value[-value]
+        status     [!]NONE|EXPECTED|SEEN_REPLY|ASSURED|CONFIRMED[,...]
+                   The states can also be written with lower case letters.
+        port := value[-value] | name[-name] | [name-w-hyphen]{-[name-w-hyphen]}
+            port names containing a hyphen (`-') must be enclosed within
+            square brackets (`[]').
 
-	Examples:
-		conntrack=dir:REPLY:state:RELATED
-		conntrack=dir:REPLY:state:ESTABLISHED,RELATED,proto:tcp:origdstport:21
-		conntrack=dir:ORIGINAL:origsrcport:ftp-ssh
-		conntrack=dir:REPLY:expire:1000-10000:proto:tcp:replsrcport:[re-mail-ck]
-		conntrack=dir:ORIGINAL:proto:udp:origdstport:[netbios-ns]-[netbios-ssn]
+    Examples:
+        conntrack=dir:REPLY:state:RELATED
+        conntrack=dir:REPLY:state:ESTABLISHED,RELATED,proto:tcp:origdstport:21
+        conntrack=dir:ORIGINAL:origsrcport:ftp-ssh
+        conntrack=dir:REPLY:expire:1000-10000:proto:tcp:replsrcport:[re-mail-ck]
+        conntrack=dir:ORIGINAL:proto:udp:origdstport:[netbios-ns]-[netbios-ssn]
 

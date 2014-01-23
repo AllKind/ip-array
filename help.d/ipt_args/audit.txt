@@ -1,7 +1,7 @@
 audit: AUDIT target.
-	Equivalent to `-j AUDIT --type'.
-	Valid values are: accept|drop|reject
+    Equivalent to `-j AUDIT --type'.
+    Valid values are: accept|drop|reject
 
-	Example:
-		audit=drop
+    Example:
+        audit=drop
 

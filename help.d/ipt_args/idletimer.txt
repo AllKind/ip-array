@@ -1,8 +1,8 @@
 idletimer: IDLETIMER target specification.
 
-	Synopsis: option:opt_arg[:...]
-		options: label, timeout
+    Synopsis: option:opt_arg[:...]
+        options: label, timeout
 
-	Example:
-		idletimer=label:foo:timeout:1000
+    Example:
+        idletimer=label:foo:timeout:1000
 

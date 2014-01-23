@@ -1,5 +1,5 @@
 comment: Comment of the comment match.
 
-	Example:
-		comment="My smart comment"
+    Example:
+        comment="My smart comment"
 
