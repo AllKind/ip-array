@@ -41,9 +41,7 @@
 		8: protocol
 		9: source port
 		10: destination port
-		11: tcp flags
-		12: tcp syn
-		13: tcp option
+		11: tcp options (flags,syn,option)
 		Mandatory options: table, target, chain
 		-->
 		<mandatory_vars> table,target,chain </mandatory_vars>
@@ -219,9 +217,7 @@
 		6: protocol
 		7: source port
 		8: destination port
-		9: tcp flags
-		10: tcp syn
-		11: tcp option
+		9: tcp options (flags,syn,option)
 		-->
 		<load_template>
 			BT_TARGET_AND_CHAIN

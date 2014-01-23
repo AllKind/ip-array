@@ -73,9 +73,7 @@
 		6: protocol
 		7: source port
 		8: destination port
-		9: tcp flags
-		10: tcp syn
-		11: tcp option
+		9: tcp options (flags,syn,option)
 		Mandatory options: target, chain 
 		-->
 		<table> filter </table>
