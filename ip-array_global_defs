@@ -162,6 +162,7 @@ IPARRAY_TARGETS=(
 "0 AUDIT filter -j AUDIT --type drop"
 "0 CT raw -j CT --notrack"
 "0 IDLETIMER filter -i dummy0 -j IDLETIMER --timeout 3600 --label ${ME}_TEST_IDLETIMER"
+"0 RATEEST mangle -j RATEEST --rateest-name ${me}_test_est --rateest-interval 250ms --rateest-ewma 0.5s"
 "0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
 "0 TEE mangle -j TEE --gateway 172.32.254.255"
 "0 TTL mangle -j TTL --ttl-inc 1"
@@ -212,6 +213,7 @@ IPARRAY_MODULES=(
 "0 dccp filter -p dccp -m dccp --dport 80"
 "0 statistic filter -m statistic --mode nth --every 10 --packet 0"
 "0 physdev filter -m physdev --physdev-is-in"
+"0 rateest mangle -m rateest --rateest ${me}_test_est --rateest-eq --rateest-bps 1Mbit"
 "0 realm filter -m realm --realm 0"
 "0 recent filter -m recent --rcheck"
 "0 string filter -m string --algo bm --string foo"
@@ -278,6 +280,7 @@ DCCP
 HASHLIMIT
 U32
 M_MARK
+M_RATEEST
 M_TTL
 CPU
 IPVS
@@ -300,6 +303,7 @@ GLOBAL_TARGET_LIST=(
 "SET SET_SET"
 "AUDIT AUDIT"
 "IDLETIMER IDLETIMER_OPT"
+"RATEEST T_RATEEST"
 )
 
 # Array with match extensions, which are only valid in certain tables

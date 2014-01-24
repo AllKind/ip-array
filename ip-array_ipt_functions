@@ -666,8 +666,6 @@ if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	else
 		ARR_TARGET_EXIST[$ttarget]=1
 	fi
-#	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
-	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
 	if ((BASH_VERSINFO[0] >= 4)); then
 		ARR_TARGET_EXIST[$ttarget]=0
@@ -694,8 +692,6 @@ if $str_dn run_ipt -t "$ttable" -A $BIC_TEST_CHAIN "$@"; then
 	else
 		ARR_MATCH_EXIST[$tmod]=1
 	fi
-#	run_ipt -t "$ttable" -D $BIC_TEST_CHAIN "$@"
-	run_ipt -t "$ttable" -F $BIC_TEST_CHAIN
 else
 	if ((BASH_VERSINFO[0] >= 4)); then
 		ARR_MATCH_EXIST[$tmod]=0
@@ -4000,6 +3996,59 @@ RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl $str_ttl "
 MSG_LIST_M_TTL[RULE_LIST_IDX]="$ttl_msg "
 } # -------------------------------------------------------------------------
 
+_process_m_rateest() { # fill the rateest match rulelist and msglist arrays
+local str_neg="" str_cmd="-m rateest " str_msg=""
+set -- ${arg_list_m_rateest[ARG_LIST_IDX]//:/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		name?(1|2))
+			str_cmd+="--rateest${1//[![:digit:]]/} '$2' "
+			str_msg+="rateest${1//[![:digit:]]/}='$2' "
+			shift
+		;;
+		delta)
+			str_cmd+="--rateest-$1 "
+			str_msg+="rateest-$1 "
+		;;
+		?(\!)@(eq|gt|lt))
+			string_negated "$1" && str_neg="! "
+			str_cmd+="${str_neg}--rateest-$(remove_negation "$1") "
+			str_msg+="${str_neg% }rateest-$(remove_negation "$1") "
+		;;
+		@(bps|pps)?(1|2))
+			str_cmd+="--rateest-$1 $2 "
+			str_msg+="rateest-$1=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_M_RATEEST[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_M_RATEEST[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
+_process_t_rateest() { # fill the RATEEST target rulelist and msglist arrays
+local str_cmd="" str_msg=""
+set -- ${arg_list_t_rateest[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case "$1" in
+		name)
+			str_cmd+="--rateest-$1 '$2' "
+			str_msg+="rateest-$1='$2' "
+		;;
+		interval|ewmalog)
+			str_cmd+="--rateest-$1 $2 "
+			str_msg+="rateest-$1=$2 "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift 2
+done
+RULELIST_T_RATEEST[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_T_RATEEST[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_policy() { # fill the policy match rulelist and msglist arrays
 local str_neg="" str_cmd="-m policy " str_msg="policy=${arg_list_policy[ARG_LIST_IDX]} "
 set -- ${arg_list_policy[ARG_LIST_IDX]//:/ }
@@ -4843,11 +4892,6 @@ if [[ ${arg_list_connlimit[OPTION_LIST_IDX]} ]]; then
 		log -E "Connlimit is only valid with tcp SYN."
 		return 1
 	fi
-fi
-# if the cluster match is used, check if table is mangle
-if [[ ${arg_list_cluster[OPTION_LIST_IDX]} && $table != mangle ]]; then
-	log -E "The cluster match is only valid in the mangle table."
-	return 1
 fi
 } # -------------------------------------------------------------------------
 
@@ -5954,6 +5998,51 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					esac
 			done
 		;;
+		(m_rateest)
+			check_match_exist rateest || return
+			while (($#)); do
+				case "$1" in
+					name?(1|2)) shift ;;
+					delta) : ;;
+					?(\!)@(eq|gt|lt)) : ;;
+					@(bps|pps)?(1|2))
+						[[ $2 = +([[:digit:]])?(.+([[:digit:]]))@(bit|[kmgt]bit|[KMGT]ibit|Bps|[KMGT]Bps|[KMGT]iBps) ]] || {
+							log -i "$2" "rateest $1. Must be specified as: bit, [kmgt]bit, [KMGT]ibit, Bps, [KMGT]Bps, [KMGT]iBps."
+							return 1
+						}
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var value descriptor. Unknown option \`$1'."
+						return 1
+				esac
+				shift
+			done
+		;;
+		(t_rateest)
+			check_tgt_exist RATEEST || return
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				if [[ -z $2 ]]; then
+					log -E "Missing value of $tmp_opt_var option \`$1'."
+					return 1
+				fi
+				case "$1" in
+					name) :
+					;;
+					ewmalog) :
+					;;
+					interval)
+						[[ $2 = *@(s|ms|us) ]] || {
+							log -i "$2" "rateest interval. Must be specified as: s|ms|us."
+							return 1
+						}
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var value descriptor. Unknown option \`$1'."
+						return 1
+				esac
+				shift 2
+			done
+		;;
 		(idletimer)
 			check_tgt_exist IDLETIMER || return
 			case "$tmp_opt_var_value" in
@@ -6606,6 +6695,9 @@ for target_idx in ${!arg_list_target[@]}; do
 			MARK)
 				_val_tgtopt_set "${arg_list_t_mark[ARG_LIST_IDX]}" || return 1
 			;;
+			RATEEST)
+				_val_tgtopt_set "${arg_list_t_rateest[ARG_LIST_IDX]}" || return 1
+			;;
 			SECMARK)
 				_val_tgtopt_set "${arg_list_t_secmark[ARG_LIST_IDX]}" || return 1
 			;;
@@ -6716,6 +6808,12 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 		esac
 		# options checks
+		# if the cluster match is used, check if table is mangle
+		if [[ ${arg_list_cluster[ARG_LIST_IDX]} && $table != mangle ]]; then
+			log -E "The cluster match is only valid in the mangle table."
+			return 1
+		fi
+		# nat options
 		if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} ]]; then
 			if [[ $table != nat ]]; then
 				log -E "The option \`nat_opt' is only valid in the nat table."
@@ -6726,6 +6824,7 @@ for target_idx in ${!arg_list_target[@]}; do
 				return 1
 			fi
 		fi
+		# CT options
 		if [[ ${arg_list_ct_opt[ARG_LIST_IDX]} ]]; then
 			if [[ $table != raw ]]; then
 				log -E "The option \`ct_opt' is only valid in the raw table."
@@ -6772,7 +6871,6 @@ case "$table" in
 	nat)
 		case "$str_target" in
 			MASQUERADE|REDIRECT)
-#				if [[ ${arg_list_nat_port[ARG_LIST_IDX]} ]]; then # if a nat port is defined
 				if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *port:?* ]]; then # if a nat port is defined
 					if [[ $(string_tolower "${arg_list_proto[ARG_LIST_IDX]:-0}") != @(tcp|udp|6|17) ]]; then
 						log -E "Port specifications with $str_target are only valid with tcp or udp."
