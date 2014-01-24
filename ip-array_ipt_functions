@@ -6462,6 +6462,16 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							fi
 						fi
 					;;
+					random-fully)
+						if ((KERN_VER[0] < 3)); then
+							log -E "NAT \`random-fully' option requires kernel versions greater or equal to \`3.14'."
+							return 1
+						fi
+						if ((KERN_VER[0] == 3 && KERN_VER[1] < 14)); then
+							log -E "NAT \`random-fully' option requires kernel versions greater or equal to \`3.14'."
+							return 1
+						fi
+					;;
 					persistent)
 						if ((KERN_VER[0] == 2)); then
 							if ((KERN_VER[1] < 6)); then
@@ -6720,10 +6730,17 @@ for target_idx in ${!arg_list_target[@]}; do
 					log -E "No $str_target target IP address specified."
 					return 1
 				}
-				if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} && ${arg_list_nat_opt[ARG_LIST_IDX]} = *@(random|persistent)* && $str_target != @(DNAT|SNAT) ]]
-				then
-					log -E "\`${arg_list_nat_opt[ARG_LIST_IDX]}' is not valid with $str_target target."
-					return 1
+				if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} ]]; then
+					if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *@(random|persistent)* && $str_target != @(DNAT|SNAT) ]]
+					then
+						log -E "random or persistent options are not valid with $str_target target."
+						return 1
+					fi
+					if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *random-fully* && $str_target != SNAT ]]
+					then
+						log -E "random-fully option is not valid with $str_target target."
+						return 1
+					fi
 				fi
 			;;
 			MASQUERADE|REDIRECT)
