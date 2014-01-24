@@ -3279,37 +3279,18 @@ load_security_rules || return
 _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
 case "$str_target" in
-	ACCEPT) str_target_msg="accept" ;;
-	AUDIT) str_target_msg="audit" ;;
-	CLASSIFY) str_target_msg="classify" ;;
-	CONNMARK) str_target_msg="connmark" ;;
-	CONNSECMARK) str_target_msg="connsecmark" ;;
-	DROP) str_target_msg="drop" ;;
-	ECN) str_target_msg="remove-ecn" ;;
+	ACCEPT|AUDIT|CLASSIFY|CONNMARK|CONNSECMARK|DROP|IDLETIMER|LOG|NLOG|ULOG|MARK|SECMARK|\
+		NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
+		str_target_msg="$(string_tolower "$str_target")"
+		;;
 	CHECKSUM) str_target_msg="fill-checksum" ;;
-	IDLETIMER) str_target_msg="idletimer" ;;
-	LOG) str_target_msg="log" ;;
-	NFLOG) str_target_msg="nflog" ;;
-	ULOG) str_target_msg="ulog" ;;
-	MARK) str_target_msg="mark" ;;
-	SECMARK) str_target_msg="secmark" ;;
-	MASQUERADE) str_target_msg="masq" ;;
-	NETMAP) str_target_msg="netmap" ;;
-	NFQUEUE) str_target_msg="nfqueue" ;;
-	REJECT) str_target_msg="reject" ;;
-	DNAT) str_target_msg="dnat" ;;
-	SNAT) str_target_msg="snat" ;;
-	RAWDNAT) str_target_msg="rawdnat" ;;
-	RAWSNAT) str_target_msg="rawsnat" ;;
-	REDIRECT) str_target_msg="redirect" ;;
-	RETURN) str_target_msg="return" ;;
-	SET) str_target_msg="set-set" ;;
-	TCPOPTSTRIP) str_target_msg="strip-tcp-opts" ;;
-	TCPMSS) str_target_msg="set-tcpmss" ;;
 	DSCP) str_target_msg="set-dscp" ;;
-	TEE) str_target_msg="tee" ;;
+	ECN) str_target_msg="remove-ecn" ;;
+	MASQUERADE) str_target_msg="masq" ;;
+	SET) str_target_msg="set-set" ;;
+	TCPMSS) str_target_msg="set-tcpmss" ;;
+	TCPOPTSTRIP) str_target_msg="strip-tcp-opts" ;;
 	TOS) str_target_msg="set-tos" ;;
-	TPROXY) str_target_msg="tproxy" ;;
 	TTL) str_target_msg="set-ttl" ;;
 	*) str_target_msg="target: $str_target" ;;
 esac
