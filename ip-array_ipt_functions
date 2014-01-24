@@ -4037,7 +4037,7 @@ while (($#)); do
 			str_cmd+="--rateest-$1 '$2' "
 			str_msg+="rateest-$1='$2' "
 		;;
-		interval|ewmalog)
+		interval|ewma?(log))
 			str_cmd+="--rateest-$1 $2 "
 			str_msg+="rateest-$1=$2 "
 		;;
@@ -6029,7 +6029,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				case "$1" in
 					name) :
 					;;
-					ewmalog) :
+					ewma?(log)) :
 					;;
 					interval)
 						[[ $2 = *@(s|ms|us) ]] || {
