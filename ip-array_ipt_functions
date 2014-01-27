@@ -3977,6 +3977,29 @@ RULELIST_M_TTL[RULE_LIST_IDX]="-m ttl $str_ttl "
 MSG_LIST_M_TTL[RULE_LIST_IDX]="$ttl_msg "
 } # -------------------------------------------------------------------------
 
+_process_time() { # fill the time match rulelist and msglist arrays
+local str_neg="" str_cmd="-m time " str_msg="time: "
+set -- ${arg_list_time[ARG_LIST_IDX]//_/ }
+while (($#)); do str_neg=""
+	case "$1" in
+		datestart|datestop|timestart|timestop|monthdays|weekdays)
+			string_negated "$2" && str_neg="! "
+			str_cmd+="${str_neg}--$1 $(remove_negation "$2") "
+			str_msg+="$1=$2 "
+			shift
+			;;
+		contiguous|kerneltz)
+			str_cmd+="--$1 "
+			str_msg+="$1"
+			;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_TIME[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_TIME[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_m_rateest() { # fill the rateest match rulelist and msglist arrays
 local str_neg="" str_cmd="-m rateest " str_msg=""
 set -- ${arg_list_m_rateest[ARG_LIST_IDX]//:/ }
@@ -5098,6 +5121,74 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 				log -E "The \`ipvs' option is required."
 				return 1
 			}
+		;;
+		(time)
+			check_match_exist time || return
+			set -- $(split_val '_' ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					datestart|datestop|timestart|timestop|monthdays|weekdays)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+						string_negated "$2" && str_var="$(remove_negation "$2")"
+					;;
+				esac
+				case "$1" in
+					datestart|datestop)
+						if [[ $2 != [[:digit:]][[:digit:]][[:digit:]][[:digit:]]-[[:digit:]][[:digit:]]-[[:digit:]][[:digit:]]?(T[[:digit:]][[:digit:]]?(:[[:digit:]][[:digit:]])?(:[[:digit:]][[:digit:]])) ]]; then
+							log -i "$2" "option \`$1' of $tmp_opt_var descriptor."
+							return 1
+						fi
+						shift
+					;;
+					timestart|timestop)
+						if [[ $2 != [[:digit:]][[:digit:]]:[[:digit:]][[:digit:]]?(:[[:digit:]][[:digit:]]) ]]; then
+							log -i "$2" "option \`$1' of $tmp_opt_var descriptor."
+							return 1
+						fi
+						shift
+					;;
+					monthdays)
+						for str_opt in ${str_var//,/ }; do
+							val_numeric "$str_opt" || return 1
+							if ((str_opt < 1 || str_opt > 31)); then
+								log -E "Value \`$str_opt' for option \`$1' is out of bounds. Valid is 1-31."
+								return 1
+							fi
+						done
+						shift
+					;;
+					weekdays)
+						for str_opt in ${str_var//,/ }; do
+							if [[ $str_opt = [[:digit:]] ]]; then
+								val_numeric "$str_opt" || return 1
+								if ((str_opt < 1 || str_opt > 7)); then
+									log -E "Value \`$str_opt' for option \`$1' is out of bounds. Valid is 1-7."
+									return 1
+								fi
+							else
+								if [[ $str_opt != @(Mo|Mon|Tu|Tue|Wed|We|Thu|Th|Sat|Sa|Sun|Su) ]]; then
+									log -i "$str_opt" "option \`$1' of $tmp_opt_var descriptor."
+									return 1
+								fi
+							fi
+						done
+						shift
+					;;
+					contiguous)
+						lsearch timestart ${tmp_opt_var_value//_/ } && lsearch timestop ${tmp_opt_var_value//_/ } || {
+							log -E "Option \`$1' requires timestart and timestop to be set."
+							return 1
+						}
+					;;
+					kerneltz) : ;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var options descriptor. Unknown option: \`$1'."
+						return 1
+				esac
+				shift
+			done
 		;;
 		(ecn)
 			check_match_exist ecn || return

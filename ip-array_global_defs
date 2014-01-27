@@ -217,6 +217,7 @@ IPARRAY_MODULES=(
 "0 realm filter -m realm --realm 0"
 "0 recent filter -m recent --rcheck"
 "0 string filter -m string --algo bm --string foo"
+"0 time filter -m time --monthdays 1"
 "0 hashlimit filter -m hashlimit --hashlimit-name ${ME}_TEST_HASHLIMIT --hashlimit-above 1024/day"
 "0 u32 filter -m u32 --u32 6&0xFF=1"
 )
@@ -289,6 +290,7 @@ QUOTA
 M_SET
 M_TCPMSS
 LIMIT
+TIME
 COMMENT
 )
 
