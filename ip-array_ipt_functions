@@ -3982,16 +3982,21 @@ local str_neg="" str_cmd="-m time " str_msg="time: "
 set -- ${arg_list_time[ARG_LIST_IDX]//_/ }
 while (($#)); do str_neg=""
 	case "$1" in
-		datestart|datestop|timestart|timestop|monthdays|weekdays)
+		datestart|datestop|timestart|timestop)
+			str_cmd+="--$1 $2 "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		monthdays|weekdays)
 			string_negated "$2" && str_neg="! "
 			str_cmd+="${str_neg}--$1 $(remove_negation "$2") "
 			str_msg+="$1=$2 "
 			shift
-			;;
+		;;
 		contiguous|kerneltz)
 			str_cmd+="--$1 "
 			str_msg+="$1"
-			;;
+		;;
 		*) log -U $FUNCNAME; return 1
 	esac
 	shift
