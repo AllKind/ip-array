@@ -14,8 +14,6 @@ time: time match specification.
         contiguous
         kerneltz
 
-        day :=       
-
     Examples:
         time=datestart_2014-01-01T00:00:01_datestop_2014-01-31T23:59:59
         time=!monthdays_1,2,3
