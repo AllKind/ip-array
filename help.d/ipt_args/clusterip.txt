@@ -1,4 +1,4 @@
-clusterip: clusterip target specification.
+clusterip: CLUSTERIP target specification.
     Requires a destination address and an interface specification.
 
     Synopsis: option[:opt_arg][:...]

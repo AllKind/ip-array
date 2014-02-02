@@ -1,4 +1,4 @@
-led: led target specification.
+led: LED target specification.
 
     Synopsis: option[:opt_arg][:...]
 
