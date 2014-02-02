@@ -3279,7 +3279,7 @@ load_security_rules || return
 _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
 case "$str_target" in
-	ACCEPT|AUDIT|CLASSIFY|CONNMARK|CONNSECMARK|DROP|IDLETIMER|LOG|NLOG|ULOG|MARK|SECMARK|\
+	ACCEPT|AUDIT|CLASSIFY|CLUSTERIP|CONNMARK|CONNSECMARK|DROP|IDLETIMER|LOG|NLOG|ULOG|MARK|SECMARK|\
 		NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
 		str_target_msg="$(string_tolower "$str_target")"
 		;;
@@ -4035,6 +4035,33 @@ while (($#)); do str_neg=""
 done
 RULELIST_M_RATEEST[RULE_LIST_IDX]="$str_cmd"
 MSG_LIST_M_RATEEST[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
+_process_clusterip() { # fill the CLUSTERIP target rulelist and msglist arrays
+local str_cmd="" str_msg="clusterip: "
+set -- ${arg_list_clusterip[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case "$1" in
+		new)
+			str_cmd+="--$1 "
+			str_msg+="$1 "
+		;;
+		clustermac)
+			str_cmd+="--$1 ${2//-/:} "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		hashmode|total-nodes|local-node|hash-init)
+			str_cmd+="--$1 $2 "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_CLUSTERIP[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_CLUSTERIP[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_t_rateest() { # fill the RATEEST target rulelist and msglist arrays
@@ -4902,10 +4929,21 @@ if [[ ${arg_list_connlimit[OPTION_LIST_IDX]} ]]; then
 		return 1
 	fi
 fi
+# if CLUSTERIP target check if protocol is tcp and syn packets are selected
+if [[ ${arg_list_clusterip[OPTION_LIST_IDX]} ]]; then
+	if [[ -z ${arg_list_dst[OPTION_LIST_IDX]} ]]; then
+		log -E "The CLUSTERIP target requires a destination address to be specified."
+		return 1
+	fi
+	if [[ -z ${arg_list_idev[OPTION_LIST_IDX]} && -z ${arg_list_odev[OPTION_LIST_IDX]} ]]; then
+		log -E "The CLUSTERIP target requires an interface to be specified."
+		return 1
+	fi
+fi
 } # -------------------------------------------------------------------------
 
 _validate_option_values() { # validate the rule given values
-local -i pos_idx arg_idx
+local -i pos_idx idx arg_idx
 local str str_var tmp_opt_var tmp_opt_var_value tmp_opt_var_value_neg_ok
 table_in_rule=0 target_in_rule=0 chain_in_rule=0 state_in_rule=0 multi_icmp_types=0 multi_source_ports=0
 multi_destination_ports=0 multi_protocols=0 multi_input_devices=0 multi_output_devices=0
@@ -5013,6 +5051,68 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(mac)
 			check_match_exist mac || return
 			val_mac "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(clusterip)
+			arg_idx=0 idx=0
+			check_tgt_exist CLUSTERIP || return
+			for str in hashmode clustermac total-nodes local-node; do
+				if [[ $tmp_opt_var_value != *${str}:* ]]; then
+					log -E "Option \`$str' is mandatory with the \`$tmp_opt_var' descriptor."
+					return 1	   
+				fi
+			done
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					hashmode|clustermac|total-nodes|local-node|hash-init)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+					;;
+				esac
+				case "$1" in
+					new) : ;;
+					hashmode)
+						if [[ $2 != @(sourceip|sourceip-sourceport|sourceip-sourceport-destport) ]]; then
+							log -i "$2" "option \`$1' of $tmp_opt_var descriptor. Has to be one of sourceip, sourceip-sourceport, sourceip-sourceport-destport."
+							return 1
+						fi
+						shift
+					;;
+					clustermac)
+						val_mac "${2//-/:}" || return 1
+						if [[ $(string_toupper "$2") != 01-00-5E-* ]]; then
+							log -i "$2" "\`$1' descriptor. Not a valid link layer multicast address."
+							return 1
+						fi
+						shift
+					;;
+					total-nodes)
+						val_numeric "$2" || return 1
+						idx=$2
+						shift
+					;;
+					local-node)
+						val_numeric "$2" || return 1
+						arg_idx=$2
+						shift
+					;;
+					hash-init)
+						if [[ $2 != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then
+							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
+						fi
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor. Unknown option \`$2'."
+						return 1
+				esac
+				shift
+			done
+			if ((arg_idx > idx)); then
+				log -E "Number of local-node cannot be greater than the value of total-nodes."
+				return 1
+			fi
 		;;
 		(nfqueue)
 			check_tgt_exist NFQUEUE || return
@@ -6756,6 +6856,9 @@ for target_idx in ${!arg_list_target[@]}; do
 			;;
 			CLASSIFY)
 				_val_tgtopt_set "${arg_list_t_class[ARG_LIST_IDX]}" || return 1
+			;;
+			CLUSTERIP)
+				_val_tgtopt_set "${arg_list_clusterip[ARG_LIST_IDX]}" || return 1
 			;;
 			CONNMARK)
 				_val_tgtopt_set "${arg_list_t_connmark[ARG_LIST_IDX]}" || return 1

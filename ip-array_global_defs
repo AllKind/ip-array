@@ -162,6 +162,7 @@ IPARRAY_TARGETS=(
 "0 AUDIT filter -j AUDIT --type drop"
 "0 CT raw -j CT --notrack"
 "0 IDLETIMER filter -i dummy0 -j IDLETIMER --timeout 3600 --label ${ME}_TEST_IDLETIMER"
+"0 CLUSTERIP filter -j CLUSTERIP --new --hashmode sourceip --total-nodes 2 --local-node 1 --clustermac 01:00:5E:00:00:10 -i dummy0 -d 1.1.1.1"
 "0 RATEEST mangle -j RATEEST --rateest-name ${me}_test_est --rateest-interval 250ms --rateest-ewma 0.5s"
 "0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
 "0 TEE mangle -j TEE --gateway 172.32.254.255"
@@ -306,6 +307,7 @@ GLOBAL_TARGET_LIST=(
 "AUDIT AUDIT"
 "IDLETIMER IDLETIMER_OPT"
 "RATEEST T_RATEEST"
+"CLUSTERIP CLUSTERIP"
 )
 
 # Array with match extensions, which are only valid in certain tables
