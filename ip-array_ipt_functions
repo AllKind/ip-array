@@ -3280,7 +3280,7 @@ _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
 case "$str_target" in
 	ACCEPT|AUDIT|CLASSIFY|CLUSTERIP|CONNMARK|CONNSECMARK|DROP|IDLETIMER|LOG|NLOG|ULOG|MARK|SECMARK|\
-		LED|NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
+		HMARK|LED|NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
 		str_target_msg="$(string_tolower "$str_target")"
 		;;
 	CHECKSUM) str_target_msg="fill-checksum" ;;
@@ -4037,6 +4037,23 @@ RULELIST_M_RATEEST[RULE_LIST_IDX]="$str_cmd"
 MSG_LIST_M_RATEEST[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
+_process_hmark() { # fill the HMARK target rulelist and msglist arrays
+local str_cmd="" str_msg="hmark: "
+set -- ${arg_list_hmark[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case "$1" in
+		tuple|mod|offset|src-prefix|dst-prefix|sport-mask|dport-mask|spi-mask|proto-mask|rnd)
+			str_cmd+="--hmark-$1 $2 "
+			str_msg+="$1=$2 "
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift 2
+done
+RULELIST_HMARK[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_HMARK[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
 _process_led() { # fill the LED target rulelist and msglist arrays
 local str_cmd="" str_msg="led: "
 set -- ${arg_list_led[ARG_LIST_IDX]//:/ }
@@ -4046,8 +4063,13 @@ while (($#)); do
 			str_cmd+="--led-$1 "
 			str_msg+="$1 "
 		;;
-		delay|trigger-id)
+		delay)
 			str_cmd+="--led-$1 $2 "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		trigger-id)
+			str_cmd+="--led-$1 '$2' "
 			str_msg+="$1=$2 "
 			shift
 		;;
@@ -5101,6 +5123,80 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						return 1
 				esac
 				shift
+			done
+		;;
+		(hmark)
+			check_tgt_exist HMARK || return
+			for str in mod rnd; do
+				if [[ $tmp_opt_var_value != *${str}:* ]]; then
+					log -E "Option \`$str' is mandatory for the \`$tmp_opt_var' descriptor."
+					return 1
+				fi
+			done
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				[[ $2 ]] || {
+					log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+					return 1
+				}
+				case "$1" in
+					tuple)
+						for str in $(split_val , ' ' "$2"); do
+							if [[ $str != @(src|dst|sport|dport|spi|ct) ]]; then
+								log -i "$str" "option \`$1' of $tmp_opt_var descriptor. Valid values: src,dst,sport,dport,spi,ct."
+								return 1
+							fi
+						done
+						for str in src-prefix dst-prefix sport-mask dport-mask spi-mask proto-mask; do
+							if [[ $tmp_opt_var_value = *${str}:* ]]; then
+								log -E "Option \`$str' cannot used in conjunction with the \`tuple' option."
+								return 1
+							fi
+						done
+					;;
+					mod)
+						val_numeric "$2" || return 1
+						(($2 != 0)) || {
+							log -i "$2" "\`$1' option of $\`$tmp_opt_var descriptor. Must be greater than 0."
+							return 1
+						}
+					;;
+					offset)
+						val_numeric "$2" || return 1
+					;;
+					src-prefix|dst-prefix)
+						val_ipv4_cidr_mask "$2" || {
+							log -i "$2" "\`$1' option of $\`$tmp_opt_var descriptor. Invalid CIDR mask."
+							return 1
+						}
+					;;
+					sport-mask|dport-mask)
+						val_16bit "$2" || {
+							log -i "$2" "\`$1' option of $\`$tmp_opt_var descriptor. Invalid mask, must be 16bit."
+							return 1
+						}
+					;;
+					spi-mask)
+						val_32bit "$2" || {
+							log -i "$2" "\`$1' option of $\`$tmp_opt_var descriptor. Invalid mask, must be 32bit."
+							return 1
+						}
+					;;
+					proto-mask)
+						val_8bit "$2" || {
+							log -i "$2" "\`$1' option of $\`$tmp_opt_var descriptor. Invalid mask, must be 8bit."
+							return 1
+						}
+					;;
+					rnd)
+						if [[ $2 != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then
+							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
+						fi
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor. Unknown option \`$2'."
+						return 1
+				esac
+				shift 2
 			done
 		;;
 		(clusterip)
