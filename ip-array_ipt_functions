@@ -3280,7 +3280,7 @@ _process_target() { # fill the target rulelist and msglist arrays
 local str_target_msg
 case "$str_target" in
 	ACCEPT|AUDIT|CLASSIFY|CLUSTERIP|CONNMARK|CONNSECMARK|DROP|IDLETIMER|LOG|NLOG|ULOG|MARK|SECMARK|\
-		NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
+		LED|NETMAP|NFQUEUE|REJECT|DNAT|SNAT|RATEEST|RAWDNAT|RAWSNAT|REDIRECT|RETURN|TEE|TPROXY)
 		str_target_msg="$(string_tolower "$str_target")"
 		;;
 	CHECKSUM) str_target_msg="fill-checksum" ;;
@@ -4035,6 +4035,28 @@ while (($#)); do str_neg=""
 done
 RULELIST_M_RATEEST[RULE_LIST_IDX]="$str_cmd"
 MSG_LIST_M_RATEEST[RULE_LIST_IDX]="$str_msg"
+} # -------------------------------------------------------------------------
+
+_process_led() { # fill the LED target rulelist and msglist arrays
+local str_cmd="" str_msg="led: "
+set -- ${arg_list_led[ARG_LIST_IDX]//:/ }
+while (($#)); do
+	case "$1" in
+		always-blink)
+			str_cmd+="--led-$1 "
+			str_msg+="$1 "
+		;;
+		delay|trigger-id)
+			str_cmd+="--led-$1 $2 "
+			str_msg+="$1=$2 "
+			shift
+		;;
+		*) log -U $FUNCNAME; return 1
+	esac
+	shift
+done
+RULELIST_LED[RULE_LIST_IDX]="$str_cmd"
+MSG_LIST_LED[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_clusterip() { # fill the CLUSTERIP target rulelist and msglist arrays
@@ -5051,6 +5073,35 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(mac)
 			check_match_exist mac || return
 			val_mac "$tmp_opt_var_value_neg_ok" || return 1
+		;;
+		(led)
+			check_tgt_exist LED || return
+			if [[ $tmp_opt_var_value != *trigger-id:* ]]; then
+				log -E "Option \`trigger-id' is mandatory for the \`$tmp_opt_var' descriptor."
+				return 1
+			fi
+			set -- $(split_val : ' ' "$tmp_opt_var_value")
+			while (($#)); do
+				case "$1" in
+					trigger-id|delay)
+						[[ $2 ]] || {
+							log -E "Value for \`$1' option is missing in \`$tmp_opt_var' descriptor."
+							return 1
+						}
+					;;
+				esac
+				case "$1" in
+					always-blink) : ;;
+					trigger-id) shift ;;
+					delay)
+						val_numeric "$2" || return 1
+						shift
+					;;
+					*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor. Unknown option \`$2'."
+						return 1
+				esac
+				shift
+			done
 		;;
 		(clusterip)
 			arg_idx=0 idx=0

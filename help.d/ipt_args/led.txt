@@ -1,0 +1,13 @@
+led: led target specification.
+
+    Synopsis: option[:opt_arg][:...]
+
+        options:
+        trigger-id    name
+        delay         value
+        always-blink
+
+    Examples:
+        led=trigger-id:ssh
+        led=trigger-id:telnet:delay:100:always-blink
+
