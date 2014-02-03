@@ -7039,6 +7039,9 @@ for target_idx in ${!arg_list_target[@]}; do
 					return 1
 				fi
 			;;
+			HMARK)
+				_val_tgtopt_set "${arg_list_hmark[ARG_LIST_IDX]}" || return 1
+			;;
 			IDLETIMER)
 				_val_tgtopt_set "${arg_list_idletimer[ARG_LIST_IDX]}" || return 1
 			;;
