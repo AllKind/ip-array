@@ -162,7 +162,7 @@ IPARRAY_TARGETS=(
 "0 AUDIT filter -j AUDIT --type drop"
 "0 CT raw -j CT --notrack"
 "0 IDLETIMER filter -i dummy0 -j IDLETIMER --timeout 3600 --label ${ME}_TEST_IDLETIMER"
-"0 CLUSTERIP filter -j CLUSTERIP --new --hashmode sourceip --total-nodes 2 --local-node 1 --clustermac 01:00:5E:00:00:10 -i dummy0 -d 1.1.1.1"
+"0 CLUSTERIP filter -j CLUSTERIP --new --hashmode sourceip --total-nodes 2 --local-node 1 --clustermac 01:00:5E:00:00:10 -i lo -d 1.1.1.1"
 "0 LED filter -j LED --led-trigger-id ${ME}_TEST"
 "0 HMARK mangle -j HMARK --hmark-tuple src --hmark-mod 1 --hmark-rnd 123"
 "0 RATEEST mangle -j RATEEST --rateest-name ${me}_test_est --rateest-interval 250ms --rateest-ewma 0.5s"
@@ -190,7 +190,7 @@ IPARRAY_MODULES=(
 "0 length filter -m length --length 32"
 "0 owner filter -m owner --uid-owner 666"
 "0 addrtype filter -m addrtype --dst-type BROADCAST"
-"0 bpf filter -m bpf --bytecode '4,48 0 0 9,21 0 1 6,6 0 0 1,6 0 0 0'"
+"0 bpf filter -m bpf --bytecode \"4,48 0 0 9,21 0 1 6,6 0 0 1,6 0 0 0\""
 "0 pkttype filter -m pkttype --pkt-type broadcast"
 "0 ipvs filter -m ipvs --ipvs"
 "0 socket filter -m socket"
@@ -222,7 +222,7 @@ IPARRAY_MODULES=(
 "0 string filter -m string --algo bm --string foo"
 "0 time filter -m time --monthdays 1"
 "0 hashlimit filter -m hashlimit --hashlimit-name ${ME}_TEST_HASHLIMIT --hashlimit-above 1024/day"
-"0 u32 filter -m u32 --u32 6&0xFF=1"
+"0 u32 filter -m u32 --u32 \"6&0xFF=1\""
 )
 
 # Array to hold the supported ipset set types

@@ -744,7 +744,8 @@ if ((NO_IPT_COMPAT_CHECK)); then
 else
 	log -I "Checking for iptables match extension"
 	for m_idx in ${!IPARRAY_MODULES[@]}; do
-		val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return
+		# eval needed for bpf match (caused error for iptables 1.4.21)
+		eval val_ipt_mod ${IPARRAY_MODULES[m_idx]} || return
 	done
 fi
 readonly ARR_MATCH_EXIST
