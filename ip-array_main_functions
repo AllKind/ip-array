@@ -1292,6 +1292,7 @@ local IFS="$Oifs"
 }
 # Save kernel version, so we can check version depending matters (TO DO!)
 KERN_VER=("$1" "$2" "${3:0:2}")
+KERN_VER[2]="${KERN_VER[2]//+([![:digit:]])}" # remove non digit
 
 if ((${KERN_VER[0]} < 2)); then
 	log -E "Kernel version $(IFS=.; printf "%s" "${KERN_VER[*]}") is lower than 2."
