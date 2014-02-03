@@ -5239,11 +5239,23 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 					total-nodes)
 						val_numeric "$2" || return 1
 						idx=$2
+						if ((idx > 16)); then
+							log -E "The maximum allowed amount of total-nodes is 16."
+							return 1
+						fi
+						if ((idx == 0)); then
+							log -E "0 is not valid for total-nodes."
+							return 1
+						fi
 						shift
 					;;
 					local-node)
 						val_numeric "$2" || return 1
 						arg_idx=$2
+						if ((arg_idx == 0)); then
+							log -E "0 is not a valid node number."
+							return 1
+						fi
 						shift
 					;;
 					hash-init)
