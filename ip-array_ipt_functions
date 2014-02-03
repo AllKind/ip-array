@@ -7045,6 +7045,9 @@ for target_idx in ${!arg_list_target[@]}; do
 			IDLETIMER)
 				_val_tgtopt_set "${arg_list_idletimer[ARG_LIST_IDX]}" || return 1
 			;;
+			LED)
+				_val_tgtopt_set "${arg_list_led[ARG_LIST_IDX]}" || return 1
+			;;
 			MARK)
 				_val_tgtopt_set "${arg_list_t_mark[ARG_LIST_IDX]}" || return 1
 			;;
