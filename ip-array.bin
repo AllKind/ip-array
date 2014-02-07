@@ -1637,7 +1637,7 @@ fi
 # set runtime variables
 # check kernel version
 # -------------------------------------------------------------------------
-if [[ $MODE = LOCKDOWN || $MODE = STOP ]]; then
+if [[ $MODE = @(LOCKDOWN|STOP) ]]; then
 	readonly REMOVE_EMPTY_CHAINS=0 REMOVE_UNREF_CHAINS=0
 elif [[ $MODE = SHOW ]]; then
 	ENABLE_SYSLOG=0

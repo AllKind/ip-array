@@ -403,23 +403,23 @@ fi
 
 reqparm() { # announce parameters missing in functions
 [[ $2 ]] || { err_msg "2 parameters required for function: \`${FUNCNAME}()'" ; return 1; }
-log -E "$2 parameter(s) required for function: \`$1'"
+log -E "$2 parameter(s) required for function: \`$1()'"
 } # -------------------------------------------------------------------------
 
 file_readable() { # check if a file is really readable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local file="$1" pv
-read -t $GLOBAL_READ_TIMEOUT pv < "${file}" || {
-	log -E "File \`${file}' is not readable."
+local file="$1"
+read -t $GLOBAL_READ_TIMEOUT < "$file" || {
+	log -E "File \`$file' is not readable."
 	return $ER_FAIL
 }
 } # -------------------------------------------------------------------------
 
 proc_file_writable() { # check if a /proc file is really writable
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local file="$1" pv
-if read -t $GLOBAL_READ_TIMEOUT pv < "${file}"; then
-	(printf "%s\n" "${pv}" > "${file}") &>/dev/null
+local file="$1"
+if read -t $GLOBAL_READ_TIMEOUT < "$file"; then
+	(printf "%s\n" "$REPLY" > "$file") &>/dev/null
 else
 	return $ER_FAIL
 fi
@@ -439,7 +439,6 @@ check_prog() { # check for mandatory programs
 set_var() { # set variables to a specific value
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 [[ $1 = +([[:word:]]) ]] || {
-#	err_msg "\`$1' is not a valid variable name."
 	log -E "\`$1' is not a valid variable name."
 	return 1
 }
@@ -795,7 +794,7 @@ check_unique() { # check for unique words in input
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local str_s="$1"
 shift
-if printf "%s\n" "$@" | lsearch_echo_reverse_single "${str_s}" | lsearch_lines "${str_s}"
+if printf "%s\n" "$@" | lsearch_echo_reverse_single "$str_s" | lsearch_lines "$str_s"
 then
 	return 1
 fi
@@ -804,9 +803,9 @@ fi
 check_str_unique() { # check for unique words in string
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_unique="$@" str_search
-for str_search in ${str_unique}; do
-	check_unique "${str_search}" "${str_unique}" || {
-		log -E "Duplicate entry \`${str_search}'."
+for str_search in $str_unique; do
+	check_unique "$str_search" "$str_unique" || {
+		log -E "Duplicate entry \`$str_search'."
 		return 1
 	}
 	str_unique="${str_unique/${str_search}/}"
@@ -843,8 +842,8 @@ val_range() {
 #} # -------------------------------------------------------------------------
 
 members_in_string() { # retrieve the amount of words in a string
-set -- ${@}
-printf "%d\n" ${#}
+set -- $@
+printf "%d\n" $#
 } # -------------------------------------------------------------------------
 
 show_last_char() {
@@ -873,7 +872,7 @@ while (($#)); do
 		log -E "\`$1' is not set"
 		let var_missing+=1
 	else
-		if [[ ${!1} = ${RULE_SEP} ]]; then
+		if [[ ${!1} = $RULE_SEP ]]; then
 			let var_sep+=1
 			log -E "\`$1' is mandatory. Placeholder not allowed."
 		fi
@@ -885,7 +884,7 @@ done
 
 check_var_no_sep_silent() { # check for undefined variable, or option which must not be a placeholder.
 [[ $1 ]] || return 1
-[[ $1 != ${RULE_SEP} ]]
+[[ $1 != $RULE_SEP ]]
 } # -------------------------------------------------------------------------
 
 var_defined_silent() { # silently check for an undefined variable
@@ -2278,18 +2277,18 @@ if ((${#ifname} < 2)); then
 else
 	local -i lastl=$((${#ifname} - 1))
 fi
-if is_ifname_wcard "${ifname}"; then # check if last letter of interface name is a '+'
+if is_ifname_wcard "$ifname"; then # check if last letter of interface name is a '+'
 	if run_iproute link show | my_cut -d ':' -c '2' | lsearch_regex "${ifname:0:${lastl}}.*" &>/dev/null
 	then
-		log -N "${ifname} is not a known device, but it looks like a valid iptables interface wildcard."
+		log -N "$ifname is not a known device, but it looks like a valid iptables interface wildcard."
 		return 0
 	else
-		log -W "${ifname} does not seem to be a valid device or iptables interface wildcard."
+		log -W "$ifname does not seem to be a valid device or iptables interface wildcard."
 		return 1
 	fi
 fi
 # now as validated, check for iface existence
-check_iface ${ifname} || return 1
+check_iface "$ifname" || return 1
 } # -------------------------------------------------------------------------
 
 check_iface() { # validate interface existence
@@ -2303,21 +2302,19 @@ dn run_iproute link show $1 || {
 
 val_multi_device() { # validate interfaces taken from a comma separated string
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#local m_dev str_m_devices="$(IFS=, split_val ${@})"
 local m_dev str_m_devices="${@//,/ }"
-check_multi_negation ${str_m_devices} || return 1
-for m_dev in ${str_m_devices}; do
-	val_ifname "${m_dev}" || return 1
+check_multi_negation $str_m_devices || return 1
+for m_dev in $str_m_devices; do
+	val_ifname "$m_dev" || return 1
 done
 } # -------------------------------------------------------------------------
 
 val_multi_proto() { # validate multiple protocol specifications separated by commas
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-#local m_proto str_m_protos="$(IFS=, split_val ${@})"
 local m_proto str_m_protos="${@//,/ }"
-check_multi_negation ${str_m_protos} || return 1
-for m_proto in ${str_m_protos}; do
-	val_proto "${m_proto}" || return 1
+check_multi_negation $str_m_protos || return 1
+for m_proto in $str_m_protos; do
+	val_proto "$m_proto" || return 1
 done
 } # -------------------------------------------------------------------------
 
@@ -2512,32 +2509,32 @@ done
 } # -------------------------------------------------------------------------
 
 set_syslog_mode() { # enable / disable syslog logging
-case "${ENABLE_SYSLOG}" in
+case "$ENABLE_SYSLOG" in
 	0) notice_msg "Syslog logging is disabled" ;;
 	1) # syslog logging is enabled
-		if [[ -z ${LOGGER} ]]; then
+		if [[ -z $LOGGER ]]; then
 			ENABLE_SYSLOG=0
 			warn_msg "Syslog logging is enabled, but \`LOGGER' is unset, disabling syslog logging"
 			return 0
 		fi
-		if [[ -x ${LOGGER} ]]; then # we can only log if we have logger program available
+		if [[ -x $LOGGER ]]; then # we can only log if we have logger program available
 			notice_msg "Syslog logging is enabled"
 			if [[ $LOG_FACILITY ]]; then # check for valid facility user config
 				if ! val_log_facility "$LOG_FACILITY"; then
-					readonly LOG_FACILITY="${DEFAULT_LOG_FACILITY}"
+					readonly LOG_FACILITY="$DEFAULT_LOG_FACILITY"
 					raise_cfg_err_count
-					notice_msg "Setting logging facility to default value: \'${DEFAULT_LOG_FACILITY}'"
+					notice_msg "Setting logging facility to default value: \'$DEFAULT_LOG_FACILITY'"
 				fi
 			else
-				LOG_FACILITY="${DEFAULT_LOG_FACILITY}"
-				notice_msg "\`LOG_FACILITY' is not defined, setting logging facility to default value: \`${DEFAULT_LOG_FACILITY}'"
+				LOG_FACILITY="$DEFAULT_LOG_FACILITY"
+				notice_msg "\`LOG_FACILITY' is not defined, setting logging facility to default value: \`$DEFAULT_LOG_FACILITY'"
 			fi
 		else
 			ENABLE_SYSLOG=0
 			err_msg "Syslog logging is enabled, but logger does not exist. Disabling syslog logging."
 		fi
 	;;
-	*) err_msg "Illegal value \`${ENABLE_SYSLOG}' for \`ENABLE_SYSLOG'. Disabling syslog logging."
+	*) err_msg "Illegal value \`$ENABLE_SYSLOG' for \`ENABLE_SYSLOG'. Disabling syslog logging."
 		ENABLE_SYSLOG=0
 		raise_cfg_err_count
 esac
@@ -2545,11 +2542,11 @@ esac
 
 set_placeholder() { # set placeholder character used to fill unused values in ruleblocks
 if [[ $RULE_PLACEHOLDER ]]; then
-	if [[ $RULE_PLACEHOLDER = @(_|-|.|;|,|\|) ]]; then
+	if [[ $RULE_PLACEHOLDER = @(_|-|.|,) ]]; then
 		RULE_SEP="$RULE_PLACEHOLDER"
 		log -N "Setting rule placeholder to: \`$RULE_PLACEHOLDER'"
 	else
-		log -E "Invalid rule placeholder value. Valid characters are: \`_' \`-' \`.' \`;' \`,' \`|'"
+		log -E "Invalid rule placeholder value. Valid characters are: \`_' \`-' \`.' \`,'"
 		raise_cfg_err_count
 		return $ER_CONF
 	fi
