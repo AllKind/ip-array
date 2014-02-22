@@ -289,7 +289,7 @@ case "$(string_tolower "$1")" in
 	minimize-delay|maximize-throughput|maximize-reliability|minimize-cost|normal-service)
 		return 0
 	;;
-	0|2|4|8|16|0x00|0x02|0x04|0x08|0x10)
+	0|2|4|8|16|0[xX]00|0[xX]02|0[xX]04|0[xX]08|0[xX]10)
 		return 0
 	;;
 	*) log -E "Invalid TOS value \`$1'. See \`iptables -m tos -h' for help."
@@ -572,7 +572,7 @@ done
 val_dscp() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 case "$1" in
-	+([[:digit:]])|0x+([[:xdigit:]]))
+	+([[:digit:]])|0[xX]+([[:xdigit:]]))
 		val_6bit "$1" || {
 			log -E "DSCP value \`$1' is out of bounds."
 			return 1
@@ -3607,7 +3607,7 @@ local str_neg=""
 string_negated "${arg_list_m_dscp[ARG_LIST_IDX]}" && str_neg="! "
 local str_val=$(remove_negation "${arg_list_m_dscp[ARG_LIST_IDX]}")
 case "${str_val}" in
-	+([[:digit:]])|0x+([[:xdigit:]]))
+	+([[:digit:]])|0[xX]+([[:xdigit:]]))
 		RULELIST_M_DSCP[RULE_LIST_IDX]="-m dscp ${str_neg}--dscp ${str_val} "
 	;;
 	BE|EF|AF+([[:digit:]])|CS@([[:digit:]]))
@@ -4339,7 +4339,7 @@ MSG_LIST_IDLETIMER_OPT[RULE_LIST_IDX]="idletimer_label='$str_ilabel' idletimer_t
 
 _process_t_dscp() { # fill the dscp target rulelist and msglist arrays
 case "${arg_list_t_dscp[ARG_LIST_IDX]}" in
-	+([[:digit:]])|0x+([[:xdigit:]]))
+	+([[:digit:]])|0[xX]+([[:xdigit:]]))
 		RULELIST_SET_DSCP[RULE_LIST_IDX]="--set-dscp ${arg_list_t_dscp[ARG_LIST_IDX]}"
 	;;
 	BE|EF|AF+([[:digit:]])|CS@([[:digit:]]))
@@ -4382,23 +4382,23 @@ else
 fi
 [[ ${str_msk} ]] && local str_msk="/${str_msk}"
 case "${arg_list_t_mark[ARG_LIST_IDX]}" in
-	?(set:)?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]])))
+	?(set:)?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]])))
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--set-mark ${str_mrk}${str_msk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="set-mark=${str_mrk}${str_msk}"
 	;;
-	xset:?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]])))
+	xset:?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]])))
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--set-xmark ${str_mrk}${str_msk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="set-xmark=${str_mrk}${str_msk}"
 	;;
-	and:?(0x)+([[:xdigit:]]))
+	and:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--and-mark ${str_mrk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="and-mark=${str_mrk}"
 	;;
-	or:?(0x)+([[:xdigit:]]))
+	or:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--or-mark ${str_mrk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="or-mark=${str_mrk}"
 	;;
-	xor:?(0x)+([[:xdigit:]]))
+	xor:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_MARK[RULE_LIST_IDX]="--xor-mark ${str_mrk}"
 		MSG_LIST_SET_MARK[RULE_LIST_IDX]="xor-mark=${str_mrk}"
 	;;
@@ -4417,7 +4417,7 @@ fi
 [[ ${str_msk} ]] && local str_msk="/${str_msk}"
 local str_act="${arg_list_t_connmark[ARG_LIST_IDX]%:*}"
 case "${arg_list_t_connmark[ARG_LIST_IDX]}" in
-	@(save|restore)?(:?(0x)*([[:xdigit:]]))?(/?(0x)+([[:xdigit:]])))
+	@(save|restore)?(:?(0[xX])*([[:xdigit:]]))?(/?(0[xX])+([[:xdigit:]])))
 		if [[ -z ${str_mrk} ]]; then
 			if [[ -z ${str_msk} ]]; then
 				RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--${str_act}-mark"
@@ -4435,23 +4435,23 @@ case "${arg_list_t_connmark[ARG_LIST_IDX]}" in
 			MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="${str_act}-mark nfmask=${str_mrk} ctmask=${str_msk#/}"
 		fi
 	;;
-	set:?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]])))
+	set:?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]])))
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--set-mark ${str_mrk}${str_msk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="set-mark=${str_mrk}${str_msk}"
 	;;
-	xset:?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]])))
+	xset:?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]])))
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--set-xmark ${str_mrk}${str_msk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="set-xmark=${str_mrk}${str_msk}"
 	;;
-	and:?(0x)+([[:xdigit:]]))
+	and:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--and-mark ${str_mrk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="and-mark=${str_mrk}"
 	;;
-	or:?(0x)+([[:xdigit:]]))
+	or:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--or-mark ${str_mrk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="or-mark=${str_mrk}"
 	;;
-	xor:?(0x)+([[:xdigit:]]))
+	xor:?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_CONNMARK[RULE_LIST_IDX]="--xor-mark ${str_mrk}"
 		MSG_LIST_SET_CONNMARK[RULE_LIST_IDX]="xor-mark=${str_mrk}"
 	;;
@@ -4679,11 +4679,11 @@ MSG_LIST_SET_CLASS[RULE_LIST_IDX]="class=${arg_list_t_class[ARG_LIST_IDX]} "
 
 _process_t_tos() {
 case "${arg_list_t_tos[ARG_LIST_IDX]}" in
-	+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0x+([[:xdigit:]]) | +([[:digit:]])/+([[:digit:]]) | ?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]]))
+	+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0[xX]+([[:xdigit:]]) | +([[:digit:]])/+([[:digit:]]) | ?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]]))
 		RULELIST_SET_TOS[RULE_LIST_IDX]="--set-tos ${arg_list_t_tos[ARG_LIST_IDX]} "
 		MSG_LIST_SET_TOS[RULE_LIST_IDX]="tos=${arg_list_t_tos[ARG_LIST_IDX]} "
 	;;
-	@(and|or|xor):@(+([[:digit:]])|0x+([[:xdigit:]])))
+	@(and|or|xor):@(+([[:digit:]])|0[xX]+([[:xdigit:]])))
 		local str_act="${arg_list_t_tos[ARG_LIST_IDX]%:*}"
 		RULELIST_SET_TOS[RULE_LIST_IDX]="--${str_act}-tos ${arg_list_t_tos[ARG_LIST_IDX]#${str_act}:} "
 		MSG_LIST_SET_TOS[RULE_LIST_IDX]="${str_act}-tos=${arg_list_t_tos[ARG_LIST_IDX]#${str_act}:} "
@@ -5190,7 +5190,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						}
 					;;
 					rnd)
-						if [[ $2 != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then
+						if [[ $2 != @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]]; then
 							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
 						fi
 					;;
@@ -5259,7 +5259,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						shift
 					;;
 					hash-init)
-						if [[ $2 != @(+([[:digit:]])|0x+([[:xdigit:]])) ]]; then
+						if [[ $2 != @(+([[:digit:]])|0[xX]+([[:xdigit:]])) ]]; then
 							log -i "$2" "for \`$1' option of \`$tmp_opt_var'"
 						fi
 						shift
@@ -6021,7 +6021,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						val_numeric $(remove_negation "$2") || return 1
 					;;
 					hash-seed)
-						[[ $2 = 0x+([[:xdigit:]]) ]] || {
+						[[ $2 = 0[xX]+([[:xdigit:]]) ]] || {
 							log -E "Value \`$2' is not in hexadecimal."
 							return 1
 						}
@@ -6409,8 +6409,8 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_mark)
 			check_tgt_exist MARK || return
 			case "$tmp_opt_var_value" in
-				?(@(set|xset):)?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
-				@(and|or|xor):?(0x)+([[:xdigit:]])) : ;;
+				?(@(set|xset):)?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]]))) : ;;
+				@(and|or|xor):?(0[xX])+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "MARK value descriptor"
 					return 1
 			esac
@@ -6431,9 +6431,9 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_connmark)
 			check_tgt_exist CONNMARK || return
 			case "$tmp_opt_var_value" in
-				@(save|restore)?(:?(0x)*([[:xdigit:]]))?(/?(0x)+([[:xdigit:]]))) : ;;
-				@(set|xset):?(0x)+([[:xdigit:]])?(/?(0x)+([[:xdigit:]]))) : ;;
-				@(and|or|xor):?(0x)+([[:xdigit:]])) : ;;
+				@(save|restore)?(:?(0[xX])*([[:xdigit:]]))?(/?(0[xX])+([[:xdigit:]]))) : ;;
+				@(set|xset):?(0[xX])+([[:xdigit:]])?(/?(0[xX])+([[:xdigit:]]))) : ;;
+				@(and|or|xor):?(0[xX])+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "CONNMARK value descriptor"
 					return 1
 			esac
@@ -6469,7 +6469,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(m_mark)
 			check_match_exist mark || return
 			case "$tmp_opt_var_value_neg_ok" in
-				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
+				?(0[xX])+([[:xdigit:]])|?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "mark match descriptor"
 					return 1
 			esac
@@ -6482,7 +6482,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(m_connmark)
 			check_match_exist connmark || return
 			case "$tmp_opt_var_value_neg_ok" in
-				?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
+				?(0[xX])+([[:xdigit:]])|?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "connmark match descriptor"
 					return 1
 			esac
@@ -6526,10 +6526,10 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(m_tos)
 			check_match_exist tos || return
 			case "$tmp_opt_var_value_neg_ok" in
-				+([[:digit:]])|?(0x)+([[:xdigit:]])|+([[:word:]])-+([[:word:]]))
+				+([[:digit:]])|?(0[xX])+([[:xdigit:]])|+([[:word:]])-+([[:word:]]))
 					val_tos "$tmp_opt_var_value_neg_ok" || return 1
 				;;
-				+([[:digit:]])/+([[:digit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]]))
+				+([[:digit:]])/+([[:digit:]])|?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]]))
 					val_tos "${tmp_opt_var_value_neg_ok%/*}" || return 1
 					val_32bit "${tmp_opt_var_value_neg_ok#*/}" || {
 						log -E "tos mask \`${tmp_opt_var_value_neg_ok#*/}' is out of bounds."
@@ -6676,7 +6676,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_class)
 			check_tgt_exist CLASSIFY || return
 			case "$tmp_opt_var_value" in
-				?(0x)+([[:xdigit:]])| ?(0x)+([[:xdigit:]]):?(0x)+([[:xdigit:]])) : ;;
+				?(0[xX])+([[:xdigit:]])| ?(0[xX])+([[:xdigit:]]):?(0[xX])+([[:xdigit:]])) : ;;
 				*) log -i "$tmp_opt_var_value" "class"
 					return 1
 			esac
@@ -6684,17 +6684,17 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 		(t_tos)
 			check_tgt_exist TOS || return
 			case "$tmp_opt_var_value" in
-				+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0x+([[:xdigit:]]))
+				+([[:alpha:]])-+([[:alpha:]]) | +([[:digit:]]) | 0[xX]+([[:xdigit:]]))
 					val_tos "$tmp_opt_var_value" || return 1
 				;;
-				+([[:digit:]])/+([[:digit:]]) | ?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]]))
+				+([[:digit:]])/+([[:digit:]]) | ?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]]))
 					val_tos "${tmp_opt_var_value%/*}" || return 1
 					val_8bit "${tmp_opt_var_value#*/}" || {
 						log -i "${tmp_opt_var_value#*/}" "TOS mask"
 						return 1
 					}
 				;;
-				@(and|or|xor):@(+([[:digit:]])|0x+([[:xdigit:]])))
+				@(and|or|xor):@(+([[:digit:]])|0[xX]+([[:xdigit:]])))
 					val_tos "${tmp_opt_var_value#@(and|or|xor):}" || return 1
 				;;
 				*) log -i "$tmp_opt_var_value" "TOS option descriptor"
@@ -6743,7 +6743,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 							"") log -E "TPROXY mark specification is missing."
 								return 1
 							;;
-							?(0x)+([[:xdigit:]])|?(0x)+([[:xdigit:]])/?(0x)+([[:xdigit:]])) : ;;
+							?(0[xX])+([[:xdigit:]])|?(0[xX])+([[:xdigit:]])/?(0[xX])+([[:xdigit:]])) : ;;
 							*) log -i "$2" "TPROXY mark descriptor"
 								return 1
 						esac
