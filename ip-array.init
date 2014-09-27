@@ -321,7 +321,7 @@ done
 }
 
 # set default values
-: ${BIN_DIR:=/usr/bin/ip-array}
+: ${BIN_DIR:=/usr/bin}
 : ${DEFAULTS_FILE:=/etc/ip-array/defaults.conf}
 : ${EXE_NAME:=ip-array}
 : ${MY_SHELL:=$BASH}
