@@ -257,6 +257,9 @@
                 <listitem>
                   <para>OUTPUT rule generation (bound to interfaces or primary IP addresses).</para>
                 </listitem>
+                <listitem>
+                  <para>Anti spoofing.</para>
+                </listitem>
               </itemizedlist></para>
           </listitem>
           <listitem>
@@ -1599,7 +1602,7 @@
               <varlistentry>
                 <term>IPT_NAT_TEMPLATES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables nat table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1624,7 +1627,7 @@
               <varlistentry>
                 <term>IPT_RAW_TEMPLATES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables raw table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1642,73 +1645,79 @@
               <varlistentry>
                 <term>ENABLE_RAWPOST</term>
                 <listitem>
-                  <para/>
+                  <para>Enable or disable loading of the iptables rawpost table configuration. Only
+                    works if xtables-addons are installed. Valid values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>IPT_RAWPOST_TEMPLATES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables rawpost table XML templates files. Only works if
+                    xtables-addons are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>RAWPOST_RULEBLOCKS</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables rawpost table ruleblocks files. Only works if
+                    xtables-addons are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>RAWPOST_RULES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables rawpost table rule files.  Only works if
+                    xtables-addons are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>ENABLE_SECURITY</term>
                 <listitem>
-                  <para/>
+                  <para>Enable or disable loading of the iptables security table configuration.
+                    Valid values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>IPT_SECURITY_TEMPLATES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables security table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>SECURITY_RULEBLOCKS</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables security table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>SECURITY_RULES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the iptables security table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>IPSET_RULES</term>
                 <listitem>
-                  <para/>
+                  <para>Names of the ipset rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>MODULE_DIR</term>
                 <listitem>
-                  <para/>
+                  <para>Patch to the kernels module directory.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>MODULES_TO_LOAD</term>
                 <listitem>
-                  <para/>
+                  <para>Select the kernel modules to load. Entries are separated by newline.</para>
+                  <para>Format: <synopsis>module-name [parameters [...]]</synopsis></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>MODS_TO_RM</term>
                 <listitem>
-                  <para/>
+                  <para>Select the kernel modules to remove.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1807,6 +1816,19 @@
                   <para>Example:</para>
                   <para>filter INPUT DROP</para>
                   <para>filter OUTPUT ACCEPT</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ALLOW_LOOPBACK</term>
+                <listitem>
+                  <para>Allow communication to and from the loopback interface. Valid values: `0' or
+                    `1'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>ADMIN_CONNECTION</term>
+                <listitem>
+                  <para/>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2082,19 +2104,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ADMIN_CONNECTION</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
                 <term>RULE_PLACEHOLDER</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>ALLOW_LOOPBACK</term>
                 <listitem>
                   <para/>
                 </listitem>
@@ -2624,123 +2634,76 @@
       </section>
       <section xml:id="pub_funcs">
         <title>Public functions</title>
-        <para/>
+        <para>IP-Array allows the use of public functions inside rule files. They are defined using
+          the <command>pub_func</command> XML tag.</para>
+        <para>The list of available public functions can be retrieved by running: <command>ip-array
+            show -sc public_functions</command>.</para>
+        <para>Help about one or more of them can be retrieved by running i.e.: <command>ip-array
+            show -sc public_functions:function_name_1,function_name_2</command>.</para>
+        <para>Here is a list of the available functions including a brief description. For more
+          details please refer to the individual help.</para>
         <variablelist>
           <varlistentry>
             <term>add_rule</term>
             <listitem>
-              <para>Description: Add (append) an iptables rule to the command queue (array). Can
-                also be used as 'inline' command.</para>
-              <para>Usage:</para>
-              <cmdsynopsis>
-                <command>add_rule</command>
-                <arg choice="req"><replaceable>table</replaceable></arg>
-                <arg choice="req"><replaceable>chain</replaceable></arg>
-                <arg choice="req"><replaceable>rest-of-rule-string</replaceable></arg>
-              </cmdsynopsis>
-              <para>Example: <code>add_rule filter INPUT -s 10.0.0.1 -j DROP</code></para>
+              <para>Add (append) an iptables rule to the command queue (array). Can also be used as
+                'inline' command.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>log</term>
             <listitem>
-              <para>Description: IP-Array messaging (logging) to stdout/stderr and/or syslog.</para>
-              <para>Usage:<cmdsynopsis>
-                  <command>log</command>
-                  <arg choice="req">option</arg>
-                  <arg choice="plain" rep="repeat"><replaceable>message</replaceable></arg>
-                </cmdsynopsis></para>
-              <para>available options:</para>
-              <simplelist>
-                <member>-e Unformatted message shown if <varname>VERBOSE</varname> is greater or
-                  equal `6'.</member>
-                <member>-l Log to syslog. Regardless of the <varname>SYSLOG_VERBOSE</varname>
-                  setting.</member>
-                <member>-m Log to stdout and syslog. Regardless of the <varname>VERBOSE</varname>
-                  and <varname>SYSLOG_VERBOSE</varname> setting.</member>
-                <member>-E ERROR message (sent to stderr).</member>
-                <member>-W WARNING message (sent to stderr).</member>
-                <member>-N NOTICE message.</member>
-                <member>-S Sub title message.</member>
-                <member>-I Info title message.</member>
-                <member>-C Configuration file loading message.</member>
-                <member>-R Rule file loading message.</member>
-              </simplelist>
-              <para>Example: <code>log -I "Info Title message"</code></para>
+              <para>IP-Array messaging (logging) to stdout/stderr and/or syslog.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>create_chain</term>
             <listitem>
-              <para>Description: Create an iptables chain (add command to the command queue).</para>
-              <para>Usage:</para>
-              <cmdsynopsis>
-                <command>create_chain</command>
-                <arg choice="req"><replaceable>table</replaceable></arg>
-                <arg choice="req"><replaceable>chain</replaceable></arg></cmdsynopsis>
-              <para>Example: <code>create_chain filter FOO</code></para>
+              <para>Create an iptables chain (add command to the command queue).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>delete_chain</term>
             <listitem>
-              <para>Description: Delete an iptables chain (add command to the command queue).</para>
-              <para>Usage:</para>
-              <cmdsynopsis>
-                <command>delete_chain</command>
-                <arg choice="req"><replaceable>table</replaceable></arg>
-                <arg choice="req"><replaceable>chain</replaceable></arg></cmdsynopsis>
-              <para>Example: <code>delete_chain filter FOO</code></para>
+              <para>Delete an iptables chain (add command to the command queue).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>set_proc</term>
             <listitem>
-              <para>Description: Set a configuration value in the `/proc' filesystem (add command to
-                the command queue).</para>
-              <para>Usage:</para>
-              <cmdsynopsis>
-                <command>set_proc</command>
-                <arg choice="req"><replaceable>value</replaceable></arg>
-                <arg choice="req"><replaceable>path-to-file</replaceable></arg>
-                <arg choice="req"><replaceable>message-to-display</replaceable></arg></cmdsynopsis>
-              <para>Example: <code>set_proc 1 '/proc/sys/net/ipv4/conf/all/log_martians' 'Enabling
-                  logging of martians on all interfaces'</code></para>
+              <para>Set a configuration value in the `/proc' filesystem (add command to the command
+                queue).</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>ipset_create</term>
+            <listitem>
+              <para>Create an ipset set.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>ipset_add</term>
+            <listitem>
+              <para>Add an entry to an ipset set.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>jump_tree_on</term>
+            <listitem>
+              <para>Enable classification into jump tree chains.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>jump_tree_off</term>
+            <listitem>
+              <para>Disable classification into jump tree chains.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>log_drop_scans</term>
             <listitem>
-              <para>Description: Globally LOG and/or DROP (nmap) scans. The following according
-                configuration variables can be configured in the main configuration file:<simplelist>
-                  <member>DROP_Stealth_XMAS</member>
-                  <member>DROP_Stealth_XMAS_PSH</member>
-                  <member>DROP_Stealth_XMAS_ALL</member>
-                  <member>DROP_Stealth_FIN</member>
-                  <member>DROP_Stealth_SYN_RST</member>
-                  <member>DROP_Stealth_SYN_FIN</member>
-                  <member>DROP_Stealth_Null</member>
-                  <member>LOG_Stealth_XMAS</member>
-                  <member>LOG_Stealth_XMAS_PSH</member>
-                  <member>LOG_Stealth_XMAS_ALL</member>
-                  <member>LOG_Stealth_FIN</member>
-                  <member>LOG_Stealth_SYN_RST</member>
-                  <member>LOG_Stealth_SYN_FIN</member>
-                  <member>LOG_Stealth_Null</member>
-                </simplelist></para>
-              <para>Usage: <command>log_drop_scans</command></para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>log_fragments</term>
-            <listitem>
-              <para>Log fragments.</para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>drop_fragments</term>
-            <listitem>
-              <para>Drop fragments.</para>
+              <para>Globally LOG and/or DROP (nmap) scans. The following according configuration
+                variables can be configured in the main configuration file:</para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -2786,15 +2749,9 @@
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>app_allow_wmp</term>
+            <term>anti_spoof</term>
             <listitem>
-              <para>Allow forwarding of Windows Media Player traffic on certain interfaces.</para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>app_allow_rmp</term>
-            <listitem>
-              <para>Allow forwarding of Real Media Player traffic on certain interfaces.</para>
+              <para>Create anti spoofing rules.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -2828,12 +2785,6 @@
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>set_ttl</term>
-            <listitem>
-              <para>Manipulate TTL on forwarded packets</para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
             <term>mark_prio_syn</term>
             <listitem>
               <para>Prioritize SYN packets.</para>
@@ -2846,17 +2797,53 @@
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>mark_fwd_bulkq</term>
+            <term>mark_fwd_bulk</term>
             <listitem>
               <para>Mark FORWARD bulk traffic.</para>
             </listitem>
           </varlistentry>
+          <varlistentry>
+            <term>nfacct_add</term>
+            <listitem>
+              <para>Add a nfacct accounting object.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>set_var</term>
+            <listitem>
+              <para>Set a variables value.</para>
+            </listitem>
+          </varlistentry>
         </variablelist>
-        <para/>
       </section>
       <section xml:id="inline_funcs">
         <title>inline functions</title>
-        <para/>
+        <para>Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
+          does not fit the current need. Using inline functions is a way around this, or allow to
+          modify the behaviour of the rule processing.</para>
+        <para>The following functions are available inline:</para>
+        <para>
+          <variablelist>
+            <varlistentry>
+              <term>add_rule</term>
+              <listitem>
+                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>insert_ipt_rule</term>
+              <listitem>
+                <para>Like `add_rule' but it will insert the rule on top of the stack.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>create_chain</term>
+              <listitem>
+                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
+        </para>
       </section>
       <section>
         <title>Rulefile usage guidelines</title>
