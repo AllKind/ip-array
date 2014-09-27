@@ -1,622 +1,601 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
 <refentry xmlns="http://docbook.org/ns/docbook">
-        <info><author>
-                <personname>AllKind</personname>
-                <email>AllKind@BonBon.net</email>
-                <personblurb>
-                    <para>Some guy infront of a screen.</para>
-                </personblurb>
-                <uri type="homepage">
-                    <link xmlns:ns1="http://www.w3.org/1999/xlink"
-                        ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
-                    </link>
-                </uri>
-                <contrib>Thanks go to the open source community.</contrib>
-            </author>
-            <productname>ip-array</productname>
-            <productnumber>0.80.00</productnumber>
-        </info>
-        <refmeta>
-            <refentrytitle>ip-array</refentrytitle>
-            <manvolnum>8</manvolnum>
-            <refmiscinfo class="manual">ip-array 0.80.00</refmiscinfo>
-        </refmeta>
-        <refnamediv>
-            <refdescriptor>ip-array</refdescriptor>
-            <refname>ip-array</refname>
-            <refpurpose>Firewall and Traffic control Configuration utility</refpurpose>
-            <refclass> Scope = security, networking, system administration -- <application
-                    class="software">linux - </application>
-                <application class="software">netfilter/iptables - </application>
-                <application class="software">tc</application>
-            </refclass>
-        </refnamediv>
-        <refsynopsisdiv>
-            <cmdsynopsis>
-                <command>ip-array</command>
-                <arg choice="plain">parameter</arg>
-                <arg choice="opt" rep="repeat">
-                    <replaceable>option</replaceable>
-                    <arg choice="opt">
-                        <replaceable>option_argument</replaceable>
-                    </arg>
+    <info><author>
+            <personname>AllKind</personname>
+            <email>AllKind@BonBon.net</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>1.0</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array</refentrytitle>
+        <manvolnum>8</manvolnum>
+        <refmiscinfo class="manual">ip-array 1.0</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array</refdescriptor>
+        <refname>ip-array</refname>
+        <refpurpose>Firewall and Traffic control Configuration utility</refpurpose>
+        <refclass> Scope = security, networking, system administration -- <application
+                class="software">linux - </application>
+            <application class="software">netfilter/iptables - </application>
+            <application class="software">tc</application>
+        </refclass>
+    </refnamediv>
+    <refsynopsisdiv>
+        <cmdsynopsis>
+            <command>ip-array</command>
+            <arg choice="plain">parameter</arg>
+            <arg choice="opt" rep="repeat">
+                <replaceable>option</replaceable>
+                <arg choice="opt">
+                    <replaceable>option_argument</replaceable>
                 </arg>
-            </cmdsynopsis>
-        </refsynopsisdiv>
-        <refsect1>
-            <title>Description</title>
-            <para> ip-array is a command generator for netfilter (currently only iptables), tc and
-                /proc configuration. </para>
-            <para> It is written in bash. Bash version 3.1 or higher is required. </para>
-            <para> Basic configuration is done via shell style configuration files. Rules are
-                defined using a simple XML syntax. The XML configuration files get converted to bash
-                scripts, which are read at runtime. </para>
-        </refsect1>
-        <refsect1>
-            <title>Parameters</title>
-            <para> If the first parameter is omitted, usage instructions are printed. Only one
-                parameter is allowed - but required - for ip-array to take any action. </para>
-            <para>
-                <variablelist>
-                    <varlistentry>
-                        <term> -?, -h, --help, help </term>
-                        <listitem>
-                            <para> Show usage instructions. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> show </term>
-                        <listitem>
-                            <para> Show configuration or feature summary. The <option>-sc |
-                                    --show-config</option> option can be used to select a specific
-                                type. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> compat-check </term>
-                        <listitem>
-                            <para> Perform a compatibility check. ip-array will look for supported
-                                kernel version, iptables targets, matches and tables. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> dry-run </term>
-                        <listitem>
-                            <para> No acting mode. All configured components are called, but no
-                                commands are executed. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> start </term>
-                        <listitem>
-                            <para> Start ip-array. </para>
-                            <para> If quick-start mode is enabled by the setting the
-                                    <varname>RESTORE_ON_START</varname> variable of the defaults
-                                file to <option>1</option>, ip-array will attempt to load the
-                                prepared scripts. In case of a failure it will start regulary.
-                                Regular start mode implies lockdown mode until commands are applied.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> stop </term>
-                        <listitem>
-                            <para> Stop ip-array. </para>
-                            <para>All iptables tables are flushed and all policies are set to
-                                ACCEPT.</para>
-                            <para>tc qdiscs are removed.</para>
-                            <para>All kernel modules configured to be loaded, are removed in reverse
-                                order.</para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> restart </term>
-                        <listitem>
-                            <para> Restart ip-array. </para>
-                            <para> The currently active iptables ruleset, tc and /proc configuration
-                                are not touched until all commands are generated. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> open </term>
-                        <listitem>
-                            <para> Remove all but the iptables NAT rules. Traffic shaping is also
-                                stopped. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> test </term>
-                        <listitem>
-                            <para> Apply testing configuration. Reload previously active iptables
-                                ruleset after the amount of minutes specified with
-                                    <varname>RELOAD_TIME</varname> or the <option>-rt |
-                                    --reload-time</option> option. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> tc-start </term>
-                        <listitem>
-                            <para>Start traffic shaping. </para>
-                            <para>Besides the creation if qdisc, classes and filters, the iptables
-                                mangle table rules are re-applied.</para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> tc-stop </term>
-                        <listitem>
-                            <para> Stop traffic shaping. </para>
-                            <para>Qdiscs and iptables mangle table traffic control rules (MARK,
-                                CLASSIFY) get removed.</para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> lockdown </term>
-                        <listitem>
-                            <para> Enforce lockdown mode. All iptables tables are flushed, a DROP
-                                policy is enforced in all builtin filter table chains. Only
-                                localhost and the administrators connection may still be permitted
-                                (depends on configuration). </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> parse-xml </term>
-                        <listitem>
-                            <para> (Re-)parse all XML configuration files. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save </term>
-                        <listitem>
-                            <para> Save currently active iptables ruleset using
-                                    <command>iptables-save</command>. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> restore </term>
-                        <listitem>
-                            <para> Restore previously saved iptables ruleset using
-                                    <command>iptables-restore</command>. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> diff-last-activated </term>
-                        <listitem>
-                            <para> Run a <command>diff</command> on the last applied rule listing.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-known-good </term>
-                        <listitem>
-                            <para> Save currently active iptables ruleset as `known-good'. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> prepare-restore-on-start </term>
-                        <listitem>
-                            <para> Prepare quick-start scripts. </para>
-                            <para>ip-array will generate `known-good' scripts, which will be loaded
-                                if the parameter <parameter>start</parameter> is used and the
-                                variable <varname>RESTORE_ON_START</varname> is set to
-                                    <option>1</option>. A separate script for iptables, modprobe, tc
-                                and /proc configuration is created (unless disabled by
-                                configuration). Depending on the configuration either the currently
-                                active ruleset is saved in iptables-save format, or configuration is
-                                read and a bash script is created, just as if one would use the
-                                    <parameter>save-iptables-commands</parameter> parameter. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-commands </term>
-                        <listitem>
-                            <para> Save all generated commands to file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-iptables-commands </term>
-                        <listitem>
-                            <para> Save generated iptables commands to file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-modprobe-commands </term>
-                        <listitem>
-                            <para> Save generated modprobe commands to file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-proc-commands </term>
-                        <listitem>
-                            <para> Save generated /proc configuration commands to file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-tc-commands </term>
-                        <listitem>
-                            <para> Save generated tc commands to file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> save-shaping-commands </term>
-                        <listitem>
-                            <para> Save generated traffic shaping commands to file. This includes tc
-                                and iptables mangle table traffic control (MARK, CLASSIFY) commands.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> version </term>
-                        <listitem>
-                            <para> Show version information. </para>
-                        </listitem>
-                    </varlistentry>
-                </variablelist>
-            </para>
-        </refsect1>
-        <refsect1>
-            <title>Options</title>
-            <para>All options are optional. Some require an argument, others do not. All options and
-                their arguments must be separated by blank(s). If an option can be used more than
-                once, it is mentioned explicitly. </para>
-            <para>
-                <variablelist>
-                    <varlistentry>
-                        <term> -PF, --public-functions
-                                    <option>[<replaceable>function_name</replaceable>]</option>
-                        </term>
-                        <listitem>
-                            <para>Show list of public functions. Or show usage instructions if
-                                    <replaceable>function_name</replaceable> is given as option
-                                argument. This option is only available with the <option>-? | -h |
-                                    --help | help</option> parameter. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -ct, --ipt-counters </term>
-                        <listitem>
-                            <para>Save/restore counters, when using the <parameter>save</parameter>,
-                                or <parameter>restore</parameter> parameter. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -na, --no-autosave </term>
-                        <listitem>
-                            <para>Do not automatically save/restore the iptables ruleset on error.
-                                This option is only available with the following parameters:
-                                    <option>restart | open | tc-start</option>. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -nc, --no-compat-check </term>
-                        <listitem>
-                            <para>Do not perform compatibility check. No checking for existence of
-                                netfilter extensions, targets, raw, rawpost and security table is
-                                done. Instead their presence is assumed. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -nd, --no-diff </term>
-                        <listitem>
-                            <para>Do not save an iptables rule listing for later difference checks
-                                with the <parameter>diff-last-activated</parameter> parameter, when
-                                applying a new ruleset. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -ni, --no-iface-check </term>
-                        <listitem>
-                            <para>Do not check for existence of interfaces. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -nm, --no-modprobe </term>
-                        <listitem>
-                            <para>Do not perform probing/removing of modules. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -np, --no-proc </term>
-                        <listitem>
-                            <para>Do not set /proc configuration. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -p, --parse-xml </term>
-                        <listitem>
-                            <para>Parse all XML configuration files and create the bash scripts,
-                                which will be executed at runtime. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -pb, --parse-ruleblocks </term>
-                        <listitem>
-                            <para> (Re-)parse XML rule-blocks. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -pr, --parse-rulefiles </term>
-                        <listitem>
-                            <para> (Re-)parse XML rule files. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -pt, --parse-templates </term>
-                        <listitem>
-                            <para> (Re-)parse XML templates. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -bd, --base-dir <option>
-                                <replaceable>directory</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Base directory to use. Overrides the configuration variable
-                                    <varname>BASE_DIR</varname> from the defaults file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -c, --config-file <option>
-                                <replaceable>file</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Main configuration file to use. Overrides the configuration
-                                variable <varname>CONFIG</varname> from the defaults file. Defaults
-                                to <option>ip-array.conf</option> if unset. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -d, --defaults-file <option>
-                                <replaceable>/PATH/file</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Defaults file to use. This option is mandatory if ip-array is not
-                                launched from the init script. Overrides the configuration variable
-                                    <varname>DEFAULTS_FILE</varname> from the init script. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -e, --exe-dir <option>
-                                <replaceable>directory</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Executable directory to use. This option is mandatory if ip-array
-                                is not launched from the init script. Overrides the configuration
-                                variable <varname>BIN_DIR</varname> from the defaults file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -l, --lib-dir <option>
-                                <replaceable>directory</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Library directory to use. Overrides the configuration variable
-                                    <varname>LIB_DIR</varname> from the defaults file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -o, --set-option <option>
-                                <replaceable>assignment</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Set (override) a configuration option. The
-                                    <replaceable>assignment</replaceable> has to be a valid bash
-                                assignment in the format: <code>
-                                    <replaceable>word</replaceable>=<replaceable>value</replaceable>
-                                </code>. Multiple use of this option is supported. Only options of
-                                the main configuration file can be set. The
-                                    <varname>ENABLE_COLORS</varname> variable is an exception.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -gf, --gen-format <option>
-                                <replaceable>type</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Save iptables commands in the specified format. Avalailable
-                                formats are: <emphasis role="bold">cmd</emphasis> and <emphasis
-                                    role="bold">ipt</emphasis>. <emphasis role="bold">cmd</emphasis>
-                                saves the generated iptables commands as shell script. <emphasis
-                                    role="bold">ipt</emphasis> saves them in iptables-save format.
-                                Defaults to <option>cmd</option> if unset. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -rt, --reload-time <option>
-                                <replaceable>1-n</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Reload time in minutes. This option is only available with the
-                                    <parameter>test</parameter> parameter. Overrides the
-                                configuration variable <varname>RELOAD_TIME</varname> from the
-                                defaults file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -s, --save-file <option>
-                                <replaceable>file</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Use this <replaceable>file</replaceable>, when using one of these
-                                parameters: <option> save | restore | diff-last-activated |
-                                    save-commands | save-iptables-commands | save-modprobe-commands
-                                    | save-proc-commands | save-tc-commands |
-                                    save-shaping-commands</option>. Overrides the configuration
-                                variable <varname>SAVE_FILE</varname>, <varname>DIFF_FILE</varname>,
-                                or <varname>RULESETFILE</varname> (depending on what parameter is
-                                used) from the defaults file. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -sc, --show-config [<option>
-                                <replaceable>type</replaceable>
-                            </option>] </term>
-                        <listitem>
-                            <para>Show configuration or feature summary of specified type.
-                                Avalailable types are: all, main (which is the default), defaults,
-                                targets, matches, ruleblocks, templates. Multiple use of this option
-                                is supported. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -sv, --syslog-verbose <option>
-                                <replaceable>0-6</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Set syslog verbosity. Set to a value of <option>0</option>, only
-                                error messages are sent to syslog. Defaults to <option>1</option> if
-                                unset. </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term> -v, --verbose <option>
-                                <replaceable>0-9</replaceable>
-                            </option>
-                        </term>
-                        <listitem>
-                            <para>Set output verbosity. A value of <option>0</option> disables
-                                output. The values <option>8</option> and <option>9</option> enable
-                                debugging output (using <command>set -x</command> and <command>set
-                                    -vx</command>). Defaults to <option>6</option> if unset. </para>
-                        </listitem>
-                    </varlistentry>
-                </variablelist>
-            </para>
-        </refsect1>
-        <refsect1>
-            <title>Environment</title>
-            <para> If the environment variable <varname>DEBUG_INFO</varname> is set, additional
-                debugging information is displayed. If in addition the output verbosity is set to
-                    <option>8</option> or higher, a debugging <varname>PS4</varname> is set. </para>
-        </refsect1>
-        <refsect1>
-            <title>Exit status</title>
-            <para>
-                <variablelist>
-                    <varlistentry>
-                        <term>0</term>
-                        <listitem>
-                            <para>
-                                Success
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>1</term>
-                        <listitem>
-                            <para>
-                                Undetermined error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>3</term>
-                        <listitem>
-                            <para>
-                               Usage error. 
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>111</term>
-                        <listitem>
-                            <para>
-                                Requested item (file, folder) does not exist error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>112</term>
-                        <listitem>
-                            <para>
-                                Item (configuration variable) not defined error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>113</term>
-                        <listitem>
-                            <para>
-                                Failed loading item (script, program) error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>114</term>
-                        <listitem>
-                            <para>
-                                General fail condition error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term>115</term>
-                        <listitem>
-                            <para>
-                                Configuration error.
-                            </para>
-                        </listitem>
-                    </varlistentry>
-                </variablelist>
-            </para>
-        </refsect1>
-        <refsect1>
-            <title>Files</title>
-            <para>
-                <filename>/usr/bin/ip-array</filename>
-            </para>
-        </refsect1>
-        <refsect1>
-            <title>See also</title>
-            <para>
-                <citerefentry>
-                    <refentrytitle>ip-array_defaults.conf</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>ip-array.conf</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>ip-array_ruleblocks</refentrytitle>
-                    <manvolnum>5</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>ip-array_rulefiles</refentrytitle>
-                    <manvolnum>5</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>ip-array_templates</refentrytitle>
-                    <manvolnum>5</manvolnum>
-                </citerefentry>
-            </para>
-            <para>
-                <citerefentry>
-                    <refentrytitle>iptables</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>iptables-save</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>iptables-restore</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>tc</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>tc-htb</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>, <citerefentry>
-                    <refentrytitle>tc-sfq</refentrytitle>
-                    <manvolnum>8</manvolnum>
-                </citerefentry>
-            </para>
-        </refsect1>
+            </arg>
+        </cmdsynopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para> ip-array is a command generator for netfilter (currently only iptables), tc and /proc
+            configuration. </para>
+        <para> It is written in bash. Bash version 3.1 or higher is required. </para>
+        <para> Basic configuration is done via shell style configuration files. Rules are defined
+            using a simple XML syntax. The XML configuration files get converted to bash scripts,
+            which are read at runtime. </para>
+    </refsect1>
+    <refsect1>
+        <title>Parameters</title>
+        <para> If the first parameter is omitted, usage instructions are printed. Only one parameter
+            is allowed - but required - for ip-array to take any action. </para>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term> -?, -h, --help, help </term>
+                    <listitem>
+                        <para> Show usage instructions. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> show </term>
+                    <listitem>
+                        <para> Show configuration or feature summary. The <option>-sc |
+                                --show-config</option> option can be used to select a specific type.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> compat-check </term>
+                    <listitem>
+                        <para> Perform a compatibility check. ip-array will look for supported
+                            kernel version, iptables targets, matches and tables. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> dry-run </term>
+                    <listitem>
+                        <para> No acting mode. All configured components are called, but no commands
+                            are executed. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> start </term>
+                    <listitem>
+                        <para> Start ip-array. </para>
+                        <para> If quick-start mode is enabled by the setting the
+                                <varname>RESTORE_ON_START</varname> variable of the defaults file to
+                                <option>1</option>, ip-array will attempt to load the prepared
+                            scripts. In case of a failure it will start regulary. Regular start mode
+                            implies lockdown mode until commands are applied. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> stop </term>
+                    <listitem>
+                        <para> Stop ip-array. </para>
+                        <para>All iptables tables are flushed and all policies are set to
+                            ACCEPT.</para>
+                        <para>tc qdiscs are removed.</para>
+                        <para>All kernel modules configured to be loaded, are removed in reverse
+                            order.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> restart </term>
+                    <listitem>
+                        <para> Restart ip-array. </para>
+                        <para> The currently active iptables ruleset, tc and /proc configuration are
+                            not touched until all commands are generated. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> open </term>
+                    <listitem>
+                        <para> Remove all but the iptables NAT rules. Traffic shaping is also
+                            stopped. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> test </term>
+                    <listitem>
+                        <para> Apply testing configuration. Reload previously active iptables
+                            ruleset after the amount of minutes specified with
+                                <varname>RELOAD_TIME</varname> or the <option>-rt |
+                                --reload-time</option> option. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> tc-start </term>
+                    <listitem>
+                        <para>Start traffic shaping. </para>
+                        <para>Besides the creation if qdisc, classes and filters, the iptables
+                            mangle table rules are re-applied.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> tc-stop </term>
+                    <listitem>
+                        <para> Stop traffic shaping. </para>
+                        <para>Qdiscs and iptables mangle table traffic control rules (MARK,
+                            CLASSIFY) get removed.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> lockdown </term>
+                    <listitem>
+                        <para> Enforce lockdown mode. All iptables tables are flushed, a DROP policy
+                            is enforced in all builtin filter table chains. Only localhost and the
+                            administrators connection may still be permitted (depends on
+                            configuration). </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> parse-xml </term>
+                    <listitem>
+                        <para> (Re-)parse all XML configuration files. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save </term>
+                    <listitem>
+                        <para> Save currently active iptables ruleset using
+                                <command>iptables-save</command>. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> restore </term>
+                    <listitem>
+                        <para> Restore previously saved iptables ruleset using
+                                <command>iptables-restore</command>. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> diff-last-activated </term>
+                    <listitem>
+                        <para> Run a <command>diff</command> on the last applied rule listing.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-known-good </term>
+                    <listitem>
+                        <para> Save currently active iptables ruleset as `known-good'. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> prepare-restore-on-start </term>
+                    <listitem>
+                        <para> Prepare quick-start scripts. </para>
+                        <para>ip-array will generate `known-good' scripts, which will be loaded if
+                            the parameter <parameter>start</parameter> is used and the variable
+                                <varname>RESTORE_ON_START</varname> is set to <option>1</option>. A
+                            separate script for iptables, modprobe, tc and /proc configuration is
+                            created (unless disabled by configuration). Depending on the
+                            configuration either the currently active ruleset is saved in
+                            iptables-save format, or configuration is read and a bash script is
+                            created, just as if one would use the
+                                <parameter>save-iptables-commands</parameter> parameter. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-commands </term>
+                    <listitem>
+                        <para> Save all generated commands to file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-iptables-commands </term>
+                    <listitem>
+                        <para> Save generated iptables commands to file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-modprobe-commands </term>
+                    <listitem>
+                        <para> Save generated modprobe commands to file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-proc-commands </term>
+                    <listitem>
+                        <para> Save generated /proc configuration commands to file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-tc-commands </term>
+                    <listitem>
+                        <para> Save generated tc commands to file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> save-shaping-commands </term>
+                    <listitem>
+                        <para> Save generated traffic shaping commands to file. This includes tc and
+                            iptables mangle table traffic control (MARK, CLASSIFY) commands. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> version </term>
+                    <listitem>
+                        <para> Show version information. </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>Options</title>
+        <para>All options are optional. Some require an argument, others do not. All options and
+            their arguments must be separated by blank(s). If an option can be used more than once,
+            it is mentioned explicitly. </para>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term> -PF, --public-functions
+                            <option>[<replaceable>function_name</replaceable>]</option>
+                    </term>
+                    <listitem>
+                        <para>Show list of public functions. Or show usage instructions if
+                                <replaceable>function_name</replaceable> is given as option
+                            argument. This option is only available with the <option>-? | -h |
+                                --help | help</option> parameter. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -ct, --ipt-counters </term>
+                    <listitem>
+                        <para>Save/restore counters, when using the <parameter>save</parameter>, or
+                                <parameter>restore</parameter> parameter. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -na, --no-autosave </term>
+                    <listitem>
+                        <para>Do not automatically save/restore the iptables ruleset on error. This
+                            option is only available with the following parameters: <option>restart
+                                | open | tc-start</option>. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -nc, --no-compat-check </term>
+                    <listitem>
+                        <para>Do not perform compatibility check. No checking for existence of
+                            netfilter extensions, targets, raw, rawpost and security table is done.
+                            Instead their presence is assumed. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -nd, --no-diff </term>
+                    <listitem>
+                        <para>Do not save an iptables rule listing for later difference checks with
+                            the <parameter>diff-last-activated</parameter> parameter, when applying
+                            a new ruleset. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -ni, --no-iface-check </term>
+                    <listitem>
+                        <para>Do not check for existence of interfaces. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -nm, --no-modprobe </term>
+                    <listitem>
+                        <para>Do not perform probing/removing of modules. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -np, --no-proc </term>
+                    <listitem>
+                        <para>Do not set /proc configuration. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -p, --parse-xml </term>
+                    <listitem>
+                        <para>Parse all XML configuration files and create the bash scripts, which
+                            will be executed at runtime. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -pb, --parse-ruleblocks </term>
+                    <listitem>
+                        <para> (Re-)parse XML rule-blocks. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -pr, --parse-rulefiles </term>
+                    <listitem>
+                        <para> (Re-)parse XML rule files. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -pt, --parse-templates </term>
+                    <listitem>
+                        <para> (Re-)parse XML templates. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -bd, --base-dir <option>
+                            <replaceable>directory</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Base directory to use. Overrides the configuration variable
+                                <varname>BASE_DIR</varname> from the defaults file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -c, --config-file <option>
+                            <replaceable>file</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Main configuration file to use. Overrides the configuration variable
+                                <varname>CONFIG</varname> from the defaults file. Defaults to
+                                <option>ip-array.conf</option> if unset. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -d, --defaults-file <option>
+                            <replaceable>/PATH/file</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Defaults file to use. This option is mandatory if ip-array is not
+                            launched from the init script. Overrides the configuration variable
+                                <varname>DEFAULTS_FILE</varname> from the init script. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -e, --exe-dir <option>
+                            <replaceable>directory</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Executable directory to use. This option is mandatory if ip-array is
+                            not launched from the init script. Overrides the configuration variable
+                                <varname>BIN_DIR</varname> from the defaults file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -l, --lib-dir <option>
+                            <replaceable>directory</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Library directory to use. Overrides the configuration variable
+                                <varname>LIB_DIR</varname> from the defaults file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -o, --set-option <option>
+                            <replaceable>assignment</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Set (override) a configuration option. The
+                                <replaceable>assignment</replaceable> has to be a valid bash
+                            assignment in the format: <code>
+                                <replaceable>word</replaceable>=<replaceable>value</replaceable>
+                            </code>. Multiple use of this option is supported. Only options of the
+                            main configuration file can be set. The <varname>ENABLE_COLORS</varname>
+                            variable is an exception. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -gf, --gen-format <option>
+                            <replaceable>type</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Save iptables commands in the specified format. Avalailable formats
+                            are: <emphasis role="bold">cmd</emphasis> and <emphasis role="bold"
+                                >ipt</emphasis>. <emphasis role="bold">cmd</emphasis> saves the
+                            generated iptables commands as shell script. <emphasis role="bold"
+                                >ipt</emphasis> saves them in iptables-save format. Defaults to
+                                <option>cmd</option> if unset. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -rt, --reload-time <option>
+                            <replaceable>1-n</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Reload time in minutes. This option is only available with the
+                                <parameter>test</parameter> parameter. Overrides the configuration
+                            variable <varname>RELOAD_TIME</varname> from the defaults file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -s, --save-file <option>
+                            <replaceable>file</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Use this <replaceable>file</replaceable>, when using one of these
+                            parameters: <option> save | restore | diff-last-activated |
+                                save-commands | save-iptables-commands | save-modprobe-commands |
+                                save-proc-commands | save-tc-commands |
+                                save-shaping-commands</option>. Overrides the configuration variable
+                                <varname>SAVE_FILE</varname>, <varname>DIFF_FILE</varname>, or
+                                <varname>RULESETFILE</varname> (depending on what parameter is used)
+                            from the defaults file. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -sc, --show-config [<option>
+                            <replaceable>type</replaceable>
+                        </option>] </term>
+                    <listitem>
+                        <para>Show configuration or feature summary of specified type. Avalailable
+                            types are: all, main (which is the default), defaults, targets, matches,
+                            ruleblocks, templates. Multiple use of this option is supported. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -sv, --syslog-verbose <option>
+                            <replaceable>0-6</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Set syslog verbosity. Set to a value of <option>0</option>, only error
+                            messages are sent to syslog. Defaults to <option>1</option> if unset.
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term> -v, --verbose <option>
+                            <replaceable>0-9</replaceable>
+                        </option>
+                    </term>
+                    <listitem>
+                        <para>Set output verbosity. A value of <option>0</option> disables output.
+                            The values <option>8</option> and <option>9</option> enable debugging
+                            output (using <command>set -x</command> and <command>set -vx</command>).
+                            Defaults to <option>6</option> if unset. </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>Environment</title>
+        <para> If the environment variable <varname>DEBUG_INFO</varname> is set, additional
+            debugging information is displayed. If in addition the output verbosity is set to
+                <option>8</option> or higher, a debugging <varname>PS4</varname> is set. </para>
+    </refsect1>
+    <refsect1>
+        <title>Exit status</title>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>0</term>
+                    <listitem>
+                        <para> Success </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>1</term>
+                    <listitem>
+                        <para> Undetermined error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>3</term>
+                    <listitem>
+                        <para> Usage error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>111</term>
+                    <listitem>
+                        <para> Requested item (file, folder) does not exist error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>112</term>
+                    <listitem>
+                        <para> Item (configuration variable) not defined error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>113</term>
+                    <listitem>
+                        <para> Failed loading item (script, program) error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>114</term>
+                    <listitem>
+                        <para> General fail condition error. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>115</term>
+                    <listitem>
+                        <para> Configuration error. </para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>Files</title>
+        <para>
+            <filename>/usr/bin/ip-array</filename>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_ruleblocks</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_rulefiles</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+        </para>
+        <para>
+            <citerefentry>
+                <refentrytitle>iptables</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>iptables-save</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>iptables-restore</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>tc</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>tc-htb</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>tc-sfq</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>
+        </para>
+    </refsect1>
 </refentry>
