@@ -1407,7 +1407,7 @@ fi
 
 check_mod_dir() {
 if ((${#MODS_TO_RM[@]} || ${#MODULES_TO_LOAD[@]})); then
-	[[ -d $MODULE_DIR ]] || {
+	[[ -d ${MODULE_DIR:=/lib/modules/$("$UNAME" -r)} ]] || { # MODULE_DIR defaults to /lib/modules/$("$UNAME" -r)
 		log -E "\`$MODULE_DIR' does not exist."
 		raise_cfg_err_count
 		return $ER_NOEX

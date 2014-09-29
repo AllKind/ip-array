@@ -489,7 +489,7 @@ CONFIG_ENTRY_ARRAY=(
 "TC_RULEBLOCKS print 0 check_str_unique \${TC_RULEBLOCKS}"
 "TC_MANGLE_RULEBLOCKS print 0 check_str_unique \${TC_MANGLE_RULEBLOCKS}"
 # modules
-"MODULE_DIR print 1"
+"MODULE_DIR print 0"
 "MODULES_TO_LOAD print 0"
 "MODS_TO_RM print 0"
 # ipset
