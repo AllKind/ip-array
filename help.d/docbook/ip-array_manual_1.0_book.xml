@@ -1705,7 +1705,8 @@
               <varlistentry>
                 <term>MODULE_DIR</term>
                 <listitem>
-                  <para>Patch to the kernels module directory.</para>
+                  <para>Patch to the kernels module directory. Defaults to /lib/modules/$(uname
+                    -r).</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1724,7 +1725,7 @@
               <varlistentry>
                 <term>LOOPBACK_IF</term>
                 <listitem>
-                  <para>Allowed values: A valid interface name. </para>
+                  <para>Allowed values: A valid interface name. Defaults to `lo' if unset.</para>
                   <para>Purpose: Name of the loopback interface.</para>
                 </listitem>
               </varlistentry>
@@ -1997,7 +1998,245 @@
                 <term>AUTO_PROV_DNS</term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
-                  <para/>
+                  <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
+                    networks to ISP nameservers. Needs the <varname>LAN_NS</varname> and
+                      <varname>ISP_NS</varname> variables to be defined.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LAN_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define name servers (DNS) that are part of a local area
+                    network.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local (LAN) name servers</title>
+                      <tgroup cols="3" align="left" char="" conformance="">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>Name server IP address</entry>
+                            <entry>[Name server MAC address]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>10.11.11.11</entry>
+                            <entry>AA:BB:CC:DD:EE:FF</entry>
+                          </row>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>10.11.11.12</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>ISP_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define the Internet service provider name servers (DNS), for each
+                    local area network.</para>
+                  <para>
+                    <table frame="all">
+                      <title>ISP name servers</title>
+                      <tgroup cols="3" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="newCol3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>ISP name server IP address[,...]</entry>
+                            <entry>[External network interface]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>PRODUCTION</entry>
+                            <entry>123.12.12.22,123.12.12.23</entry>
+                            <entry>eth1</entry>
+                          </row>
+                          <row>
+                            <entry>DEVELOPMENT</entry>
+                            <entry>124.13.13.23,124.13.13.24</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>AUTO_ISP_SMTP</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Allow SMTP traffic from inside one or more local networks to SMTP
+                    mailservers. Needs the <varname>ISP_SMTP</varname>  variable to be
+                    defined.</para>
+                  <para>
+                    <table frame="all">
+                      <title>ISP SMTP servers</title>
+                      <tgroup cols="3" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <thead>
+                          <row>
+                            <entry>Network name</entry>
+                            <entry>ISP mail server IP address[,...]</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>PRODUCTION</entry>
+                            <entry>123.12.12.90,123.12.12.91</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>DEVELOPMENT</entry>
+                            <entry>125.25.25.5,125.25.25.6</entry>
+                            <entry>INET_CON_ISP_Y</entry>
+                          </row>
+                          <row>
+                            <entry>DMZ</entry>
+                            <entry>126.26.26.6,128.28.28.8</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>RESTRICT_OUTPUT</term>
+                <listitem>
+                  <para>Valid values: `0', `1, ´IFBOUND' or `IPBOUND'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_DNS_ALLOW</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LOCAL_NS</varname></term>
+                <listitem>
+                  <para>Purpose: Define name servers (DNS) of the local system (most likely those
+                    configured in <filename>/etc/resolv.conf</filename>.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local name servers (resolv.conf)</title>
+                      <tgroup cols="2" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <thead>
+                          <row>
+                            <entry>Name server IP address</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>123.12.12.22,123.12.12.23</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>124.13.13.23,124.13.13.24</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_NTP_ALLOW</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>TIME_SERVERS</varname></term>
+                <listitem>
+                  <para>Purpose: Define time service request (NTP) of the local system.</para>
+                  <para>
+                    <table frame="all">
+                      <title>Local NTP servers</title>
+                      <tgroup cols="2" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <thead>
+                          <row>
+                            <entry>NTP server IP address[,...]</entry>
+                            <entry>[External network name]</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>11.12.13.14,12.13.14.15</entry>
+                            <entry>INET_CON_ISP_X</entry>
+                          </row>
+                          <row>
+                            <entry>99.99.99.9,99.99.99.10</entry>
+                            <entry/>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_OUT_LAN_ALLOW</term>
+                <listitem>
+                  <para>Valid values "lan-interface  [...]"</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REST_ALLOW_RELATED</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REJECT_AUTH</term>
+                <listitem>
+                  <para>Reject auth (port 113) traffic on listed interfaces. Example:
+                      <code>REJECT_AUTH="eth0 eth1"</code></para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_NETBIOS</term>
+                <listitem>
+                  <para>Drop NetBios (Microsoft) broadcasts to the listed interfaces. Allowed values
+                    are interface-names or network names.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_DHCP</term>
+                <listitem>
+                  <para>Drop DHCP broadcasts to certain interfaces. Allowed values are
+                    interface-names.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>DROP_UPNP</term>
+                <listitem>
+                  <para>Drop UPNP broadcasts to certain interfaces. Allowed values are
+                    interface-names.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2046,66 +2285,6 @@
               </varlistentry>
               <varlistentry>
                 <term>PRIORITIZE_SYN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>AUTO_ISP_SMTP</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>RESTRICT_OUTPUT</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>REST_OUT_DNS_ALLOW</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>REST_OUT_NTP_ALLOW</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>REST_OUT_LAN_ALLOW</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>REST_ALLOW_RELATED</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>REJECT_AUTH</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_NETBIOS</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_DHCP</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_UPNP</term>
                 <listitem>
                   <para/>
                 </listitem>
@@ -2287,182 +2466,6 @@
                   <para>Allowed values: Characters of calss [:word:] (alphanumeric and the `_'
                     (underline) character). </para>
                   <para>Purpose: Set name of the local VPN branch.</para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>LAN_NS</varname></term>
-                <listitem>
-                  <para>Purpose: Define name servers (DNS) that are part of a local area
-                    network.</para>
-                  <para>
-                    <table frame="all">
-                      <title>Local (LAN) name servers</title>
-                      <tgroup cols="3" align="left" char="" conformance="">
-                        <colspec colname="c1" colnum="1"/>
-                        <colspec colname="c2" colnum="2"/>
-                        <colspec colname="c3" colnum="3"/>
-                        <thead>
-                          <row>
-                            <entry>Network name</entry>
-                            <entry>Name server IP address</entry>
-                            <entry>[Name server MAC address]</entry>
-                          </row>
-                        </thead>
-                        <tbody>
-                          <row>
-                            <entry>DMZ</entry>
-                            <entry>10.11.11.11</entry>
-                            <entry>AA:BB:CC:DD:EE:FF</entry>
-                          </row>
-                          <row>
-                            <entry>DMZ</entry>
-                            <entry>10.11.11.12</entry>
-                            <entry/>
-                          </row>
-                        </tbody>
-                      </tgroup>
-                    </table>
-                  </para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>ISP_NS</varname></term>
-                <listitem>
-                  <para>Purpose: Define the Internet service provider name servers (DNS), for each
-                    local area network.</para>
-                  <para>
-                    <table frame="all">
-                      <title>ISP name servers</title>
-                      <tgroup cols="3" align="left">
-                        <colspec colname="c1" colnum="1"/>
-                        <colspec colname="c2" colnum="2"/>
-                        <colspec colname="newCol3" colnum="3"/>
-                        <thead>
-                          <row>
-                            <entry>Network name</entry>
-                            <entry>ISP name server IP address[,...]</entry>
-                            <entry>[External network interface]</entry>
-                          </row>
-                        </thead>
-                        <tbody>
-                          <row>
-                            <entry>PRODUCTION</entry>
-                            <entry>123.12.12.22,123.12.12.23</entry>
-                            <entry>eth1</entry>
-                          </row>
-                          <row>
-                            <entry>DEVELOPMENT</entry>
-                            <entry>124.13.13.23,124.13.13.24</entry>
-                            <entry/>
-                          </row>
-                        </tbody>
-                      </tgroup>
-                    </table>
-                  </para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>LOCAL_NS</varname></term>
-                <listitem>
-                  <para>Purpose: Define name servers (DNS) of the local system (most likely those
-                    configured in <filename>/etc/resolv.conf</filename>.</para>
-                  <para>
-                    <table frame="all">
-                      <title>Local name servers (resolv.conf)</title>
-                      <tgroup cols="2" align="left">
-                        <colspec colname="c1" colnum="1"/>
-                        <colspec colname="c2" colnum="2"/>
-                        <thead>
-                          <row>
-                            <entry>Name server IP address</entry>
-                            <entry>[External network name]</entry>
-                          </row>
-                        </thead>
-                        <tbody>
-                          <row>
-                            <entry>123.12.12.22,123.12.12.23</entry>
-                            <entry>INET_CON_ISP_X</entry>
-                          </row>
-                          <row>
-                            <entry>124.13.13.23,124.13.13.24</entry>
-                            <entry/>
-                          </row>
-                        </tbody>
-                      </tgroup>
-                    </table>
-                  </para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>ISP_SMTP</varname></term>
-                <listitem>
-                  <para>Purpose: Define the Internet service provider mail servers (SMTP), for each
-                    local area network.</para>
-                  <para>
-                    <table frame="all">
-                      <title>ISP SMTP servers</title>
-                      <tgroup cols="3" align="left">
-                        <colspec colname="c1" colnum="1"/>
-                        <colspec colname="c2" colnum="2"/>
-                        <colspec colname="c3" colnum="3"/>
-                        <thead>
-                          <row>
-                            <entry>Network name</entry>
-                            <entry>ISP mail server IP address[,...]</entry>
-                            <entry>[External network name]</entry>
-                          </row>
-                        </thead>
-                        <tbody>
-                          <row>
-                            <entry>PRODUCTION</entry>
-                            <entry>123.12.12.90,123.12.12.91</entry>
-                            <entry>INET_CON_ISP_X</entry>
-                          </row>
-                          <row>
-                            <entry>DEVELOPMENT</entry>
-                            <entry>125.25.25.5,125.25.25.6</entry>
-                            <entry>INET_CON_ISP_Y</entry>
-                          </row>
-                          <row>
-                            <entry>DMZ</entry>
-                            <entry>126.26.26.6,128.28.28.8</entry>
-                            <entry/>
-                          </row>
-                        </tbody>
-                      </tgroup>
-                    </table>
-                  </para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>TIME_SERVERS</varname></term>
-                <listitem>
-                  <para>Purpose: Define time servers (NTP) of the local system.</para>
-                  <para>
-                    <table frame="all">
-                      <title>Local NTP servers</title>
-                      <tgroup cols="2" align="left">
-                        <colspec colname="c1" colnum="1"/>
-                        <colspec colname="c2" colnum="2"/>
-                        <thead>
-                          <row>
-                            <entry>NTP server IP address[,...]</entry>
-                            <entry>[External network name]</entry>
-                          </row>
-                        </thead>
-                        <tbody>
-                          <row>
-                            <entry>11.12.13.14,12.13.14.15</entry>
-                            <entry>INET_CON_ISP_X</entry>
-                          </row>
-                          <row>
-                            <entry>99.99.99.9,99.99.99.10</entry>
-                            <entry/>
-                          </row>
-                        </tbody>
-                      </tgroup>
-                    </table>
-                  </para>
                 </listitem>
               </varlistentry>
             </variablelist>
