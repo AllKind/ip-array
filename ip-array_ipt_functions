@@ -8554,42 +8554,36 @@ done
 # AUTOMATIC RULE CREATION
 # -------------------------------------------------------------------------
 
-allow_loopback() { # LOOPBACK ALLOW
+allow_loopback() { # Loopback allow
 ((ENABLE_FILTER)) || return 0
-if [[ -z ${LOOPBACK_IF} ]]; then
-	log -u 'LOOPBACK_IF'
-	return $ER_NODEF
-fi
-case "${ALLOW_LOOPBACK}" in
+: ${LOOPBACK_IF:=lo}
+case "$ALLOW_LOOPBACK" in
 	0) log -w "Not allowing loopback communication" ;;
 	1)
 		log -S "Allowing loopback communication"
-		check_iface "${LOOPBACK_IF}" || return $ER_FAIL
-		log -e "${PF}accept chain=INPUT idev=${LOOPBACK_IF}"
+		check_iface "$LOOPBACK_IF" || return $ER_FAIL
+		log -e "${PF}accept chain=INPUT idev=$LOOPBACK_IF"
 		add_rule filter INPUT -i "${LOOPBACK_IF}" -j ACCEPT
-		log -e "${PF}accept chain=OUTPUT odev=${LOOPBACK_IF}"
-		add_rule filter OUTPUT -o "${LOOPBACK_IF}" -j ACCEPT
+		log -e "${PF}accept chain=OUTPUT odev=$LOOPBACK_IF"
+		add_rule filter OUTPUT -o "$LOOPBACK_IF" -j ACCEPT
 	;;
-	*) log -i "${ALLOW_LOOPBACK}" 'ALLOW_LOOPBACK'
+	*) log -i "$ALLOW_LOOPBACK" 'ALLOW_LOOPBACK'
 		raise_cfg_err_count
 		return 0
 esac
 } # -------------------------------------------------------------------------
 
 allow_loopback_immediate() { # immediately allow loopback
-if [[ -z ${LOOPBACK_IF} ]]; then
-	log -u 'LOOPBACK_IF'
-	return 0
-fi
-case "${ALLOW_LOOPBACK}" in
+: ${LOOPBACK_IF:=lo}
+case "$ALLOW_LOOPBACK" in
 	0) log -w "Not allowing loopback communication" ;;
 	1)
 		log -I "Immediately allowing loopback communication"
-		check_iface "${LOOPBACK_IF}" || return $ER_FAIL
-		run_ipt -t filter -A INPUT -i "${LOOPBACK_IF}" -j ACCEPT
-		run_ipt -t filter -A OUTPUT -o "${LOOPBACK_IF}" -j ACCEPT
+		check_iface "$LOOPBACK_IF" || return $ER_FAIL
+		run_ipt -t filter -A INPUT -i "$LOOPBACK_IF" -j ACCEPT
+		run_ipt -t filter -A OUTPUT -o "$LOOPBACK_IF" -j ACCEPT
 	;;
-	*) log -i "${ALLOW_LOOPBACK}" 'ALLOW_LOOPBACK'
+	*) log -i "$ALLOW_LOOPBACK" 'ALLOW_LOOPBACK'
 		return 0
 esac
 } # -------------------------------------------------------------------------
