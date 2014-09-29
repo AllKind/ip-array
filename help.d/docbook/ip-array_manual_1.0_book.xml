@@ -140,10 +140,10 @@
             <para>Avaliable iptables targets:<itemizedlist>
                 <listitem>
                   <para>Supported in this version:</para>
-                  <para>ACCEPT, DROP, AUDIT, CHECKSUM, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK,
-                    CT, DNAT, DSCP, ECN, HMARK, IDLETIMER, LED, LOG, MARK, MASQUERADE, NETMAP,
-                    NFLOG, NFQUEUE, QUEUE, RATEEST, RAWDNAT, RAWSNAT, REDIRECT, REJECT, SECMARK,
-                    SET, SNAT, TCPMSS, TCPOPTSTRIP, TEE, TOS, TPROXY, TTL, ULOG</para>
+                  <para>AUDIT, CHECKSUM, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, CT, DNAT, DSCP,
+                    ECN, HMARK, IDLETIMER, LED, LOG, MARK, MASQUERADE, NETMAP, NFLOG, NFQUEUE,
+                    QUEUE, RATEEST, RAWDNAT, RAWSNAT, REDIRECT, REJECT, SECMARK, SET, SNAT, TCPMSS,
+                    TCPOPTSTRIP, TEE, TOS, TPROXY, TTL, ULOG</para>
                 </listitem>
                 <listitem>
                   <para>The list of available targets can be retrieved by executing
@@ -697,8 +697,9 @@
       <title>Installer</title>
       <para>An installation program comes with IP-Array. It is called install.bash and allows to
         install all necessary files at once. Also the destination directories can be given as well
-        as the file ownership can be set. It's also possible to create a backup of the old
-        files.</para>
+        as the file ownership can be set. It's also possible to create a backup of the old files.
+        The installer utilises the <command>install</command> program, for more information about it
+        its man page.</para>
     </section>
     <section>
       <title>Upgrade</title>
@@ -1666,8 +1667,8 @@
               <varlistentry>
                 <term>RAWPOST_RULES</term>
                 <listitem>
-                  <para>Names of the iptables rawpost table rule files.  Only works if
-                    xtables-addons are installed.</para>
+                  <para>Names of the iptables rawpost table rule files. Only works if xtables-addons
+                    are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1828,7 +1829,31 @@
               <varlistentry>
                 <term>ADMIN_CONNECTION</term>
                 <listitem>
-                  <para/>
+                  <para>Define an administrative connection, which will be allowed under certain
+                    conditions. The conditions are:</para>
+                  <para>
+                    <itemizedlist>
+                      <listitem>
+                        <para>If the enviroment variable $SSH_CONNECTION is not available, otherwise
+                          those values will always be used.</para>
+                      </listitem>
+                      <listitem>
+                        <para>When IP-Array enters lockdown mode in start mode.</para>
+                      </listitem>
+                      <listitem>
+                        <para>In restore mode, if ipset is used.</para>
+                      </listitem>
+                      <listitem>
+                        <para>In lockdown mode.</para>
+                      </listitem>
+                      <listitem>
+                        <para>On a fail condition (an error occured while applying a
+                          ruleset).</para>
+                      </listitem>
+                    </itemizedlist>
+                  </para>
+                  <para>The format is:
+                    <synopsis>admin_source-IP local_destination-IP local_destination-port</synopsis></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1888,14 +1913,104 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
+                <term>KNOWN_TRAFFIC_MAP</term>
+                <listitem>
+                  <para>This allows to define which and where the rules are created, which deal with
+                    the return traffic identified by the connection tracker. The format is (newline
+                    separates entries): <synopsis>chain [ state ] [ top | bottom ]</synopsis></para>
+                  <para>state can be either E, R or ER (ESTABLESHED, RELATED or ESTABLISHED and
+                    RELATED). top or bottom define wheter the rule should be placed on top or bottom
+                    of the rule stack.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REVERSE_INPUT_RULES_REQUIRED</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>In a ruleblock which uses a template definition that uses the reverse
+                    (return) mode to generate bidirectional rules, define if those are needed (i.e.
+                      <varname>KNOWN_TRAFFIC_MAP</varname> is not used). This applies to traffic
+                    entering the INPUT chain.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>REVERSE_FORWARD_RULES_REQUIRED</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>In a ruleblock which uses a template definition that uses the reverse
+                    (return) mode to generate bidirectional rules, define if those are needed (i.e.
+                      <varname>KNOWN_TRAFFIC_MAP</varname> is not used). This applies to traffic
+                    entering the FORWARD chain.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>FINAL_RULE_MAP</term>
+                <listitem>
+                  <para>Define a terminating rule for custom or builtin chains. Format:
+                    <synopsis>chain action [ limit:burst:value ] ] [ log-level ] [ log-options ]</synopsis></para>
+                  <para>chain = the name of the chain. action = the target. See the help of the
+                    iptables arguments for the other entries (<command>ip-array show -sc
+                      ipt_args:limit,log-level,log-options</command>).</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_INVALID</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Log packets in invalid state. The logging options are defined with the
+                    global log options.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BLOCK_INVALID</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Drop packets in invalid state.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LOG_ILLEGAL</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Log illegal TCP packets. The logging options are defined with the global log
+                    options.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>BLOCK_ILLEGAL</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Drop illegal TCP packets.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>LAN_FTP</term>
+                <listitem>
+                  <para>Select LAN interface from where FTP traffic is permitted. Format (newline
+                    separates entries):
+                    <synopsis>lan-interface[:external-interface][:active|passive] [...]</synopsis></para>
+                  <para>i.e. <code>eth1:eth0:active</code> or <code>eth2</code> or
+                      <code>eth1::passive</code></para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>AUTO_PROV_DNS</term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para/>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
                 <term>ENABLE_IPSEC</term>
                 <listitem>
+                  <para>Valid values: `0' or `1'.</para>
                   <para/>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term>ALLOW_ALL_BRANCH</term>
                 <listitem>
+                  <para>Valid values: `0' or `1'.</para>
                   <para/>
                 </listitem>
               </varlistentry>
@@ -1931,66 +2046,6 @@
               </varlistentry>
               <varlistentry>
                 <term>PRIORITIZE_SYN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_INVALID</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>BLOCK_INVALID</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_ILLEGAL</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>BLOCK_ILLEGAL</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>BLOCK_FRAGMENTS</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_FRAGMENTS</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LAN_FTP_INTERFACES</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>ACTIVE_FTP_INTERFACES</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>PASSIVE_FTP_INTERFACES</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>AUTO_PROV_DNS</term>
                 <listitem>
                   <para/>
                 </listitem>
@@ -2111,12 +2166,6 @@
               </varlistentry>
               <varlistentry>
                 <term>TCPMSS_TO_MTU</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>FINAL_RULE</term>
                 <listitem>
                   <para/>
                 </listitem>
