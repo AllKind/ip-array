@@ -218,13 +218,7 @@
             <para>Automatic configuration (rule generation) options for:<itemizedlist>
                 <listitem>
                   <para>Policy</para>
-                  <para>Set the chains policy.</para>
-                </listitem>
-                <listitem>
-                  <para>IPSEC (VPN)</para>
-                  <para>Put all ipsec related traffic into the ipsec chain. Allow only packets from
-                    / to the configured VPN branches.</para>
-                  <para>An option is available to allow all traffic between the VPN branches.</para>
+                  <para>Set the iptables builtin chains policy.</para>
                 </listitem>
                 <listitem>
                   <para>DNS<orderedlist>
@@ -234,10 +228,6 @@
                       <listitem>
                         <para>Allow forwarded DNS lookups from specific LAN name servers to ISP name
                           servers.</para>
-                      </listitem>
-                      <listitem>
-                        <para>Allow forwarded DNS lookups from specific LAN name servers to root
-                          name servers.</para>
                       </listitem>
                     </orderedlist></para>
                 </listitem>
@@ -255,7 +245,14 @@
                     LAN(s).</para>
                 </listitem>
                 <listitem>
-                  <para>OUTPUT rule generation (bound to interfaces or primary IP addresses).</para>
+                  <para>OUTPUT allow rules generation (bound to interfaces or primary IP addresses)
+                    if the policy is DROP.</para>
+                </listitem>
+                <listitem>
+                  <para>IPSEC (VPN)</para>
+                  <para>Put all ipsec related traffic into the ipsec chain. Allow only packets from
+                    / to the configured VPN branches.</para>
+                  <para>An option is available to allow all traffic between the VPN branches.</para>
                 </listitem>
                 <listitem>
                   <para>Anti spoofing.</para>
@@ -264,9 +261,6 @@
           </listitem>
           <listitem>
             <para>Automated iptables logging options:<itemizedlist>
-                <listitem>
-                  <para>Globally log fragments</para>
-                </listitem>
                 <listitem>
                   <para>Globally log invalid TCP packets</para>
                 </listitem>
@@ -283,9 +277,6 @@
           </listitem>
           <listitem>
             <para>Automated iptables dropping options:<itemizedlist>
-                <listitem>
-                  <para>Globally drop fragments</para>
-                </listitem>
                 <listitem>
                   <para>Globally drop invalid TCP packets</para>
                 </listitem>
@@ -324,7 +315,7 @@
                   <para>Bulk OUTPUT and FORWARD qdiscs</para>
                 </listitem>
                 <listitem>
-                  <para>Prioryzing of SYN packets</para>
+                  <para>Prioritizing of TCP SYN packets</para>
                 </listitem>
               </itemizedlist></para>
           </listitem>
@@ -462,11 +453,11 @@
       <section xml:id="start_behav">
         <title>Starting behaviour</title>
         <para>If IP-Array is run with the `<emphasis role="bold">start</emphasis>' parameter, a
-          lockdown mode is enforced until configuration is read and all iptables rules have been
-          generated. During this lockdown mode only localhost and the administrator connection are
-          allowed. After all rules are collected, they are applied at once. If the config variable
-          RESTORE_ON_START is set to `1' and previously saved rulesets are available, those will be
-          sourced and thus activated immediatly.</para>
+          lockdown mode is enforced until the configuration is read and all iptables, ipset, tc and
+          /proc rules have been generated. During this lockdown mode only localhost and the
+          administrator connection are allowed. After all rules are collected, they are applied at
+          once. If the config variable RESTORE_ON_START is set to `1' and previously saved rulesets
+          are available, those will be sourced and thus activated immediatly.</para>
         <para>In any other mode, that actually runs commands to configure the system, IP-Array will
           not touch the currently active iptables, tc rules or /proc configuration until all rules
           and / or commands have been generated.</para>
@@ -2265,53 +2256,164 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_IPSEC</term>
+                <term><varname>EXIT_ON_ERROR</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
-                  <para/>
+                  <para>If enabled, IP-Array will exit on all error conditions (configuration,
+                    comand apply errors, etc.). Otherwise it will continue and will only exit on
+                    hard errors.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ALLOW_ALL_BRANCH</term>
+                <term><varname>RULE_PLACEHOLDER</varname></term>
+                <listitem>
+                  <para>Valid values: `_' (underscore), `-' (dash), `.' (dot), `,' (comma). Defaults
+                    to `_' (underscore).</para>
+                  <para>If a rule entry in a ruleblock will not be set, use this character as
+                    placeholder.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>LOG_PREFIX</varname></term>
+                <listitem>
+                  <para>A prefix for iptables log entries.<tip>
+                      <para>Use a short value, log entries have a limited lenght.</para>
+                    </tip></para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>GLOBAL_LOGLIMIT</varname></term>
+                <listitem>
+                  <para>An iptables logging limit parameter that will be used globally, wherever
+                    it's not specified / requested differently.  Defaults to 1/s (1 per
+                    second).</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>GLOBAL_BURSTLIMIT</varname></term>
+                <listitem>
+                  <para>An iptables logging limit-burst parameter that will be used globally,
+                    wherever it's not specified / requested differently. Defaults to `3'.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>GLOBAL_LOGLEVL</varname></term>
+                <listitem>
+                  <para>Valid values are: alert, crit, debug, emerg, err, info, notice and warning.
+                    Defaults to `info'.</para>
+                  <para>An iptables logging loglevel parameter that will be used globally, wherever
+                    it's not specified / requested differently.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>ENABLE_IPSEC</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
-                  <para/>
+                  <para>Enable or disable the IPSEC rules.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPSEC_RULES</term>
+                <term><varname>ALLOW_ALL_BRANCH</varname></term>
                 <listitem>
-                  <para/>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Allow all traffic between all VPN branches.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_TC_SHAPING</term>
+                <term><varname>LOCAL_BRANCH</varname></term>
                 <listitem>
-                  <para/>
+                  <para>Allowed values: Characters of class [:word:] (alphanumeric and the `_'
+                    (underline) character). </para>
+                  <para>Purpose: Set name of the local VPN branch.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>TC_MARK_RULES</term>
+                <term><varname>IPSEC_RULES</varname></term>
                 <listitem>
-                  <para/>
+                  <para>The IPSEC rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>OUTPUT_BULK</term>
+                <term><varname>VPN_MAP</varname></term>
                 <listitem>
-                  <para/>
+                  <para>This variable holds the vpn branch data.</para>
+                  <para>The VPN_MAP variable is structured as follows (example data
+                    provided):</para>
+                  <para>
+                    <table frame="all">
+                      <title>VPN_MAP structure</title>
+                      <tgroup cols="4" align="left">
+                        <colspec colname="c1" colnum="1"/>
+                        <colspec colname="c2" colnum="2"/>
+                        <colspec colname="c3" colnum="3"/>
+                        <colspec colname="c4" colnum="4"/>
+                        <thead>
+                          <row>
+                            <entry>Branch name</entry>
+                            <entry>External IP address</entry>
+                            <entry>LAN address/mask</entry>
+                            <entry>LAN interface IP address</entry>
+                          </row>
+                        </thead>
+                        <tbody>
+                          <row>
+                            <entry>local_branch</entry>
+                            <entry>188.88.88.8</entry>
+                            <entry>192.168.1.0/24</entry>
+                            <entry>192.168.1.1</entry>
+                          </row>
+                          <row>
+                            <entry>remote_branch_01</entry>
+                            <entry>177.77.77.7</entry>
+                            <entry>10.1.1.0/24</entry>
+                            <entry>10.1.1.1</entry>
+                          </row>
+                          <row>
+                            <entry>remote_branch_02</entry>
+                            <entry>166.66.66.6</entry>
+                            <entry>172.16.1.0/24</entry>
+                            <entry>172.16.1.1</entry>
+                          </row>
+                        </tbody>
+                      </tgroup>
+                    </table>
+                  </para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>FORWARD_BULK</term>
+                <term><varname>ENABLE_TC_SHAPING</varname></term>
                 <listitem>
-                  <para/>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Enable or disable traffic shaping rules.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>PRIORITIZE_SYN</term>
+                <term><varname>TC_MARK_RULES</varname></term>
                 <listitem>
-                  <para/>
+                  <para>Files holding the iptables MARK and CLASSIFY rules for the traffic shaping.
+                  </para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>OUTPUT_BULK</varname></term>
+                <listitem>
+                  <para>Formatting: <synopsis>output-interface:mark [...]</synopsis></para>
+                  <para>Put the matching packets into the output bulk queue disc.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>FORWARD_BULK</varname></term>
+                <listitem>
+                  <para>Formatting:
+                    <synopsis>input-interface,output-interface:mark [...]</synopsis></para>
+                  <para>Put the matching packets into the forward bulk queue disc.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>PRIORITIZE_SYN</varname></term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Prioritize TCP SYN packets in traffic shaping.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2357,43 +2459,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>EXIT_ON_ERROR</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>RULE_PLACEHOLDER</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
                 <term>TCPMSS_TO_MTU</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_PREFIX</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>GLOBAL_LOGLIMIT</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>GLOBAL_BURSTLIMIT</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>GLOBAL_LOGLEVL</term>
                 <listitem>
                   <para/>
                 </listitem>
@@ -2479,75 +2545,11 @@
             </variablelist>
           </para>
         </section>
-        <section xml:id="conf_file_local_conf">
-          <title>Local settings - configuration file (local.conf)</title>
-          <para>This file is supposed to hold variable definitions, which only apply to the current
-            working system. They may not be used on any other host.</para>
-          <para>
-            <variablelist>
-              <varlistentry>
-                <term><varname>LOCAL_BRANCH</varname></term>
-                <listitem>
-                  <para>Allowed values: Characters of calss [:word:] (alphanumeric and the `_'
-                    (underline) character). </para>
-                  <para>Purpose: Set name of the local VPN branch.</para>
-                </listitem>
-              </varlistentry>
-            </variablelist>
-          </para>
-        </section>
         <section xml:id="conf_file_global_conf">
           <title>Global settings - configuration file (global.conf)</title>
           <para>This file is supposed to hold global variable definitions (i.e. ports, network
             classes), which do not apply to the current working system only, but are of generic use,
             to be utilized on any or more than one host.</para>
-        </section>
-        <section xml:id="conf_file_ipsec_conf">
-          <title>IPSEC configuration (vpn.conf)</title>
-          <para>In this file the IPSEC (VPN) configuration is defined by the
-              <varname>VPN_MAP</varname> variable, which holds the vpn branch data.</para>
-          <para>If <varname>ENABLE_IPSEC</varname> is disabled, loading this file becomes
-            obsolet.</para>
-          <para>The VPN_MAP variable is structured as follows (example data provided):</para>
-          <para>
-            <table frame="all">
-              <title>VPN_MAP structure</title>
-              <tgroup cols="4" align="left">
-                <colspec colname="c1" colnum="1"/>
-                <colspec colname="c2" colnum="2"/>
-                <colspec colname="c3" colnum="3"/>
-                <colspec colname="c4" colnum="4"/>
-                <thead>
-                  <row>
-                    <entry>Branch name</entry>
-                    <entry>External IP address</entry>
-                    <entry>LAN address/mask</entry>
-                    <entry>LAN interface IP address</entry>
-                  </row>
-                </thead>
-                <tbody>
-                  <row>
-                    <entry>local_branch</entry>
-                    <entry>188.88.88.8</entry>
-                    <entry>192.168.1.0/24</entry>
-                    <entry>192.168.1.1</entry>
-                  </row>
-                  <row>
-                    <entry>remote_branch_01</entry>
-                    <entry>177.77.77.7</entry>
-                    <entry>10.1.1.0/24</entry>
-                    <entry>10.1.1.1</entry>
-                  </row>
-                  <row>
-                    <entry>remote_branch_02</entry>
-                    <entry>166.66.66.6</entry>
-                    <entry>172.16.1.0/24</entry>
-                    <entry>172.16.1.1</entry>
-                  </row>
-                </tbody>
-              </tgroup>
-            </table>
-          </para>
         </section>
         <section xml:id="conf_file_alias_conf">
           <title>Custom variables/namings (alias.conf)</title>
