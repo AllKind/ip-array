@@ -9317,9 +9317,10 @@ if ! ((${#TIME_SERVERS[@]})); then
 	log -u 'TIME_SERVERS'
 	return 0
 fi
-local -i idx i=0
+local -i idx=i=0
 local -a RULEBLOCK_BUILTIN_LOCAL_USE_NTP_ALLOW RULEBLOCK_BUILTIN_LOCAL_USE_NTP_JUMPS
 local strERR str_ntp_servers str_ext_net str_ext_netif str_iface_ip str_ntp_host str_ntp_if_list str_setname
+local str_regex="((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
 local TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW=(
 "table=filter"
 "target[0]=ACCEPT"
@@ -9350,6 +9351,32 @@ if ((USE_IPSET)); then
 	TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[${#TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[@]}]="option_list_0[4]=m_set"
 fi
 log -I "Allowing local host to NTP server(s) traffic"
+if [[ $(string_tolower "${TIME_SERVERS[0]}") = auto ]]; then
+	if [[ -r /etc/ntp.conf ]]; then
+		while read -r -t $GLOBAL_READ_TIMEOUT; do
+			if [[ $REPLY ]]; then
+				set -- $REPLY
+				if [[ $2 =~ ^${str_regex}$ ]]; then
+					log -w "${PF}Adding ntp server: $2"
+					TIME_SERVERS[idx++]="$2"
+				else
+					log -E "server entry \`$2' in /etc/ntp.conf is not an IP address (hostnames are not supported). Edit this or the \`TIME_SERVERS' variable."
+					raise_cfg_err_count
+					return 0
+				fi
+			fi
+		done < <(dn2 "$GREP" "^server[[:blank:]]*.*" /etc/ntp.conf)
+		if ! ((${#TIME_SERVERS[@]})); then
+			log -E "No ntp server entries have been found in /etc/ntp.conf."
+			raise_gen_err_count
+			return 0
+		fi
+	else
+		log -E "Configuration variable \´TIME_SERVERS' is set to \`auto', but \`/etc/ntp.conf' is not readable."
+		raise_cfg_err_count
+		return 0
+	fi
+fi
 for idx in ${!TIME_SERVERS[@]}; do
 	set -- ${TIME_SERVERS[idx]}
 	str_ntp_servers=${1//,/ } str_ext_net=$2
