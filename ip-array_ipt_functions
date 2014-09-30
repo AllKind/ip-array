@@ -9229,7 +9229,7 @@ local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 log -I "Allowing local host to ISP nameservers traffic"
 # if set to 'auto' try to read from /etc/resolv.conf
-if [[ $(string_tolower "${LOCAL_NS[0]}") = auto ]]; then
+if [[ $(string_tolower "${LOCAL_NS[0]}") = auto ]]; then unset LOCAL_NS
 	if [[ -r /etc/resolv.conf ]]; then
 		while read -r -t $GLOBAL_READ_TIMEOUT; do
 			if [[ $REPLY = *([[:blank:]])nameserver+([[:blank:]])+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])*([[:blank:]]*) ]]; then
@@ -9351,7 +9351,7 @@ if ((USE_IPSET)); then
 	TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[${#TEMPLATE_BUILTIN_LOCAL_USE_NTP_SERVICE_ALLOW[@]}]="option_list_0[4]=m_set"
 fi
 log -I "Allowing local host to NTP server(s) traffic"
-if [[ $(string_tolower "${TIME_SERVERS[0]}") = auto ]]; then
+if [[ $(string_tolower "${TIME_SERVERS[0]}") = auto ]]; then unset TIME_SERVERS
 	if [[ -r /etc/ntp.conf ]]; then
 		while read -r -t $GLOBAL_READ_TIMEOUT; do
 			if [[ $REPLY ]]; then
