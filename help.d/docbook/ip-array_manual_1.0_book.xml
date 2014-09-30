@@ -1531,206 +1531,206 @@
           <para>
             <variablelist>
               <varlistentry>
-                <term>CONFIG_FILES</term>
+                <term><varname>CONFIG_FILES</varname></term>
                 <listitem>
                   <para>Names of the configuration files which will be loaded in order of
                     appearence. i.e. CONFIG_FILES="aliases.conf global.conf"</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>BASE_TEMPLATES</term>
+                <term><varname>BASE_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the basic XML template files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_FILTER</term>
+                <term><varname>ENABLE_FILTER</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables filter table configuration. Valid
                     values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_FILTER_TEMPLATES</term>
+                <term><varname>IPT_FILTER_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables filter table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>FILTER_RULEBLOCKS</term>
+                <term><varname>FILTER_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables filter table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>FILTER_RULES</term>
+                <term><varname>FILTER_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables filter table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_MANGLE</term>
+                <term><varname>ENABLE_MANGLE</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables mangle table configuration. Valid
                     values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_MANGLE_TEMPLATES</term>
+                <term><varname>IPT_MANGLE_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables mangle table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>MANGLE_RULEBLOCKS</term>
+                <term><varname>MANGLE_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables mangle table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>MANGLE_RULES</term>
+                <term><varname>MANGLE_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables mangle table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_NAT</term>
+                <term><varname>ENABLE_NAT</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables nat table configuration. Valid
                     values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_NAT_TEMPLATES</term>
+                <term><varname>IPT_NAT_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables nat table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>NAT_RULEBLOCKS</term>
+                <term><varname>NAT_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables nat table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>NAT_RULES</term>
+                <term><varname>NAT_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables nat table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_RAW</term>
+                <term><varname>ENABLE_RAW</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables raw table configuration. Valid
                     values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_RAW_TEMPLATES</term>
+                <term><varname>IPT_RAW_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables raw table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>RAW_RULEBLOCKS</term>
+                <term><varname>RAW_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables raw table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>RAW_RULES</term>
+                <term><varname>RAW_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables raw table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_RAWPOST</term>
+                <term><varname>ENABLE_RAWPOST</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables rawpost table configuration. Only
                     works if xtables-addons are installed. Valid values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_RAWPOST_TEMPLATES</term>
+                <term><varname>IPT_RAWPOST_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables rawpost table XML templates files. Only works if
                     xtables-addons are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>RAWPOST_RULEBLOCKS</term>
+                <term><varname>RAWPOST_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables rawpost table ruleblocks files. Only works if
                     xtables-addons are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>RAWPOST_RULES</term>
+                <term><varname>RAWPOST_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables rawpost table rule files. Only works if xtables-addons
                     are installed.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ENABLE_SECURITY</term>
+                <term><varname>ENABLE_SECURITY</varname></term>
                 <listitem>
                   <para>Enable or disable loading of the iptables security table configuration.
                     Valid values are `0' or `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPT_SECURITY_TEMPLATES</term>
+                <term><varname>IPT_SECURITY_TEMPLATES</varname></term>
                 <listitem>
                   <para>Names of the iptables security table XML templates files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>SECURITY_RULEBLOCKS</term>
+                <term><varname>SECURITY_RULEBLOCKS</varname></term>
                 <listitem>
                   <para>Names of the iptables security table ruleblocks files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>SECURITY_RULES</term>
+                <term><varname>SECURITY_RULES</varname></term>
                 <listitem>
                   <para>Names of the iptables security table rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>IPSET_RULES</term>
+                <term><varname>IPSET_RULES</varname></term>
                 <listitem>
                   <para>Names of the ipset rule files.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>MODULE_DIR</term>
+                <term><varname>MODULE_DIR</varname></term>
                 <listitem>
                   <para>Patch to the kernels module directory. Defaults to /lib/modules/$(uname
                     -r).</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>MODULES_TO_LOAD</term>
+                <term><varname>MODULES_TO_LOAD</varname></term>
                 <listitem>
                   <para>Select the kernel modules to load. Entries are separated by newline.</para>
                   <para>Format: <synopsis>module-name [parameters [...]]</synopsis></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>MODS_TO_RM</term>
+                <term><varname>MODS_TO_RM</varname></term>
                 <listitem>
                   <para>Select the kernel modules to remove.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>LOOPBACK_IF</term>
+                <term><varname>LOOPBACK_IF</varname></term>
                 <listitem>
                   <para>Allowed values: A valid interface name. Defaults to `lo' if unset.</para>
                   <para>Purpose: Name of the loopback interface.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>NET_INTERFACES</term>
+                <term><varname>NET_INTERFACES</varname></term>
                 <listitem>
                   <para>Types: ext | local | ipsec</para>
                   <para>
@@ -1793,7 +1793,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>SCRIPT_MAP</term>
+                <term><varname>SCRIPT_MAP</varname></term>
                 <listitem>
                   <para>The purpose of this variable is to configure which scripts will run at what
                     startup mode.</para>
@@ -1807,7 +1807,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>POLICY_MAP</term>
+                <term><varname>POLICY_MAP</varname></term>
                 <listitem>
                   <para>The purpose of this variable is to configure the policy for buitin iptables
                     chains.</para>
@@ -1821,14 +1821,14 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ALLOW_LOOPBACK</term>
+                <term><varname>ALLOW_LOOPBACK</varname></term>
                 <listitem>
                   <para>Allow communication to and from the loopback interface. Valid values: `0' or
                     `1'.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>ADMIN_CONNECTION</term>
+                <term><varname>ADMIN_CONNECTION</varname></term>
                 <listitem>
                   <para>Define an administrative connection, which will be allowed under certain
                     conditions. The conditions are:</para>
@@ -1858,7 +1858,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>CHAIN_MAP</term>
+                <term><varname>CHAIN_MAP</varname></term>
                 <listitem>
                   <para>The purpose of this variable is to create custom iptables chains.</para>
                   <para>The format is (newline separates entries):</para>
@@ -1871,7 +1871,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>JUMP_TREE</term>
+                <term><varname>JUMP_TREE</varname></term>
                 <listitem>
                   <para>The purpose of this variable is to create an automated jump tree of iptables
                     chains.</para>
@@ -1893,28 +1893,28 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>JUMP_TREE_CHAINS_CREATE_ALL</term>
+                <term><varname>JUMP_TREE_CHAINS_CREATE_ALL</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Enable or disable automatic creation of all jump tree chains.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REMOVE_EMPTY_CHAINS</term>
+                <term><varname>REMOVE_EMPTY_CHAINS</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Remove empty chains after applying the ruleset.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REMOVE_UNREF_CHAINS</term>
+                <term><varname>REMOVE_UNREF_CHAINS</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Remove unreferenced chains after applying the ruleset.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>KNOWN_TRAFFIC_MAP</term>
+                <term><varname>KNOWN_TRAFFIC_MAP</varname></term>
                 <listitem>
                   <para>This allows to define which and where the rules are created, which deal with
                     the return traffic identified by the connection tracker. The format is (newline
@@ -1925,7 +1925,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REVERSE_INPUT_RULES_REQUIRED</term>
+                <term><varname>REVERSE_INPUT_RULES_REQUIRED</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>In a ruleblock which uses a template definition that uses the reverse
@@ -1935,7 +1935,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REVERSE_FORWARD_RULES_REQUIRED</term>
+                <term><varname>REVERSE_FORWARD_RULES_REQUIRED</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>In a ruleblock which uses a template definition that uses the reverse
@@ -1945,7 +1945,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>FINAL_RULE_MAP</term>
+                <term><varname>FINAL_RULE_MAP</varname></term>
                 <listitem>
                   <para>Define a terminating rule for custom or builtin chains. Format:
                     <synopsis>chain action [ limit:burst:value ] ] [ log-level ] [ log-options ]</synopsis></para>
@@ -1955,7 +1955,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>LOG_INVALID</term>
+                <term><varname>LOG_INVALID</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Log packets in invalid state. The logging options are defined with the
@@ -1963,14 +1963,14 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>BLOCK_INVALID</term>
+                <term><varname>BLOCK_INVALID</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Drop packets in invalid state.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>LOG_ILLEGAL</term>
+                <term><varname>LOG_ILLEGAL</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Log illegal TCP packets. The logging options are defined with the global log
@@ -1978,14 +1978,14 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>BLOCK_ILLEGAL</term>
+                <term><varname>BLOCK_ILLEGAL</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Drop illegal TCP packets.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>LAN_FTP</term>
+                <term><varname>LAN_FTP</varname></term>
                 <listitem>
                   <para>Select LAN interface from where FTP traffic is permitted. Format (newline
                     separates entries):
@@ -1995,7 +1995,7 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>AUTO_PROV_DNS</term>
+                <term><varname>AUTO_PROV_DNS</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
@@ -2076,11 +2076,11 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>AUTO_ISP_SMTP</term>
+                <term><varname>AUTO_ISP_SMTP</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Allow SMTP traffic from inside one or more local networks to SMTP
-                    mailservers. Needs the <varname>ISP_SMTP</varname>  variable to be
+                    mailservers. Needs the <varname>ISP_SMTP</varname> variable to be
                     defined.</para>
                   <para>
                     <table frame="all">
@@ -2119,15 +2119,24 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>RESTRICT_OUTPUT</term>
+                <term><varname>RESTRICT_OUTPUT</varname></term>
                 <listitem>
                   <para>Valid values: `0', `1, ´IFBOUND' or `IPBOUND'.</para>
+                  <para>If the policy for the OUTPUT chain is set to DROP, additional allow rules
+                    may be applied. A value of `1' will allow other configurations like allow rules
+                    for local name or time servers. A value of ´IFBOUND' will create OUTPUT allow
+                    rules per interface i.e. <code>-A OUTPUT -o eth0 -j ACCEPT</code>. While setting
+                    it to `IPBOUND' will cause creation of one allow rule per IP address configure
+                    on each interface.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REST_OUT_DNS_ALLOW</term>
+                <term><varname>REST_OUT_DNS_ALLOW</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
+                  <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow localhost to
+                    nameservers traffic .</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2135,6 +2144,9 @@
                 <listitem>
                   <para>Purpose: Define name servers (DNS) of the local system (most likely those
                     configured in <filename>/etc/resolv.conf</filename>.</para>
+                  <para>If set to `auto', then IP-Array will try to read the nameservers from
+                      <filename>/etc/resolv.conf</filename>. Otherwise the following formatting is
+                    used:</para>
                   <para>
                     <table frame="all">
                       <title>Local name servers (resolv.conf)</title>
@@ -2163,15 +2175,21 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REST_OUT_NTP_ALLOW</term>
+                <term><varname>REST_OUT_NTP_ALLOW</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
+                  <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow localhost to time
+                    servers traffic .</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
                 <term><varname>TIME_SERVERS</varname></term>
                 <listitem>
                   <para>Purpose: Define time service request (NTP) of the local system.</para>
+                  <para>If set to `auto', then IP-Array will try to read the ntp servers from
+                      <filename>/etc/ntp.conf</filename>. Note that host names are not supported!
+                    Otherwise the following formatting is used:</para>
                   <para>
                     <table frame="all">
                       <title>Local NTP servers</title>
@@ -2200,40 +2218,47 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REST_OUT_LAN_ALLOW</term>
+                <term><varname>REST_OUT_LAN_ALLOW</varname></term>
                 <listitem>
-                  <para>Valid values "lan-interface  [...]"</para>
+                  <para>Valid values "lan-interface [...]"</para>
+                  <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow traffic to the subnets
+                    configured .</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REST_ALLOW_RELATED</term>
+                <term><varname>REST_ALLOW_RELATED</varname></term>
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
+                  <para>If <varname>RESTRICT_OUTPUT</varname> is set to `IFBOUND' or ´IPBOUND' and
+                    the policy of the OUTPUT chain is DROP, setting this variable to `0' will allow
+                    only traffic in ESTABLISHED state, while setting it to `1' will allow traffic in
+                    ESTABLISHED and RELATED state.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>REJECT_AUTH</term>
+                <term><varname>REJECT_AUTH</varname></term>
                 <listitem>
                   <para>Reject auth (port 113) traffic on listed interfaces. Example:
                       <code>REJECT_AUTH="eth0 eth1"</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>DROP_NETBIOS</term>
+                <term><varname>DROP_NETBIOS</varname></term>
                 <listitem>
                   <para>Drop NetBios (Microsoft) broadcasts to the listed interfaces. Allowed values
                     are interface-names or network names.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>DROP_DHCP</term>
+                <term><varname>DROP_DHCP</varname></term>
                 <listitem>
                   <para>Drop DHCP broadcasts to certain interfaces. Allowed values are
                     interface-names.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term>DROP_UPNP</term>
+                <term><varname>DROP_UPNP</varname></term>
                 <listitem>
                   <para>Drop UPNP broadcasts to certain interfaces. Allowed values are
                     interface-names.</para>
