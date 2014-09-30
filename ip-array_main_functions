@@ -2676,7 +2676,7 @@ for net_idx in ${!LOCAL_NET_ARRAY[@]}; do
 		log -E "Failed filling array ${LOCAL_NET_ARRAY[net_idx]}."
 		return $ER_FAIL
 	}
-	readonly ${LOCAL_NET_ARRAY[net_idx]}
+#	readonly ${LOCAL_NET_ARRAY[net_idx]}
 	[[ $DEBUG_INFO ]] && dbg_arr ${LOCAL_NET_ARRAY[net_idx]} || :
 done
 } # -------------------------------------------------------------------------

@@ -9228,6 +9228,27 @@ local TEMPLATE_BUILTIN_LOCAL_HOST_DNS_SERVERS_JUMPS=(
 )
 local RULEBLOCK_BUILTIN_LOCAL_HOST_DNS_SERVERS_ALLOW[i++]="$RULE_SEP $RULE_SEP $RULE_SEP ESTABLISHED"
 log -I "Allowing local host to ISP nameservers traffic"
+# if set to 'auto' try to read from /etc/resolv.conf
+if [[ $(string_tolower "${LOCAL_NS[0]}") = auto ]]; then
+	if [[ -r /etc/resolv.conf ]]; then
+		while read -r -t $GLOBAL_READ_TIMEOUT; do
+			if [[ $REPLY = *([[:blank:]])nameserver+([[:blank:]])+([[:digit:]]).+([[:digit:]]).+([[:digit:]]).+([[:digit:]])*([[:blank:]]*) ]]; then
+				set -- $REPLY
+				log -w "${PF}Adding nameserver: $2"
+				LOCAL_NS[idx++]="$2"
+			fi
+		done < /etc/resolv.conf
+		if ! ((${#LOCAL_NS[@]})); then
+			log -E "No nameserver entries have been found in /etc/resolv.conf."
+			raise_gen_err_count
+			return 0
+		fi
+	else
+		log -E "Configuration variable \´LOCAL_NS' is set to \`auto', but \`/etc/resolv.conf' is not readable."
+		raise_cfg_err_count
+		return 0
+	fi
+fi
 for idx in ${!LOCAL_NS[@]}; do
 	set -- ${LOCAL_NS[idx]}
 	str_nslist=${1//,/ } str_ext_net=$2
