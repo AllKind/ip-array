@@ -634,7 +634,7 @@ Options:
                            Types: all, ansi_codes, colors, defaults[:NAME[,...]],
                            main[:NAME[,...]] (=default), targets, matches, rules,
                            ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
-                           templates[:NAME[,...]], public_functions[:NAME[,...]].
+                           templates[:NAME[,...]], proc, public_functions[:NAME[,...]].
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -1181,10 +1181,10 @@ while (($#)); do
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
-					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates|public_functions)/}"
+					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates|proc|public_functions)/}"
 					cmdline_show_conf=" defaults main targets matches ipt_args ruleblocks templates rules public_functions"
 				;;
-				main|defaults|targets|matches|ruleblocks|templates|public_functions|rules|ipt_args|ansi_codes|colors)
+				main|defaults|targets|matches|ruleblocks|templates|proc|public_functions|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;

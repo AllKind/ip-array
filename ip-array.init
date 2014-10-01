@@ -184,7 +184,7 @@ Options:
                            Types: all, ansi_codes, colors, defaults[:NAME[,...]],
                            main[:NAME[,...]] (=default), targets, matches, rules,
                            ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
-                           templates[:NAME[,...]], public_functions[:NAME[,...]].
+                           templates[:NAME[,...]], proc, public_functions[:NAME[,...]].
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
@@ -257,7 +257,7 @@ while (($#)); do
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|rules|ruleblocks|templates|public_functions|ipt_args|ansi_codes|colors)
+				all|main|defaults|targets|matches|rules|ruleblocks|templates|proc|public_functions|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))

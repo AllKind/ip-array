@@ -3256,6 +3256,8 @@
                   names.</member>
                 <member> templates[:NAME[,...] display all or just the selected templates
                   names.</member>
+                <member> proc display the /proc filesystem configuration options, paths and their
+                  configured values.</member>
                 <member> public_functions[:NAME[,...] display all or just the selected public
                   functions help.</member>
               </simplelist></para>

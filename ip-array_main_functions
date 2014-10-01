@@ -1768,7 +1768,11 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 					if ((PROC_COMPAT_CHECK == 0)); then
 						set_proc "$vresult" "${ppath}/all/${epath}" "$procmsg on all interfaces"
 					else
-						pr_str "'$vresult' '${ppath}/all/${epath}' $procmsg on all interfaces"
+						if [[ $MODE = SHOW ]]; then
+							pr_str "${vname}: '$vresult' '$ppath/all/${epath}' $procmsg on all interfaces"
+						else
+							pr_str "'$vresult' '${ppath}/all/${epath}' $procmsg on all interfaces"
+						fi
 					fi
 				;;
 				(+(*([[:space:]])+([[:graph:]])[:][0-1]*([[:space:]]))) # valid config string
@@ -1784,7 +1788,11 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 						if ((PROC_COMPAT_CHECK == 0)); then
 							set_proc "$proc_set" "${ppath}/${proc_dev}/${epath}" "$procmsg on $proc_dev"
 						else
-							pr_str "'$proc_set' '${ppath}/${proc_dev}/${epath}' $procmsg on $proc_dev"
+							if [[ $MODE = SHOW ]]; then
+								pr_str "${vname}: '$vresult' '$ppath/${proc_dev}/${epath}' $procmsg on ${proc_dev}"
+							else
+								pr_str "'$proc_set' '${ppath}/${proc_dev}/${epath}' $procmsg on $proc_dev"
+							fi
 						fi
 					done
 				;;
@@ -1837,7 +1845,11 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 	if ((PROC_COMPAT_CHECK == 0)); then
 		set_proc "$vresult" "$ppath" "$procmsg"
 	else
-		pr_str "'$vresult' '$ppath' $procmsg"
+		if [[ $MODE = SHOW ]]; then
+			pr_str "${vname}: '$vresult' '$ppath' $procmsg"
+		else
+			pr_str "'$vresult' '$ppath' $procmsg"
+		fi
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -4965,6 +4977,14 @@ case "$1" in
 						fi
 					done
 					pr_banner "End of iptables arguments"
+				;;
+				proc)
+					PROC_COMPAT_CHECK=1
+					pr_banner "Starting dump of /proc filesystem options:"
+					calc_conntrack_max
+					calc_conntrack_hashsize
+					proc_conf_global
+					pr_banner "End of dump of /proc filesystem options."
 				;;
 				ruleblocks)
 					load_configs || return
