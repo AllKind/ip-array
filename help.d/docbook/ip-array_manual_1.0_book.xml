@@ -2256,24 +2256,6 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term><varname>EXIT_ON_ERROR</varname></term>
-                <listitem>
-                  <para>Valid values: `0' or `1'.</para>
-                  <para>If enabled, IP-Array will exit on all error conditions (configuration,
-                    comand apply errors, etc.). Otherwise it will continue and will only exit on
-                    hard errors.</para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>RULE_PLACEHOLDER</varname></term>
-                <listitem>
-                  <para>Valid values: `_' (underscore), `-' (dash), `.' (dot), `,' (comma). Defaults
-                    to `_' (underscore).</para>
-                  <para>If a rule entry in a ruleblock will not be set, use this character as
-                    placeholder.</para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
                 <term><varname>LOG_PREFIX</varname></term>
                 <listitem>
                   <para>A prefix for iptables log entries.<tip>
@@ -2285,7 +2267,7 @@
                 <term><varname>GLOBAL_LOGLIMIT</varname></term>
                 <listitem>
                   <para>An iptables logging limit parameter that will be used globally, wherever
-                    it's not specified / requested differently.  Defaults to 1/s (1 per
+                    it's not specified / requested differently. Defaults to 1/s (1 per
                     second).</para>
                 </listitem>
               </varlistentry>
@@ -2414,6 +2396,39 @@
                 <listitem>
                   <para>Valid values: `0' or `1'.</para>
                   <para>Prioritize TCP SYN packets in traffic shaping.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>EXIT_ON_ERROR</varname></term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>If enabled, IP-Array will exit on all error conditions (configuration,
+                    comand apply errors, etc.). Otherwise it will continue and will only exit on
+                    hard errors.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>RULE_PLACEHOLDER</varname></term>
+                <listitem>
+                  <para>Valid values: `_' (underscore), `-' (dash), `.' (dot), `,' (comma). Defaults
+                    to `_' (underscore).</para>
+                  <para>If a rule entry in a ruleblock will not be set, use this character as
+                    placeholder.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>USE_M_CONNTRACK</varname></term>
+                <listitem>
+                  <para>Valid values: `0' or `1'.</para>
+                  <para>Always use the iptables match extension conntrack in favour of the state
+                    match.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>NFACCT_OBJ_MAP</varname></term>
+                <listitem>
+                  <para>Netfilter accounting objects (nfacct)</para>
+                  <para>Format: <synopsis>nfacct-name [...]</synopsis></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
