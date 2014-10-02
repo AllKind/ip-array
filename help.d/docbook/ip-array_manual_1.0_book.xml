@@ -553,41 +553,45 @@
             linkend="startup_params">startup parameters</link> available to force XML parsing
           globaly, or selectively for templates, rules and ruleblocks.</para>
       </section>
-      <section xml:id="iface_chains">
-        <title>Per interface jump tree creation</title>
-        <para/>
-        <section>
-          <title>Forwarding interface classified chains</title>
-          <para>IP-Array creates chains between every network interface configured in
-            'NET_INTERFACES'. Means if you define two interfaces i.e: eth0 and eth1, IP-Array will
-            create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'. And so on for every
-            additional interface. This can done for the filter, mangle, nat and the raw table
-            according to the configuration. In example for the filter table the FORWARD chain then
-            is filled with jump entries, seeding out the cross-interface traffic to the appropriate
-            chain. Means every packet entering the FORWARD chain will end up in one of those chains
-            created by IP-Array. This should minimize the amount of rules to pass before reaching
-            the matching rule. IP-Array always uses those cross-interface chains when it applies
-            rules in the FORWARD chain. In case an interface wildcard i.e: 'eth+', or an inverted
-            interface value i.e: '!eth0' is used, the target chain will be FORWARD, instead of the
-            cross-interface chains.</para>
-        </section>
-        <section>
-          <title>Non-forwarding interface classified chains</title>
+      <section xml:id="jump_tree">
+        <title>iptables jump tree</title>
+        <section xml:id="iface_chains">
+          <title>Per interface classified chains</title>
+          <para>IP-Array may create chains between every network interface configured in
+              <varname>NET_INTERFACES</varname>. Means if you define two interfaces i.e: eth0 and
+            eth1, IP-Array will create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'. And so
+            on for every additional interface. This can done for all tables according to the
+            configuration. In example for the filter table the FORWARD chain then is filled with
+            jump entries, seeding out the cross-interface traffic to the appropriate chain. Means
+            every packet entering the FORWARD chain will end up in one of those chains created by
+            IP-Array. This should minimize the amount of rules to pass before reaching the matching
+            rule. IP-Array always uses those cross-interface chains when it applies rules in the
+            FORWARD chain. In case of a rule without an interface definition, or an interface
+            wildcard i.e: 'eth+', or an inverted interface value i.e: '!eth0' is used, the target
+            chain will be FORWARD, instead of the cross-interface chains. Rules with chain values
+            not matching builtin chains will not be touched.</para>
           <para>Just like with the cross-interface chains, INPUT and OUTPUT packets are also
             classified by interface. For each network interface configured, INPUT and OUTPUT chains
             will be created. For example if one interface named 'eth0' is present, the chains
-            'INPUT_eth0', 'OUTPUT_eth0' and the according jump entries will be created and
+            'INPUT_eth0', 'OUTPUT_eth0' and the according jump entries will be created
             automatically.</para>
         </section>
-      </section>
-      <section xml:id="network_chains">
-        <title>Per network jump tree creation</title>
-        <para/>
-      </section>
-      <section>
-        <title xml:id="iface_and_network_chains">Combined network and interface jump tree
-          creation</title>
-        <para/>
+        <section xml:id="network_chains">
+          <title>Per network jump tree</title>
+          <para>The jump tree creation is also available for networks defined in
+              <varname>NET_INTERFACES</varname>. For every network IP-Array will create the
+            according INPUT, OUTPUT, PREROUTING (just named PRE), POSTROUTING (just named POST)
+            (depending on the active table) chains prefixed with NETWORK-NAME_ and FORWARD chains
+            named NETWORK-NAME_FWD_IN and NETWORK-NAME_FWD_OUT. IP-Array will try to place rules
+            into those chains by selecting on source address, destination address, input device and
+            output device. Rules with chain values not matching builtin chains will not be
+            touched.</para>
+        </section>
+        <section xml:id="nw_iface_chains">
+          <title xml:id="iface_and_network_chains">Combined network and interface jump tree</title>
+          <para>There also is a combined method of the both above mentioned. First select upon
+            interface and then jump into network chains attached to those interfaces.</para>
+        </section>
       </section>
       <section xml:id="routing">
         <title>Routing</title>
@@ -1525,7 +1529,15 @@
                 <term><varname>CONFIG_FILES</varname></term>
                 <listitem>
                   <para>Names of the configuration files which will be loaded in order of
-                    appearence. i.e. CONFIG_FILES="aliases.conf global.conf"</para>
+                    appearence. i.e. CONFIG_FILES="aliases.conf global.conf".</para>
+                  <para>
+                    <tip>
+                      <para>This is the only variable that needs to be insoide the main
+                        configuration file. All others can be placed into different files of your
+                        choice and be listed in the above variable, in order to be sourced from
+                        there.</para>
+                    </tip>
+                  </para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2572,6 +2584,12 @@
             its use is recommended.</para>
           <para>Most likely the user will put definitions for interface names, hosts, etc. Those can
             be used in rules, ruleblocks and templates.</para>
+        </section>
+        <section xml:id="internal_defs">
+          <title>Internal variables (ip-array_global_defs)</title>
+          <para>This file holds variables only used internaly. But they still may be altered to
+            change some of the IP-Array behaviour. This is only for advanced usage. Please stick to
+            the comments for information about the settings available.</para>
         </section>
       </section>
       <section xml:id="config_files_xml">
