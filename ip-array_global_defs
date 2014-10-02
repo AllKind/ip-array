@@ -38,9 +38,9 @@
 declare -r IP_TABLES_NAMES="/proc/net/ip_tables_names"	# path to index of iptables table names
 declare -r PROC_SNET="/proc/sys/net"	# path to sys/net sysctl config
 declare -r PROC_IPV4="${PROC_SNET}/ipv4"	# path to ipv4 sysctl config
-declare -r PROC_NF="${PROC_SNET}/netfilter"
-declare -r PROC_NF_OLD="${PROC_IPV4}/netfilter"
-declare -r MODS_ALIAS_FILE="modules.alias"
+declare -r PROC_NF="${PROC_SNET}/netfilter" # path to the netfilter dir
+declare -r PROC_NF_OLD="${PROC_IPV4}/netfilter"	# old netfilter dir
+declare -r MODS_ALIAS_FILE="modules.alias"		# module alias file
 
 # Chains (BIC = built in chain)
 declare -r BIC_TEST_CHAIN="${ME}_TEST_CHAIN"   		# testing chain
@@ -60,7 +60,7 @@ declare -r BIC_TC_POSTROUTING_EGRESS="POSTROUTING"		# tc postrouting
 
 # Misc Variables
 declare -ir GLOBAL_READ_TIMEOUT=30		# number of seconds the read builtin waits for input
-declare -r IF_CON="_to_"
+declare -r IF_CON="_to_" 	# string used to separate interface dependant jump tree chains in FORWARD path
 declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
 declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
 declare -r DEFAULT_RULESETFILE="${me}_commands.bash"	# default file to save iptables commands to
@@ -74,14 +74,6 @@ declare -r stNE="NEW,ESTABLISHED"
 declare -r stNER="NEW,ESTABLISHED,RELATED"
 declare -r stR="RELATED"
 declare -r stU="UNTRACKED"
-#declare -r stateE="-m state --state ESTABLISHED"
-#declare -r stateR="-m state --state RELATED"
-#declare -r stateER="-m state --state ESTABLISHED,RELATED"
-#declare -r stateNE="-m state --state NEW,ESTABLISHED"
-#declare -r stateNER="-m state --state NEW,ESTABLISHED,RELATED"
-#declare -r stateN="-m state --state NEW"
-#declare -r stateI="-m state --state INVALID"
-#declare -r stateU="-m state --state UNTRACKED"
 
 # Messages
 declare -r PF=".. "				# prefix for stdout messages
