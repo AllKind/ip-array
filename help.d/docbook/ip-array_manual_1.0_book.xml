@@ -1372,9 +1372,9 @@
                       <filename>iptables_ruleset_saved_for_diff</filename>.</para>
                   <para>Allowed values: A valid filename (i.e.:
                       <filename>iptables_ruleset_saved_for_diff</filename>).</para>
-                  <para>File to save the iptables rule listing (iptables -nL) into, after applying
-                    the rules. The target directory will be
-                    <command>$BASE_DIR/save.d</command>.</para>
+                  <para>File to save the iptables rule listing (iptables -S, or if not available on
+                    old systems -nL) into, after applying the rules. The target directory will be
+                      <command>$BASE_DIR/save.d</command>.</para>
                   <para>This file will be used to check for a difference to the currently active
                     ruleset, when using the 'diff-last-activated' startup parameter.</para>
                 </listitem>
@@ -2620,88 +2620,141 @@
       <para/>
       <section>
         <title>Syntax</title>
-        <para/>
+        <para>A template definition file must contain the following:</para>
+        <para>
+          <orderedlist>
+            <listitem>
+              <para>First a root tag including the describing name attribule and the syntax
+                version:</para>
+              <para><code>&lt;ip_array_root name="iptables_templates"
+                syntax_version="0.1"></code></para>
+              <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables
+                template.</para>
+              <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+                version (only 0.1 is available by now).</para>
+            </listitem>
+            <listitem>
+              <para>The actual template tag including the name attribute defining the name of the
+                template:</para>
+              <para>&lt;template name="T_EXAMPLE"></para>
+              <para>The template name must begin with one of the following prefixes: T_, BT_, GT_,
+                TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_.</para>
+            </listitem>
+          </orderedlist>
+        </para>
       </section>
       <section>
         <title>Template XML elements</title>
-        <para/>
+        <para>The following list describes the elements which are valid inside the templates.</para>
         <variablelist>
           <varlistentry>
-            <term>ipt_table</term>
+            <term>table</term>
             <listitem>
-              <para/>
+              <para>The name of the iptables table (defaults to `filter' if unset).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>ipt_targets</term>
+            <term>target</term>
             <listitem>
-              <para/>
+              <para>A comma separated list of iptables targets.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>ipt_chains</term>
+            <term>chain</term>
             <listitem>
-              <para/>
+              <para>A comma separated list of iptables chains. A maximum of 2 chain names can be
+                specified, if the <varname>reverse_mode</varname> is `reverse' or `mirror'.
+                Otherwise only one is valid.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>reverse_mode</term>
             <listitem>
-              <para/>
+              <para>Reverse mode can either be set to `reverse' or `mirror'. This means that a
+                second option list will be processed (most likely the return traffic). See
+                  <varname>option_list_1</varname> below. If `mirror' is specified the first option
+                list will be copied to the second one. Otherwise <varname>option_list_1</varname>
+                will be used.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>reverse_condition</term>
             <listitem>
-              <para/>
+              <para>If this condition evaluates to true, than reverse mode will be used (if
+                specified - othewise this setting does not make sense).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>ruleblock_msg</term>
+            <term>template_msg</term>
             <listitem>
-              <para/>
+              <para>A message that will be displayed as the template is called, if
+                  <varname>VERBOSE</varname> is greater or equal 3.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>mandatory_vars</term>
             <listitem>
-              <para/>
+              <para>A comma separated list of variable names that must be defined in the ruleblock
+                called with the template.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>load_template</term>
             <listitem>
-              <para/>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>always_use_0</term>
-            <listitem>
-              <para/>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>always_use_1</term>
-            <listitem>
-              <para/>
+              <para>Other templates to load into the current one.</para>
+              <para>
+                <important>
+                  <para>Those loaded templates will always be read before any option_list or
+                    always_use list. Means they are on the more left side from the ruleblock
+                    perspective.</para>
+                </important>
+              </para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>option_list_0</term>
             <listitem>
-              <para/>
+              <para>These are the actual iptables arguments which will be filled with values from
+                the ruleblock called with the template.</para>
+              <para>The list of valid iptables arguments and their usage can be called with:
+                  <command>ip-array show -sc ipt_args[,...]</command>.</para>
+              <para>You can define default values to be used by using this syntax:
+                <synopsis>name=default_value</synopsis></para>
+              <para>I.e. idev=eth0</para>
+              <para>These default values will be used if the according ruleblock entry is not
+                defined (filled with the rule placeholder value, or undefined).</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>option_list_1</term>
             <listitem>
-              <para/>
+              <para>This second list of iptables options is used for the reverse_mode if set to
+                `reverse'. I.e. what has been idev (input interface) will be odev (output interface)
+                in the reverse rule.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>always_use_0</term>
+            <listitem>
+              <para>You can define default values for <varname>option_list_0</varname> by using this
+                syntax: <synopsis>name=default_value</synopsis></para>
+              <para>I.e. idev=eth0</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>always_use_1</term>
+            <listitem>
+              <para>You can define default values for <varname>option_list_1</varname> by using this
+                syntax: <synopsis>name=default_value</synopsis></para>
+              <para>I.e. odev=eth0</para>
             </listitem>
           </varlistentry>
           <varlistentry>
             <term>state_match_arg</term>
             <listitem>
-              <para/>
+              <para>A maximum of two comma separated lists with state-names of the state/conntrack
+                match. I.e. NEW,ESTABLISHED ESTABLISHED.</para>
+              <para>The second one is only used if the reverse_mode is set to `reverse'.</para>
             </listitem>
           </varlistentry>
         </variablelist>
