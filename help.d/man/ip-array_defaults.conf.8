@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: ip-array_defaults.conf
 .\"    Author: AllKind <AllKind@BonBon.net>
-.\" Generator: DocBook XSL-NS Stylesheets v1.74.3-pre <http://docbook.sf.net/>
-.\"      Date: 01/12/2011
-.\"    Manual: ip-array 0.80.00
-.\"    Source: ip-array 0.80.00
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 10/16/2014
+.\"    Manual: ip-array 1.0
+.\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_DEFAULTS\&" "8" "01/12/2011" "ip-array 0.80.00" "ip\-array 0\&.80\&.00"
+.TH "IP\-ARRAY_DEFAULTS\&" "8" "10/16/2014" "ip-array 1.0" "ip\-array 1\&.0"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -35,15 +44,809 @@ configuration\&. It uses bash shell syntax\&. Many of the configuration variable
 .SH "VARIABLES"
 .PP
 .PP
-ENABLE_COLORS
+\fIENABLE_COLORS\fR
 .RS 4
-Enable or disable coloured output\&.
+Mandatory: no\&. Defaults to `0\*(Aq if unset\&.
 .sp
-Valid values:
+Allowed values: `0\*(Aq or `1\*(Aq\&.
 .sp
-Defaults to:
+Purpose: Enable or disable IP\-Array coloured output\&.
+.RE
+.PP
+\fIENABLE_SYSLOG\fR
+.RS 4
+Mandatory: no\&. Defaults to `0\*(Aq if unset\&.
 .sp
-Mandatory:
+Allowed values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Purpose: Enable or disable logging of IP\-Array\*(Aqs output to syslog using the
+\fBlogger\fR
+utility\&.
+.RE
+.PP
+\fILOG_FACILITY\fR
+.RS 4
+Mandatory: no\&. Defaults to `local0\*(Aq if unset\&.
+.sp
+Allowed values:
+auth, authpriv (for security information of a sensitive nature), cron, daemon, ftp, kern, lpr, mail, news, security (deprecated synonym for auth), syslog, user, uucp, local0 to local7 inclusive\&.
+.sp
+Purpose: Configure IP\-Array\*(Aqs syslog logging facility\&.
+.RE
+.PP
+\fIVERBOSE\fR
+.RS 4
+Mandatory: no\&. Defaults to `6\*(Aq if unset\&.
+.sp
+Allowed values: `0\*(Aq to `8\*(Aq\&.
+.sp
+Purpose: Control level of IP\-Array\*(Aqs output verbosity\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTip\fR
+.ps -1
+.br
+With a non zero environment variable `\fIDEBUG_INFO\fR\*(Aq, additional processing (debugging) information is printed\&.
+.sp .5v
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+No messages are shown\&. Exit status indicates success or failure\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Shows start and end message and errors\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Main title and warning messages are also shown\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Sub title messages are shown in addition\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+Info title, config and rule file loading messages, are shown additionally\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+Also show notice messages\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+Verbose output\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 8.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  8." 4.2
+.\}
+Also show IP\-Array internals\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 9.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  9." 4.2
+.\}
+Debug mode (set \-x)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTip\fR
+.ps -1
+.br
+With a non zero environment variable `\fIDEBUG_INFO\fR\*(Aq, a debugging `\fIPS4\fR\*(Aq is set\&.
+.sp .5v
+.RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'10.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "10." 4.2
+.\}
+More verbose debug mode (set \-vx)\&.
+.RE
+.RE
+.PP
+\fISYSLOG_VERBOSE\fR
+.RS 4
+Mandatory: no\&. Defaults to `1\*(Aq if unset\&.
+.sp
+Allowed values: `0\*(Aq to `6\*(Aq\&.
+.sp
+Purpose: Control verbosity level of IP\-Array\*(Aqs syslog logging\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+Errror messages are shown\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+Main title and warning messages are shown\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+Subtitle messages are shown in addition\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 4.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  4." 4.2
+.\}
+Info title, config and rule file loading messages, are shown additionally\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 5.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  5." 4.2
+.\}
+Also show notice messages\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 6.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  6." 4.2
+.\}
+Verbose output\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 7.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  7." 4.2
+.\}
+Also show IP\-Array internals\&.
+.RE
+.RE
+.PP
+\fICOLOR_MSG_MAIN_TITLE\fR
+.RS 4
+Mandatory: no\&. Defaults to `magenta\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for title messages\&.
+.RE
+.PP
+\fICOLOR_MSG_SUBTITLE\fR
+.RS 4
+Mandatory: no\&. Defaults to `blue\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for sub title messages\&.
+.RE
+.PP
+\fICOLOR_MSG_INFO_TITLE\fR
+.RS 4
+Mandatory: no\&. Defaults to `cyan\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for info title messages\&.
+.RE
+.PP
+\fICOLOR_MSG_ERROR\fR
+.RS 4
+Mandatory: no\&. Defaults to `red\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for error messages\&.
+.RE
+.PP
+\fICOLOR_MSG_WARNING\fR
+.RS 4
+Mandatory: no\&. Defaults to `yellow\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for warning messages\&.
+.RE
+.PP
+\fICOLOR_MSG_NOTICE\fR
+.RS 4
+Mandatory: no\&. Defaults to `white\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for notice messages\&.
+.RE
+.PP
+\fICOLOR_MSG_CONFIG_LOAD\fR
+.RS 4
+Mandatory: no\&. Defaults to `green\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for configuration file loading messages\&.
+.RE
+.PP
+\fICOLOR_MSG_RULE_LOAD\fR
+.RS 4
+Mandatory: no\&. Defaults to `yellow\*(Aq if unset\&.
+.sp
+Allowed values:
+black, blue, cyan, green, magenta, red, white, yellow\&.
+.sp
+Purpose: Set color for rule file loading messages\&.
+.RE
+.PP
+\fIAUTO_GET_PROGS\fR
+.RS 4
+Mandatory: no \- defaults to `1\*(Aq\&.
+.sp
+Allowed values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Purpose: Configure if IP\-Array should try to automatically find the mandatory programs (must be in
+\fI$PATH\fR) \&. If disabled (set to `0\*(Aq), the program names varaibles (below)
+\fBmust\fR
+be configured manually\&.
+.RE
+.PP
+\fIAT\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBat\fR
+executable file (i\&.e:
+/usr/bin/at), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fICAT\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBcat\fR
+executable file (i\&.e:
+/bin/cat), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIDATE\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBdate\fR
+executable file (i\&.e:
+/bin/date), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIDIFF\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBdiff\fR
+executable file (i\&.e:
+/usr/bin/diff), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIFIND\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBfind\fR
+executable file (i\&.e:
+/usr/bin/find), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIGREP\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBgrep\fR
+executable file (i\&.e:
+/bin/grep), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIIP\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBip\fR
+executable file (i\&.e:
+/sbin/ip), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIIPSET\fR
+.RS 4
+Mandatory: no
+.sp
+Allowed values: A valid path to the
+\fBipset\fR
+executable file (i\&.e:
+/sbin/ipset), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIIPT\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBiptables\fR
+executable file (i\&.e:
+/sbin/iptables), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fILOGGER\fR
+.RS 4
+Mandatory: no
+.sp
+Allowed values: A valid path to the
+\fBlogger\fR
+executable file (i\&.e:
+/usr/bin/logger), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fILSMOD\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBlsmod\fR
+executable file (i\&.e:
+/sbin/lsmod), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIMODPROBE\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBmodprobe\fR
+executable file (i\&.e:
+/sbin/modprobe), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fINFACCT\fR
+.RS 4
+Mandatory: no
+.sp
+Allowed values: A valid path to the
+\fBnfacct\fR
+executable file (i\&.e:
+/usr/sbin/nfacct), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIRM\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBrm\fR
+executable file (i\&.e:
+/bin/rm), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIIPT_SAVE\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBiptables\-save\fR
+executable file (i\&.e:
+/sbin/iptables\-save), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.sp
+This variable is only used by the IP\-Array init script\&. It is not globally available\&.
+.RE
+.PP
+\fIIPT_RESTORE\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBiptables\-restore\fR
+executable file (i\&.e:
+/sbin/iptables\-restore), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.sp
+This variable is only used by the IP\-Array init script\&. It is not globally available\&.
+.RE
+.PP
+\fISORT\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBsort\fR
+executable file (i\&.e:
+/usr/bin/sort), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fITC\fR
+.RS 4
+Mandatory: no
+.sp
+Allowed values: A valid path to the
+\fBtc\fR
+executable file (i\&.e:
+/sbin/tc), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIUNAME\fR
+.RS 4
+Mandatory: yes
+.sp
+Allowed values: A valid path to the
+\fBuname\fR
+executable file (i\&.e:
+/bin/uname), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
+\fIBASE_DIR\fR
+.RS 4
+Mandatory: no \- defaults to
+/etc/ip\-array\&.
+.sp
+Allowed values: A valid path (i\&.e\&.:
+/etc/ip\-array)\&.
+.sp
+IP\-Array base directory\&.
+.RE
+.PP
+\fICONFIG\fR
+.RS 4
+Mandatory: no \- defaults to
+ip\-array\&.conf\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+ip\-array\&.conf)\&.
+.sp
+Name of the main configuration file\&.
+.RE
+.PP
+\fICONF_DIR\fR
+.RS 4
+Mandatory: no \- defaults to
+conf\&.d\&.
+.sp
+Allowed values: A valid directory name (i\&.e\&.:
+conf\&.d)\&.
+.sp
+Configuration directory must be below
+\fIBASE_DIR\fR\&.
+.RE
+.PP
+\fILIB_DIR\fR
+.RS 4
+Mandatory: no \- defaults to
+/usr/lib/ip\-array\&.
+.sp
+Allowed values: A valid path (i\&.e\&.:
+/usr/lib/ip\-array)\&.
+.sp
+Library directory used for the IP\-Array function files\&.
+.RE
+.PP
+\fILOCK_DIR\fR
+.RS 4
+Mandatory: no \- defaults to
+/var/run\&.
+.sp
+Allowed values: A valid path (i\&.e\&.:
+/var/run)\&.
+.sp
+Directory to put the IP\-Array PID file into\&.
+.RE
+.PP
+\fISHARE_DIR\fR
+.RS 4
+Mandatory: no \- defaults to
+/usr/share/ip\-array\&.
+.sp
+Allowed values: A valid path (i\&.e\&.:
+/usr/share/ip\-array)\&.
+.sp
+Data directory\&.
+.RE
+.PP
+\fISAVE_FILE\fR
+.RS 4
+Mandatory: no \- defaults to
+iptables_ruleset\&.save\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+iptables_ruleset\&.save)\&.
+.sp
+File to put the iptables\-save output into, when executing IP\-Array with the \*(Aqsave\*(Aq startup parameter\&.
+.RE
+.PP
+\fIIPSET_SAVE_FILE\fR
+.RS 4
+Mandatory: no \- defaults to
+ipset_ruleset\&.save\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+ipset_ruleset\&.save)\&.
+.sp
+File to put the ipset save output into, when executing IP\-Array with the \*(Aqsave\*(Aq startup parameter\&.
+.RE
+.PP
+\fIRULESETFILE\fR
+.RS 4
+Mandatory: no \- defaults to
+ip\-array_commands\&.bash\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+ip\-array_commands\&.bash)\&.
+.sp
+File where the generated commands will be saved, if executing IP\-Array with one of the \*(Aqsave[ \-iptables | \-modprobe | \-proc | \-tc | \-shaping ]\-commands\*(Aq parameters\&. The target directory will be
+\fB$BASE_DIR/save\&.d\fR\&.
+.RE
+.PP
+\fIDIFF_FILE\fR
+.RS 4
+Mandatory: no \- defaults to
+iptables_ruleset_saved_for_diff\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+iptables_ruleset_saved_for_diff)\&.
+.sp
+File to save the iptables rule listing (iptables \-S, or if not available on old systems \-nL) into, after applying the rules\&. The target directory will be
+\fB$BASE_DIR/save\&.d\fR\&.
+.sp
+This file will be used to check for a difference to the currently active ruleset, when using the \*(Aqdiff\-last\-activated\*(Aq startup parameter\&.
+.RE
+.PP
+\fISERVICES\fR
+.RS 4
+Mandatory: no \- defaults to
+/etc/services\&.
+.sp
+Allowed values: A valid path to the services file (most likely:
+/etc/services)\&.
+.sp
+Purpose: Configure the location of the services file (containing service definitions)\&.
+.RE
+.PP
+\fIPROTOCOLS\fR
+.RS 4
+Mandatory: no \- defaults to
+/etc/protocols\&.
+.sp
+Allowed values: A valid path to the services file (most likely:
+/etc/protocols)\&.
+.sp
+Purpose: Configure the location of the protocols file (containing protocol definitions)\&.
+.RE
+.PP
+\fIKNOWN_GOOD_RULESET\fR
+.RS 4
+Mandatory: no \- defaults to
+KNOWN_GOOD_RULESET\&.save\&.
+.sp
+Allowed values: A valid filename (i\&.e\&.:
+KNOWN_GOOD_RULESET\&.save)\&.
+.sp
+File to save the currently active \*(Aqknown good\*(Aq ruleset\&. This file will be used to restore the ruleset on \*(Aqstart\*(Aq, if
+\fIRESTORE_ON_START\fR
+is enabled\&.
+.RE
+.PP
+\fIRESTORE_ON_START\fR
+.RS 4
+Mandatory: no \- defaults to `0\*(Aq\&.
+.sp
+Allowed values: `0\*(Aq to disable `1\*(Aq to enable\&.
+.sp
+Loads the ruleset saved into
+\fI$KNOWN_GOOG_RULESET\fR, if IP\-Array is loaded with the `start\*(Aq parameter (faster startup also called quick start)\&.
+.RE
+.PP
+\fIRELOAD_TIME\fR
+.RS 4
+Mandatory: no \- defaults to 7\&.
+.sp
+Allowed values: Any value from 1 to 15\&.
+.sp
+Time period until the previously saved ruleset will be restored, when using the \*(Aqtest\*(Aq startup parameter\&..if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+If
+\fBiptables\-save\fR
+or
+\fBiptables\-restore\fR
+fails for some reason, the \*(Aqtest\*(Aq parameter will not work, thus this setting will not produce the desired effect\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fIGEN_FORMAT\fR
+.RS 4
+Mandatory: no \- defaults to `cmd\*(Aq\&.
+.sp
+Allowed values: `cmd\*(Aq: generated commands will be save as list of commands\&. \(aaipt\*(Aq: generated commands will be used in iptables\-save format (faster loading time)\&.
+.RE
+.PP
+\fIIPTSAVE_FAILS\fR
+.RS 4
+Mandatory: no \- defaults to `0\*(Aq\&.
+.sp
+Allowed values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Enable this if saving or restoring with
+\fBiptables\-save\fR
+or
+\fBiptables\-restore\fR
+fails for some reason\&.
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBImportant\fR
+.ps -1
+.br
+Any startup mode, that utilizes
+\fBiptables\-save\fR
+or
+\fBiptables\-restore\fR
+will not work in that case\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fIUSE_IPSET\fR
+.RS 4
+Mandatory: no \- defaults to `0\*(Aq\&.
+.sp
+Allowed values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Enable or disable the usage of ipset\&.
+.RE
+.PP
+\fIMAX_SETS\fR
+.RS 4
+Mandatory: no \- defaults to `256\*(Aq\&.
+.sp
+Allowed values: The value compiled into your kernel\&.
+.sp
+The maximal amount of ipset sets to create\&.
+.RE
+.PP
+\fISYNTAX_CHECK\fR
+.RS 4
+Mandatory: no \- defaults to `1\*(Aq\&.
+.sp
+Allowed values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Purpose: Perform a bash grammar check before sourcing or executing files\&. The bash grammar check is done using `bash \-n file\*(Aq\&. Thus the syntax check is very basic and may not catch all errors (as described in `man bash\*(Aq)\&.
 .RE
 .SH "SEE ALSO"
 .PP
