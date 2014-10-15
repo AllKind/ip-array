@@ -2938,9 +2938,9 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							case "${str_attr_name}" in
 								target|chain)
 									opt_idx=0
-#									for tmp_content in $(IFS=, split_val ${str_attr_val}); do
 									for tmp_content in ${str_attr_val//,/ }; do
 										RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}[$((opt_idx++))]=\\\"${tmp_content}\\\"\""
+# " # just coz syntax highlight messes up
 									done
 								;;
 								table|reverse_mode|reverse_condition|msg)
@@ -2955,20 +2955,20 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							return 1
 						}
 						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
-#set -x
 						if ((attr_members > 0)); then
 							_verify_attributes || return 1
 							for i in ${attr_indicies}; do
 								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 								RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}=\\\"${str_attr_val}\\\"\""
+# "
 							done
 						fi
 						if ((cont_members > 0)); then
 							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
 							RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}=\\\"${str_cont}\\\"\""
+# "
 						fi
-#set +x
 					;;
 					target|chain|load_template|always_use_0|always_use_1|option_list_0|option_list_1|state_match_arg|mandatory_vars)
 						((attr_members > 0 && cont_members > 0)) && {
@@ -2986,8 +2986,10 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									always_use_0|always_use_1|option_list_0|option_list_1)
 										if [[ ${str_attr_val} ]]; then
 											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=${str_attr_val}\""
+# "
 										else
 											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}\""
+# "
 										fi
 									;;
 									*) RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=\\\"${str_attr_val}\\\"\""
@@ -3002,6 +3004,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								eval 'set -- '"${str_cont}"
 								for tmp_content in "$@"; do
 									RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}[$((opt_idx++))]=${tmp_content}\""
+# "
 								done
 							done
 						fi
@@ -3215,7 +3218,6 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									log -E "Unkown public function name \`${str_cont%%+([[:blank:]])*}'."
 									return 1
 								}
-#							RESULT_ARR[IDX++]="${str_cont}"
 							RESULT_ARR[IDX++]="$(re_normalize str_cont)"
 						done
 						if ((attr_members > 0)); then
@@ -3252,33 +3254,25 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						done
 						if ((cont_members > 0)); then
 							tmp_content=""
-#set -x
 							for i in ${cont_indicies}; do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
-#								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
 								str_cont=""
 								for str_attr in "$@"; do
 									str_cont+="${str_attr%%=*}=\"${str_attr#*=}\" "
 								done
-#								tmp_content+="${str_cont}"
 								tmp_content+="$(re_normalize str_cont)"
 							done
-#							str="${str%[[:blank:]]}"
 							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${tmp_content%[[:blank:]]}"
-#set +x
 						fi
 						if ((attr_members > 0)); then
 							str_cont=""
-#set -x
 							for i in ${attr_indicies}; do
 								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
-#								str_cont+="${str_attr_name}=\"${str_attr_val}\" "
 								str_cont+="${str_attr_name}=\"$(re_normalize str_attr_val)\" "
 							done
 							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${str_cont%[[:blank:]]}"
-#set +x
 						fi
 					;;
 					tr|template_rule)
@@ -3359,39 +3353,49 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_mode=${reverse_mode}\""
 								[[ ${reverse_condition} ]] && ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_condition=\\\"${reverse_condition}\\\"\""
+# "
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
 							fi
 							for i in ${!ARR_GLOBAL_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
+# "
 							done
 							for i in ${!ARR_CRULE_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
+# "
 							done
 							for i in ${cont_indicies}; do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
-#								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
 								for str_attr in "$@"; do
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
-									_validate_ipt_option_name "${str_attr_name}" || return 1
+									if ! ((opt_list_count == 1)) && [[ $str_attr_name = empty ]]; then
+										_validate_ipt_option_name "$str_attr_name" || return 1
+									fi
 									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
+# "
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 								done
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+# "
 							done
 							if ((attr_members > 0)); then
 								for i in ${attr_indicies}; do
 									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
-									_validate_ipt_option_name "${str_attr_name}" || return 1
+									if ! ((opt_list_count == 1)) && [[ $str_attr_name = empty ]]; then
+										_validate_ipt_option_name "$str_attr_name" || return 1
+									fi
 									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+# "
 								done
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+# "
 							fi
 							if ((opt_list_count == max_optlist)); then
 								for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
@@ -3411,6 +3415,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
 							for i in ${!ARR_GLOBAL_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
+# "
 								if [[ ${ARR_GLOBAL_OPTS[i]#*=} = *[[:blank:]]* ]]; then
 									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_GLOBAL_OPTS[i]#*=}' "
 								else
@@ -3419,6 +3424,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							done
 							for i in ${!ARR_CRULE_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
+# "
 								if [[ ${ARR_CRULE_OPTS[i]#*=} = *[[:blank:]]* ]]; then
 									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_CRULE_OPTS[i]#*=}' "
 								else
@@ -3426,12 +3432,11 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								fi
 							done
 							for i in ${cont_indicies}; do
-#set -x
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
-#								eval 'set -- '"${str_cont}"
 								eval 'set -- '"$(re_normalize str_cont)"
 								for str in "$@"; do
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str%%=*}\""
+# "
 									if [[ ${str#*=} = *[[:blank:]]* ]]; then
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str#*=}' "
 									else
@@ -3439,34 +3444,31 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									fi
 								done
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-#set +x
+# "
 							done
 							if ((attr_members > 0)); then
 								for i in ${attr_indicies}; do
-#set -x
 									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name%%=*}\""
+# "
 									if [[ ${str_attr_val} = *[[:blank:]]* ]]; then
-#										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str_attr_val}' "
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="\\\"${str_attr_val}\\\" "
+# "
 									else
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 									fi
 								done
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-	#							ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"$(re_normalize ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]])\""
-#set +x
+# "
 							fi
 							for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
 								RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
 							done
 							RESULT_ARR[IDX++]=")"
-#set -x
 							for i in ${!ARR_GLOB_TMP_RULEBLOCK[@]}; do
 								RESULT_ARR[IDX++]="${ARR_GLOB_TMP_RULEBLOCK[i]}"
 							done
-#set +x
 							RESULT_ARR[IDX++]=")"
 							RESULT_ARR[IDX++]="process_ipt_ruleblock 'TEMPLATE_TEMP_C_RULE' 'RULEBLOCK_TEMP_C_RULE'"
 						fi
@@ -3619,7 +3621,6 @@ while read -r; do let line_count+=1
 				eval 'set -- '"$(re_normalize attributes)"
 				for str_attr in "$@"; do
 					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
-#					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"${str_attr}"'"'
 				done
 			fi
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
@@ -3701,8 +3702,6 @@ while read -r; do let line_count+=1
 					else
 						log -E "Unmatched line #${line_count} - no content expected: '${line}'"
 						return 1
-#						echo "ADDING CONTENT: '${line}' TO CLOSE TAG"
-#						eval 'ARR_CONT_NO_'${tag_idx}'[cont_idx++]="'"${line}"'"'
 					fi
 				fi
 				if [[ -z ${line} || ${line} = +([[:blank:]]) ]]; then continue 2; fi
