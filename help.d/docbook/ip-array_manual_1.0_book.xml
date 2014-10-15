@@ -3021,7 +3021,12 @@
   </chapter>
   <chapter>
     <title>Traffic shaping</title>
-    <para/>
+    <para>IP-Array has basic traffic shaping support built in. When traffic shaping is enabled by
+      setting the <varname>ENABLE_TC_SHAPING</varname> variable to `1', a number of predifined
+      ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> - the iptables mangle table marking and
+        <varname>TC_RULEBLOCKS</varname> - the queue discs, classes and filters) and rules
+        (<varname>TC_MARK_RULES</varname> also containing the tc public functions) get
+      loaded.</para>
   </chapter>
   <chapter xml:id="usage">
     <title>Usage</title>
@@ -3299,9 +3304,19 @@
             <para>Enable or disable coloured output.</para>
           </listitem>
           <listitem>
+            <para>-ui, --use-ipset 0 | 1</para>
+            <para>Enable or disable usage of ipset. This setting is globally. It disables builtin
+              usage as well as the users ipset rules.</para>
+          </listitem>
+          <listitem>
+            <para>-o, --set-option assignment [...]</para>
+            <para>Override variables of the <link xlink:href="#conf_file_main_conf">main
+                configuration file</link>. i.e. <code>-o ENABLE_NAT=0</code>.</para>
+          </listitem>
+          <listitem>
             <para>-gf, --gen-format type</para>
             <para>Generate command in iptables-save format, or as command list. Available types:
-              `cmd' (= default) or `ipt'</para>
+              `cmd' (= default) or `ipt'.</para>
           </listitem>
           <listitem>
             <para>-rs, --restore-on-start 0 | 1</para>
