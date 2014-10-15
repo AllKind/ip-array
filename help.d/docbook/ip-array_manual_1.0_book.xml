@@ -2774,15 +2774,40 @@
       <para/>
       <section>
         <title>Syntax</title>
-        <para/>
-      </section>
-      <section>
-        <title>Ruleblock XML elements</title>
-        <para/>
+        <para>A ruleblock definition file must contain the following:</para>
+        <para>
+          <orderedlist>
+            <listitem>
+              <para>First a root tag including the describing name attribule and the syntax
+                version:</para>
+              <para><code>&lt;ip_array_root name="ruleblocks" syntax_version="0.1"></code></para>
+              <para>The <emphasis role="bold">name</emphasis> attribute tells us it is a ruleblocks
+                definition.</para>
+              <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+                version (only 0.1 is available by now).</para>
+            </listitem>
+            <listitem>
+              <para>The actual ruleblock tag including the name attribute defining the name of the
+                ruleblock:</para>
+              <para>&lt;ruleblock name="RULEBLOCK_EXAMPLE"></para>
+              <para>The ruleblock name must begin with one of the following prefixes: RB_,
+                RULEBLOCK_.</para>
+            </listitem>
+          </orderedlist>
+        </para>
       </section>
       <section>
         <title>Ruleblocks usage guidelines</title>
-        <para/>
+        <para>It's a good idea to write down the structure of the template you want to call the
+          ruleblock with as a comment below the ruleblock opening tag. This way you will easily
+          remember what each column has to contain.</para>
+        <para>Newline separates rules inside a ruleblock.</para>
+        <para>You can use your shell variables inside ruleblock rules.</para>
+        <para>XML style comments (&lt;!-- comment -->) are valid inside ruleblocks.</para>
+        <para>If you want to leave a value in a column undefined use the character defined with
+          $RULE_PLACEHOLDER (default = `_') as a placeholder.</para>
+        <para>To use spaces inside a column value, use either escaped double quotes (\"value with
+          space\") or single quotes ('value with space').</para>
       </section>
     </section>
     <section xml:id="conf_xml_rule_files_howto">
@@ -2791,11 +2816,138 @@
       <para/>
       <section>
         <title>Syntax</title>
-        <para/>
+        <para>A rule definition file must contain the root tag including the describing name
+          attribule and the syntax version:</para>
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="0.1"></code></para>
+        <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
+          definition.</para>
+        <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+          version (only 0.1 is available by now).</para>
+        <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way. Tags
+          can be closed by a simple `/>'. Attributes can have their value enclosed inside single
+          quotes.</para>
       </section>
       <section>
         <title>Rule file XML elements</title>
-        <para/>
+        <para>
+          <itemizedlist>
+            <listitem>
+              <para>&lt;rule> or the short form &lt;r></para>
+              <para>A single rule entry. All iptables arguments can be used inside a rule tag. The
+                list of valid arguments can be retrieved by running: <command>ip-array show -sc
+                  ipt_args[,...]</command>.</para>
+              <para>They can be used as attributes of the tag, or as content inside the tag. In the
+                first form they must be enclosed inside quotes. Values with whitespace must be
+                enclosed within double or single quotes. In both cases the left hand side (left of
+                the `=') is the iptables argument and the right hand side is its value.</para>
+              <para>Examples:</para>
+              <para><code>&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                  &lt;/rule></code></para>
+              <para><code>&lt;r> table=filter chain=INPUT target=LOG log_prefix="my log message"
+                  /></code></para>
+            </listitem>
+            <listitem>
+              <para>&lt;combined_rule> or the short form &lt;cr></para>
+              <para>´Combined rules allow to create reverse traffic rules like with templates with
+                the reverse_mode=reverse option, but in a dynamic way.</para>
+              <para>It has these attributes available:</para>
+              <para>
+                <itemizedlist>
+                  <listitem>
+                    <para>reverse_mode - which can be like within templates set to either `reverse'
+                      or `mirror'.</para>
+                  </listitem>
+                  <listitem>
+                    <para>reverse_condition - like within templates defines a condition that must
+                      evaluate to true for the reverse rules to be created. The variable name and
+                      its value must be separated by a colon `:'. i.e. foo:bar</para>
+                  </listitem>
+                  <listitem>
+                    <para>msg - like with template_msg, it allows to define a message to be
+                      displayed, if <varname>VERBOSE</varname> is greater or equal 3.</para>
+                  </listitem>
+                </itemizedlist>
+              </para>
+              <para>The iptables arguments must be used inside the &lt;optlist> tag (see next item
+                in the list). The arguments in the second option list do not need the equal siqn and
+                the right hand side value. The values of the first option list will be used in order
+                from left to right and will be applied to the options (iptables arguments) of the
+                second option list. Only if a value needs to be left out the special keyword
+                  `<emphasis role="bold">empty</emphasis>' can be used.</para>
+              <para>Examples:</para>
+              <para><code>&lt;table> filter</code></para>
+              <para><code>    &lt;combined_rule reverse_mode="reverse" reverse_condition="foo:bar"
+                  ></code></para>
+              <para><code>        &lt;chain> INPUT,OUTPUT</code></para>
+              <para><code>            &lt;target> ACCEPT</code></para>
+              <para><code>                &lt;optlist> proto=tcp sport=99
+                &lt;/optlist></code></para>
+              <para><code>                &lt;optlist> proto dport &lt;/optlist></code></para>
+              <para><code>            &lt;/target></code></para>
+              <para><code>            &lt;target> DROP</code></para>
+              <para><code>                &lt;opts idev="$lan_if" proto="udp" sport="66"
+                /></code></para>
+              <para><code>                &lt;opts> odev proto dport=empty /></code></para>
+              <para><code>            &lt;/target></code></para>
+              <para><code>        &lt;/chain></code></para>
+              <para><code>    &lt;/combined_rule></code></para>
+              <para><code>&lt;/table></code></para>
+            </listitem>
+            <listitem>
+              <para>&lt;optlist> or the allowed variations: &lt;opt>, &lt;opts>, &lt;option>,
+                &lt;options></para>
+              <para>This tag is only valid within a combined_rule tag. All iptables arguments can be
+                used inside this tag. The list of valid arguments can be retrieved by running:
+                  <command>ip-array show -sc ipt_args[,...]</command>.</para>
+              <para>They can be used as attributes of the tag, or as content inside the tag. In the
+                first form they must be enclosed inside quotes. Values with whitespace must be
+                enclosed within double or single quotes. In both cases the left hand side (left of
+                the `=') is the iptables argument and the right hand side is its value.</para>
+            </listitem>
+            <listitem>
+              <para>&lt;template_rule> or the short form &lt;tr></para>
+              <para>This tag defines one or more ruleblocks to be called with their corresponding
+                templates.</para>
+              <para>The syntax is:
+                <synopsis>&lt;template_rule> template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule></synopsis><synopsis>or:</synopsis><synopsis>&lt;template_rule template="template-name" ruleblock="ruleblock-name" /></synopsis></para>
+              <para>For the first form multible entries may be separated by newline.</para>
+            </listitem>
+            <listitem>
+              <para>&lt;pub_func> or the short form &lt;f></para>
+              <para>This tag defines one or more <link linkend="pub_funcs">public functions</link>
+                to be called.</para>
+              <para>The syntax is:
+                <synopsis>&lt;pub_func name="function-name" /></synopsis><synopsis>or</synopsis><synopsis>&lt;pub_func> function-name [ option ... ] &lt;/pub_func></synopsis>For
+                the second form multible entries may be separated by newline.</para>
+              <para>The value part of the name attribute must be enclosed within quotes.</para>
+              <para>Examples:</para>
+              <para><code>&lt;pub_func></code></para>
+              <para><code>    log -S "Adding pre alteration log rules"</code></para>
+              <para><code>    drop_dhcp</code></para>
+              <para><code>    drop_netbios</code></para>
+              <para><code>&lt;/pub_func></code></para>
+              <para><code>&lt;f name="lan_ftp" /></code></para>
+            </listitem>
+            <listitem>
+              <para>All other iptables arguments.</para>
+              <para>The list of valid arguments can be retrieved by running: <command>ip-array show
+                  -sc ipt_args[,...]</command>.</para>
+              <para>These can be used to apply their value to all other rules following. In
+                example:</para>
+              <para><code>&lt;table name="filter"></code></para>
+              <para><code>    &lt;chain name="INPUT"></code></para>
+              <para><code>         &lt;rule> rule1 &lt;/rule></code></para>
+              <para><code>         &lt;rule> rule2 &lt;/rule></code></para>
+              <para><code>    &lt;/chain></code></para>
+              <para><code>&lt;/table></code></para>
+              <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
+              <para><code>&lt;table> filter &lt;chain> INPUT</code></para>
+              <para><code>     &lt;rule> rule1 /></code></para>
+              <para><code>     &lt;rule> rule2 /></code></para>
+              <para><code>/> /></code></para>
+            </listitem>
+          </itemizedlist>
+        </para>
       </section>
       <section xml:id="pub_funcs">
         <title>Public functions</title>
