@@ -2443,132 +2443,6 @@
                   <para>Format: <synopsis>nfacct-name [...]</synopsis></para>
                 </listitem>
               </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_XMAS</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_XMAS_PSH</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_XMAS_ALL</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_FIN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_SYN_RST</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_SYN_FIN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>DROP_Stealth_Null</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>TCPMSS_TO_MTU</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_XMAS</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_XMAS_PSH</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_XMAS_ALL</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_FIN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_SYN_RST</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_SYN_FIN</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term>LOG_Stealth_Null</term>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term/>
-                <listitem>
-                  <para/>
-                </listitem>
-              </varlistentry>
             </variablelist>
           </para>
         </section>
@@ -2590,27 +2464,6 @@
           <para>This file holds variables only used internaly. But they still may be altered to
             change some of the IP-Array behaviour. This is only for advanced usage. Please stick to
             the comments for information about the settings available.</para>
-        </section>
-      </section>
-      <section xml:id="config_files_xml">
-        <title>XML</title>
-        <subtitle>Description of the XML configuration files</subtitle>
-        <para/>
-        <section xml:id="conf_file_xml_def">
-          <title>XML guidelines</title>
-          <para/>
-        </section>
-        <section xml:id="conf_file_xml_templates">
-          <title>XML templates</title>
-          <para/>
-        </section>
-        <section xml:id="conf_file_xml_ruleblocks">
-          <title>XML ruleblocks</title>
-          <para/>
-        </section>
-        <section xml:id="conf_file_xml_rule_files">
-          <title>XML rule files</title>
-          <para/>
         </section>
       </section>
     </section>
@@ -2758,14 +2611,12 @@
             </listitem>
           </varlistentry>
         </variablelist>
-        <section xml:id="option_lists">
-          <title>Option lists</title>
-          <para/>
-        </section>
       </section>
       <section>
         <title>Template usage guidelines</title>
-        <para/>
+        <para>It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
+          (called <emphasis role="bold">base templates</emphasis>) and to use them modulary to build
+          your final templates (using the load_template element).</para>
       </section>
     </section>
     <section xml:id="conf_xml_ruleblocks_howto">
@@ -2808,6 +2659,9 @@
           $RULE_PLACEHOLDER (default = `_') as a placeholder.</para>
         <para>To use spaces inside a column value, use either escaped double quotes (\"value with
           space\") or single quotes ('value with space').</para>
+        <para>If the structure of a ruleblock does not fit your needs, it is possible to use the
+            <link linkend="inline_funcs">inline functions</link> inside it to add a rule with a
+          different structure.</para>
       </section>
     </section>
     <section xml:id="conf_xml_rule_files_howto">
@@ -2876,21 +2730,19 @@
                   `<emphasis role="bold">empty</emphasis>' can be used.</para>
               <para>Examples:</para>
               <para><code>&lt;table> filter</code></para>
-              <para><code>    &lt;combined_rule reverse_mode="reverse" reverse_condition="foo:bar"
+              <para><code> &lt;combined_rule reverse_mode="reverse" reverse_condition="foo:bar"
                   ></code></para>
-              <para><code>        &lt;chain> INPUT,OUTPUT</code></para>
-              <para><code>            &lt;target> ACCEPT</code></para>
-              <para><code>                &lt;optlist> proto=tcp sport=99
-                &lt;/optlist></code></para>
-              <para><code>                &lt;optlist> proto dport &lt;/optlist></code></para>
-              <para><code>            &lt;/target></code></para>
-              <para><code>            &lt;target> DROP</code></para>
-              <para><code>                &lt;opts idev="$lan_if" proto="udp" sport="66"
-                /></code></para>
-              <para><code>                &lt;opts> odev proto dport=empty /></code></para>
-              <para><code>            &lt;/target></code></para>
-              <para><code>        &lt;/chain></code></para>
-              <para><code>    &lt;/combined_rule></code></para>
+              <para><code> &lt;chain> INPUT,OUTPUT</code></para>
+              <para><code> &lt;target> ACCEPT</code></para>
+              <para><code> &lt;optlist> proto=tcp sport=99 &lt;/optlist></code></para>
+              <para><code> &lt;optlist> proto dport &lt;/optlist></code></para>
+              <para><code> &lt;/target></code></para>
+              <para><code> &lt;target> DROP</code></para>
+              <para><code> &lt;opts idev="$lan_if" proto="udp" sport="66" /></code></para>
+              <para><code> &lt;opts> odev proto dport=empty /></code></para>
+              <para><code> &lt;/target></code></para>
+              <para><code> &lt;/chain></code></para>
+              <para><code> &lt;/combined_rule></code></para>
               <para><code>&lt;/table></code></para>
             </listitem>
             <listitem>
@@ -2922,28 +2774,33 @@
               <para>The value part of the name attribute must be enclosed within quotes.</para>
               <para>Examples:</para>
               <para><code>&lt;pub_func></code></para>
-              <para><code>    log -S "Adding pre alteration log rules"</code></para>
-              <para><code>    drop_dhcp</code></para>
-              <para><code>    drop_netbios</code></para>
+              <para><code> log -S "Adding pre alteration log rules"</code></para>
+              <para><code> drop_dhcp</code></para>
+              <para><code> drop_netbios</code></para>
               <para><code>&lt;/pub_func></code></para>
               <para><code>&lt;f name="lan_ftp" /></code></para>
             </listitem>
             <listitem>
-              <para>All other iptables arguments.</para>
+              <para>All other iptables arguments. We'll call them <emphasis role="italic">global
+                  arguments</emphasis>.</para>
               <para>The list of valid arguments can be retrieved by running: <command>ip-array show
                   -sc ipt_args[,...]</command>.</para>
-              <para>These can be used to apply their value to all other rules following. In
-                example:</para>
+              <para>These can be used to apply their value to all other rules following. Global
+                arguments <emphasis role="bold">must</emphasis> be terminated by a <emphasis
+                  role="underline">&lt;rule></emphasis> or a <emphasis role="underline"
+                  >&lt;combined_rule></emphasis> with the according <emphasis role="underline"
+                  >&lt;optlist></emphasis> tag.</para>
+              <para>In example:</para>
               <para><code>&lt;table name="filter"></code></para>
-              <para><code>    &lt;chain name="INPUT"></code></para>
-              <para><code>         &lt;rule> rule1 &lt;/rule></code></para>
-              <para><code>         &lt;rule> rule2 &lt;/rule></code></para>
-              <para><code>    &lt;/chain></code></para>
+              <para><code> &lt;chain name="INPUT"></code></para>
+              <para><code> &lt;rule> rule1 &lt;/rule></code></para>
+              <para><code> &lt;rule> rule2 &lt;/rule></code></para>
+              <para><code> &lt;/chain></code></para>
               <para><code>&lt;/table></code></para>
               <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
               <para><code>&lt;table> filter &lt;chain> INPUT</code></para>
-              <para><code>     &lt;rule> rule1 /></code></para>
-              <para><code>     &lt;rule> rule2 /></code></para>
+              <para><code> &lt;rule> rule1 /></code></para>
+              <para><code> &lt;rule> rule2 /></code></para>
               <para><code>/> /></code></para>
             </listitem>
           </itemizedlist>
@@ -3014,13 +2871,6 @@
             <term>jump_tree_off</term>
             <listitem>
               <para>Disable classification into jump tree chains.</para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
-            <term>log_drop_scans</term>
-            <listitem>
-              <para>Globally LOG and/or DROP (nmap) scans. The following according configuration
-                variables can be configured in the main configuration file:</para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -3163,10 +3013,15 @@
         </para>
       </section>
       <section>
-        <title>Rulefile usage guidelines</title>
-        <para/>
+        <title>ipset usage</title>
+        <para>ipset sets are controlled with the public functions <emphasis role="bold"
+            >ipset_create</emphasis> and <emphasis role="bold">ipset_add</emphasis>.</para>
       </section>
     </section>
+  </chapter>
+  <chapter>
+    <title>Traffic shaping</title>
+    <para/>
   </chapter>
   <chapter xml:id="usage">
     <title>Usage</title>
@@ -3574,44 +3429,6 @@
       <title>Multi-homed example</title>
       <para/>
     </section>
-  </chapter>
-  <chapter xml:id="faq"><title>FAQ</title><subtitle>Frequently Asked Questions</subtitle><qandaset>
-      <qandadiv>
-        <qandaentry>
-          <question>
-            <para>Why the name 'IP-Array'?</para>
-          </question>
-          <answer>
-            <para>IP-Array functionality is built around utilizing 'arrays', hence the name.</para>
-          </answer>
-        </qandaentry>
-        <qandaentry>
-          <question>
-            <para>Why a bash script?</para>
-          </question>
-          <answer>
-            <itemizedlist>
-              <listitem>
-                <para>I wanted to learn bash. Usually I choose myself a project and then learn while
-                  developing - same here.</para>
-              </listitem>
-              <listitem>
-                <para>Bash should be installed on every common linux distribution, hence no need for
-                  any additional packages.</para>
-              </listitem>
-              <listitem>
-                <para>You could say 'there are already a lot of iptables frontends available': Well,
-                  actually there are a couple of public bash firewall scripts available. Lots of
-                  them are quite unmaintained, or did not quite do what i wanted. Of course there
-                  are also accurate and good scripts around, so it's up to the user to decide. Also
-                  if you don't want to use any external program for whatever reason, IP-Array might
-                  become useful.</para>
-              </listitem>
-            </itemizedlist>
-          </answer>
-        </qandaentry>
-      </qandadiv>
-    </qandaset>
   </chapter>
   <chapter xml:id="appendix">
     <title>Appendix</title>
