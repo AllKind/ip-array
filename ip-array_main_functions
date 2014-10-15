@@ -3376,7 +3376,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								for str_attr in "$@"; do
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 									_validate_ipt_option_name "${str_attr_name}" || return 1
-									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name+="=${str_attr_val}"
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 								done
@@ -3387,7 +3387,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 									_validate_ipt_option_name "${str_attr_name}" || return 1
-									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name+="=${str_attr_val}"
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 								done
