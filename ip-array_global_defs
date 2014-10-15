@@ -45,7 +45,7 @@ declare -r MODS_ALIAS_FILE="modules.alias"		# module alias file
 # Chains (BIC = built in chain)
 declare -r BIC_TEST_CHAIN="${ME}_TEST_CHAIN"   		# testing chain
 declare -r BIC_BAD_TCP_PACKETS="BAD_TCP_PACKETS"	# name of the bad tcp packets chain
-declare -r BIC_SCANS_CHAIN="TCP_SCANS"			# name of the scans handling chain
+#declare -r BIC_SCANS_CHAIN="TCP_SCANS"			# name of the scans handling chain
 declare -r BIC_NAMESERVER_CHAIN="NAMESERVERS"		# name of the isp/root nameserver handling chain
 declare -r BIC_LOCAL_NAMESERVERS="LOCAL_NAMESERVERS"	# name of the local isp nameserver handling chain
 declare -r BIC_SMTP_SRV_CHAIN="ISP_SMTP_SERVERS"	# name of the isp smtp server handling chain
@@ -331,15 +331,15 @@ TCPMSS:SET_TCPMSS TOS:SET_TOS TPROXY:TPROXY_OPT TTL:SET_TTL TEE:TEE_GW"
 
 # Array to hold the portscan names and their tcp flags
 # Format: scan-name | tcp-flags
-PORTSCAN_ARRRAY=(
-"Stealth_XMAS ALL FIN,URG,PSH"
-"Stealth_XMAS_PSH ALL SYN,RST,ACK,FIN,URG"
-"Stealth_XMAS_ALL ALL ALL"
-"Stealth_FIN ALL FIN"
-"Stealth_SYN_RST SYN,RST SYN,RST"
-"Stealth_SYN_FIN SYN,FIN SYN,FIN"
-"Stealth_Null ALL NONE"
-)
+#PORTSCAN_ARRRAY=(
+#"Stealth_XMAS ALL FIN,URG,PSH"
+#"Stealth_XMAS_PSH ALL SYN,RST,ACK,FIN,URG"
+#"Stealth_XMAS_ALL ALL ALL"
+#"Stealth_FIN ALL FIN"
+#"Stealth_SYN_RST SYN,RST SYN,RST"
+#"Stealth_SYN_FIN SYN,FIN SYN,FIN"
+#"Stealth_Null ALL NONE"
+#)
 
 # Message colour array for title, subtitle, info, warn, error, notice, etc.
 # Format: msg-name | colour (lowercase)
@@ -541,13 +541,13 @@ CONFIG_ENTRY_ARRAY=(
 "DROP_NETBIOS print 0 check_str_unique \${DROP_NETBIOS}"
 "DROP_DHCP print 0 check_str_unique \${DROP_DHCP}"
 "DROP_UPNP print 0 check_str_unique \${DROP_UPNP}"
-"DROP_Stealth_XMAS bool 0"
-"DROP_Stealth_XMAS_PSH bool 0"
-"DROP_Stealth_XMAS_ALL bool 0"
-"DROP_Stealth_FIN bool 0"
-"DROP_Stealth_SYN_RST bool 0"
-"DROP_Stealth_SYN_FIN bool 0"
-"DROP_Stealth_Null bool 0"
+#"DROP_Stealth_XMAS bool 0"
+#"DROP_Stealth_XMAS_PSH bool 0"
+#"DROP_Stealth_XMAS_ALL bool 0"
+#"DROP_Stealth_FIN bool 0"
+#"DROP_Stealth_SYN_RST bool 0"
+#"DROP_Stealth_SYN_FIN bool 0"
+#"DROP_Stealth_Null bool 0"
 # misc
 "EXIT_ON_ERROR bool 1"
 "RULE_PLACEHOLDER graph 0"

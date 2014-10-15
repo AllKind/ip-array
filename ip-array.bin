@@ -512,7 +512,7 @@ PUBLIC_FUNCTION_LIST=(
 "jump_tree_off Disable classification into jump tree chains"
 "set_var Set a variables value"
 "set_proc Set a /proc value"
-"log_drop_scans Log and/or drop scans"
+# "log_drop_scans Log and/or drop scans"
 "log_drop_invalid_state Log and/or drop packets in invalid state"
 "log_drop_illegal_tcp Log and/or drop non legal tcp packets"
 "anti_spoof Create Anti-Spoofing rules"
@@ -1433,7 +1433,7 @@ source "$rvar" || {
 set_env # reset possibly messed up env
 # set those arrays as read-only
 readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES IPARRAY_IPSET_SETTYPE_LIST\
-   	PORTSCAN_ARRRAY LOCAL_NET_ARRAY CMD_NAMES_ARRAY MSG_COLOR_ARRAY CONFIG_ENTRY_ARRAY\
+   	LOCAL_NET_ARRAY CMD_NAMES_ARRAY MSG_COLOR_ARRAY CONFIG_ENTRY_ARRAY\
 	GLOBAL_MATCH_LIST GLOBAL_TARGET_LIST TABLE_DEPEND_MATCH_LIST TABLE_DEPEND_TARGET_LIST
 
 # -------------------------------------------------------------------------
