@@ -1,0 +1,352 @@
+<?xml version="1.0"?>
+
+<!-- FILTER TABLE RULEBLOCKS -->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="RB_EXEPTIONS_REJECT_INPUT">
+	<!-- 
+	Purpose: Stateful REJECT rules in INPUT chain
+	Template options:
+	+ filter table
+	+ REJECT target
+	+ chain set to INPUT
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	8: reject type
+	Mandatory options: input device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_EXEPTIONS_REJECT_FORWARD">
+	<!-- 
+	Purpose: Stateful forwarding REJECT rules
+	Template options:
+	+ filter table
+	+ REJECT target
+	+ chain set to FORWARD
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	8: state
+	9: reject type
+	Mandatory options: input device, output device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_EXEPTIONS_DROP_INPUT">
+	<!-- 
+	Purpose: Stateful DROP rules in INPUT chain
+	Template options:
+	+ filter table
+	+ DROP target
+	+ chain set to INPUT
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	Mandatory options: input device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_EXEPTIONS_DROP_FORWARD">
+	<!-- 
+	Purpose: Stateful forwarding DROP rules
+	Template options:
+	+ filter table
+	+ DROP target
+	+ chain set to FORWARD
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	8: state
+	Mandatory options: input device, output device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_LOCAL_SERVICE">
+	<!-- 
+	Purpose: Allow local stateful services + mac address in match set
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chains set to INPUT / OUTPUT
+	+ reversed option list
+	+ reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: mac address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	Mandatory options: input device
+	Reverse option list:
+	1: output device
+	2: destination address
+	3: empty
+	4: source address
+	5: protocol
+	6: destination port
+	7: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_ALLOW_INPUT">
+	<!-- 
+	Purpose: Stateful ACCEPT rules in INPUT chain + mac address in match set
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chain set to INPUT
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: mac address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	8: state
+	Mandatory options: input device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_ALLOW_OUTPUT">
+	<!-- 
+	Purpose: Stateful OUTPUT ACCEPT rules
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chain set to OUTPUT
+	Resulting ruleblock structure:
+	1: output device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	Mandatory options: output device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_ALLOW_FORWARD">
+		<!-- 
+		Purpose: Stateful forwarding ACCEPT rules + mac address in match set
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to FORWARD
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		Mandatory options: input device, output device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_LAN_TO_LAN_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding ACCEPT rules + mac address in match set
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: mac address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: destination address
+	4: source address
+	5: empty
+	6: protocol
+	7: destination port
+	8: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_LAN_TO_DMZ_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding ACCEPT rules + mac address in match set
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: mac address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: destination address
+	4: source address
+	5: empty
+	6: protocol
+	7: destination port
+	8: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_DMZ_TO_LAN_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding ACCEPT rules + mac address in match set
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: mac address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: destination address
+	4: source address
+	5: empty
+	6: protocol
+	7: destination port
+	8: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_LAN_TO_INET_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding - to ANY - ACCEPT rules
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: protocol
+	5: source port
+	6: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: destination address
+	4: protocol
+	5: destination port
+	6: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_DMZ_TO_INET_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding - to ANY - ACCEPT rules
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: protocol
+	5: source port
+	6: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: destination address
+	4: protocol
+	5: destination port
+	6: source port
+	-->
+</ruleblock>
+
+<ruleblock name="RB_INET_TO_DMZ_SVC">
+	<!-- 
+	Purpose: Stateful reversed forwarding - from ANY - ACCEPT rules
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ reversed option list
+	+ chain set to FORWARD
+	+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	Mandatory options: input device, output device
+	Reverse option list:
+	1: output device
+	2: input device
+	3: source address
+	4: protocol
+	5: destination port
+	6: source port
+	-->
+</ruleblock>
+
+</ip_array_root>
+

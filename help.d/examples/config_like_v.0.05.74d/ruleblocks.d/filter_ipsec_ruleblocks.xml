@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+
+<!-- FILTER TABLE IPSEC RULEBLOCKS -->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="RB_ALLOW_VPN_INPUT">
+	<!-- 
+	Purpose: Stateful INPUT ACCEPT rules in ipsec chain
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	8: limit
+	-->
+</ruleblock>
+
+<ruleblock name="RB_ALLOW_VPN_OUTPUT">
+	<!-- 
+	Purpose: Stateful OUTPUT ACCEPT rules in ipsec chain
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: output device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	8: limit
+	-->
+</ruleblock>
+
+<ruleblock name="RB_ALLOW_VPN_FWD">
+	<!-- 
+	Purpose: Stateful FORWARD ACCEPT rules in ipsec chain
+	Template options:
+	+ filter table
+	+ ACCEPT target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	8: state
+	9: limit
+	-->
+</ruleblock>
+
+<ruleblock name="RB_BLOCK_VPN_INPUT">
+	<!-- 
+	Purpose: Stateful INPUT DROP rules in ipsec chain
+	Template options:
+	+ filter table
+	+ DROP target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	8: limit
+	-->
+</ruleblock>
+
+<ruleblock name="RB_BLOCK_VPN_OUTPUT">
+	<!-- 
+	Purpose: Stateful OUTPUT DROP rules in ipsec chain
+	Template options:
+	+ filter table
+	+ DROP target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: output device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: state
+	8: limit
+	-->
+</ruleblock>
+
+<ruleblock name="RB_BLOCK_VPN_FWD">
+	<!-- 
+	Purpose: Stateful FORWARD DROP rules in ipsec chain
+	Template options:
+	+ filter table
+	+ DROP target
+	+ chain set to ${ipsec_chain}
+	Resulting ruleblock structure:
+	1: input device
+	2: output device
+	3: source address
+	4: destination address
+	5: protocol
+	6: source port
+	7: destination port
+	8: state
+	9: limit
+	-->
+</ruleblock>
+
+</ip_array_root>
+

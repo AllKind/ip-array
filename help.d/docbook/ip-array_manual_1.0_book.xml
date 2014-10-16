@@ -204,7 +204,7 @@
             <para>Differnent modi of automatic `jump tree' creation in all tables.</para>
           </listitem>
           <listitem>
-            <para>Allow admin connection.</para>
+            <para>Allow an admin connection.</para>
           </listitem>
           <listitem>
             <para>Create stateful return traffic rules (ESTABLISHED, RELATED).</para>
@@ -268,9 +268,6 @@
                   <para>Globally log packets in INVALID state</para>
                 </listitem>
                 <listitem>
-                  <para>Globally log port scans</para>
-                </listitem>
-                <listitem>
                   <para>Log options (prefix, level, etc.) for the above listed.</para>
                 </listitem>
               </itemizedlist></para>
@@ -282,9 +279,6 @@
                 </listitem>
                 <listitem>
                   <para>Globally drop packets in INVALID state</para>
-                </listitem>
-                <listitem>
-                  <para>Globally drop port scans</para>
                 </listitem>
                 <listitem>
                   <para>Reject AUTH (tcp port 113) on certain interfaces</para>
@@ -325,7 +319,7 @@
               mode.</para>
           </listitem>
           <listitem>
-            <para>Loading and unloading of kernel modules (with optional parameters)</para>
+            <para>Loading and unloading of kernel modules (with optional parameters).</para>
           </listitem>
           <listitem>
             <para>/proc filesystem configuration</para>
@@ -333,17 +327,17 @@
               system using the /proc filesystem.</para>
           </listitem>
           <listitem>
-            <para>Saving restore rulesets / commands / system state</para>
+            <para>Saving restore rulesets / commands / system state.</para>
             <para>There are various ways available to save the generated rulesets and or commands
               selectivly (iptables, ipset, tc, modprobe, /proc) or all at once. The saved files may
               be used to restore the configured system state.</para>
           </listitem>
           <listitem>
             <para>Different levels of IP-Array's output verbosity to the screen and or syslog can be
-              set</para>
+              set.</para>
           </listitem>
           <listitem>
-            <para>Screen output can be colourized</para>
+            <para>Screen output can be colourized.</para>
             <para>Colours for different message categories can be defined by the user.</para>
           </listitem>
           <listitem>
@@ -449,7 +443,6 @@
     </section>
     <section xml:id="prog_logic">
       <title>Program logic</title>
-      <para/>
       <section xml:id="start_behav">
         <title>Starting behaviour</title>
         <para>If IP-Array is run with the `<emphasis role="bold">start</emphasis>' parameter, a
@@ -468,7 +461,8 @@
           is done every time IP-Array loads. To avoid reloading modules on an already running
           system, modules will only be loaded if they are not loaded already. If running in a mode
           that does not apply commands like i.e. `dry-run', then module probing is not actually
-          perfomed, but done with `modprobe -n'.</para>
+          perfomed, but done with `modprobe -n'. Alternativly the module probing can be disabled by
+          using the `-nm' startup option.</para>
       </section>
       <section xml:id="error_handling">
         <title>Error handling</title>
@@ -503,38 +497,6 @@
             </important>
           </para>
         </section>
-        <section xml:id="exit_codes">
-          <title>Exit codes</title>
-          <para>
-            <itemizedlist>
-              <listitem>
-                <para>0 - Success.</para>
-              </listitem>
-              <listitem>
-                <para>1 - Unknown error.</para>
-              </listitem>
-              <listitem>
-                <para>2 - Usage information (help).</para>
-              </listitem>
-              <listitem>
-                <para>111 - Not exist error. Used if i.e. a file was not found.</para>
-              </listitem>
-              <listitem>
-                <para>112 - Not defined error. Used if i.e. a configuration variable is not
-                  set.</para>
-              </listitem>
-              <listitem>
-                <para>113 - Loading error. Used if i.e. sourcing a file failed.</para>
-              </listitem>
-              <listitem>
-                <para>114 - Failure error. General fail condition.</para>
-              </listitem>
-              <listitem>
-                <para>115 - Configuration error. Used if a configuration error was not found.</para>
-              </listitem>
-            </itemizedlist>
-          </para>
-        </section>
       </section>
       <section xml:id="config_validation">
         <title>Configuration validation</title>
@@ -546,12 +508,12 @@
       </section>
       <section xml:id="configfile_parsing">
         <title>XML configuration file parsing</title>
-        <para xlink:href="">As IP-Array starts, it looks if it can find previously already compiled
-          bash scripts for templates, rules and ruleblocks. If those are found, they will be read
-          and no XML file parsing will be done. Otherwise the XML configuration files will be
-          interpreted and the according bash scripts will be compiled. There are <link
-            linkend="startup_params">startup parameters</link> available to force XML parsing
-          globaly, or selectively for templates, rules and ruleblocks.</para>
+        <para>As IP-Array starts, it looks if it can find previously already compiled bash scripts
+          for templates, rules and ruleblocks. If those are found, they will be read and no XML file
+          parsing will be done. Otherwise the XML configuration files will be parsed, interpreted
+          and the according bash scripts will be compiled. There are <link linkend="startup_params"
+            >startup parameters</link> available to force XML parsing globaly, or selectively for
+          templates, rules and ruleblocks.</para>
       </section>
       <section xml:id="jump_tree">
         <title>iptables jump tree</title>
@@ -601,13 +563,16 @@
     </section>
     <section xml:id="dir_struct">
       <title>Directory structure</title>
-      <para>This is the description of the dicretory structure IP-Array uses:</para>
+      <para>This is the description of the dicretory structure IP-Array uses, some of them can be
+        altered by editing variables in the <link linkend="conf_file_defaults">defaults</link>
+        configuration file:</para>
       <variablelist>
         <varlistentry>
           <term>BASE_DIR</term>
           <listitem>
             <para>Base directory for IP-Array.</para>
-            <para>Default location of defaults directory, saving directory, help directory.</para>
+            <para>Default location of the defaults directory, saving directory, help
+              directory.</para>
             <para>`stable' and `test' (OP_DIR) directory (describing runmode).</para>
             <para>i.e. <filename>`/usr/local/etc/ip-array/'</filename></para>
           </listitem>
@@ -680,7 +645,14 @@
           <term>SAVE_DIR</term>
           <listitem>
             <para>Directory used to save commands, scripts or rulesets.</para>
-            <para><code>SAVE_DIR="${BASE_DIR}/save"</code></para>
+            <para><code>SAVE_DIR="${BASE_DIR}/save.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>TEMPLATE_REPOSITORY</term>
+          <listitem>
+            <para>Directory where all the templates that come with IP-Array are stored . By default
+              it is <filename>/usr/share/ip-array/template_repo.d</filename>.</para>
           </listitem>
         </varlistentry>
       </variablelist>
@@ -698,6 +670,14 @@
     </section>
     <section>
       <title>Upgrade</title>
+      <para>
+        <note>
+          <para>There is <emphasis role="bold">no upgrade path</emphasis> from older ip-array
+            versions (0.05.xx) available, but in the <filename>examples</filename> directory there
+            is a set of rule and ruleblock files, which is mimics the old configuration almost
+            completely.</para>
+        </note>
+      </para>
       <important>
         <para>Always create a backup before installing a new version! Configuration files will be
           overwritten with the default ones!</para>
@@ -722,7 +702,7 @@
         </note>
       </para>
       <section xml:id="config_files_bash">
-        <title>Bash config files</title>
+        <title>Bash configuration files</title>
         <subtitle>Description of the bash (shell) configuration files</subtitle>
         <section xml:id="conf_init_script">
           <title>init script</title>
@@ -2678,7 +2658,7 @@
             <varlistentry>
               <term>add_rule</term>
               <listitem>
-                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+                <para>See description of <link linkend="pub_funcs">public_functions</link>.</para>
               </listitem>
             </varlistentry>
             <varlistentry>
@@ -2690,7 +2670,7 @@
             <varlistentry>
               <term>create_chain</term>
               <listitem>
-                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+                <para>See description of <link linkend="pub_funcs">public_functions</link>.</para>
               </listitem>
             </varlistentry>
           </variablelist>
@@ -2700,7 +2680,9 @@
     <section xml:id="conf_xml_rule_files_howto">
       <title>Rule files</title>
       <subtitle>How to configure XML rule files</subtitle>
-      <para/>
+      <para>The rule files define what is run at what point. It may contain public functions, normal
+        rules, combined rules, template rules and iptables arguments that may be used globally to be
+        applied to all following rules (grouping).</para>
       <section>
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
@@ -2772,7 +2754,7 @@
               <para><code> &lt;/target></code></para>
               <para><code> &lt;target> DROP</code></para>
               <para><code> &lt;opts idev="$lan_if" proto="udp" sport="66" /></code></para>
-              <para><code> &lt;opts> odev proto dport=empty /></code></para>
+              <para><code> &lt;opts> odev proto empty /></code></para>
               <para><code> &lt;/target></code></para>
               <para><code> &lt;/chain></code></para>
               <para><code> &lt;/combined_rule></code></para>
@@ -2795,7 +2777,8 @@
                 templates.</para>
               <para>The syntax is:
                 <synopsis>&lt;template_rule> template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule></synopsis><synopsis>or:</synopsis><synopsis>&lt;template_rule template="template-name" ruleblock="ruleblock-name" /></synopsis></para>
-              <para>For the first form multible entries may be separated by newline.</para>
+              <para>For the first form multible entries may be separated by newline. Also óne or
+                more command(s) can be run at invocation of the ruleblock.</para>
             </listitem>
             <listitem>
               <para>&lt;pub_func> or the short form &lt;f></para>
@@ -2803,7 +2786,8 @@
                 to be called.</para>
               <para>The syntax is:
                 <synopsis>&lt;pub_func name="function-name" /></synopsis><synopsis>or</synopsis><synopsis>&lt;pub_func> function-name [ option ... ] &lt;/pub_func></synopsis>For
-                the second form multible entries may be separated by newline.</para>
+                the second form multible entries may be separated by newline. Also it allows to pass
+                parameters to the call of the function.</para>
               <para>The value part of the name attribute must be enclosed within quotes.</para>
               <para>Examples:</para>
               <para><code>&lt;pub_func></code></para>
@@ -3025,13 +3009,14 @@
   </chapter>
   <chapter xml:id="traffic_shaping">
     <title>Traffic shaping</title>
-    <para>IP-Array has basic traffic shaping support built in. When traffic shaping is enabled by
-      setting the <varname>ENABLE_TC_SHAPING</varname> variable to `1', a number of predifined
-      ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> - the iptables mangle table marking and
-        <varname>TC_RULEBLOCKS</varname> - the queue discs, classes and filters) and rules
-        (<varname>TC_MARK_RULES</varname> also containing the tc public functions) get loaded.
-      Unlike with the iptables counterpart, there are no templates to edit and the names and order
-      of parameters of the ruleblocks are hard coded.</para>
+    <para>IP-Array has basic traffic shaping support built in.</para>
+    <para>When traffic shaping is enabled by setting the <varname>ENABLE_TC_SHAPING</varname>
+      variable to `1', a number of predifined ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> -
+      the iptables mangle table marking and <varname>TC_RULEBLOCKS</varname> - the queue discs,
+      classes and filters) and rules (<varname>TC_MARK_RULES</varname> also containing the tc public
+      functions) get loaded.</para>
+    <para>Unlike with the iptables counterpart, there are no templates to edit and the names and
+      order of parameters of the ruleblocks are hard coded.</para>
   </chapter>
   <chapter xml:id="usage">
     <title>Usage</title>
@@ -3039,7 +3024,6 @@
     <para/>
     <section xml:id="startup_params">
       <title>Startup parameters and options</title>
-      <para/>
       <section xml:id="usage_params">
         <title>Parameters</title>
         <para>If the first parameter is omitted, usage instructions are printed. Only one parameter
@@ -3191,9 +3175,6 @@
           <listitem>
             <para>help, -h, --help, -?</para>
             <para>Show usage information.</para>
-            <para>If `--public-functions' is used as second argument, a list of available public
-              functions is printed. If a name of public function is given as third argument, a brief
-              description of the function is shown.</para>
           </listitem>
         </itemizedlist>
       </section>
@@ -3382,6 +3363,47 @@
           </listitem>
         </itemizedlist>
       </section>
+    </section>
+    <section xml:id="init_script">
+      <title>init script</title>
+      <para>Usually IP-Array is called from the init script. But it can also be started directly by
+        running the executable. In that case you must specify a path to the defaults file on the
+        command line.</para>
+      <para>There is also a second init script provided, called
+          <filename>ip-array.init_pre_net_boot</filename>, this should be executed before the
+        network configuration takes place. It will apply `lockdown' mode, in order to make sure
+        there's no unsecure gap while setting up the networking.</para>
+    </section>
+    <section xml:id="exit_codes">
+      <title>Exit codes</title>
+      <para>
+        <itemizedlist>
+          <listitem>
+            <para>0 - Success.</para>
+          </listitem>
+          <listitem>
+            <para>1 - Unknown error.</para>
+          </listitem>
+          <listitem>
+            <para>2 - Usage information (help).</para>
+          </listitem>
+          <listitem>
+            <para>111 - Not exist error. Used if i.e. a file was not found.</para>
+          </listitem>
+          <listitem>
+            <para>112 - Not defined error. Used if i.e. a configuration variable is not set.</para>
+          </listitem>
+          <listitem>
+            <para>113 - Loading error. Used if i.e. sourcing a file failed.</para>
+          </listitem>
+          <listitem>
+            <para>114 - Failure error. General fail condition.</para>
+          </listitem>
+          <listitem>
+            <para>115 - Configuration error. Used if a configuration error was not found.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
     </section>
     <section xml:id="startup_usage_examples">
       <title>Usage examples</title>

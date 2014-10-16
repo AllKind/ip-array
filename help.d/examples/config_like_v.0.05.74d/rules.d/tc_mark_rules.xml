@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!-- MANGLE TABLE MARKING FOR TRAFFIC SHAPING -->
+
+<ip_array_root name="iptables_rules" syntax_version="0.1">
+
+	<pub_func>
+		jump_tree_off
+	</pub_func>
+
+	<!-- priorize SYN packets -->
+	<pub_func> mark_prio_syn </pub_func>
+
+	<template_rule>
+		<!-- mark OUTPUT packets based on TOS -->
+		TEMPLATE_MANGLE_TOS_OUTPUT_MARK RB_TOS_OUT_MAP
+
+		<!-- mark OUTPUT IP packets -->
+		TEMPLATE_MANGLE_STATELESS_IP_OUTPUT_MARK RB_MARK_OUT_IP
+	</template_rule>
+
+	<!-- mark for OUTPUT bulk qdisc -->
+	<pub_func> mark_out_bulk </pub_func>
+
+	<template_rule>
+		<!-- classify FORWARD packets based on TOS -->
+		TEMPLATE_MANGLE_TOS_MARK_FORWARD RB_TOS_FWD_MAP
+
+		<!-- classify FORWARD IP packets -->
+		TEMPLATE_MANGLE_STATELESS_IP_MARK_FORWARD RB_MARK_FWD_IP
+	</template_rule>
+	
+	<!-- mark for FORWARD bulk qdisc -->
+	<pub_func> mark_fwd_bulk </pub_func>
+
+	<pub_func>
+		jump_tree_on
+	</pub_func>
+
+</ip_array_root>

@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+
+<!-- IPSEC RULES -->
+
+<ip_array_root name="iptables_rules" syntax_version="0.1">
+	
+	<template_rule>
+		<!-- apply custom allow rules in IPSEC INPUT chain -->
+		TEMPLATE_ALLOW_VPN_INPUT RB_ALLOW_VPN_INPUT
+
+		<!-- apply custom allow rules in IPSEC OUTPUT chain -->
+		TEMPLATE_ALLOW_VPN_OUTPUT RB_ALLOW_VPN_OUTPUT
+		
+		<!-- apply custom allow rules in IPSEC FORWARD chain -->
+		TEMPLATE_ALLOW_VPN_FWD RB_ALLOW_VPN_FWD
+		
+		<!-- apply custom block rules in IPSEC INPUT chain -->
+		TEMPLATE_BLOCK_VPN_INPUT RB_BLOCK_VPN_INPUT
+
+		<!-- apply custom block rules in IPSEC OUTPUT chain -->
+		TEMPLATE_BLOCK_VPN_OUTPUT RB_BLOCK_VPN_OUTPUT
+
+		<!-- apply custom block rules in IPSEC FORWARD chain -->
+		TEMPLATE_BLOCK_VPN_FWD RB_BLOCK_VPN_FWD
+	</template_rule>
+
+</ip_array_root>

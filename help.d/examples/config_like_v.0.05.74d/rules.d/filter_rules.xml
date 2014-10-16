@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+
+<!-- FITLER TABLE RULES -->
+
+<ip_array_root name="iptables_rules" syntax_version="0.1">
+
+<!--
+	PRE SCREEN LOG RULES
+	Log before any rule takes place
+-->
+	<pub_func> log -S "${ADDMSG} pre alteration LOG rules" </pub_func>
+	<rule>
+		<!-- full logging in INPUT chain -->
+		TEMPLATE_INPUT_FULL_LOG_STATEFUL RB_PRE_SCREEN_LOG_INPUT
+		<!-- full logging in OUTPUT chain -->
+		TEMPLATE_OUTPUT_FULL_LOG_STATEFUL RB_PRE_SCREEN_LOG_OUTPUT
+		<!-- full logging in FORWARD chain -->
+		TEMPLATE_FORWARD_FULL_LOG_STATEFUL RB_PRE_SCREEN_LOG_FORWARD
+	</rule>
+<!--
+	BAD PACKETS RULES
+-->
+	<pub_func>
+		<!-- bad traffic logging/dropping -->
+		log -S "${ADDMSG} bad packets rules"
+		log_drop_invalid_state
+		log_drop_illegal_tcp
+	</pub_func>
+<!--
+	EXEPTIONS BLOCKING RULES
+	Block exeptions, which would otherwise match in accept rules later
+-->
+	<pub_func> log -S "${ADDMSG} exeptions REJECT rules" </pub_func>
+	<template_rule>
+		<!-- reject INPUT exeptions -->
+		TEMPLATE_INPUT_REJECT_STATEFUL RB_EXEPTIONS_REJECT_INPUT
+		<!-- reject FORWARD exeptions -->
+		TEMPLATE_FORWARD_REJECT_STATEFUL RB_EXEPTIONS_REJECT_FORWARD
+	</template_rule>
+	<pub_func> log -S "${ADDMSG} exeptions DROP rules" </pub_func>
+	<template_rule>
+		<!-- drop INPUT exeptions -->
+		TEMPLATE_INPUT_DROP_STATEFUL RB_EXEPTIONS_DROP_INPUT
+		<!-- drop FORWARD exeptions -->
+		TEMPLATE_FORWARD_DROP_STATEFUL RB_EXEPTIONS_DROP_FORWARD
+	</template_rule>
+<!--
+	AUTOMATED INPUT BLOCK RULES
+-->
+	<pub_func>
+		log -S "${ADDMSG} automated INPUT block rules"
+		drop_dhcp
+		drop_netbios
+		drop_upnp
+		reject_auth
+	</pub_func>
+<!--
+	ALLOW RULES
+-->
+	<pub_func> log -S "${ADDMSG} Allow rules" </pub_func>
+	<template_rule>
+		<!-- allow access to services running on the local system -->
+		TEMPLATE_LOCAL_SERVICE_WITH_MAC RB_LOCAL_SERVICE 'output_rules_required_msg,auto'
+		<!-- allow INPUT -->
+		TEMPLATE_INPUT_ALLOW_STATEFUL_WITH_MAC RB_ALLOW_INPUT
+		<!-- allow OUTPUT -->
+		TEMPLATE_OUTPUT_ALLOW_STATEFUL RB_ALLOW_OUTPUT 'output_rules_required_msg,manual,ALLOW_OUTPUT'
+		<!-- allow FOWARD -->
+		TEMPLATE_FORWARD_ALLOW_STATEFUL_WITH_MAC RB_ALLOW_FORWARD
+<!--
+	LAN <-> LAN RULES
+	allow traffic between local area networks
+-->
+		<!-- allow services between LANs -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_STATEFUL_WITH_MAC RB_LAN_TO_LAN_SVC
+		<!-- LAN(s) TO DMZ RULES -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_STATEFUL_WITH_MAC RB_LAN_TO_DMZ_SVC
+		<!-- DMZ TO LAN(s) RULES -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_STATEFUL_WITH_MAC RB_DMZ_TO_LAN_SVC
+<!--
+	LAN(s) <-> INTERNET RULES
+	traffic originated from local area networks to the Internet
+-->
+		<!-- allow LANs to use services on the Internet -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_TO_ANY_STATEFUL RB_LAN_TO_INET_SVC
+		<!-- allow DMZ hosts to use services on the Internet  -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_TO_ANY_STATEFUL RB_DMZ_TO_INET_SVC
+<!--
+	INTERNET TO DMZ RULES
+	Public services on the DMZ - accessable from the Internet
+-->
+		<!-- allow DMZ services reachable from the Internet -->
+		TEMPLATE_REVERSE_FORWARD_ALLOW_FROM_ANY_STATEFUL RB_INET_TO_DMZ_SVC
+	</template_rule>
+<!--
+	AUTOMATED LAN(s) <-> INTERNET RULES
+-->
+	<pub_func>
+		<!-- internal nameservers to external nameservers -->
+		intns_to_extns
+		<!-- internal networks to external smtp servers -->
+		lan_isp_smtp
+		<!-- apply FTP rules at last -->
+		lan_ftp
+<!--
+	VPN RULES
+-->
+		<!-- run enable_ipsec function -->
+		enable_ipsec
+<!--
+	OUTPUT RULES
+-->
+		<!--
+		If OUTPUT is restricted,
+		create additional automatically generated OUTPUT allow rules
+		-->
+		restrict_output
+	</pub_func>
+
+</ip_array_root>
+

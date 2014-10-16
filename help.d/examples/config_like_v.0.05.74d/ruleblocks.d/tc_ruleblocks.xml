@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+
+<!-- TRAFFIC CONTROL RULEBLOCKS -->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="HTB_QDISC">
+</ruleblock>
+
+<ruleblock name="TC_CLASS">
+</ruleblock>
+
+<ruleblock name="SFQ_QDISC">
+</ruleblock>
+
+<ruleblock name="TC_FILTER">
+</ruleblock>
+
+</ip_array_root>
+
+
