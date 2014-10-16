@@ -81,7 +81,7 @@
 		5: source port
 		6: destination port
 		7: nat options
-		Mandatory options: input device, nat ip address
+		Mandatory options: input device, nat options
 		-->
 		<template_msg> ${ADDMSG} DNAT rules </template_msg>
 		<mandatory_vars> idev,nat_opt </mandatory_vars>
@@ -108,7 +108,7 @@
 		6: source port
 		7: destination port
 		8: nat options
-		Mandatory options: input device, nat ip address
+		Mandatory options: input device, nat options
 		-->
 		<template_msg>
 			${ADDMSG} DNAT rules with source mac option
@@ -166,7 +166,7 @@
 		5: source port
 		6: destination port
 		7: nat options
-		Mandatory options: output device, nat ip address
+		Mandatory options: output device, nat options
 		-->
 		<table> nat </table>
 		<target> SNAT </target>
@@ -266,8 +266,8 @@
 		1: output device
 		2: source address
 		3: destination address
-		4: nat ip address[/mask]
-		Mandatory options: nat ip address
+		4: nat options
+		Mandatory options: nat options
 		-->
 		<table> nat </table>
 		<target> NETMAP </target>
