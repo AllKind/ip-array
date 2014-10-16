@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: ip-array_templates
 .\"    Author: AllKind <AllKind@BonBon.net>
-.\" Generator: DocBook XSL-NS Stylesheets v1.74.3-pre <http://docbook.sf.net/>
-.\"      Date: 01/12/2011
-.\"    Manual: ip-array 0.80.00
-.\"    Source: ip-array 0.80.00
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 10/16/2014
+.\"    Manual: ip-array 1.0
+.\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_TEMPLATES" "5" "01/12/2011" "ip-array 0.80.00" "ip\-array 0\&.80\&.00"
+.TH "IP\-ARRAY_TEMPLATES" "5" "10/16/2014" "ip-array 1.0" "ip\-array 1\&.0"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -23,19 +32,207 @@ ip-array_templates \- Configure ip\-array templates
 .SH "SYNOPSIS"
 .sp
 .nf
-/etc/ip\-array/{stable|test}/conf\&.d/templates\&.d/\fIfile\fR
-            
-            < ip_array_root 
-            name="templates"
+/etc/ip\-array/{stable|test}/conf\&.d/templates\&.d/\fIfile\fR          
         
 .fi
 .SH "DESCRIPTION"
 .PP
+A ruleblock is a group (stack) of rules, containing only the values of each option, to be read in order of occurence\&. The structure of the ruleblock is defined in a template\&. Each rule entry in a ruleblock is interpreted column\-wise\&. How the values in each column are interpreted, is defined in the template called with the ruleblock\&.
+.SH "SYNTAX"
+.PP
+A template definition file must contain the following:
+.PP
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+First a root tag including the describing name attribule and the syntax version:
+.sp
+<ip_array_root name="iptables_templates" syntax_version="0\&.1">
+.sp
+The
+\fBname\fR
+attribute tells us it is an iptables template\&.
+.sp
+The
+\fBsyntax_version\fR
+attribute defines the syntax version (only 0\&.1 is available by now)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+The actual template tag including the name attribute defining the name of the template:
+.sp
+<template name="T_EXAMPLE">
+.sp
+The template name must begin with one of the following prefixes: T_, BT_, GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_\&.
+.RE
+.sp
+.SH "ELEMENTS"
+.PP
+The following list describes the elements which are valid inside the templates\&.
+.PP
+table
+.RS 4
+The name of the iptables table (defaults to `filter\*(Aq if unset)\&.
+.RE
+.PP
+target
+.RS 4
+A comma separated list of iptables targets\&.
+.RE
+.PP
+chain
+.RS 4
+A comma separated list of iptables chains\&. A maximum of 2 chain names can be specified, if the
+\fIreverse_mode\fR
+is `reverse\*(Aq or `mirror\*(Aq\&. Otherwise only one is valid\&.
+.RE
+.PP
+reverse_mode
+.RS 4
+Reverse mode can either be set to `reverse\*(Aq or `mirror\*(Aq\&. This means that a second option list will be processed (most likely the return traffic)\&. See
+\fIoption_list_1\fR
+below\&. If `mirror\*(Aq is specified the first option list will be copied to the second one\&. Otherwise
+\fIoption_list_1\fR
+will be used\&.
+.RE
+.PP
+reverse_condition
+.RS 4
+If this condition evaluates to true, than reverse mode will be used (if specified \- othewise this setting does not make sense)\&.
+.RE
+.PP
+template_msg
+.RS 4
+A message that will be displayed as the template is called, if
+\fIVERBOSE\fR
+is greater or equal 3\&.
+.RE
+.PP
+mandatory_vars
+.RS 4
+A comma separated list of variable names that must be defined in the ruleblock called with the template\&.
+.RE
+.PP
+load_template
+.RS 4
+Other templates to load into the current one\&.
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBImportant\fR
+.ps -1
+.br
+Those loaded templates will always be read before any option_list or always_use list\&. Means they are on the more left side from the ruleblock perspective\&.
+.sp .5v
+.RE
+.RE
+.PP
+option_list_0
+.RS 4
+These are the actual iptables arguments which will be filled with values from the ruleblock called with the template\&.
+.sp
+The list of valid iptables arguments and their usage can be called with:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+You can define default values to be used by using this syntax:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+name=default_value
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+I\&.e\&. idev=eth0
+.sp
+These default values will be used if the according ruleblock entry is not defined (filled with the rule placeholder value, or undefined)\&.
+.RE
+.PP
+option_list_1
+.RS 4
+This second list of iptables options is used for the reverse_mode if set to `reverse\*(Aq\&. I\&.e\&. what has been idev (input interface) will be odev (output interface) in the reverse rule\&.
+.RE
+.PP
+always_use_0
+.RS 4
+You can define default values for
+\fIoption_list_0\fR
+by using this syntax:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+name=default_value
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+I\&.e\&. idev=eth0
+.RE
+.PP
+always_use_1
+.RS 4
+You can define default values for
+\fIoption_list_1\fR
+by using this syntax:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+name=default_value
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+I\&.e\&. odev=eth0
+.RE
+.PP
+state_match_arg
+.RS 4
+A maximum of two comma separated lists with state\-names of the state/conntrack match\&. I\&.e\&. NEW,ESTABLISHED ESTABLISHED\&.
+.sp
+The second one is only used if the reverse_mode is set to `reverse\*(Aq\&.
+.RE
+.SH "USAGE GUIDELINES"
+.PP
+It is recommended to build
+\fIsmall chunk\fR
+templates (called
+\fBbase templates\fR) and to use them modulary to build your final templates (using the load_template element)\&.
 .SH "SEE ALSO"
 .PP
 
 \fBip-array\fR(8),
 \fBip-array.conf\fR(8),
+\fBip-array_defaults.conf\fR(8),
 \fBip-array_ruleblocks\fR(5),
 \fBip-array_rulefiles\fR(5)
 .SH "AUTHOR"

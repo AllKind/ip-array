@@ -409,8 +409,8 @@
         </listitem>
         <listitem xml:id="name_def_ruleblock">
           <para>ruleblock</para>
-          <para>A ruleblock is a group (stack) of <link linkend="name_def_rule">rules</link>, to be
-            read in order of occurence.</para>
+          <para>A ruleblock is a group (stack) of <link linkend="name_def_rule">rules</link>,
+            containing only the values of each option, to be read in order of occurence.</para>
           <para>The structure of the ruleblock is defined in a <link linkend="name_def_template"
               >template</link>.</para>
         </listitem>
@@ -1522,7 +1522,11 @@
         </section>
         <section xml:id="conf_file_main_conf">
           <title>Main configuration file (ip-array.conf)</title>
-          <para>This file is the main IP-Array configuration file.</para>
+          <para>This file is the main IP-Array configuration file. The various settings for the
+            /proc filesystem are not listed here. Please stick to the comments in the configuration
+            file and the kernel documentation for further explanations. The list of the settings
+            names and their path inside the /proc filesystem can be retrieved by running:
+              <command>ip-array show -sc proc</command>.</para>
           <para>
             <variablelist>
               <varlistentry>
@@ -2663,6 +2667,35 @@
             <link linkend="inline_funcs">inline functions</link> inside it to add a rule with a
           different structure.</para>
       </section>
+      <section xml:id="inline_funcs">
+        <title>inline functions</title>
+        <para>Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
+          does not fit the current need. Using inline functions is a way around this, or allow to
+          modify the behaviour of the rule processing.</para>
+        <para>The following functions are available inline:</para>
+        <para>
+          <variablelist>
+            <varlistentry>
+              <term>add_rule</term>
+              <listitem>
+                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>insert_ipt_rule</term>
+              <listitem>
+                <para>Like `add_rule' but it will insert the rule on top of the stack.</para>
+              </listitem>
+            </varlistentry>
+            <varlistentry>
+              <term>create_chain</term>
+              <listitem>
+                <para xlink:href="#pub_funcs">See description of public_functions.</para>
+              </listitem>
+            </varlistentry>
+          </variablelist>
+        </para>
+      </section>
     </section>
     <section xml:id="conf_xml_rule_files_howto">
       <title>Rule files</title>
@@ -2983,35 +3016,6 @@
           </varlistentry>
         </variablelist>
       </section>
-      <section xml:id="inline_funcs">
-        <title>inline functions</title>
-        <para>Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
-          does not fit the current need. Using inline functions is a way around this, or allow to
-          modify the behaviour of the rule processing.</para>
-        <para>The following functions are available inline:</para>
-        <para>
-          <variablelist>
-            <varlistentry>
-              <term>add_rule</term>
-              <listitem>
-                <para xlink:href="#pub_funcs">See description of public_functions.</para>
-              </listitem>
-            </varlistentry>
-            <varlistentry>
-              <term>insert_ipt_rule</term>
-              <listitem>
-                <para>Like `add_rule' but it will insert the rule on top of the stack.</para>
-              </listitem>
-            </varlistentry>
-            <varlistentry>
-              <term>create_chain</term>
-              <listitem>
-                <para xlink:href="#pub_funcs">See description of public_functions.</para>
-              </listitem>
-            </varlistentry>
-          </variablelist>
-        </para>
-      </section>
       <section>
         <title>ipset usage</title>
         <para>ipset sets are controlled with the public functions <emphasis role="bold"
@@ -3019,14 +3023,15 @@
       </section>
     </section>
   </chapter>
-  <chapter>
+  <chapter xml:id="traffic_shaping">
     <title>Traffic shaping</title>
     <para>IP-Array has basic traffic shaping support built in. When traffic shaping is enabled by
       setting the <varname>ENABLE_TC_SHAPING</varname> variable to `1', a number of predifined
       ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> - the iptables mangle table marking and
         <varname>TC_RULEBLOCKS</varname> - the queue discs, classes and filters) and rules
-        (<varname>TC_MARK_RULES</varname> also containing the tc public functions) get
-      loaded.</para>
+        (<varname>TC_MARK_RULES</varname> also containing the tc public functions) get loaded.
+      Unlike with the iptables counterpart, there are no templates to edit and the names and order
+      of parameters of the ruleblocks are hard coded.</para>
   </chapter>
   <chapter xml:id="usage">
     <title>Usage</title>
@@ -3037,6 +3042,8 @@
       <para/>
       <section xml:id="usage_params">
         <title>Parameters</title>
+        <para>If the first parameter is omitted, usage instructions are printed. Only one parameter
+          is allowed - but required - for ip-array to take any action.</para>
         <para>These parameters control the 'mode' IP-Array runs on.</para>
         <itemizedlist>
           <listitem>
@@ -3067,10 +3074,10 @@
           </listitem>
           <listitem>
             <para>open</para>
-            <para>Module probing (if configured) is done first.This mode leaves only the NAT rules
-              active (reads configuration and re-applies them), all other tables are emptied.
-              Policies are set to ACCEPT. An iptables rule listing is saved for later difference
-              checks.</para>
+            <para>Module probing (if configured) is done first.</para>
+            <para>This mode leaves only the NAT rules active (reads configuration and re-applies
+              them), all other tables are emptied. Policies are set to ACCEPT. An iptables rule
+              listing is saved for later difference checks.</para>
           </listitem>
           <listitem>
             <para>tc-start</para>
@@ -3192,7 +3199,9 @@
       </section>
       <section xml:id="usage_options">
         <title>Options</title>
-        <para>Options with no further argument are listed first.</para>
+        <para>All options are optional. Some require an argument, others do not. All options and
+          their arguments must be separated by blank(s). If an option can be used more than once, it
+          is mentioned explicitly.</para>
         <itemizedlist>
           <listitem>
             <para>-ct, --ipt-counters</para>

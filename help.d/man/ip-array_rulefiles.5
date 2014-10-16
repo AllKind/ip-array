@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: ip-array_rulefiles
-.\"    Author: AllKind <AllKind@BonBon.net>
-.\" Generator: DocBook XSL-NS Stylesheets v1.74.3-pre <http://docbook.sf.net/>
-.\"      Date: 01/12/2011
-.\"    Manual: ip-array 0.80.00
-.\"    Source: ip-array 0.80.00
+.\"    Author: AllKind <AllKind@fastest.cc>
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 10/16/2014
+.\"    Manual: ip-array 1.0
+.\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_RULEFILES" "5" "01/12/2011" "ip-array 0.80.00" "ip\-array 0\&.80\&.00"
+.TH "IP\-ARRAY_RULEFILES" "5" "10/16/2014" "ip-array 1.0" "ip\-array 1\&.0"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -27,16 +36,325 @@ ip-array_rulefiles \- Configure ip\-array rule files
 .fi
 .SH "DESCRIPTION"
 .PP
+Rule files are written in a simple and
+\fIrelaxed\fR
+XML style\&. There are different rule tags available, as well as public functions\&. For each iptables table (if configured to be used) there must be at least one rule file defined\&.
+.SH "SYNTAX"
+.PP
+A rule definition file must contain the root tag including the describing name attribule and the syntax version:
+.PP
+<ip_array_root name="iptables_rules" syntax_version="0\&.1">
+.PP
+The
+\fBname\fR
+attribute tells us it is an iptables rule definition\&.
+.PP
+The
+\fBsyntax_version\fR
+attribute defines the syntax version (only 0\&.1 is available by now)\&.
+.PP
+The XML syntax can be used in a
+\fIrelaxed\fR
+way\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their value enclosed inside single quotes\&.
+.SH "ELEMENTS"
+.PP
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<rule> or the short form <r>
+.sp
+A single rule entry\&. All iptables arguments can be used inside a rule tag\&. The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they must be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+.sp
+Examples:
+.sp
+<rule table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" </rule>
+.sp
+<r> table=filter chain=INPUT target=LOG log_prefix="my log message" />
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<combined_rule> or the short form <cr>
+.sp
+\(aaCombined rules allow to create reverse traffic rules like with templates with the reverse_mode=reverse option, but in a dynamic way\&.
+.sp
+It has these attributes available:
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reverse_mode \- which can be like within templates set to either `reverse\*(Aq or `mirror\*(Aq\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reverse_condition \- like within templates defines a condition that must evaluate to true for the reverse rules to be created\&. The variable name and its value must be separated by a colon `:\*(Aq\&. i\&.e\&. foo:bar
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+msg \- like with template_msg, it allows to define a message to be displayed, if
+\fIVERBOSE\fR
+is greater or equal 3\&.
+.RE
+.sp
+The iptables arguments must be used inside the <optlist> tag (see next item in the list)\&. The arguments in the second option list do not need the equal siqn and the right hand side value\&. The values of the first option list will be used in order from left to right and will be applied to the options (iptables arguments) of the second option list\&. Only if a value needs to be left out the special keyword `\fBempty\fR\*(Aq can be used\&.
+.sp
+Examples:
+.sp
+<table> filter
+.sp
+<combined_rule reverse_mode="reverse" reverse_condition="foo:bar" >
+.sp
+<chain> INPUT,OUTPUT
+.sp
+<target> ACCEPT
+.sp
+<optlist> proto=tcp sport=99 </optlist>
+.sp
+<optlist> proto dport </optlist>
+.sp
+</target>
+.sp
+<target> DROP
+.sp
+<opts idev="$lan_if" proto="udp" sport="66" />
+.sp
+<opts> odev proto dport=empty />
+.sp
+</target>
+.sp
+</chain>
+.sp
+</combined_rule>
+.sp
+</table>
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<optlist> or the allowed variations: <opt>, <opts>, <option>, <options>
+.sp
+This tag is only valid within a combined_rule tag\&. All iptables arguments can be used inside this tag\&. The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they must be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<template_rule> or the short form <tr>
+.sp
+This tag defines one or more ruleblocks to be called with their corresponding templates\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<template_rule> template\-name ruleblock\-name [ template\-invocation\-command \&.\&.\&. ] </template_rule>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+or:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<template_rule template="template\-name" ruleblock="ruleblock\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the first form multible entries may be separated by newline\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<pub_func> or the short form <f>
+.sp
+This tag defines one or more public functions to be called\&. A list of public functions and their usage can be retrieved by running:
+\fBip\-array show \-sc public_functions[:name[,\&.\&.\&.]]\fR\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<pub_func name="function\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+or
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<pub_func> function\-name [ option \&.\&.\&. ] </pub_func>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the second form multible entries may be separated by newline\&.
+.sp
+The value part of the name attribute must be enclosed within quotes\&.
+.sp
+Examples:
+.sp
+<pub_func>
+.sp
+log \-S "Adding pre alteration log rules"
+.sp
+drop_dhcp
+.sp
+drop_netbios
+.sp
+</pub_func>
+.sp
+<f name="lan_ftp" />
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+All other iptables arguments\&. We\*(Aqll call them
+\fIglobal arguments\fR\&.
+.sp
+The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+These can be used to apply their value to all other rules following\&. Global arguments
+\fBmust\fR
+be terminated by a
+\fI<rule>\fR
+or a
+\fI<combined_rule>\fR
+with the according
+\fI<optlist>\fR
+tag\&.
+.sp
+In example:
+.sp
+<table name="filter">
+.sp
+<chain name="INPUT">
+.sp
+<rule> rule1 </rule>
+.sp
+<rule> rule2 </rule>
+.sp
+</chain>
+.sp
+</table>
+.sp
+Or in the
+\fIrelaxed\fR
+way:
+.sp
+<table> filter <chain> INPUT
+.sp
+<rule> rule1 />
+.sp
+<rule> rule2 />
+.sp
+/> />
+.RE
+.sp
 .SH "SEE ALSO"
 .PP
 
 \fBip-array\fR(8),
 \fBip-array.conf\fR(8),
+\fBip-array_defaults.conf\fR(8),
 \fBip-array_ruleblocks\fR(5),
 \fBip-array_templates\fR(5)
 .SH "AUTHOR"
 .PP
-\fBAllKind\fR <\&AllKind@BonBon\&.net\&>
+\fBAllKind\fR <\&AllKind@fastest\&.cc\&>
 .RS 4
 Some guy infront of a screen\&.
 .RE

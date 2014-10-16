@@ -3,7 +3,7 @@
 <refentry xmlns="http://docbook.org/ns/docbook">
     <info><author>
             <personname>AllKind</personname>
-            <email>AllKind@BonBon.net</email>
+            <email>AllKind@fastest.cc</email>
             <personblurb>
                 <para>Some guy infront of a screen.</para>
             </personblurb>
@@ -32,8 +32,61 @@
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
+        <para>A ruleblock is a group (stack) of rules, containing only the values of each option, to
+            be read in order of occurence. The structure of the ruleblock is defined in a template.
+            Each rule entry in a ruleblock is interpreted column-wise. How the values in each column
+            are interpreted, is defined in the template called with the ruleblock.</para>
+    </refsect1>
+    <refsect1>
+        <title>Syntax</title>
+        <para>A ruleblock definition file must contain the following:</para>
         <para>
+            <orderedlist>
+                <listitem>
+                    <para>First a root tag including the describing name attribule and the syntax
+                        version:</para>
+                    <para><code>&lt;ip_array_root name="ruleblocks"
+                        syntax_version="0.1"></code></para>
+                    <para>The <emphasis role="bold">name</emphasis> attribute tells us it is a
+                        ruleblocks definition.</para>
+                    <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the
+                        syntax version (only 0.1 is available by now).</para>
+                </listitem>
+                <listitem>
+                    <para>The actual ruleblock tag including the name attribute defining the name of
+                        the ruleblock:</para>
+                    <para>&lt;ruleblock name="RULEBLOCK_EXAMPLE"></para>
+                    <para>The ruleblock name must begin with one of the following prefixes: RB_,
+                        RULEBLOCK_.</para>
+                </listitem>
+            </orderedlist>
         </para>
+    </refsect1>
+    <refsect1>
+        <title>Usage guidelines</title>
+        <para>It's a good idea to write down the structure of the template you want to call the
+            ruleblock with as a comment below the ruleblock opening tag. This way you will easily
+            remember what each column has to contain.</para>
+        <para>Newline separates rules inside a ruleblock.</para>
+        <para>You can use your shell variables inside ruleblock rules.</para>
+        <para>XML style comments (&lt;!-- comment -->) are valid inside ruleblocks.</para>
+        <para>If you want to leave a value in a column undefined use the character defined with
+                <varname>RULE_PLACEHOLDER</varname> (default = `_') as a placeholder.</para>
+        <para>To use spaces inside a column value, use either escaped double quotes (\"value with
+            space\") or single quotes ('value with space').</para>
+        <para>If the structure of a ruleblock does not fit your needs, it is possible to use the
+                <emphasis role="underline">inline functions</emphasis> inside it to add a rule with
+            a different structure. </para>
+    </refsect1>
+    <refsect1>
+        <title>Inline functions</title>
+        <para> Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
+            does not fit the current need. Using inline functions is a way around this, or allow to
+            modify the behaviour of the rule processing.</para>
+        <para>The following functions are available inline: add_rule, insert_ipt_rule and
+            create_chain.</para>
+        <para> For a description on how to use them run: <command>ip-array show -sc
+                public_functions[:name[,...]]</command>.</para>
     </refsect1>
     <refsect1>
         <title>See also</title>
@@ -43,6 +96,9 @@
                 <manvolnum>8</manvolnum>
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
                 <manvolnum>8</manvolnum>
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_rulefiles</refentrytitle>

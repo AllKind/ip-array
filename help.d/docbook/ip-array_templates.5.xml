@@ -28,16 +28,167 @@
         <refpurpose>Configure ip-array templates</refpurpose>
     </refnamediv>
     <refsynopsisdiv>
-        <synopsis>/etc/ip-array/{stable|test}/conf.d/templates.d/<replaceable>file</replaceable>
-            
-            <tag class="element">&lt; ip_array_root </tag>
-            <tag class="attribute">name=&quot;templates&quot;</tag>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/templates.d/<replaceable>file</replaceable>          
         </synopsis>
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
-        <para>
+        <para>A ruleblock is a group (stack) of rules, containing only the values of each option, to
+            be read in order of occurence. The structure of the ruleblock is defined in a template.
+            Each rule entry in a ruleblock is interpreted column-wise. How the values in each column
+            are interpreted, is defined in the template called with the ruleblock.</para>
+    </refsect1>
+    <refsect1>
+        <title>Syntax</title>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >A template definition file must contain the following:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <orderedlist>
+                <listitem>
+                    <para>First a root tag including the describing name attribule and the syntax
+                        version:</para>
+                    <para><code>&lt;ip_array_root name="iptables_templates"
+                            syntax_version="0.1"></code></para>
+                    <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an
+                        iptables template.</para>
+                    <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the
+                        syntax version (only 0.1 is available by now).</para>
+                </listitem>
+                <listitem>
+                    <para>The actual template tag including the name attribute defining the name of
+                        the template:</para>
+                    <para>&lt;template name="T_EXAMPLE"></para>
+                    <para>The template name must begin with one of the following prefixes: T_, BT_,
+                        GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_.</para>
+                </listitem>
+            </orderedlist>
         </para>
+    </refsect1>
+    <refsect1>
+        <title>Elements</title>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >The following list describes the elements which are valid inside the templates.</para>
+        <variablelist xmlns:xi="http://www.w3.org/2001/XInclude"
+            xmlns:xlink="http://www.w3.org/1999/xlink">
+            <varlistentry>
+                <term>table</term>
+                <listitem>
+                    <para>The name of the iptables table (defaults to `filter' if unset).</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>target</term>
+                <listitem>
+                    <para>A comma separated list of iptables targets.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>chain</term>
+                <listitem>
+                    <para>A comma separated list of iptables chains. A maximum of 2 chain names can
+                        be specified, if the <varname>reverse_mode</varname> is `reverse' or
+                        `mirror'. Otherwise only one is valid.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>reverse_mode</term>
+                <listitem>
+                    <para>Reverse mode can either be set to `reverse' or `mirror'. This means that a
+                        second option list will be processed (most likely the return traffic). See
+                            <varname>option_list_1</varname> below. If `mirror' is specified the
+                        first option list will be copied to the second one. Otherwise
+                            <varname>option_list_1</varname> will be used.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>reverse_condition</term>
+                <listitem>
+                    <para>If this condition evaluates to true, than reverse mode will be used (if
+                        specified - othewise this setting does not make sense).</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>template_msg</term>
+                <listitem>
+                    <para>A message that will be displayed as the template is called, if
+                            <varname>VERBOSE</varname> is greater or equal 3.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>mandatory_vars</term>
+                <listitem>
+                    <para>A comma separated list of variable names that must be defined in the
+                        ruleblock called with the template.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>load_template</term>
+                <listitem>
+                    <para>Other templates to load into the current one.</para>
+                    <para>
+                        <important>
+                            <para>Those loaded templates will always be read before any option_list
+                                or always_use list. Means they are on the more left side from the
+                                ruleblock perspective.</para>
+                        </important>
+                    </para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>option_list_0</term>
+                <listitem>
+                    <para>These are the actual iptables arguments which will be filled with values
+                        from the ruleblock called with the template.</para>
+                    <para>The list of valid iptables arguments and their usage can be called with:
+                            <command>ip-array show -sc ipt_args[,...]</command>.</para>
+                    <para>You can define default values to be used by using this syntax:
+                        <synopsis>name=default_value</synopsis></para>
+                    <para>I.e. idev=eth0</para>
+                    <para>These default values will be used if the according ruleblock entry is not
+                        defined (filled with the rule placeholder value, or undefined).</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>option_list_1</term>
+                <listitem>
+                    <para>This second list of iptables options is used for the reverse_mode if set
+                        to `reverse'. I.e. what has been idev (input interface) will be odev (output
+                        interface) in the reverse rule.</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>always_use_0</term>
+                <listitem>
+                    <para>You can define default values for <varname>option_list_0</varname> by
+                        using this syntax: <synopsis>name=default_value</synopsis></para>
+                    <para>I.e. idev=eth0</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>always_use_1</term>
+                <listitem>
+                    <para>You can define default values for <varname>option_list_1</varname> by
+                        using this syntax: <synopsis>name=default_value</synopsis></para>
+                    <para>I.e. odev=eth0</para>
+                </listitem>
+            </varlistentry>
+            <varlistentry>
+                <term>state_match_arg</term>
+                <listitem>
+                    <para>A maximum of two comma separated lists with state-names of the
+                        state/conntrack match. I.e. NEW,ESTABLISHED ESTABLISHED.</para>
+                    <para>The second one is only used if the reverse_mode is set to
+                        `reverse'.</para>
+                </listitem>
+            </varlistentry>
+        </variablelist>
+    </refsect1>
+    <refsect1>
+        <title>Usage guidelines</title>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
+            (called <emphasis role="bold">base templates</emphasis>) and to use them modulary to
+            build your final templates (using the load_template element).</para>
     </refsect1>
     <refsect1>
         <title>See also</title>
@@ -47,6 +198,9 @@
                 <manvolnum>8</manvolnum>
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
                 <manvolnum>8</manvolnum>
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_ruleblocks</refentrytitle>

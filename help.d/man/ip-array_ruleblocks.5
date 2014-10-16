@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: ip-array_ruleblocks
-.\"    Author: AllKind <AllKind@BonBon.net>
-.\" Generator: DocBook XSL-NS Stylesheets v1.74.3-pre <http://docbook.sf.net/>
-.\"      Date: 01/12/2011
-.\"    Manual: ip-array 0.80.00
-.\"    Source: ip-array 0.80.00
+.\"    Author: AllKind <AllKind@fastest.cc>
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 10/16/2014
+.\"    Manual: ip-array 1.0
+.\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_RULEBLOCKS" "5" "01/12/2011" "ip-array 0.80.00" "ip\-array 0\&.80\&.00"
+.TH "IP\-ARRAY_RULEBLOCKS" "5" "10/16/2014" "ip-array 1.0" "ip\-array 1\&.0"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -27,16 +36,87 @@ ip-array_ruleblocks \- Configure ip\-array ruleblocks
 .fi
 .SH "DESCRIPTION"
 .PP
+A ruleblock is a group (stack) of rules, containing only the values of each option, to be read in order of occurence\&. The structure of the ruleblock is defined in a template\&. Each rule entry in a ruleblock is interpreted column\-wise\&. How the values in each column are interpreted, is defined in the template called with the ruleblock\&.
+.SH "SYNTAX"
+.PP
+A ruleblock definition file must contain the following:
+.PP
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+First a root tag including the describing name attribule and the syntax version:
+.sp
+<ip_array_root name="ruleblocks" syntax_version="0\&.1">
+.sp
+The
+\fBname\fR
+attribute tells us it is a ruleblocks definition\&.
+.sp
+The
+\fBsyntax_version\fR
+attribute defines the syntax version (only 0\&.1 is available by now)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+The actual ruleblock tag including the name attribute defining the name of the ruleblock:
+.sp
+<ruleblock name="RULEBLOCK_EXAMPLE">
+.sp
+The ruleblock name must begin with one of the following prefixes: RB_, RULEBLOCK_\&.
+.RE
+.sp
+.SH "USAGE GUIDELINES"
+.PP
+It\*(Aqs a good idea to write down the structure of the template you want to call the ruleblock with as a comment below the ruleblock opening tag\&. This way you will easily remember what each column has to contain\&.
+.PP
+Newline separates rules inside a ruleblock\&.
+.PP
+You can use your shell variables inside ruleblock rules\&.
+.PP
+XML style comments (<!\-\- comment \-\->) are valid inside ruleblocks\&.
+.PP
+If you want to leave a value in a column undefined use the character defined with
+\fIRULE_PLACEHOLDER\fR
+(default = `_\*(Aq) as a placeholder\&.
+.PP
+To use spaces inside a column value, use either escaped double quotes (\e"value with space\e") or single quotes (\*(Aqvalue with space\*(Aq)\&.
+.PP
+If the structure of a ruleblock does not fit your needs, it is possible to use the
+\fIinline functions\fR
+inside it to add a rule with a different structure\&.
+.SH "INLINE FUNCTIONS"
+.PP
+Inline functions are used inside ruleblocks\&. Sometimes the structure of a ruleblock does not fit the current need\&. Using inline functions is a way around this, or allow to modify the behaviour of the rule processing\&.
+.PP
+The following functions are available inline: add_rule, insert_ipt_rule and create_chain\&.
+.PP
+For a description on how to use them run:
+\fBip\-array show \-sc public_functions[:name[,\&.\&.\&.]]\fR\&.
 .SH "SEE ALSO"
 .PP
 
 \fBip-array\fR(8),
 \fBip-array.conf\fR(8),
+\fBip-array_defaults.conf\fR(8),
 \fBip-array_rulefiles\fR(5),
 \fBip-array_templates\fR(5)
 .SH "AUTHOR"
 .PP
-\fBAllKind\fR <\&AllKind@BonBon\&.net\&>
+\fBAllKind\fR <\&AllKind@fastest\&.cc\&>
 .RS 4
 Some guy infront of a screen\&.
 .RE
