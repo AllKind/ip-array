@@ -39,14 +39,12 @@
         <para>The various settings for the /proc filesystem are not listed here. Please stick to the
             comments in the configuration file and the kernel documentation for further
             explanations. The list of the settings names and their path inside the /proc filesystem
-            can be retrieved by running: <command xmlns:xi="http://www.w3.org/2001/XInclude"
-                xmlns:xlink="http://www.w3.org/1999/xlink">ip-array show -sc proc</command></para>
+            can be retrieved by running: <command>ip-array show -sc proc</command></para>
     </refsect1>
     <refsect1>
         <title>Variables</title>
         <para>
-            <variablelist xmlns:xi="http://www.w3.org/2001/XInclude"
-                xmlns:xlink="http://www.w3.org/1999/xlink">
+            <variablelist>
                 <varlistentry>
                     <term><varname>CONFIG_FILES</varname></term>
                     <listitem>

@@ -40,9 +40,8 @@
     </refsect1>
     <refsect1>
         <title>Syntax</title>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >A template definition file must contain the following:</para>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <para>A template definition file must contain the following:</para>
+        <para>
             <orderedlist>
                 <listitem>
                     <para>First a root tag including the describing name attribule and the syntax
@@ -66,10 +65,8 @@
     </refsect1>
     <refsect1>
         <title>Elements</title>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >The following list describes the elements which are valid inside the templates.</para>
-        <variablelist xmlns:xi="http://www.w3.org/2001/XInclude"
-            xmlns:xlink="http://www.w3.org/1999/xlink">
+        <para>The following list describes the elements which are valid inside the templates.</para>
+        <variablelist>
             <varlistentry>
                 <term>table</term>
                 <listitem>
@@ -185,8 +182,7 @@
     </refsect1>
     <refsect1>
         <title>Usage guidelines</title>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
+        <para>It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
             (called <emphasis role="bold">base templates</emphasis>) and to use them modulary to
             build your final templates (using the load_template element).</para>
     </refsect1>

@@ -39,19 +39,14 @@
     </refsect1>
     <refsect1>
         <title>Syntax</title>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >A rule definition file must contain the root tag including the describing name
+        <para>A rule definition file must contain the root tag including the describing name
             attribule and the syntax version:</para>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-                ><code>&lt;ip_array_root name="iptables_rules" syntax_version="0.1"></code></para>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="0.1"></code></para>
+        <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
             definition.</para>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+        <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
             version (only 0.1 is available by now).</para>
-        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
-            >The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way. Tags
+        <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way. Tags
             can be closed by a simple `/>'. Attributes can have their value enclosed inside single
             quotes.</para>
     </refsect1>

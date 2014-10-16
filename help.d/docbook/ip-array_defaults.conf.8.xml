@@ -41,8 +41,7 @@
     <refsect1>
         <title>Variables</title>
         <para>
-            <variablelist xmlns:xi="http://www.w3.org/2001/XInclude"
-                xmlns:xlink="http://www.w3.org/1999/xlink">
+            <variablelist>
                 <varlistentry>
                     <term>
                         <varname>ENABLE_COLORS</varname>
