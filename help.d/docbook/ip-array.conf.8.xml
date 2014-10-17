@@ -258,7 +258,21 @@
                 <varlistentry>
                     <term><varname>NET_INTERFACES</varname></term>
                     <listitem>
-                        <para>Types: ext | local | ipsec</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">This variable must be
+                            configured with at least one interface. Any network interface but `lo'
+                            (localhost) may be put here.</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">If you use a VPN software
+                            that creates an interface (named i.e. ipsec) you need to put it in as a
+                            separate entry. Otherwise use the available types:</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">ext | local | ipsec</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">ext = an external interface,
+                            local = a local interface, ipsec = an ipsec interface</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">Example:</para>
                         <para>
                             <table frame="all">
                                 <title>Configure networking interfaces</title>
@@ -328,8 +342,8 @@
                             <synopsis>startup-parameter-name[,...] { prolog | epilog } script-name { prolog | epilog } script-name</synopsis>
                         </para>
                         <para>Example:</para>
-                        <para>start,restart prolog my_start_prolog-script epilog
-                            my_start_epilog-script</para>
+                        <para><code>start,restart prolog my_start_prolog-script epilog
+                                my_start_epilog-script</code></para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -342,8 +356,8 @@
                             <synopsis>table chain policy</synopsis>
                         </para>
                         <para>Example:</para>
-                        <para>filter INPUT DROP</para>
-                        <para>filter OUTPUT ACCEPT</para>
+                        <para><code>filter INPUT DROP</code></para>
+                        <para><code>filter OUTPUT ACCEPT</code></para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -394,8 +408,8 @@
                             <synopsis>table chain-name [...]</synopsis>
                         </para>
                         <para>Example:</para>
-                        <para>filter chain1 chain2</para>
-                        <para>mangle mchain1 mchain2</para>
+                        <para><code>filter chain1 chain2</code></para>
+                        <para><code>mangle mchain1 mchain2</code></para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -417,8 +431,8 @@
                         <para>`table' defines in which table the jump tree will be created. A value
                             of `all' will cause creation in all tables.</para>
                         <para>Examples:</para>
-                        <para>JUMP_TREE="interface filter mangle"</para>
-                        <para>JUMP_TREE="netname all"</para>
+                        <para><code>JUMP_TREE="interface filter mangle"</code></para>
+                        <para><code>JUMP_TREE="netname all"</code></para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>

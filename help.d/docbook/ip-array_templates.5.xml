@@ -102,6 +102,10 @@
                 <listitem>
                     <para>If this condition evaluates to true, than reverse mode will be used (if
                         specified - othewise this setting does not make sense).</para>
+                    <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                        xmlns:xlink="http://www.w3.org/1999/xlink">The condition must be defined
+                        like this: <synopsis>foo:bar</synopsis>where foo is the condition and bar is
+                        the value it has to match. </para>
                 </listitem>
             </varlistentry>
             <varlistentry>

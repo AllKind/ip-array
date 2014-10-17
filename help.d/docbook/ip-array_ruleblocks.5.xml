@@ -80,7 +80,7 @@
     </refsect1>
     <refsect1>
         <title>Inline functions</title>
-        <para> Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
+        <para>Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
             does not fit the current need. Using inline functions is a way around this, or allow to
             modify the behaviour of the rule processing.</para>
         <para>The following functions are available inline: add_rule, insert_ipt_rule and
