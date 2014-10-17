@@ -62,8 +62,8 @@
               <para>Netfilter support enabled in the kernel.</para>
             </listitem>
             <listitem>
-              <para>Traffic control support enabled in the kernel (optional).</para>
-              <para>To enable traffic shaping.</para>
+              <para>Traffic control support enabled in the kernel (optional). In order to enable
+                traffic shaping.</para>
             </listitem>
             <listitem>
               <para>Some coreutils: cat, date, grep, mkdir, rm, sort, uname.</para>
@@ -79,16 +79,15 @@
               <para>The <command>iproute2</command> program (ip).</para>
             </listitem>
             <listitem>
-              <para>The <command>lsmod</command> and <command>modprobe</command> programs.</para>
-              <para>Required if IP-Array is configured to load and/or unload modules.</para>
+              <para>The <command>lsmod</command> and <command>modprobe</command> programs are
+                required if IP-Array is configured to load and/or unload modules.</para>
             </listitem>
             <listitem>
-              <para>The <command>tc</command> program (optional).</para>
-              <para>To enable traffic shaping.</para>
+              <para>The <command>tc</command> program (optional). To enable traffic shaping.</para>
             </listitem>
             <listitem>
-              <para>The <command>logger</command> utility (optional).</para>
-              <para>To write messages to syslog.</para>
+              <para>The <command>logger</command> utility (optional). To write messages to
+                syslog.</para>
             </listitem>
             <listitem>
               <para>The <command>at</command> utility.</para>
@@ -182,8 +181,8 @@
           </listitem>
           <listitem>
             <para>Template based rule structure definition (quite a huge list of predifined
-              templates is provided out of the box) to build rulesblocks (stacks of rules, which
-              just contain values).</para>
+              templates is provided out of the box) to build ruleblocks (stacks of rules, which just
+              contain values).</para>
           </listitem>
           <listitem>
             <para>Definition of templates, ruleblocks and rules is done in a simple XML
@@ -194,14 +193,14 @@
           </listitem>
           <listitem>
             <para>ipset integration. Older ipset versions (4.x, 5.x) are supported. Compatible with
-              ipset v. 6 to 6.22.</para>
+              ipset v. 6 to 6.22+.</para>
           </listitem>
           <listitem>
             <para>Chain creation (by adding them in the <varname>CHAIN_MAP</varname>
               variable).</para>
           </listitem>
           <listitem>
-            <para>Differnent modi of automatic `jump tree' creation in all tables.</para>
+            <para>Different modi of automatic `jump tree' creation in all tables.</para>
           </listitem>
           <listitem>
             <para>Allow an admin connection.</para>
@@ -337,13 +336,13 @@
               set.</para>
           </listitem>
           <listitem>
-            <para>Screen output can be colourized.</para>
-            <para>Colours for different message categories can be defined by the user.</para>
+            <para>Screen output can be colourized. Colours for different message categories can be
+              defined by the user.</para>
           </listitem>
           <listitem>
             <para>Public functions</para>
             <para>IP-Array allows the usage of `public functions' in rule files. They may be used to
-              log messages (giving the opportunity to totally customize IP-Array's log output) or
+              log messages (giving the opportunity to totally customize IP-Array's log output), or
               call automatic rule creation functions.</para>
           </listitem>
           <listitem>
@@ -393,7 +392,8 @@
             </listitem>
             <listitem>
               <para>An entity added by the `add_rule' function. Where the `add_rule' function may be
-                used as `public function' or `inline function'. In order to create an iptables
+                used as `<link linkend="pub_funcs">public function</link>' or `<link
+                  linkend="inline_funcs">inline function</link>'. In order to create an iptables
                 command.</para>
             </listitem>
             <listitem>
@@ -446,11 +446,12 @@
       <section xml:id="start_behav">
         <title>Starting behaviour</title>
         <para>If IP-Array is run with the `<emphasis role="bold">start</emphasis>' parameter, a
-          lockdown mode is enforced until the configuration is read and all iptables, ipset, tc and
-          /proc rules have been generated. During this lockdown mode only localhost and the
-          administrator connection are allowed. After all rules are collected, they are applied at
-          once. If the config variable RESTORE_ON_START is set to `1' and previously saved rulesets
-          are available, those will be sourced and thus activated immediatly.</para>
+            <emphasis role="underline">lockdown</emphasis> mode is enforced until the configuration
+          is read and all iptables, ipset, tc and /proc rules have been generated. During this
+          lockdown mode only localhost and the administrator connection are allowed. After all rules
+          are collected, they are applied at once. If the config variable
+            <varname>RESTORE_ON_START</varname> is set to `1' and previously saved rulesets are
+          available, those will be sourced and thus activated immediatly.</para>
         <para>In any other mode, that actually runs commands to configure the system, IP-Array will
           not touch the currently active iptables, tc rules or /proc configuration until all rules
           and / or commands have been generated.</para>
@@ -461,31 +462,32 @@
           is done every time IP-Array loads. To avoid reloading modules on an already running
           system, modules will only be loaded if they are not loaded already. If running in a mode
           that does not apply commands like i.e. `dry-run', then module probing is not actually
-          perfomed, but done with `modprobe -n'. Alternativly the module probing can be disabled by
-          using the `-nm' startup option.</para>
+          perfomed, but done with `<command>modprobe -n</command>'. Alternativly the module probing
+          can be disabled by using the `-nm' startup option.</para>
       </section>
       <section xml:id="error_handling">
         <title>Error handling</title>
-        <para>In the main configuration file a variable named <varname>EXIT_ON_ERROR</varname>
-          exists to control IP-Arrays behaviour on errors. If it set to `1', the program will exit
-          on any configuration and command apply error it can detect. In case the system state has
-          already been changed by, either loading / unloading modules, or setting values in the
-          /proc filesystem, IP-Array will try to revert those changes. If iptables commands have
-          already been applied, a lockdown mode will be enforced. All policies will be set to DROP
-          and all chains get emptied. Depending on the configuration, only the current
-          administrative connection (if present taken from the bash environment variable
-            <varname>SSH_CONNECTION</varname>, or if not, if configured from the configuration
-          variable <varname>ADMIN_CONNECTION</varname>) and localhost traffic (configuration
-          variable <varname>ALLOW_LOOPBACK</varname>) may be allowed. If
-            <varname>EXIT_ON_ERROR</varname> is set to `0', IP-Array only sends error messages and
-          keeps on going.</para>
+        <para>In the <link linkend="conf_file_main_conf">main configuration file</link> a variable
+          named <varname>EXIT_ON_ERROR</varname> exists to control IP-Arrays behaviour on errors. If
+          it set to `1', the program will exit on any configuration and command apply error it can
+          detect. In case the system state has already been changed by, either loading / unloading
+          modules, or setting values in the /proc filesystem, IP-Array will try to revert those
+          changes. If iptables commands have already been applied, a lockdown mode will be enforced
+          first, before attempting a restore. All policies will be set to DROP and all chains get
+          emptied. Depending on the configuration, only the current administrative connection (if
+          present taken from the bash environment variable <varname>SSH_CONNECTION</varname>, or if
+          not, if configured from the configuration variable <varname>ADMIN_CONNECTION</varname>)
+          and localhost traffic (configuration variable <varname>ALLOW_LOOPBACK</varname>) may be
+          allowed. If <varname>EXIT_ON_ERROR</varname> is set to `0', IP-Array only sends error
+          messages and keeps on going.</para>
         <section xml:id="autosave">
           <title>Autosave / restore</title>
           <para>If IP-Array is started with one of the following parameters: open, restart, or
-            tc-start it will automatically save the current iptables ruleset using iptables-save to
-            a temporary file. In case an error occurs while processing the configuration, this
-            ruleset will be restored. This behaviour can be turned off, by using the startup option
-              <emphasis role="bold">-na | --no-autosave</emphasis>. If the configuration variable
+            tc-start it will automatically save the current iptables ruleset using
+              <command>iptables-save</command> to a temporary file. In case an error occurs while
+            processing the configuration, this ruleset will be restored. This behaviour can be
+            turned off, by using the startup option <emphasis role="bold">-na |
+              --no-autosave</emphasis>. If the configuration variable
               <varname>IPTSAVE_FAILS</varname> is set to `1' automatic saving / restoring will also
             not take place.</para>
           <para>
@@ -517,12 +519,17 @@
       </section>
       <section xml:id="jump_tree">
         <title>iptables jump tree</title>
+        <para>A jump tree is a set of chains and jump instructions starting from the builtin
+          iptables chains, in order to quickly sort out traffic and to find a terminating rule as
+          soon as possible. The desired jump tree behaviour can be configured using the
+            <varname>JUMP_TREE</varname> variable in the <link linkend="conf_file_main_conf">main
+            configuration file</link>.</para>
         <section xml:id="iface_chains">
-          <title>Per interface classified chains</title>
+          <title>Per interface classified jump tree</title>
           <para>IP-Array may create chains between every network interface configured in
               <varname>NET_INTERFACES</varname>. Means if you define two interfaces i.e: eth0 and
             eth1, IP-Array will create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'. And so
-            on for every additional interface. This can done for all tables according to the
+            on for every additional interface. This can be done for all tables according to the
             configuration. In example for the filter table the FORWARD chain then is filled with
             jump entries, seeding out the cross-interface traffic to the appropriate chain. Means
             every packet entering the FORWARD chain will end up in one of those chains created by
@@ -543,11 +550,11 @@
           <para>The jump tree creation is also available for networks defined in
               <varname>NET_INTERFACES</varname>. For every network IP-Array will create the
             according INPUT, OUTPUT, PREROUTING (just named PRE), POSTROUTING (just named POST)
-            (depending on the active table) chains prefixed with NETWORK-NAME_ and FORWARD chains
-            named NETWORK-NAME_FWD_IN and NETWORK-NAME_FWD_OUT. IP-Array will try to place rules
-            into those chains by selecting on source address, destination address, input device and
-            output device. Rules with chain values not matching builtin chains will not be
-            touched.</para>
+            (depending on the active table) chains prefixed with `NETWORK-NAME_'. The FORWARD chains
+            will be named NETWORK-NAME_FWD_IN and NETWORK-NAME_FWD_OUT. IP-Array will try to place
+            rules into those chains by selecting on source address, destination address, input
+            device and output device. Rules with chain values not matching builtin chains will not
+            be touched.</para>
         </section>
         <section xml:id="nw_iface_chains">
           <title xml:id="iface_and_network_chains">Combined network and interface jump tree</title>
@@ -1719,7 +1726,14 @@
               <varlistentry>
                 <term><varname>NET_INTERFACES</varname></term>
                 <listitem>
-                  <para>Types: ext | local | ipsec</para>
+                  <para>This variable must be configured with at least one interface. Any network
+                    interface but `lo' (localhost) may be put here.</para>
+                  <para>If you use a VPN software that creates an interface (named i.e. ipsec) you
+                    need to put it in as a separate entry. Otherwise use the available types:</para>
+                  <para>ext | local | ipsec</para>
+                  <para>ext = an external interface, local = a local interface, ipsec = an ipsec
+                    interface</para>
+                  <para>Example:</para>
                   <para>
                     <table frame="all">
                       <title>Configure networking interfaces</title>
@@ -1789,8 +1803,8 @@
                     <synopsis>startup-parameter-name[,...] { prolog | epilog } script-name { prolog | epilog } script-name</synopsis>
                   </para>
                   <para>Example:</para>
-                  <para>start,restart prolog my_start_prolog-script epilog
-                    my_start_epilog-script</para>
+                  <para><code>start,restart prolog my_start_prolog-script epilog
+                      my_start_epilog-script</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1803,8 +1817,8 @@
                     <synopsis>table chain policy</synopsis>
                   </para>
                   <para>Example:</para>
-                  <para>filter INPUT DROP</para>
-                  <para>filter OUTPUT ACCEPT</para>
+                  <para><code>filter INPUT DROP</code></para>
+                  <para><code>filter OUTPUT ACCEPT</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1853,8 +1867,8 @@
                     <synopsis>table chain-name [...]</synopsis>
                   </para>
                   <para>Example:</para>
-                  <para>filter chain1 chain2</para>
-                  <para>mangle mchain1 mchain2</para>
+                  <para><code>filter chain1 chain2</code></para>
+                  <para><code>mangle mchain1 mchain2</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1875,8 +1889,8 @@
                   <para>`table' defines in which table the jump tree will be created. A value of
                     `all' will cause creation in all tables.</para>
                   <para>Examples:</para>
-                  <para>JUMP_TREE="interface filter mangle"</para>
-                  <para>JUMP_TREE="netname all"</para>
+                  <para><code>JUMP_TREE="interface filter mangle"</code></para>
+                  <para><code>JUMP_TREE="netname all"</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2454,7 +2468,11 @@
     <section xml:id="conf_xml_templates_howto">
       <title>Templates</title>
       <subtitle>How to configure XML templates</subtitle>
-      <para/>
+      <para>XML templates provide the structure for the ruleblocks they will be associated with in
+        the rule files (template rule).</para>
+      <para>Many templates are provided out of the box inside the
+          <filename>template_repo.d</filename>. For better performance it is recommended to put only
+        those templates which will actually be used into the directory holding the templates.</para>
       <section>
         <title>Syntax</title>
         <para>A template definition file must contain the following:</para>
@@ -2519,6 +2537,8 @@
             <listitem>
               <para>If this condition evaluates to true, than reverse mode will be used (if
                 specified - othewise this setting does not make sense).</para>
+              <para>The condition must be defined like this: <synopsis>foo:bar</synopsis>where foo
+                is the condition and bar is the value it has to match. </para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -2606,7 +2626,8 @@
     <section xml:id="conf_xml_ruleblocks_howto">
       <title>Ruleblocks</title>
       <subtitle>How to configure XML ruleblocks</subtitle>
-      <para/>
+      <para>Ruleblocks are used inside the template_rule tags in rule files. They always need to be
+        called with the template defining their structure.</para>
       <section>
         <title>Syntax</title>
         <para>A ruleblock definition file must contain the following:</para>
@@ -2682,7 +2703,8 @@
       <subtitle>How to configure XML rule files</subtitle>
       <para>The rule files define what is run at what point. It may contain public functions, normal
         rules, combined rules, template rules and iptables arguments that may be used globally to be
-        applied to all following rules (grouping).</para>
+        applied to all following rules (grouping). For each iptables table (if configured to be
+        used) there must be at least one rule file defined.</para>
       <section>
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
@@ -2702,9 +2724,9 @@
           <itemizedlist>
             <listitem>
               <para>&lt;rule> or the short form &lt;r></para>
-              <para>A single rule entry. All iptables arguments can be used inside a rule tag. The
-                list of valid arguments can be retrieved by running: <command>ip-array show -sc
-                  ipt_args[,...]</command>.</para>
+              <para>A <emphasis role="bold">single rule</emphasis> entry. All iptables arguments can
+                be used inside a rule tag. The list of valid arguments can be retrieved by running:
+                  <command>ip-array show -sc ipt_args[,...]</command>.</para>
               <para>They can be used as attributes of the tag, or as content inside the tag. In the
                 first form they must be enclosed inside quotes. Values with whitespace must be
                 enclosed within double or single quotes. In both cases the left hand side (left of
@@ -2717,8 +2739,9 @@
             </listitem>
             <listitem>
               <para>&lt;combined_rule> or the short form &lt;cr></para>
-              <para>´Combined rules allow to create reverse traffic rules like with templates with
-                the reverse_mode=reverse option, but in a dynamic way.</para>
+              <para>´<emphasis role="bold">Combined rules</emphasis> allow to create reverse traffic
+                rules like with templates with the reverse_mode=reverse option, but in a dynamic
+                way.</para>
               <para>It has these attributes available:</para>
               <para>
                 <itemizedlist>
@@ -2743,6 +2766,12 @@
                 from left to right and will be applied to the options (iptables arguments) of the
                 second option list. Only if a value needs to be left out the special keyword
                   `<emphasis role="bold">empty</emphasis>' can be used.</para>
+              <para>
+                <note>
+                  <simpara>Inside combined rules the iptables arguments table and chain may be set
+                    to a comma separated list (maximum 2 chains can be defined).</simpara>
+                </note>
+              </para>
               <para>Examples:</para>
               <para><code>&lt;table> filter</code></para>
               <para><code> &lt;combined_rule reverse_mode="reverse" reverse_condition="foo:bar"
@@ -2774,7 +2803,7 @@
             <listitem>
               <para>&lt;template_rule> or the short form &lt;tr></para>
               <para>This tag defines one or more ruleblocks to be called with their corresponding
-                templates.</para>
+                templates - a <emphasis role="bold">template rule</emphasis>.</para>
               <para>The syntax is:
                 <synopsis>&lt;template_rule> template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule></synopsis><synopsis>or:</synopsis><synopsis>&lt;template_rule template="template-name" ruleblock="ruleblock-name" /></synopsis></para>
               <para>For the first form multible entries may be separated by newline. Also óne or
@@ -2786,8 +2815,8 @@
                 to be called.</para>
               <para>The syntax is:
                 <synopsis>&lt;pub_func name="function-name" /></synopsis><synopsis>or</synopsis><synopsis>&lt;pub_func> function-name [ option ... ] &lt;/pub_func></synopsis>For
-                the second form multible entries may be separated by newline. Also it allows to pass
-                parameters to the call of the function.</para>
+                the second form multible entries must be separated by newline. Also it allows to
+                pass parameters to the call of the function.</para>
               <para>The value part of the name attribute must be enclosed within quotes.</para>
               <para>Examples:</para>
               <para><code>&lt;pub_func></code></para>
@@ -2802,11 +2831,14 @@
                   arguments</emphasis>.</para>
               <para>The list of valid arguments can be retrieved by running: <command>ip-array show
                   -sc ipt_args[,...]</command>.</para>
-              <para>These can be used to apply their value to all other rules following. Global
-                arguments <emphasis role="bold">must</emphasis> be terminated by a <emphasis
+              <para>These can be used to apply their value to all other rules following (grouping).
+                Global arguments <emphasis role="bold">must</emphasis> be terminated by a <emphasis
                   role="underline">&lt;rule></emphasis> or a <emphasis role="underline"
                   >&lt;combined_rule></emphasis> with the according <emphasis role="underline"
-                  >&lt;optlist></emphasis> tag.</para>
+                  >&lt;optlist></emphasis> tag. </para>
+              <important>
+                <para>They will not be applied to template rules!</para>
+              </important>
               <para>In example:</para>
               <para><code>&lt;table name="filter"></code></para>
               <para><code> &lt;chain name="INPUT"></code></para>
