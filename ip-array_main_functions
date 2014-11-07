@@ -3200,7 +3200,6 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 				root_found=1 tag_depth=1 global_opts=0 opt_list_count=0
 			else
 				let ++tag_depth
-				g_rule=0 # not a global iptables arguments only rule
 				case "${tag_name}" in
 					f|pub_func)
 						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
@@ -3476,7 +3475,8 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						let ++opt_count ++opt_list_count
 					;;
 					*)
-						((opt_count == 0)) || { log -E "There is already an open option list."; return 1; }
+						# global iptables options (to apply to others, or build rules by their own (on close))
+						((opt_count == 0)) || { log -E "There is an open option list."; return 1; }
 						_validate_ipt_option_name "${tag_name}" || return 1
 						for i in ${cont_indicies}; do
 							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
@@ -3497,6 +3497,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						done
 						if ((c_rule == 0)); then
 							let ++global_opts
+							g_rule=0 # not a global iptables arguments only rule
 						else
 							let ++crule_opts
 						fi
@@ -3526,7 +3527,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					;;
 					*)
 						if ((c_rule == 0)); then
-							if ((q_rule == 0 && t_rule == 0)); then # not a combined, template or quick rule - must a global iptables args rule
+							if ((q_rule == 0 && t_rule == 0)); then # not a combined, template or quick rule - must be a global iptables args rule
 								if ((g_rule == 0)); then # has not been done before
 									str_app_opts=""
 									for i in ${!ARR_GLOBAL_OPTS[@]}; do
@@ -3679,8 +3680,8 @@ while read -r; do let line_count+=1
 			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
 			strip_blanks_var 'tmp_content'
 			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			ARR_TAGS[tag_idx++]="close ${ARR_TMP_TAGS[tmp_tag_idx-1]}"
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
-			ARR_TAGS[tag_idx++]="close ${last_tag}"
 			cont_expect=0 attr_expect=0 comment_idx=0
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${last_tag}'" "Remaining line: '${line}'"
 		else # either expected attributes, or expected content, or an unmatched line
