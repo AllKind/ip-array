@@ -3512,7 +3512,10 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 			else
 				case "${tag_name}" in
 					f|pub_func) pf_rule=0 ;;
-					r|rule) q_rule=0 ;;
+					r|rule)
+						q_rule=0
+						if ((${#ARR_GLOBAL_OPTS[@]})); then g_rule=1; fi # remember we used the global iptables args
+					;;
 					tr|template_rule) t_rule=0 ;;
 					opt|opts|option|options|optlist) let --opt_count ;;
 					cr|combined_rule)
