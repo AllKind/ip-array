@@ -1302,7 +1302,7 @@ elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} < 4)); then
 elif ((${KERN_VER[0]} == 2 && ${KERN_VER[1]} == 4 && ${KERN_VER[2]:-0} < 18)); then
 	ALL_MANGLE_CHAINS_PRESENT=0
 elif ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} > 14)); then
-	log -W "Kernel version greater than 3.14. UNTESTED!"
+	log -N "Kernel version greater than 3.14. UNTESTED!"
 elif ((${KERN_VER[0]} >= 4)); then
 	log -W "Kernel version 4.0 or higher. UNTESTED!"
 fi
