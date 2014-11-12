@@ -260,7 +260,7 @@ while (($#)); do
 				all|main|defaults|targets|matches|rules|ruleblocks|templates|proc|public_functions|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
-				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
+				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]]))|find_templates:*)
 					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				public_functions:*)

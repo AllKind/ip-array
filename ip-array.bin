@@ -1188,7 +1188,7 @@ while (($#)); do
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
-				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]])))
+				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]]))|find_templates:*)
 					cmdline_show_conf+="$opt_arg "
 				;;
 				public_functions:*)

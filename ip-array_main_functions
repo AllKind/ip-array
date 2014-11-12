@@ -958,6 +958,17 @@ show_arr_members() {
 eval 'printf "%s\n" "${'"$1"'[@]}"'
 } # -------------------------------------------------------------------------
 
+dump_arr() {
+while read; do
+	printf "%s=(\n" "$REPLY"
+	for i in $(arr_indicies "$REPLY"); do
+		eval 'printf "[$i]='\''%s'\''\n" "${'"$REPLY"'['$i']}"'
+	done
+	printf ")\n"
+done
+} # -------------------------------------------------------------------------
+
+
 #check_array_empty_indicies() { # check for empty indicies in an array
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 #(($(($(last_arr_member "$1") + 1)) == $(arr_members_sum "$1")))
@@ -4632,6 +4643,8 @@ fi
 
 run_main() {
 local str_opt str_x
+local -a arr_tmp
+local -i x
 case "$1" in
 	RESTART|SAVE-COMMANDS|START)
 	# All of these modes use all IP-Array features
@@ -5049,6 +5062,30 @@ case "$1" in
 							pr_str $str_opt | dump_arr
 						done
 						pr_banner "End of template dump"
+					else
+						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
+					fi
+					;;
+				find_templates:*)
+					str_opt="${rvar#find_templates:}"
+					i=$(IFS=, members_in_string "$str_opt")
+					load_configs || return
+					load_all_templates || return
+					if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+						set -- ${str_opt//,/ }
+						while read -r -t $GLOBAL_READ_TIMEOUT; do idx=0
+							local -a arr_tmp=()
+							$($copy_array $REPLY arr_tmp)
+							for x in ${!arr_tmp[@]}; do
+								for str_opt; do
+									[[ ${arr_tmp[x]} = $str_opt ]] && let idx++
+								done
+								if (($i == $idx)); then
+									pr_str $REPLY | dump_arr
+									break
+								fi
+							done
+						done < "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 					else
 						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
 					fi
