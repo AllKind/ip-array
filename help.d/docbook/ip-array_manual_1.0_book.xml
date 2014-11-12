@@ -2511,7 +2511,9 @@
           <varlistentry>
             <term>target</term>
             <listitem>
-              <para>A comma separated list of iptables targets.</para>
+              <para>A comma separated list of iptables targets. Usually the target will be 'jumped'
+                (--jump) to. To use a goto (--goto) instead, prefix the target name with
+                `goto:'.</para>
             </listitem>
           </varlistentry>
           <varlistentry>
@@ -2714,9 +2716,9 @@
           definition.</para>
         <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
           version (only 0.1 is available by now).</para>
-        <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way. Tags
-          can be closed by a simple `/>'. Attributes can have their value enclosed inside single
-          quotes.</para>
+        <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not
+          XML compatible). Tags can be closed by a simple `/>'. Attributes can have their value
+          enclosed inside single quotes, or not quoted at all.</para>
       </section>
       <section>
         <title>Rule file XML elements</title>
@@ -2728,9 +2730,10 @@
                 be used inside a rule tag. The list of valid arguments can be retrieved by running:
                   <command>ip-array show -sc ipt_args[,...]</command>.</para>
               <para>They can be used as attributes of the tag, or as content inside the tag. In the
-                first form they must be enclosed inside quotes. Values with whitespace must be
-                enclosed within double or single quotes. In both cases the left hand side (left of
-                the `=') is the iptables argument and the right hand side is its value.</para>
+                first form they do not need be enclosed inside quotes (relaxed XML), unless the
+                value contains a whitespace. Values with whitespace must be enclosed within double
+                or single quotes. In both cases the left hand side (left of the `=') is the iptables
+                argument and the right hand side is its value.</para>
               <para>Examples:</para>
               <para><code>&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
                   &lt;/rule></code></para>
@@ -2740,8 +2743,8 @@
             <listitem>
               <para>&lt;combined_rule> or the short form &lt;cr></para>
               <para>´<emphasis role="bold">Combined rules</emphasis> allow to create reverse traffic
-                rules like with templates with the reverse_mode=reverse option, but in a dynamic
-                way.</para>
+                rules like with templates and ruleblocks with the reverse_mode=reverse option, but
+                in a dynamic way.</para>
               <para>It has these attributes available:</para>
               <para>
                 <itemizedlist>
@@ -2765,29 +2768,35 @@
                 the right hand side value. The values of the first option list will be used in order
                 from left to right and will be applied to the options (iptables arguments) of the
                 second option list. Only if a value needs to be left out the special keyword
-                  `<emphasis role="bold">empty</emphasis>' can be used.</para>
+                  `<emphasis role="bold">empty</emphasis>' can be used. Either as option name (i.e.
+                option list one has `odev=eth0' as iptables argument, you will use just `empty' in
+                the second option list), or as value (i.e. idev=empty).</para>
+              <para>All global iptables arguments, that are opended inside a combined rule will be
+                applied to all following rules created with the &lt;optlist> tag. They will not be
+                applied to rules outside of the combined rule.</para>
               <para>
                 <note>
                   <simpara>Inside combined rules the iptables arguments table and chain may be set
                     to a comma separated list (maximum 2 chains can be defined).</simpara>
                 </note>
               </para>
-              <para>Examples:</para>
-              <para><code>&lt;table> filter</code></para>
-              <para><code> &lt;combined_rule reverse_mode="reverse" reverse_condition="foo:bar"
-                  ></code></para>
-              <para><code> &lt;chain> INPUT,OUTPUT</code></para>
-              <para><code> &lt;target> ACCEPT</code></para>
-              <para><code> &lt;optlist> proto=tcp sport=99 &lt;/optlist></code></para>
-              <para><code> &lt;optlist> proto dport &lt;/optlist></code></para>
-              <para><code> &lt;/target></code></para>
-              <para><code> &lt;target> DROP</code></para>
-              <para><code> &lt;opts idev="$lan_if" proto="udp" sport="66" /></code></para>
-              <para><code> &lt;opts> odev proto empty /></code></para>
-              <para><code> &lt;/target></code></para>
-              <para><code> &lt;/chain></code></para>
-              <para><code> &lt;/combined_rule></code></para>
-              <para><code>&lt;/table></code></para>
+              <para>Example:</para>
+              <para>
+                <programlisting>&lt;table> filter
+    &lt;combined_rule reverse_mode="reverse" reverse_condition="x:y">
+        &lt;chain> INPUT,OUTPUT
+            &lt;target> LOG,ACCEPT
+                &lt;optlist> proto=tcp sport=99 &lt;/optlist>
+                &lt;optlist> proto dport &lt;/optlist>
+            &lt;/target>
+            &lt;target> DROP
+                &lt;opts idev="$lan_if" proto="udp" sport="66" />
+                &lt;opts> odev proto empty />
+            &lt;/target>
+        &lt;/chain>
+    &lt;/combined_rule>
+&lt;/table></programlisting>
+              </para>
             </listitem>
             <listitem>
               <para>&lt;optlist> or the allowed variations: &lt;opt>, &lt;opts>, &lt;option>,
@@ -2796,18 +2805,19 @@
                 used inside this tag. The list of valid arguments can be retrieved by running:
                   <command>ip-array show -sc ipt_args[,...]</command>.</para>
               <para>They can be used as attributes of the tag, or as content inside the tag. In the
-                first form they must be enclosed inside quotes. Values with whitespace must be
-                enclosed within double or single quotes. In both cases the left hand side (left of
-                the `=') is the iptables argument and the right hand side is its value.</para>
+                first form they do not need be enclosed inside quotes. Values with whitespace must
+                be enclosed within double or single quotes. In both cases the left hand side (left
+                of the `=') is the iptables argument and the right hand side is its value.</para>
             </listitem>
             <listitem>
               <para>&lt;template_rule> or the short form &lt;tr></para>
               <para>This tag defines one or more ruleblocks to be called with their corresponding
-                templates - a <emphasis role="bold">template rule</emphasis>.</para>
+                templates. This is named a <emphasis role="bold">template rule</emphasis>.</para>
               <para>The syntax is:
                 <synopsis>&lt;template_rule> template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule></synopsis><synopsis>or:</synopsis><synopsis>&lt;template_rule template="template-name" ruleblock="ruleblock-name" /></synopsis></para>
-              <para>For the first form multible entries may be separated by newline. Also óne or
+              <para>For the first form multible entries may be separated by newline. Also one or
                 more command(s) can be run at invocation of the ruleblock.</para>
+              <para>Template rules will not inherit the global arguments (see below).</para>
             </listitem>
             <listitem>
               <para>&lt;pub_func> or the short form &lt;f></para>
@@ -2819,12 +2829,16 @@
                 pass parameters to the call of the function.</para>
               <para>The value part of the name attribute must be enclosed within quotes.</para>
               <para>Examples:</para>
-              <para><code>&lt;pub_func></code></para>
-              <para><code> log -S "Adding pre alteration log rules"</code></para>
-              <para><code> drop_dhcp</code></para>
-              <para><code> drop_netbios</code></para>
-              <para><code>&lt;/pub_func></code></para>
-              <para><code>&lt;f name="lan_ftp" /></code></para>
+              <para>
+                <programlisting>&lt;pub_func>
+    log -S "Adding DROP rules"
+    drop_dhcp
+    drop_netbios
+&lt;/pub_func></programlisting>
+              </para>
+              <para>
+                <programlisting>&lt;f name="lan_ftp" /></programlisting>
+              </para>
             </listitem>
             <listitem>
               <para>All other iptables arguments. We'll call them <emphasis role="italic">global
@@ -2832,25 +2846,44 @@
               <para>The list of valid arguments can be retrieved by running: <command>ip-array show
                   -sc ipt_args[,...]</command>.</para>
               <para>These can be used to apply their value to all other rules following (grouping).
-                Global arguments <emphasis role="bold">must</emphasis> be terminated by a <emphasis
-                  role="underline">&lt;rule></emphasis> or a <emphasis role="underline"
-                  >&lt;combined_rule></emphasis> with the according <emphasis role="underline"
-                  >&lt;optlist></emphasis> tag. </para>
+                Or to build rules by their own. In the second case, the closing of a tag will cause
+                the creation of a rule. Except they are terminated by a <emphasis role="underline"
+                  >&lt;rule></emphasis> or a <emphasis role="underline"
+                  >&lt;combined_rule></emphasis>, in which case their closing will not cause
+                additional rules to be created, unless a new tag is opend (and then closed
+                afterwards to create a rule), which will start a new counter like before. </para>
               <important>
                 <para>They will not be applied to template rules!</para>
               </important>
               <para>In example:</para>
-              <para><code>&lt;table name="filter"></code></para>
-              <para><code> &lt;chain name="INPUT"></code></para>
-              <para><code> &lt;rule> rule1 &lt;/rule></code></para>
-              <para><code> &lt;rule> rule2 &lt;/rule></code></para>
-              <para><code> &lt;/chain></code></para>
-              <para><code>&lt;/table></code></para>
+              <para>
+                <programlisting>&lt;table name="filter">
+    &lt;chain name="INPUT">
+        &lt;rule> rule1 &lt;/rule>
+        &lt;rule> rule2 &lt;/rule>
+    &lt;/chain>
+&lt;/table></programlisting>
+              </para>
               <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
-              <para><code>&lt;table> filter &lt;chain> INPUT</code></para>
-              <para><code> &lt;rule> rule1 /></code></para>
-              <para><code> &lt;rule> rule2 /></code></para>
-              <para><code>/> /></code></para>
+              <para>
+                <programlisting>&lt;table> filter &lt;chain name=INPUT>
+    &lt;rule> rule1 />
+    &lt;rule> rule2 />
+/> /></programlisting>
+              </para>
+              <para>Another example using only global arguments:</para>
+              <para>
+                <programlisting>&lt;table> filter
+    &lt;chain> INPUT
+        &lt;target> ACCEPT
+            &lt;state> NEW,ESTABLISHED
+                 &lt;src> 1.1.1.1 &lt;/src>
+                 &lt;dst> 2.2.2.2 &lt;/dst>
+            &lt;/state> &lt;/target>
+        &lt;target> DROP &lt;/target>
+    &lt;/chain>
+&lt;/table></programlisting>
+              </para>
             </listitem>
           </itemizedlist>
         </para>
@@ -3489,23 +3522,6 @@
           </varlistentry>
         </variablelist>
       </para>
-    </section>
-  </chapter>
-  <chapter xml:id="examples">
-    <title>Examples</title>
-    <subtitle>Example scenarios</subtitle>
-    <para/>
-    <section xml:id="example_single_host">
-      <title>Single host example</title>
-      <para/>
-    </section>
-    <section xml:id="example_lan_gatew">
-      <title>LAN gateway example</title>
-      <para/>
-    </section>
-    <section xml:id="example_multi_home">
-      <title>Multi-homed example</title>
-      <para/>
     </section>
   </chapter>
   <chapter xml:id="appendix">
