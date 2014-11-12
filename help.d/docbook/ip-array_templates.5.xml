@@ -76,7 +76,9 @@
             <varlistentry>
                 <term>target</term>
                 <listitem>
-                    <para>A comma separated list of iptables targets.</para>
+                    <para>A comma separated list of iptables targets.  Usually the target will be
+                        'jumped' (--jump) to. To use a goto (--goto) instead, prefix the target name
+                        with `goto:'.</para>
                 </listitem>
             </varlistentry>
             <varlistentry>

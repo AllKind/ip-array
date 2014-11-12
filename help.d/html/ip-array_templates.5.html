@@ -1,11 +1,46 @@
 <html><head>
       <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-   <title>ip-array_templates</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array_templates &#8212; Configure ip-array templates</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/{stable|test}/conf.d/templates.d/<em class="replaceable"><code>file</code></em>
-            
-            <code class="sgmltag-element">&lt; ip_array_root </code>
-            <code class="sgmltag-attribute">name="templates"</code>
-        </pre></div><div class="refsect1" lang="en"><a name="d0e51"></a><h2>Description</h2><p>
-            
-        </p></div><div class="refsect1" lang="en"><a name="d0e56"></a><h2>See also</h2><p>
-            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>
+   <title>ip-array_templates</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array_templates &#8212; Configure ip-array templates</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/{stable|test}/conf.d/templates.d/<em class="replaceable"><code>file</code></em>          
+        </pre></div><div class="refsect1" lang="en"><a name="d0e45"></a><h2>Description</h2><p>A ruleblock is a group (stack) of rules, containing only the values of each option, to
+            be read in order of occurence. The structure of the ruleblock is defined in a template.
+            Each rule entry in a ruleblock is interpreted column-wise. How the values in each column
+            are interpreted, is defined in the template called with the ruleblock.</p></div><div class="refsect1" lang="en"><a name="d0e50"></a><h2>Syntax</h2><p>A template definition file must contain the following:</p><p>
+            </p><div class="orderedlist"><ol type="1"><li><p>First a root tag including the describing name attribule and the syntax
+                        version:</p><p><code class="code">&lt;ip_array_root name="iptables_templates"
+                            syntax_version="0.1"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an
+                        iptables template.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the
+                        syntax version (only 0.1 is available by now).</p></li><li><p>The actual template tag including the name attribute defining the name of
+                        the template:</p><p>&lt;template name="T_EXAMPLE"&gt;</p><p>The template name must begin with one of the following prefixes: T_, BT_,
+                        GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_.</p></li></ol></div><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e82"></a><h2>Elements</h2><p>The following list describes the elements which are valid inside the templates.</p><div class="variablelist"><dl><dt><span class="term">table</span></dt><dd><p>The name of the iptables table (defaults to `filter' if unset).</p></dd><dt><span class="term">target</span></dt><dd><p>A comma separated list of iptables targets.  Usually the target will be
+                        'jumped' (--jump) to. To use a goto (--goto) instead, prefix the target name
+                        with `goto:'.</p></dd><dt><span class="term">chain</span></dt><dd><p>A comma separated list of iptables chains. A maximum of 2 chain names can
+                        be specified, if the <code class="varname">reverse_mode</code> is `reverse' or
+                        `mirror'. Otherwise only one is valid.</p></dd><dt><span class="term">reverse_mode</span></dt><dd><p>Reverse mode can either be set to `reverse' or `mirror'. This means that a
+                        second option list will be processed (most likely the return traffic). See
+                            <code class="varname">option_list_1</code> below. If `mirror' is specified the
+                        first option list will be copied to the second one. Otherwise
+                            <code class="varname">option_list_1</code> will be used.</p></dd><dt><span class="term">reverse_condition</span></dt><dd><p>If this condition evaluates to true, than reverse mode will be used (if
+                        specified - othewise this setting does not make sense).</p><p>The condition must be defined
+                        like this: </p><pre class="synopsis">foo:bar</pre><p>where foo is the condition and bar is
+                        the value it has to match. </p></dd><dt><span class="term">template_msg</span></dt><dd><p>A message that will be displayed as the template is called, if
+                            <code class="varname">VERBOSE</code> is greater or equal 3.</p></dd><dt><span class="term">mandatory_vars</span></dt><dd><p>A comma separated list of variable names that must be defined in the
+                        ruleblock called with the template.</p></dd><dt><span class="term">load_template</span></dt><dd><p>Other templates to load into the current one.</p><p>
+                        </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Those loaded templates will always be read before any option_list
+                                or always_use list. Means they are on the more left side from the
+                                ruleblock perspective.</p></div><p>
+                    </p></dd><dt><span class="term">option_list_0</span></dt><dd><p>These are the actual iptables arguments which will be filled with values
+                        from the ruleblock called with the template.</p><p>The list of valid iptables arguments and their usage can be called with:
+                            <span class="command"><strong>ip-array show -sc ipt_args[,...]</strong></span>.</p><p>You can define default values to be used by using this syntax:
+                        </p><pre class="synopsis">name=default_value</pre><p>I.e. idev=eth0</p><p>These default values will be used if the according ruleblock entry is not
+                        defined (filled with the rule placeholder value, or undefined).</p></dd><dt><span class="term">option_list_1</span></dt><dd><p>This second list of iptables options is used for the reverse_mode if set
+                        to `reverse'. I.e. what has been idev (input interface) will be odev (output
+                        interface) in the reverse rule.</p></dd><dt><span class="term">always_use_0</span></dt><dd><p>You can define default values for <code class="varname">option_list_0</code> by
+                        using this syntax: </p><pre class="synopsis">name=default_value</pre><p>I.e. idev=eth0</p></dd><dt><span class="term">always_use_1</span></dt><dd><p>You can define default values for <code class="varname">option_list_1</code> by
+                        using this syntax: </p><pre class="synopsis">name=default_value</pre><p>I.e. odev=eth0</p></dd><dt><span class="term">state_match_arg</span></dt><dd><p>A maximum of two comma separated lists with state-names of the
+                        state/conntrack match. I.e. NEW,ESTABLISHED ESTABLISHED.</p><p>The second one is only used if the reverse_mode is set to
+                        `reverse'.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="d0e218"></a><h2>Usage guidelines</h2><p>It is recommended to build <span class="italic">small chunk</span> templates
+            (called <span class="bold"><strong>base templates</strong></span>) and to use them modulary to
+            build your final templates (using the load_template element).</p></div><div class="refsect1" lang="en"><a name="d0e229"></a><h2>See also</h2><p>
+            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>
         </p></div></div></body></html>

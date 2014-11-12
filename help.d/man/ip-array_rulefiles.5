@@ -2,12 +2,12 @@
 .\"     Title: ip-array_rulefiles
 .\"    Author: AllKind <AllKind@fastest.cc>
 .\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 10/16/2014
+.\"      Date: 11/12/2014
 .\"    Manual: ip-array 1.0
 .\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_RULEFILES" "5" "10/16/2014" "ip-array 1.0" "ip\-array 1\&.0"
+.TH "IP\-ARRAY_RULEFILES" "5" "11/12/2014" "ip-array 1.0" "ip\-array 1\&.0"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -55,10 +55,8 @@ attribute defines the syntax version (only 0\&.1 is available by now)\&.
 .PP
 The XML syntax can be used in a
 \fIrelaxed\fR
-way\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their value enclosed inside single quotes\&.
+way (not XML compatible)\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their value enclosed inside single quotes, or not quoted at all\&.
 .SH "ELEMENTS"
-.PP
-
 .sp
 .RS 4
 .ie n \{\
@@ -70,10 +68,12 @@ way\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their valu
 .\}
 <rule> or the short form <r>
 .sp
-A single rule entry\&. All iptables arguments can be used inside a rule tag\&. The list of valid arguments can be retrieved by running:
+A
+\fBsingle rule\fR
+entry\&. All iptables arguments can be used inside a rule tag\&. The list of valid arguments can be retrieved by running:
 \fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
 .sp
-They can be used as attributes of the tag, or as content inside the tag\&. In the first form they must be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they do not need be enclosed inside quotes (relaxed XML), unless the value contains a whitespace\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
 .sp
 Examples:
 .sp
@@ -92,7 +92,8 @@ Examples:
 .\}
 <combined_rule> or the short form <cr>
 .sp
-\(aaCombined rules allow to create reverse traffic rules like with templates with the reverse_mode=reverse option, but in a dynamic way\&.
+\(aa\fBCombined rules\fR
+allow to create reverse traffic rules like with templates and ruleblocks with the reverse_mode=reverse option, but in a dynamic way\&.
 .sp
 It has these attributes available:
 .sp
@@ -133,37 +134,53 @@ msg \- like with template_msg, it allows to define a message to be displayed, if
 is greater or equal 3\&.
 .RE
 .sp
-The iptables arguments must be used inside the <optlist> tag (see next item in the list)\&. The arguments in the second option list do not need the equal siqn and the right hand side value\&. The values of the first option list will be used in order from left to right and will be applied to the options (iptables arguments) of the second option list\&. Only if a value needs to be left out the special keyword `\fBempty\fR\*(Aq can be used\&.
+The iptables arguments must be used inside the <optlist> tag (see next item in the list)\&. The arguments in the second option list do not need the equal siqn and the right hand side value\&. The values of the first option list will be used in order from left to right and will be applied to the options (iptables arguments) of the second option list\&. Only if a value needs to be left out the special keyword `\fBempty\fR\*(Aq can be used\&. Either as option name (i\&.e\&. option list one has `odev=eth0\*(Aq as iptables argument, you will use just `empty\*(Aq in the second option list), or as value (i\&.e\&. idev=empty)\&.
 .sp
-Examples:
+All global iptables arguments, that are opended inside a combined rule will be applied to all following rules created with the <optlist> tag\&. They will not be applied to rules outside of the combined rule\&.
 .sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Inside combined rules the iptables arguments table and chain may be set to a comma separated list (maximum 2 chains can be defined)\&.
+.sp .5v
+.RE
+.sp
+Example:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 <table> filter
-.sp
-<combined_rule reverse_mode="reverse" reverse_condition="foo:bar" >
-.sp
-<chain> INPUT,OUTPUT
-.sp
-<target> ACCEPT
-.sp
-<optlist> proto=tcp sport=99 </optlist>
-.sp
-<optlist> proto dport </optlist>
-.sp
-</target>
-.sp
-<target> DROP
-.sp
-<opts idev="$lan_if" proto="udp" sport="66" />
-.sp
-<opts> odev proto dport=empty />
-.sp
-</target>
-.sp
-</chain>
-.sp
-</combined_rule>
-.sp
+    <combined_rule reverse_mode="reverse" reverse_condition="x:y">
+        <chain> INPUT,OUTPUT
+            <target> LOG,ACCEPT
+                <optlist> proto=tcp sport=99 </optlist>
+                <optlist> proto dport </optlist>
+            </target>
+            <target> DROP
+                <opts idev="$lan_if" proto="udp" sport="66" />
+                <opts> odev proto empty />
+            </target>
+        </chain>
+    </combined_rule>
 </table>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
 .RE
 .sp
 .RS 4
@@ -179,7 +196,7 @@ Examples:
 This tag is only valid within a combined_rule tag\&. All iptables arguments can be used inside this tag\&. The list of valid arguments can be retrieved by running:
 \fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
 .sp
-They can be used as attributes of the tag, or as content inside the tag\&. In the first form they must be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they do not need be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
 .RE
 .sp
 .RS 4
@@ -192,7 +209,8 @@ They can be used as attributes of the tag, or as content inside the tag\&. In th
 .\}
 <template_rule> or the short form <tr>
 .sp
-This tag defines one or more ruleblocks to be called with their corresponding templates\&.
+This tag defines one or more ruleblocks to be called with their corresponding templates\&. This is named a
+\fBtemplate rule\fR\&.
 .sp
 The syntax is:
 .sp
@@ -226,7 +244,9 @@ or:
 .RE
 .\}
 .sp
-For the first form multible entries may be separated by newline\&.
+For the first form multible entries may be separated by newline\&. Also one or more command(s) can be run at invocation of the ruleblock\&.
+.sp
+Template rules will not inherit the global arguments (see below)\&.
 .RE
 .sp
 .RS 4
@@ -239,8 +259,7 @@ For the first form multible entries may be separated by newline\&.
 .\}
 <pub_func> or the short form <f>
 .sp
-This tag defines one or more public functions to be called\&. A list of public functions and their usage can be retrieved by running:
-\fBip\-array show \-sc public_functions[:name[,\&.\&.\&.]]\fR\&.
+This tag defines one or more public functions to be called\&.
 .sp
 The syntax is:
 .sp
@@ -274,23 +293,40 @@ or
 .RE
 .\}
 .sp
-For the second form multible entries may be separated by newline\&.
+For the second form multible entries must be separated by newline\&. Also it allows to pass parameters to the call of the function\&.
 .sp
 The value part of the name attribute must be enclosed within quotes\&.
 .sp
 Examples:
 .sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 <pub_func>
-.sp
-log \-S "Adding pre alteration log rules"
-.sp
-drop_dhcp
-.sp
-drop_netbios
-.sp
+    log \-S "Adding DROP rules"
+    drop_dhcp
+    drop_netbios
 </pub_func>
+.fi
+.if n \{\
+.RE
+.\}
 .sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 <f name="lan_ftp" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
 .RE
 .sp
 .RS 4
@@ -307,43 +343,87 @@ All other iptables arguments\&. We\*(Aqll call them
 The list of valid arguments can be retrieved by running:
 \fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
 .sp
-These can be used to apply their value to all other rules following\&. Global arguments
-\fBmust\fR
-be terminated by a
+These can be used to apply their value to all other rules following (grouping)\&. Or to build rules by their own\&. In the second case, the closing of a tag will cause the creation of a rule\&. Except they are terminated by a
 \fI<rule>\fR
 or a
-\fI<combined_rule>\fR
-with the according
-\fI<optlist>\fR
-tag\&.
+\fI<combined_rule>\fR, in which case their closing will not cause additional rules to be created, unless a new tag is opend (and then closed afterwards to create a rule), which will start a new counter like before\&.
+.if n \{\
 .sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBImportant\fR
+.ps -1
+.br
+They will not be applied to template rules!
+.sp .5v
+.RE
 In example:
 .sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 <table name="filter">
-.sp
-<chain name="INPUT">
-.sp
-<rule> rule1 </rule>
-.sp
-<rule> rule2 </rule>
-.sp
-</chain>
-.sp
+    <chain name="INPUT">
+        <rule> rule1 </rule>
+        <rule> rule2 </rule>
+    </chain>
 </table>
+.fi
+.if n \{\
+.RE
+.\}
 .sp
 Or in the
 \fIrelaxed\fR
 way:
 .sp
-<table> filter <chain> INPUT
+
 .sp
-<rule> rule1 />
-.sp
-<rule> rule2 />
-.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table> filter <chain name=INPUT>
+    <rule> rule1 />
+    <rule> rule2 />
 /> />
+.fi
+.if n \{\
 .RE
+.\}
 .sp
+Another example using only global arguments:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table> filter
+    <chain> INPUT
+        <target> ACCEPT
+            <state> NEW,ESTABLISHED
+                 <src> 1\&.1\&.1\&.1 </src>
+                 <dst> 2\&.2\&.2\&.2 </dst>
+            </state> </target>
+        <target> DROP </target>
+    </chain>
+</table>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
 .SH "SEE ALSO"
 .PP
 
