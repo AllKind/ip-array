@@ -5024,7 +5024,7 @@ case "$1" in
 						done
 						pr_banner "End of ruleblock dump"
 					else
-						log -W "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES does not exist. Templates must first be parsed."
+						log -W "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES does not exist. Ruleblocks must first be parsed."
 					fi
 				;;
 				templates)
