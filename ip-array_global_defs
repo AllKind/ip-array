@@ -524,8 +524,6 @@ CONFIG_ENTRY_ARRAY=(
 "BLOCK_ILLEGAL bool 0"
 # applications
 "LAN_FTP print 0 check_str_unique \${LAN_FTP}"
-"AUTO_PROV_DNS bool 0"
-"AUTO_ISP_SMTP bool 0"
 "ISP_NS print 0"
 "ISP_SMTP print 0"
 "LAN_NS print 0"
