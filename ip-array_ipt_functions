@@ -9520,10 +9520,6 @@ done
 
 lan_isp_smtp() { # allow subnets to use certain SMTP servers
 ((ENABLE_FILTER)) || return 0
-((AUTO_ISP_SMTP)) || {
-	log -w "Not using automatic ISP SMTP server configuration"
-	return 0
-}
 if ! ((${#ISP_SMTP[@]})); then
 	log -u 'ISP_SMTP'
 	return 0

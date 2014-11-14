@@ -3,7 +3,7 @@ Name: lan_isp_smtp
 
 Description:
 	Permit forwarded SMTP traffic from LAN(s) to remote ISP mailservers.
-	Requires `AUTO_ISP_SMTP' variable to be configured.
+	Requires `ISP_SMTP' variable to be configured.
 
 Usage:
 	lan_isp_smtp
