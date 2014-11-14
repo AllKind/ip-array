@@ -8966,7 +8966,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_REJECT_AUTH RULEBLOCK_BUILTIN_REJECT_AUTH
 drop_netbios() { # drop NetBios broadcasts on certain interfaces (prevent log spamming)
 ((ENABLE_FILTER)) || return 0
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local iface_ip iface_mask iface_brd str str_iflist str_netlist str_net_data str_iface
+local iface_ip iface_mask str str_iflist str_netlist str_net_data str_iface rest
 local TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST=(
 "table=filter"
 "target[0]=DROP"
@@ -8997,25 +8997,15 @@ done
 	return 0
 }
 for str in $str_iflist; do
-	while read iface_ip iface_mask iface_brd; do
-		if [[ -z $iface_brd ]]; then
-			log -E "Unable to retrieve broadcast address for interface \`$str'."
-			raise_gen_err_count
-			continue
-		fi
-		RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str $(ip_network "${iface_ip}/${iface_mask}")/${iface_mask} ${iface_brd}"
+	while read iface_ip iface_mask rest; do
+		RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str $(ip_network "${iface_ip}/${iface_mask}")/${iface_mask} 255.255.255.255"
 	done < <(get_if_ipv4_data "$str" -i -m -b)
 done
 for str in $str_netlist; do
 	str_net_data=$(get_net_data "$str") || continue
 	set -- $str_net_data
-	str_iface="$1" iface_ip=$(ip_network "${3}/${4}") iface_mask="$4" iface_brd="$6"
-	if [[ -z $iface_brd ]]; then
-		log -E "Unable to retrieve broadcast address for interface \`$str'."
-		raise_gen_err_count
-		continue
-	fi
-	RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str_iface ${iface_ip}/${iface_mask} $iface_brd"
+	str_iface="$1" iface_ip=$(ip_network "${3}/${4}") iface_mask="$4"
+	RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str_iface ${iface_ip}/${iface_mask} 255.255.255.255"
 done
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST
 } # -------------------------------------------------------------------------
