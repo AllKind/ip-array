@@ -2233,20 +2233,6 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term><varname>REJECT_AUTH</varname></term>
-                <listitem>
-                  <para>Reject auth (port 113) traffic on listed interfaces. Example:
-                      <code>REJECT_AUTH="eth0 eth1"</code></para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
-                <term><varname>DROP_NETBIOS</varname></term>
-                <listitem>
-                  <para>Drop NetBios (Microsoft) broadcasts to the listed interfaces. Allowed values
-                    are interface-names or network names.</para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
                 <term><varname>DROP_DHCP</varname></term>
                 <listitem>
                   <para>Drop DHCP broadcasts to certain interfaces. Allowed values are
@@ -3403,7 +3389,7 @@
                   configured values.</member>
                 <member> public_functions[:NAME[,...] display all or just the selected public
                   functions help.</member>
-                <member> find templates:template-entry-glob[,...] find templates containing all
+                <member> find_templates:template-entry-glob[,...] find templates containing all
                   entries of the comma separated search list.</member>
               </simplelist></para>
           </listitem>

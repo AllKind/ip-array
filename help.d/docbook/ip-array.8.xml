@@ -381,6 +381,8 @@
                                 and their configured values.</member>
                             <member> public_functions[:NAME[,...] display all or just the selected
                                 public functions help.</member>
+                            <member> find_templates:template-entry-glob[,...] find templates
+                                containing all entries of the comma separated search list.</member>
                         </simplelist></para>
                 </listitem>
                 <listitem>

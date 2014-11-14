@@ -539,19 +539,12 @@
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term><varname>AUTO_PROV_DNS</varname></term>
-                    <listitem>
-                        <para>Valid values: `0' or `1'.</para>
-                        <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more
-                            local networks to ISP nameservers. Needs the <varname>LAN_NS</varname>
-                            and <varname>ISP_NS</varname> variables to be defined.</para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
                     <term><varname>LAN_NS</varname></term>
                     <listitem>
-                        <para>Purpose: Define name servers (DNS) that are part of a local area
-                            network.</para>
+                        <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more
+                            local networks to ISP nameservers. Needs the <varname>LAN_NS</varname>
+                            and <varname>ISP_NS</varname> variables to be defined. Purpose: Define
+                            name servers (DNS) that are part of a local area network.</para>
                         <para>
                             <table frame="all">
                                 <title>Local (LAN) name servers</title>
@@ -586,8 +579,11 @@
                 <varlistentry>
                     <term><varname>ISP_NS</varname></term>
                     <listitem>
-                        <para>Purpose: Define the Internet service provider name servers (DNS), for
-                            each local area network.</para>
+                        <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more
+                            local networks to ISP nameservers. Needs the <varname>LAN_NS</varname>
+                            and <varname>ISP_NS</varname> variables to be defined. Purpose: Define
+                            the Internet service provider name servers (DNS), for each local area
+                            network.</para>
                         <para>
                             <table frame="all">
                                 <title>ISP name servers</title>
@@ -620,12 +616,13 @@
                     </listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term><varname>AUTO_ISP_SMTP</varname></term>
+                    <term><varname>ISP_SMTP</varname></term>
                     <listitem>
-                        <para>Valid values: `0' or `1'.</para>
                         <para>Allow SMTP traffic from inside one or more local networks to SMTP
-                            mailservers. Needs the <varname>ISP_SMTP</varname> variable to be
-                            defined.</para>
+                            mailservers. Needs the <command
+                                xmlns:xi="http://www.w3.org/2001/XInclude"
+                                xmlns:xlink="http://www.w3.org/1999/xlink">lan_isp_smtp</command>
+                            public function to be called in the rule file.</para>
                         <para>
                             <table frame="all">
                                 <title>ISP SMTP servers</title>
@@ -779,20 +776,6 @@
                             and the policy of the OUTPUT chain is DROP, setting this variable to `0'
                             will allow only traffic in ESTABLISHED state, while setting it to `1'
                             will allow traffic in ESTABLISHED and RELATED state.</para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term><varname>REJECT_AUTH</varname></term>
-                    <listitem>
-                        <para>Reject auth (port 113) traffic on listed interfaces. Example:
-                                <code>REJECT_AUTH="eth0 eth1"</code></para>
-                    </listitem>
-                </varlistentry>
-                <varlistentry>
-                    <term><varname>DROP_NETBIOS</varname></term>
-                    <listitem>
-                        <para>Drop NetBios (Microsoft) broadcasts to the listed interfaces. Allowed
-                            values are interface-names or network names.</para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
