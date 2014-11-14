@@ -8965,10 +8965,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_REJECT_AUTH RULEBLOCK_BUILTIN_REJECT_AUTH
 
 drop_netbios() { # drop NetBios broadcasts on certain interfaces (prevent log spamming)
 ((ENABLE_FILTER)) || return 0
-[[ ${DROP_NETBIOS} ]] || {
-	log -w "Not applying NETBIOS broadcasts drop rules"
-	return 0
-}
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local iface_ip iface_mask iface_brd str str_iflist str_netlist str_net_data str_iface
 local TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST=(
 "table=filter"
@@ -8983,42 +8980,42 @@ local TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST=(
 "always_use_0[2]=state=NEW"
 )
 local -a RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST
-for str in ${DROP_NETBIOS}; do
-	if lsearch "${str}" ${NET_IFLIST}; then
-		str_iflist+=" ${str}"
-	elif lsearch "${str}" ${NET_NAME_LIST}; then
-		str_netlist+=" ${str}"
+for str; do
+	if lsearch "$str" $NET_IFLIST; then
+		str_iflist+=" $str"
+	elif lsearch "$str" $NET_NAME_LIST; then
+		str_netlist+=" $str"
 	else
-		log -E "Unable to find a matching interface or netname for \`${str}' in \`DROP_NETBIOS'."
+		log -E "Unable to find a matching interface or netname for \`$str' in \`drop_netbios' parameters."
 		raise_cfg_err_count
 	fi
 done
 
-[[ -z ${str_iflist} && -z ${str_netlist} ]] && {
-	log -E "Unable to find a matching interface or netname in \`DROP_NETBIOS'."
+[[ -z $str_iflist && -z $str_netlist ]] && {
+	log -E "Unable to find a matching interface or netname in \`drop_netbios' parameters."
 	raise_cfg_err_count
 	return 0
 }
-for str in ${str_iflist}; do
+for str in $str_iflist; do
 	while read iface_ip iface_mask iface_brd; do
-		if [[ -z ${iface_brd} ]]; then
-			log -E "Unable to retrieve broadcast address for interface \`${str}'."
+		if [[ -z $iface_brd ]]; then
+			log -E "Unable to retrieve broadcast address for interface \`$str'."
 			raise_gen_err_count
 			continue
 		fi
 		RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str $(ip_network "${iface_ip}/${iface_mask}")/${iface_mask} ${iface_brd}"
-	done < <(get_if_ipv4_data "${str}" -i -m -b)
+	done < <(get_if_ipv4_data "$str" -i -m -b)
 done
-for str in ${str_netlist}; do
-	str_net_data=$(get_net_data "${str}") || continue
-	set -- ${str_net_data}
-	str_iface="$1" iface_ip=$(ip_network "${3}/${4}") iface_mask="$4" iface_brd="${6}"
-	if [[ -z ${iface_brd} ]]; then
-		log -E "Unable to retrieve broadcast address for interface \`${str}'."
+for str in $str_netlist; do
+	str_net_data=$(get_net_data "$str") || continue
+	set -- $str_net_data
+	str_iface="$1" iface_ip=$(ip_network "${3}/${4}") iface_mask="$4" iface_brd="$6"
+	if [[ -z $iface_brd ]]; then
+		log -E "Unable to retrieve broadcast address for interface \`$str'."
 		raise_gen_err_count
 		continue
 	fi
-	RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="${str_iface} ${iface_ip}/${iface_mask} ${iface_brd}"
+	RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[${#RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST[@]}]="$str_iface ${iface_ip}/${iface_mask} $iface_brd"
 done
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_NETBIOS_BCAST RULEBLOCK_BUILTIN_DROP_NETBIOS_BCAST
 } # -------------------------------------------------------------------------

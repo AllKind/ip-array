@@ -2,11 +2,10 @@
 Name: drop_netbios
 
 Description:
-	Drop NetBios broadcast on certain interfaces.
-	Configuration variable `DROP_NETBIOS' must be configured.
+	Drop NetBios broadcast on certain interfaces or networks.
 	
 Usage:
-	drop_netbios
+	drop_netbios { interface | network-name } [...]
 	
 Example:
-	drop_netbios
+	drop_netbios eth0 PUBLIC
