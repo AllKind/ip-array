@@ -1996,19 +1996,12 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term><varname>AUTO_PROV_DNS</varname></term>
-                <listitem>
-                  <para>Valid values: `0' or `1'.</para>
-                  <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
-                    networks to ISP nameservers. Needs the <varname>LAN_NS</varname> and
-                      <varname>ISP_NS</varname> variables to be defined.</para>
-                </listitem>
-              </varlistentry>
-              <varlistentry>
                 <term><varname>LAN_NS</varname></term>
                 <listitem>
-                  <para>Purpose: Define name servers (DNS) that are part of a local area
-                    network.</para>
+                  <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
+                    networks to ISP nameservers. Needs the <varname>LAN_NS</varname> and
+                      <varname>ISP_NS</varname> variables to be defined. Purpose: Define name
+                    servers (DNS) that are part of a local area network.</para>
                   <para>
                     <table frame="all">
                       <title>Local (LAN) name servers</title>
@@ -2043,8 +2036,11 @@
               <varlistentry>
                 <term><varname>ISP_NS</varname></term>
                 <listitem>
-                  <para>Purpose: Define the Internet service provider name servers (DNS), for each
-                    local area network.</para>
+                  <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
+                    networks to ISP nameservers. Needs the <varname>LAN_NS</varname> and
+                      <varname>ISP_NS</varname> variables to be defined. Purpose: Define the
+                    Internet service provider name servers (DNS), for each local area
+                    network.</para>
                   <para>
                     <table frame="all">
                       <title>ISP name servers</title>
@@ -2077,12 +2073,11 @@
                 </listitem>
               </varlistentry>
               <varlistentry>
-                <term><varname>AUTO_ISP_SMTP</varname></term>
+                <term><varname>ISP_SMTP</varname></term>
                 <listitem>
-                  <para>Valid values: `0' or `1'.</para>
                   <para>Allow SMTP traffic from inside one or more local networks to SMTP
-                    mailservers. Needs the <varname>ISP_SMTP</varname> variable to be
-                    defined.</para>
+                    mailservers. Needs the <command>lan_isp_smtp</command> public function to be
+                    called in the rule file.</para>
                   <para>
                     <table frame="all">
                       <title>ISP SMTP servers</title>
@@ -3382,10 +3377,10 @@
             <para>Time in minutes until the saved ruleset will be restored.</para>
           </listitem>
           <listitem>
-            <para>-sc, --show-config [type]</para>
+            <para>-sc, --show-config [type] [...]</para>
             <para>Select type of information to show. If type is omitted, the settings of the <link
-                xlink:href="#conf_file_main_conf">main configuration file</link> will be
-              displayed.</para>
+                xlink:href="#conf_file_main_conf">main configuration file</link> will be displayed.
+              This option can be used multible times.</para>
             <para>Available types are: <simplelist>
                 <member> all (everything will be displayed)</member>
                 <member> ansi_codes (display ANSI codes for coloured shell output)</member>
@@ -3408,6 +3403,8 @@
                   configured values.</member>
                 <member> public_functions[:NAME[,...] display all or just the selected public
                   functions help.</member>
+                <member> find templates:template-entry-glob[,...] find templates containing all
+                  entries of the comma separated search list.</member>
               </simplelist></para>
           </listitem>
           <listitem>
@@ -3518,6 +3515,16 @@
             <listitem>
               <para>Prepare the 'quick-start' scripts with a screen verbosity of `1' and syslog
                 verbosity of `0'.</para>
+            </listitem>
+          </varlistentry>
+          <varlistentry>
+            <term>/etc/init.d/ip-array show -sc
+              find_templates:option_list_0*=odev,option_list_0*=src,option_list_0\\\[6\\\]=nat_opt
+              -v 0 -sv 0</term>
+            <listitem>
+              <para>Find templates conaining the iptables arguments in the first option list
+                (option_list_0) odev and src at any position and the the iptables arguent nat_opt at
+                position `6'. Screen verbosity set to `0' and syslog verbosity of `0'.</para>
             </listitem>
           </varlistentry>
         </variablelist>
