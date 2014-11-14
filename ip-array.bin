@@ -1182,7 +1182,7 @@ while (($#)); do
 			case "$opt_arg" in
 				all)
 					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates|proc|public_functions)/}"
-					cmdline_show_conf=" defaults main targets matches ipt_args ruleblocks templates rules public_functions"
+					cmdline_show_conf=" defaults main targets matches ipt_args public_functions proc templates ruleblocks rules"
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|proc|public_functions|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
