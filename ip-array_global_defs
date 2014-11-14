@@ -535,7 +535,6 @@ CONFIG_ENTRY_ARRAY=(
 "REST_OUT_NTP_ALLOW bool 0"
 "REST_OUT_LAN_ALLOW print 0 check_str_unique \${REST_OUT_LAN_ALLOW}"
 "REST_ALLOW_RELATED bool 0"
-"REJECT_AUTH print 0 check_str_unique \${REJECT_AUTH}"
 "DROP_NETBIOS print 0 check_str_unique \${DROP_NETBIOS}"
 "DROP_DHCP print 0 check_str_unique \${DROP_DHCP}"
 "DROP_UPNP print 0 check_str_unique \${DROP_UPNP}"

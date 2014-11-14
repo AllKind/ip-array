@@ -8918,10 +8918,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_ANTI_SPOOF RULEBLOCK_BUILTIN_ANTI_SPOOF
 
 reject_auth() { # reject auth (ident) on certain interfaces
 ((ENABLE_FILTER)) || return 0
-[[ ${REJECT_AUTH} ]] || {
-	log -w "Not applying AUTH reject rules"
-	return 0
-}
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str str_iflist str_netlist str_net_if
 local -a RULEBLOCK_BUILTIN_REJECT_AUTH
 local TEMPLATE_BUILTIN_REJECT_AUTH=(
@@ -8936,18 +8933,18 @@ local TEMPLATE_BUILTIN_REJECT_AUTH=(
 "always_use_0[2]=state=NEW"
 "always_use_0[3]=reject_type=tcp-reset"
 )
-for str in ${REJECT_AUTH}; do
+for str; do
 	if lsearch "${str}" ${NET_IFLIST}; then
 		str_iflist+=" ${str}"
 	elif lsearch "${str}" ${NET_NAME_LIST}; then
 		str_netlist+=" ${str}"
 	else
-		log -E "Unable to find a matching interface or netname for \`${str}' in \`REJECT_AUTH'."
+		log -E "Unable to find a matching interface or netname for \`${str}' in \`reject_auth' parameters."
 		raise_cfg_err_count
 	fi
 done
 [[ -z ${str_iflist} && -z ${str_netlist} ]] && {
-	log -E "Unable to find a matching interface or netname in \`REJECT_AUTH'."
+	log -E "Unable to find a matching interface or netname in \`reject_auth' parameters."
 	raise_cfg_err_count
 	return 0
 }
