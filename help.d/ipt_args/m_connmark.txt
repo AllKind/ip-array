@@ -4,6 +4,5 @@ m_connmark: connmark match specification.
 
     Examples:
         m_connmark=0xF1
-        m_connmark=
-        m_connmark=
+        m_connmark=0xbeef/cafe
 
