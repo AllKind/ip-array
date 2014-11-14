@@ -9631,10 +9631,6 @@ fi
 
 intns_to_extns() { # allow internal DNS servers udp traffic to providers name servers.
 ((ENABLE_FILTER)) || return 0
-((AUTO_PROV_DNS)) || {
-	log -w "Not using automated provider DNS configuration"
-	return 0
-}
 ((${#ISP_NS[@]})) || {
 	log -u 'ISP_NS'
 	return 0
