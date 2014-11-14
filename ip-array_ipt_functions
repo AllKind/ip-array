@@ -8934,30 +8934,30 @@ local TEMPLATE_BUILTIN_REJECT_AUTH=(
 "always_use_0[3]=reject_type=tcp-reset"
 )
 for str; do
-	if lsearch "${str}" ${NET_IFLIST}; then
-		str_iflist+=" ${str}"
-	elif lsearch "${str}" ${NET_NAME_LIST}; then
-		str_netlist+=" ${str}"
+	if lsearch "$str" $NET_IFLIST; then
+		str_iflist+=" $str"
+	elif lsearch "$str" $NET_NAME_LIST; then
+		str_netlist+=" $str"
 	else
-		log -E "Unable to find a matching interface or netname for \`${str}' in \`reject_auth' parameters."
+		log -E "Unable to find a matching interface or netname for \`$str' in \`reject_auth' parameters."
 		raise_cfg_err_count
 	fi
 done
-[[ -z ${str_iflist} && -z ${str_netlist} ]] && {
+[[ -z $str_iflist && -z $str_netlist ]] && {
 	log -E "Unable to find a matching interface or netname in \`reject_auth' parameters."
 	raise_cfg_err_count
 	return 0
 }
-[[ ${str_iflist} ]] && RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]=$(build_list ',' "${str_iflist}")
-[[ ${str_netlist} ]] && {
-	for str in ${str_netlist}; do
-		str_net_if=$(get_net_iface "${str}")
-		[[ ${str_net_if} ]] || {
-			log -d "${str}"
+[[ $str_iflist ]] && RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]=$(build_list ',' "$str_iflist")
+[[ $str_netlist ]] && {
+	for str in $str_netlist; do
+		str_net_if=$(get_net_iface "$str")
+		[[ $str_net_if ]] || {
+			log -d "$str"
 			raise_gen_err_count
 			continue
 		}
-		RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]="${str_net_if} ${str}"
+		RULEBLOCK_BUILTIN_REJECT_AUTH[${#RULEBLOCK_BUILTIN_REJECT_AUTH[@]}]="$str_net_if $str"
 	done
 }
 process_ipt_ruleblock TEMPLATE_BUILTIN_REJECT_AUTH RULEBLOCK_BUILTIN_REJECT_AUTH
