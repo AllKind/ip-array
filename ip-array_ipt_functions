@@ -9790,7 +9790,18 @@ lan_ftp() { # handle LAN(s) to Internet FTP traffic
 	log -w "Not applying LAN ftp rules"
 	return 0
 }
-local -i idx
+local -i idx use_ct=0 ct_exist=0 kern_ok=0
+local TEMPLATE_BUILTIN_RAW_FTP_ALLOW=(
+"table=raw"
+"chain[0]=PREROUTING"
+"target[0]=CT"
+"option_list_0[0]=idev"
+"option_list_0[1]=src"
+"option_list_0[2]=dst"
+"always_use_0[0]=proto=tcp"
+"always_use_0[1]=dport=21"
+"always_use_0[2]=ct_opt=helper:ftp"
+)
 local TEMPLATE_BUILTIN_FWD_FTP_ALLOW=(
 "table=filter"
 "chain[0]=FORWARD"
@@ -9807,41 +9818,63 @@ local TEMPLATE_BUILTIN_FWD_FTP_ALLOW=(
 )
 local -a RULEBLOCK_BUILTIN_FWD_FTP_ALLOW
 local oIFS="$IFS"
-for rvar in ${LAN_FTP}; do
+if ((BASH_VERSINFO[0] < 4)); then
+	lsearch 'CT' "${ARR_TARGET_EXIST[@]}" && ct_exist=1
+else
+	((${ARR_TARGET_EXIST[CT]})) && ct_exist=1
+fi
+if ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} >= 5)); then
+	kern_ok=1
+elif ((${KERN_VER[0]} == 4)); then
+	kern_ok=1
+fi
+if ((RAW_TABLE_PRESENT && ct_exist && kern_ok)); then
+	if [[ $PROC_CT_HELPER ]]; then
+		if ((PROC_CT_HELPER)); then
+			use_ct=1
+		else
+			log -N "\`PROC_CT_HELPER' is set to \`0'. Will not use the CT target for ftp connection tracking."
+		fi
+	else
+		log -W "\`PROC_CT_HELPER' is undefined. Setting it to \`1' to use the CT target for ftp connection tracking."
+		set_proc "1" "$PROC_NF/nf_conntrack_helper" "deactivation of automatic conntrack assignment" && use_ct=1
+	fi
+fi
+for rvar in $LAN_FTP; do
 	local IFS=":"
 	set -- $rvar
 	local str_in="$1" str_out="$2" str_ftpmode="${3:-all}"
-	local IFS="${oIFS}"
-	if [[ -z ${str_out} ]]; then
-		if [[ ${DEF_ROUTE_IF} ]]; then
-			str_odev=${DEF_ROUTE_IF}
+	local IFS="$oIFS"
+	if [[ -z $str_out ]]; then
+		if [[ $DEF_ROUTE_IF ]]; then
+			str_odev=$DEF_ROUTE_IF
 		else
 			log -E "No external interface specified with \`$rvar' and no default route is set"
 			raise_cfg_err_count
 			continue
 		fi
 	else
-		if lsearch "${str_out}" ${NET_IFLIST}; then
-			str_odev="${str_out}"
-		elif lsearch "${str_out}" ${NET_NAME_LIST}; then
-			str_odev=$(get_net_iface "${str_out}")
-			[[ ${str_odev} ]] || {
-				log -d "${str_out}"
+		if lsearch "$str_out" $NET_IFLIST; then
+			str_odev="$str_out"
+		elif lsearch "$str_out" $NET_NAME_LIST; then
+			str_odev=$(get_net_iface "$str_out")
+			[[ $str_odev ]] || {
+				log -d "$str_out"
 				raise_gen_err_count
 				continue
 			}
 		else
-			log -E "Unable to find a matching interface or netname for \`${str_out}' in \`$rvar'."
+			log -E "Unable to find a matching interface or netname for \`$str_out' in \`$rvar'."
 			raise_cfg_err_count
 			continue
 		fi
 	fi
-	if lsearch "${str_in}" ${NET_IFLIST}; then
-		str_iface="${str_in}" str_net_addr="${RULE_SEP}"
-	elif lsearch "${str_in}" ${NET_NAME_LIST}; then
-		str_iface=$(get_net_iface "${str_in}") str_net_addr=$(get_net_addr "${str_in}")
-		[[ ${str_iface} && ${str_net_addr} ]] || {
-			log -E "Unable to retrieve data for network \`${str_in}'"
+	if lsearch "$str_in" $NET_IFLIST; then
+		str_iface="$str_in" str_net_addr="$RULE_SEP"
+	elif lsearch "$str_in" $NET_NAME_LIST; then
+		str_iface=$(get_net_iface "$str_in") str_net_addr=$(get_net_addr "$str_in")
+		[[ $str_iface && $str_net_addr ]] || {
+			log -E "Unable to retrieve data for network \`$str_in'"
 			raise_gen_err_count
 			continue
 		}
@@ -9850,7 +9883,7 @@ for rvar in ${LAN_FTP}; do
 		raise_cfg_err_count
 		continue
 	fi
-	[[ ${str_iface} != ${str_odev} ]] || {
+	[[ $str_iface != $str_odev ]] || {
 		log -E "FTP input and output interfaces are the same in \`$rvar'."
 		raise_cfg_err_count
 		continue
@@ -9863,31 +9896,37 @@ for rvar in ${LAN_FTP}; do
 	}
 	idx=0
 	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW=()
-	log -I "Allowing FTP from ${str_in} over ${str_out:-${str_odev}}"
-	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS 21 ${stNE}"
-	if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-		RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp 21 $UNPRIV_PORTS ${stE}"
+	RULEBLOCK_BUILTIN_RAW_FTP_ALLOW=()
+
+	log -I "Allowing FTP from $str_in over ${str_out:-$str_odev}"
+	if ((use_ct)); then
+		RULEBLOCK_BUILTIN_RAW_FTP_ALLOW[0]="$str_iface $str_net_addr"
 	fi
-	case "${str_ftpmode}" in
-		all) log -N "Allowing active and passive mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
+	RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_iface $str_odev $str_net_addr $RULE_SEP tcp $UNPRIV_PORTS 21 $stNE"
+	if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
+		RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_odev $str_iface $RULE_SEP $str_net_addr tcp 21 $UNPRIV_PORTS $stE"
+	fi
+	case "$str_ftpmode" in
+		all) log -N "Allowing active and passive mode FTP on: \`$str_in'"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_iface $str_odev $str_net_addr $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_odev $str_iface $RULE_SEP $str_net_addr $RULE_SEP $RULE_SEP $RULE_SEP $RULE_SEP ftp"
 			fi
 		;;
-		active) log -N "Allowing active mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp 20 $UNPRIV_PORTS ${stER} ftp"
+		active) log -N "Allowing active mode FTP on: \`$str_in'"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_odev $str_iface $RULE_SEP $str_net_addr tcp 20 $UNPRIV_PORTS $stER ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS 20 ${stE} ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_iface $str_odev $str_net_addr $RULE_SEP tcp $UNPRIV_PORTS 20 $stE ftp"
 			fi
 		;;
-		passive) log -N "Allowing passive mode FTP on: \`${str_in}'"
-			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_iface} ${str_odev} ${str_net_addr} $RULE_SEP tcp $UNPRIV_PORTS $UNPRIV_PORTS ${stER} ftp"
+		passive) log -N "Allowing passive mode FTP on: \`$str_in'"
+			RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_iface $str_odev $str_net_addr $RULE_SEP tcp $UNPRIV_PORTS $UNPRIV_PORTS $stER ftp"
 			if ((REVERSE_FOWARD_RULES_REQUIRED == 1)); then
-				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="${str_odev} ${str_iface} $RULE_SEP ${str_net_addr} tcp $UNPRIV_PORTS $UNPRIV_PORTS ${stE} ftp"
+				RULEBLOCK_BUILTIN_FWD_FTP_ALLOW[idx++]="$str_odev $str_iface $RULE_SEP $str_net_addr tcp $UNPRIV_PORTS $UNPRIV_PORTS $stE ftp"
 			fi
 		;;
 	esac
+	((use_ct)) && process_ipt_ruleblock TEMPLATE_BUILTIN_RAW_FTP_ALLOW RULEBLOCK_BUILTIN_RAW_FTP_ALLOW
 	process_ipt_ruleblock TEMPLATE_BUILTIN_FWD_FTP_ALLOW RULEBLOCK_BUILTIN_FWD_FTP_ALLOW
 done
 } # -------------------------------------------------------------------------
