@@ -3112,13 +3112,15 @@
           <listitem>
             <para>tc-start</para>
             <para>Start traffic shaping only. Mangle table rules will be (re)-applied. An iptables
-              rule listing is saved for later difference checks.</para>
+              rule listing is saved for later difference checks. ipset ruleset will not be
+              touched.</para>
           </listitem>
           <listitem>
             <para>tc-stop</para>
             <para>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
               interfaces listed in <varname>NET_INTERFACES</varname> will be deleted. An iptables
-              rule listing is saved for later difference checks.</para>
+              rule listing is saved for later difference checks.  ipset ruleset will not be
+              touched.</para>
           </listitem>
           <listitem>
             <para>lockdown</para>
@@ -3520,6 +3522,21 @@
   <chapter xml:id="appendix">
     <title>Appendix</title>
     <para/>
+    <section xml:id="troubleshooting">
+      <title>Troubleshooting</title>
+      <para>
+        <itemizedlist>
+          <listitem>
+            <para>Compatibility test lists a target or module as not existing, although it
+              is.</para>
+            <para>Answer: Open the file <filename>'ip-array_global_defs'</filename> and find the
+              definition of the arrays <varname>IPARRAY_TARGETS</varname> or
+                <varname>IPARRAY_MODULES</varname>. Edit the line containing the test for the
+              desired module or module to fit your needs.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </section>
     <section xml:id="support_info">
       <title>Support</title>
       <para>The preferred way to get support on IP-Array, is to open a forum post on the project
