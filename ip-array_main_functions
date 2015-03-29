@@ -4220,7 +4220,7 @@ case "$MODE" in # act according to runtime mode
 			fi
 		done
 		# merge iptables and ipset command arrays
-		if ((USE_IPSET)); then
+		if ((USE_IPSET)) && [[ $MODE != @(TC-START|TC-STOP) ]]; then
 			ipset_merge_arrays
 			rvar="IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
 			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
@@ -5131,6 +5131,9 @@ case "$1" in
 		remove_qdiscs
 		classification_chains 'chains' 'mangle' || return
 		log -T "Loading mangle rule files"
+		if ((USE_IPSET)); then
+			log -W "Mode is \`$MODE', ipset configuration will not be modified!"
+		fi
 		load_mangle_rules || return
 		traffic_shaping_marks || return
 		classification_chains 'jumps' 'mangle' || return
@@ -5154,6 +5157,9 @@ case "$1" in
 		remove_qdiscs
 		classification_chains 'chains' 'mangle' || return
 		log -T "Loading mangle rule files"
+		if ((USE_IPSET)); then
+			log -W "Mode is \`$MODE', ipset configuration will not be modified!"
+		fi
 		load_mangle_rules || return
 		classification_chains 'jumps' 'mangle' || return
 		apply_rules || return
