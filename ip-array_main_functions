@@ -3758,6 +3758,300 @@ case "${str_interpreter}" in
 esac
 } # -------------------------------------------------------------------------
 
+iactive_template_builder() { # interactive template builder
+
+local t_name t_file i x y str_tmp str_x ret
+local arr_title=( --title "IP-Array template builder" )
+local -i w_with=0
+local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
+local -a arr_opts=(
+table "Table name" off
+chain "Chain name" off
+target "Target name" off
+template_msg "Template message" off
+load_template "Load another template" off
+option_list_0 "List of options" off
+option_list_1 "Reverse option list" off
+always_use_0 "List of fixed options" off
+always_use_1 "Reverse list of fixed options" off
+mandatory_vars "Mandatory variables" off
+state_match_arg  "Conntrack states" off
+reverse_mode "Bidirectonal traffic" off
+reverse_condition "Condition for reverse mode" off
+)
+
+check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
+
+#local -a i_args=( addrtype ahspi audit bpf chain cluster clusterip comment connbytes connlimit conntrack core cpu ct_opt dccp devgroup dport dst ecn espspi hashlimit helper hmark icmp_type idev idletimer ipvs led length limit log_level log_options log_prefix m_connmark m_dscp m_mark m_rateest m_set m_tcpmss m_tos m_ttl mac nat_opt nfacct nflog_opt nfqueue odev osf owner physdev pkttype policy proto quota realm recent reject_type rpfilter sctp socket sport src state statistic string t_class t_connmark t_connsecmark t_dscp t_mark t_rateest t_secmark t_set t_tcpmss t_tos t_ttl table target tcp_opt tcpoptstrip tee_gw time tproxy_opt u32 ulog_opt
+#)
+y=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[y++]="${ARG_NAMES_LIST[x]}"
+	x_args[y++]=""
+done
+
+local -a xopts=()
+t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the template (prefix with T_ or TEMPLATE_)" 14 $w_with T_ 2>&1 > /dev/tty)
+
+(($? != 0)) && return 1
+
+[[ $t_name || $t_name != @(T_|TEMPLATE_|T|TEMPLATE) ]] || return 1
+[[ $t_name = @(T|TEMPLATE)_+([[:word:]]) ]] || return 1
+local t_file="$SAVE_DIR/${t_name}.txt"
+
+xopts=( $("$WHIPTAIL" "${arr_title[@]}" --separate-output \
+	--checklist "Choose the options for the template $t_name" 14 $w_with 10 "${arr_opts[@]}" 2>&1 > /dev/tty) )
+
+if ((${#xopts[*]})); then
+	for ((x=0; x<=${#xopts[*]}; x++)); do
+		case "${xopts[x]}" in
+			table)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+					--menu "Choose the table name" 17 $w_with 7 filter "" mangle "" nat "" raw "" security "" rawpost "" 2>&1 > /dev/tty)"
+			;;
+			chain)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			target)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the ${xopts[x]} name(s) (comma separated)" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			load_template)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the name for the other template(s) to load (separated by space)" 14 $w_with T_ 2>&1 > /dev/tty)"
+			;;
+			state_match_arg)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter one or two comma separated list of conntrack state names" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			template_msg)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a template loading message" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			mandatory_vars)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a comma separated list of required variable names" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			reverse_mode)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --radiolist "Select a reverse mode." 14 $w_with 10 \
+					reverse "Reverse data from the first option list (bidirectional traffic)" on mirror "Mirror the first option list" off 2>&1 > /dev/tty)"
+			;;
+			reverse_condition)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS)" \
+					14 $w_with 2>&1 > /dev/tty)"
+			;;
+			option_list_0)
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_o0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_o0[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_o0[i-1]
+					fi
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+				done
+				if (($? == 1)); then
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to define default values for one or more of these options?" 14 $w_with
+					if (($? == 0)); then
+						for i in ${!arr_o0[*]}; do
+							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+								--inputbox "Enter a default value for \`${arr_o0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+							if (($? == 0)) && [[ $str_x ]]; then
+								arr_o0[i]="${arr_o0[i]}=\"$str_x\""
+#"
+							fi
+						done
+					fi
+				fi
+			;;
+			option_list_1)
+				if ! ((${#arr_o0[*]})); then
+					printf "%s\n" "option_list_0 options have not been set." >&2
+					return 1
+				fi
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_o1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
+						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_o1[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_o1[i-1]
+					fi
+					if (( ${#arr_o1[*]} < ${#arr_o0[*]} )); then # reverse list must not be greater than first
+						"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+					else
+						false
+					fi
+				done
+				if (($? == 1)); then
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to define default values for one or more of these options?" 14 $w_with
+					if (($? == 0)); then
+						for i in ${!arr_o1[*]}; do
+							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+								--inputbox "Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+							if (($? == 0)) && [[ $str_x ]]; then
+								arr_o1[i]="${arr_o1[i]}=\"$str_x\""
+#"
+							fi
+						done
+					fi
+				fi
+			;;
+			always_use_0)
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_alw0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_alw0[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_alw0[i-1]
+					fi
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+				done
+				if (($? == 1)); then
+					for i in ${!arr_alw0[*]}; do
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+							--inputbox "Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_alw0[i]="${arr_alw0[i]}=\"$str_x\""
+#"
+						fi
+					done
+				fi
+			;;
+			always_use_1)
+				if ! ((${#arr_alw0[*]})); then
+					printf "%s\n" "always_use_0 options have not been set." >&2
+					return 1
+				fi
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_alw1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
+						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_alw1[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_alw1[i-1]
+					fi
+					if (( ${#arr_alw1[*]} < ${#arr_alw0[*]} )); then # reverse list must not be greater than first
+						"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+					else
+						false
+					fi
+				done
+				if (($? == 1)); then
+					for i in ${!arr_alw1[*]}; do
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_alw1[i]="${arr_alw1[i]}=\"$str_x\""
+#"
+						fi
+					done
+				fi
+			;;
+		esac
+		if (($? != 0)); then return 1; fi
+	done
+	(($? != 0)) && return 1
+	printf '<template name="%s">\n' "$t_name" > "$t_file"
+	y=0
+	for x in ${!xopts[*]}; do
+		case "${xopts[x]}" in
+			table*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			chain*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			target*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			state_match_arg*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			template_msg*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			mandatory_vars*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			reverse_mode*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			reverse_condition*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			load_template*)
+				printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+					for str_tmp in ${xopts[x]#*=}; do
+						printf '\t\t%s\n' "$str_tmp" >> "$t_file"
+					done
+				printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+			;;
+			option_list_0)
+				(( ${#arr_o0[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_o0[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			option_list_1)
+				(( ${#arr_o1[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_o1[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			always_use_0)
+				(( ${#arr_alw0[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_alw0[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			always_use_1)
+				(( ${#arr_alw1[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_alw1[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+		esac
+	done
+	printf '</template>\n' >> "$t_file"
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting template has been saved to: $t_file\nDo you want to view the created template?" 14 $w_with
+	if (($? == 0)); then
+		if [[ -r "$t_file" ]]; then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			cat "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another template?" 14 $w_with
+fi
+
+}
+
 # -------------------------------------------------------------------------
 # RULE SAVING - APPLYING
 # -------------------------------------------------------------------------
@@ -4676,6 +4970,13 @@ case "$1" in
 		enable_traffic_shaping
 		apply_rules || return
 		common_end
+	;;
+	BUILD_TEMPLATES)
+	# interactively build xml templates
+		while (($? == 0)); do
+			iactive_template_builder
+		done
+		return 0
 	;;
 	COMPAT_CHECK)
 	# just perform compatibility check

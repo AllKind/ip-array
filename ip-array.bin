@@ -499,6 +499,7 @@ IPARRAY_PROGRAMS=(
 "SORT sort 1"
 "TC tc 0"
 "UNAME uname 1"
+"WHIPTAIL whiptail 0"
 )
 
 PUBLIC_FUNCTION_LIST=(
@@ -591,6 +592,7 @@ save-shaping-commands      Save tc and iptables mangle table (mark) commands to 
 parse-xml                  Parse (by default all) XML files.
                            Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
 compat-check               Check compatibility (kernel, supported targets, matches, tables).
+build_templates            Interactive template builder.
 show                       Show configuration or color settings. Option \`-sc' selects type.
 version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
@@ -1069,7 +1071,7 @@ case "$MAIN_ARG" in
 		 shift
 		(($#)) || usage # if there isn't a second arg, show usage
 	 ;;
-	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
+	build_templates|compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|restart|\
 	restore|save|save-commands|save-modprobe-commands|save-proc-commands| save-iptables-commands|\
 	save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
 		shift
@@ -1443,6 +1445,9 @@ case "$MAIN_ARG" in
 	'-?'|-h|help|--help)
 		usage
 		quit_welldone
+	;;
+	build_templates)
+		MODE='BUILD_TEMPLATES'
 	;;
 	compat-check)
 		MODE='COMPAT_CHECK'

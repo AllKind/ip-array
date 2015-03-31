@@ -142,6 +142,7 @@ save-shaping-commands      Save tc and iptables mangle table (mark) commands to 
 parse-xml                  Parse (by default all) XML files.
                            Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
 compat-check               Check compatibility (kernel, supported targets, matches, tables).
+build_templates            Interactive template builder.
 show                       Show configuration or color settings. Option \`-sc' selects type.
 version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
@@ -208,7 +209,7 @@ case "$MAIN_ARG" in
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|\
 	restart|restore|save|save-commands|save-modprobe-commands|save-proc-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|\
-	show|start|stop|test|tc-start|tc-stop|version)
+	build_templates|show|start|stop|test|tc-start|tc-stop|version)
 		shift
 	;;
 	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
