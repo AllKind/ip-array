@@ -3771,6 +3771,26 @@ for i in ${!arr_templ[*]}; do
 	let idx++
 done
 }
+
+_edit_rb_line() { # edit an existing ruleblock line
+arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 19 $w_with 15 "${arr_rb[@]}" 2>&1 >/dev/tty ) )
+local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
+x=0
+local -a arr_line_new=()
+set -- ${arr_rb[lnum]}
+shift # number was first param
+for ((i=0; i <$#; i++)); do # edit existing ruleblock line
+	arr_line_new[i]="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_templ[i]%%=*} ${arr_rb[i]}" 14 $w_with ${arr_rb[i]} 2>&1 > /dev/tty )
+	(($? == 0)) || return 1
+	if [[ ${arr_line_new[i-1]} = *[[:blank:]]* ]]; then
+		arr_line_new[i-1]="\\\"${arr_line_new[idx]}\\\""
+# :"
+	fi
+	let idx++
+done
+arr_rb_tmp[lnum]="$((lnum + 1)): ${arr_line_new[@]}"
+} # -------------------------------------------------------------------------
+
 iactive_ruleblock_builder() { # interactive ruleblock builder
 local arr_title=( --title "$ME ruleblock builder" )
 local str_tmp t_name r_name r_file
@@ -3811,8 +3831,20 @@ elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
 	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 19 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
-	$($copy_array "$r_name" arr_rb_tmp) || return 1
-#	arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 19 $w_with 15 "${arr_rb_tmp[@]}" 2>&1 >/dev/tty ) )
+	$($copy_array "$r_name" arr_rb) || return 1
+x=1
+for i in ${!arr_rb[*]}; do # add line numbers
+	arr_rb[i]="$x: ${arr_rb[i]}"
+	let x++
+done
+for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
+	arr_tmp[x++]="${arr_templ[i]}"
+done
+while (($? == 0)); do
+	_edit_rb_line && "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to edit another rule?" 14 $w_with
+done
+for i in ${!arr_rb[*]}; do # remove line numbers
+	arr_rb[i]="${arr_rb[i]#* }"
 fi
 r_file="$SAVE_DIR/${r_name}.txt"
 if ((${#arr_rb[*]})); then
