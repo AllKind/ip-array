@@ -3758,10 +3758,93 @@ case "${str_interpreter}" in
 esac
 } # -------------------------------------------------------------------------
 
+_add_rb_line() {
+local idx=0
+arr_line=()
+for i in ${!arr_templ[*]}; do
+	arr_line[idx]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_templ[i]%%=*} ${arr_templ[i]#*=}" 14 $w_with 2>&1 > /dev/tty )
+	(($? == 0)) || return 1
+	if [[ ${arr_line[idx]} = *[[:blank:]]* ]]; then
+		arr_line[idx]="\\\"${arr_line[idx]}\\\""
+# :"
+	fi
+	let idx++
+done
+}
+iactive_ruleblock_builder() { # interactive ruleblock builder
+local arr_title=( --title "$ME ruleblock builder" )
+local str_tmp t_name r_name r_file
+local -i i x w_with=0
+local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
+
+str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Select the desired option" 14 $w_with 4 \
+	"Create a new ruleblock" "" "Edit an existing ruleblock" "" 2>&1 >/dev/tty )
+if (($? != 0)); then
+	return 1
+fi
+if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES ) )
+	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 19 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+else
+	log -E "Templates must first be parsed (parse-xml -pt)"
+	return $ER_USE
+fi
+load_all_templates || return
+$($copy_array "$t_name" arr_templ) || return 1
+for i in ${!arr_templ[*]}; do
+	if [[ ${arr_templ[i]} != option_list_* ]]; then
+		arr_inf[${#arr_inf[*]}]="${arr_templ[i]}"
+		unset arr_templ[i]
+	fi
+done
+if [[ $str_tmp = "Create a new ruleblock" ]]; then
+	r_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the ruleblock (prefix with R_ or RULEBLOCK_)" 14 $w_with R_ 2>&1 > /dev/tty)
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	x=0
+	while (($? == 0)); do
+		"$WHIPTAIL" "${arr_title[@]}" --yesno "Add a line to the ruleblock?" 14 $w_with && _add_rb_line && arr_rb[x++]="${arr_line[*]}"
+	done
+elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
+	load_all_ruleblocks || return
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES ) )
+	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 19 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	$($copy_array "$r_name" arr_rb_tmp) || return 1
+#	arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 19 $w_with 15 "${arr_rb_tmp[@]}" 2>&1 >/dev/tty ) )
+fi
+r_file="$SAVE_DIR/${r_name}.txt"
+if ((${#arr_rb[*]})); then
+	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
+	if ((${#arr_inf[*]})); then
+		printf '\t<!--\n\tTemplate options:\n' >> "$r_file"
+		printf "\t%s\n" "${arr_inf[@]}" >> "$r_file"
+		printf '\t%s\n' '-->' >> "$r_file"
+	fi
+	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
+	printf '</ruleblock>\n' >> "$r_file"
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting ruleblock has been saved to: $r_file\nDo you want to view the created ruleblock?" 14 $w_with
+	if (($? == 0)); then
+		if [[ -r "$r_file" ]]; then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			cat "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create/edit another ruleblock?" 14 $w_with
+else
+	log -W "No ruleblock data has been collected"
+fi
+
+} # -------------------------------------------------------------------------
+
 iactive_template_builder() { # interactive template builder
 
+check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
+
 local t_name t_file i x y str_tmp str_x ret
-local arr_title=( --title "IP-Array template builder" )
+local arr_title=( --title "$ME template builder" )
 local -i w_with=0
 local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
 local -a arr_opts=(
@@ -3780,10 +3863,6 @@ reverse_mode "Bidirectonal traffic" off
 reverse_condition "Condition for reverse mode" off
 )
 
-check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
-
-#local -a i_args=( addrtype ahspi audit bpf chain cluster clusterip comment connbytes connlimit conntrack core cpu ct_opt dccp devgroup dport dst ecn espspi hashlimit helper hmark icmp_type idev idletimer ipvs led length limit log_level log_options log_prefix m_connmark m_dscp m_mark m_rateest m_set m_tcpmss m_tos m_ttl mac nat_opt nfacct nflog_opt nfqueue odev osf owner physdev pkttype policy proto quota realm recent reject_type rpfilter sctp socket sport src state statistic string t_class t_connmark t_connsecmark t_dscp t_mark t_rateest t_secmark t_set t_tcpmss t_tos t_ttl table target tcp_opt tcpoptstrip tee_gw time tproxy_opt u32 ulog_opt
-#)
 y=0
 for x in ${!ARG_NAMES_LIST[*]}; do
 	x_args[y++]="${ARG_NAMES_LIST[x]}"
@@ -4971,13 +5050,6 @@ case "$1" in
 		apply_rules || return
 		common_end
 	;;
-	BUILD_TEMPLATES)
-	# interactively build xml templates
-		while (($? == 0)); do
-			iactive_template_builder
-		done
-		return 0
-	;;
 	COMPAT_CHECK)
 	# just perform compatibility check
 		start_msg
@@ -5016,6 +5088,27 @@ case "$1" in
 		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && diff_ruleset 'security'
 		((ENABLE_FILTER == 1)) && diff_ruleset 
 		common_end
+	;;
+	INTERACTIVE)
+		if ! [[ -t 1 ]]; then # check if output is a terminal
+			err_msg "Output is not a terminal. Interactive mode requires a terminal."
+			return $ER_FAIL
+		fi
+		str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
+			--menu "Select the desired action" 14 0 4 "Ruleblock builder" "Create or edit XML ruleblocks" \
+			"Template builder" "Create XML templates" 2>&1 > /dev/tty)
+		if (($? == 0)); then
+			if [[ $str_opt = "Ruleblock builder" ]]; then
+				while (($? == 0)); do
+					iactive_ruleblock_builder
+				done
+			elif [[ $str_opt = "Template builder" ]]; then
+				while (($? == 0)); do
+					iactive_template_builder
+				done
+			fi
+		fi
+		return 0
 	;;
 	LOCKDOWN)
 	# Lockdown mode.
