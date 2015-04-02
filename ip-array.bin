@@ -966,7 +966,7 @@ fi
 cleanup_lock() { # remove temp lockfile
 if ((IPA_DID_LOCK == 1)) && [[ -f $LOCKFILE ]]; then
 	verbose_msg "Removing lock file: \`$LOCKFILE'."
-	run_rm "$LOCKFILE" || :
+	run_rm "$LOCKFILE" && IPA_DID_LOCK=0 || :
 fi
 } # -------------------------------------------------------------------------
 
@@ -1458,6 +1458,7 @@ case "$MAIN_ARG" in
 	;;
 	interactive)
 		MODE='INTERACTIVE'
+		EXEC_COMMANDS=0
 	;;
 	lockdown) # lockdown network connections
 		MODE='LOCKDOWN'

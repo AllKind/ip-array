@@ -3773,16 +3773,17 @@ done
 }
 
 _edit_rb_line() { # edit an existing ruleblock line
-arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]}" 2>&1 >/dev/tty ) )
+arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]//\"/\\\\\"}" 2>&1 >/dev/tty ) )
+(($? == 0)) || return 1
 local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
 local -a arr_line_new=()
-set -- ${arr_rb[lnum]}
+eval set -- "${arr_rb[lnum]}"
 #shift # number was first param
 for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
-	arr_line_new[i]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" 14 $w_with ${!x} 2>&1 > /dev/tty )
+	arr_line_new[i]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" 14 $w_with "${!x}" 2>&1 > /dev/tty )
 	(($? == 0)) || return 1
 	if [[ ${arr_line_new[i]} = *[[:blank:]]* ]]; then
-		arr_line_new[i]="\\\"${arr_line_new[idx]}\\\"" # :"
+		arr_line_new[i]="\\\"${arr_line_new[i]}\\\"" # :"
 	fi
 done
 arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
@@ -3851,6 +3852,7 @@ elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
 fi
 r_file="$SAVE_DIR/${r_name}.txt"
 if ((${#arr_rb[*]})); then
+	mutex_on || bail_out $?
 	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
 	if ((${#arr_inf[*]})); then
 		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
@@ -3859,6 +3861,7 @@ if ((${#arr_rb[*]})); then
 	fi
 	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
 	printf '</ruleblock>\n' >> "$r_file"
+	cleanup_lock
 	"$WHIPTAIL" "${arr_title[@]}" \
 		--yesno "The resulting ruleblock has been saved to: $r_file\nDo you want to view the created ruleblock?" 14 $w_with
 	if (($? == 0)); then
@@ -4091,6 +4094,7 @@ if ((${#xopts[*]})); then
 		if (($? != 0)); then return 1; fi
 	done
 	(($? != 0)) && return 1
+	mutex_on || bail_out $?
 	printf '<template name="%s">\n' "$t_name" > "$t_file"
 	y=0
 	for x in ${!xopts[*]}; do
@@ -4153,6 +4157,7 @@ if ((${#xopts[*]})); then
 		esac
 	done
 	printf '</template>\n' >> "$t_file"
+	cleanup_lock
 	"$WHIPTAIL" "${arr_title[@]}" \
 		--yesno "The resulting template has been saved to: $t_file\nDo you want to view the created template?" 14 $w_with
 	if (($? == 0)); then
