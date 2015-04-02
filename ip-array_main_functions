@@ -3773,28 +3773,26 @@ done
 }
 
 _edit_rb_line() { # edit an existing ruleblock line
-arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 19 $w_with 15 "${arr_rb[@]}" 2>&1 >/dev/tty ) )
+arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]}" 2>&1 >/dev/tty ) )
 local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
-x=0
 local -a arr_line_new=()
 set -- ${arr_rb[lnum]}
-shift # number was first param
-for ((i=0; i <$#; i++)); do # edit existing ruleblock line
-	arr_line_new[i]="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_templ[i]%%=*} ${arr_rb[i]}" 14 $w_with ${arr_rb[i]} 2>&1 > /dev/tty )
+#shift # number was first param
+for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
+	arr_line_new[i]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" 14 $w_with ${!x} 2>&1 > /dev/tty )
 	(($? == 0)) || return 1
-	if [[ ${arr_line_new[i-1]} = *[[:blank:]]* ]]; then
-		arr_line_new[i-1]="\\\"${arr_line_new[idx]}\\\""
-# :"
+	if [[ ${arr_line_new[i]} = *[[:blank:]]* ]]; then
+		arr_line_new[i]="\\\"${arr_line_new[idx]}\\\"" # :"
 	fi
-	let idx++
 done
-arr_rb_tmp[lnum]="$((lnum + 1)): ${arr_line_new[@]}"
+arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
+arr_rb[lnum]="${arr_line_new[@]}"
 } # -------------------------------------------------------------------------
 
 iactive_ruleblock_builder() { # interactive ruleblock builder
 local arr_title=( --title "$ME ruleblock builder" )
 local str_tmp t_name r_name r_file
-local -i i x w_with=0
+local -i i x idx w_with=90
 local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
 
 str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Select the desired option" 14 $w_with 4 \
@@ -3804,7 +3802,7 @@ if (($? != 0)); then
 fi
 if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES ) )
-	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 19 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 else
 	log -E "Templates must first be parsed (parse-xml -pt)"
 	return $ER_USE
@@ -3827,30 +3825,35 @@ if [[ $str_tmp = "Create a new ruleblock" ]]; then
 	done
 elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
 	load_all_ruleblocks || return
+	# put list of all ruleblocks into an array
 	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES ) )
-	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 19 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	# choose one ruleblock
+	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
 	$($copy_array "$r_name" arr_rb) || return 1
-x=1
-for i in ${!arr_rb[*]}; do # add line numbers
-	arr_rb[i]="$x: ${arr_rb[i]}"
-	let x++
-done
-for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
-	arr_tmp[x++]="${arr_templ[i]}"
-done
-while (($? == 0)); do
-	_edit_rb_line && "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to edit another rule?" 14 $w_with
-done
-for i in ${!arr_rb[*]}; do # remove line numbers
-	arr_rb[i]="${arr_rb[i]#* }"
+	x=1 idx=0
+	for i in ${!arr_rb[*]}; do # add line numbers
+		arr_rb_tmp[idx++]="$x: ${arr_rb[i]}"
+		arr_rb_tmp[idx++]=""
+		let x++
+	done
+	dbg_arr arr_rb_tmp
+	x=0 arr_tmp=()
+	for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
+		if [[ ${arr_templ[i]} = option_list_0* ]]; then
+			arr_tmp[x++]="${arr_templ[i]}"
+		fi
+	done
+	while (($? == 0)); do # edit line
+		_edit_rb_line && "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to edit another rule?" 14 $w_with
+	done
 fi
 r_file="$SAVE_DIR/${r_name}.txt"
 if ((${#arr_rb[*]})); then
 	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
 	if ((${#arr_inf[*]})); then
-		printf '\t<!--\n\tTemplate options:\n' >> "$r_file"
+		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
 		printf "\t%s\n" "${arr_inf[@]}" >> "$r_file"
 		printf '\t%s\n' '-->' >> "$r_file"
 	fi
