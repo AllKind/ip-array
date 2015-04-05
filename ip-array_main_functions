@@ -2602,7 +2602,7 @@ else
 fi
 ((VERBOSE >= 7)) && printf "PID: %d\nParameters: %s\n" $PID "$PARAMS"
 syslog $LOG_FACILITY notice "Initializing $ME $STR_VERSION - MODE: $MODE - Parameters: $PARAMS"
-if ((EXEC_COMMANDS == 0)) && [[ $MODE != @(RESTORE_ON_START|SHOW|SAVE-*) ]]; then
+if ((EXEC_COMMANDS == 0)) && [[ $MODE != @(INTERACTIVE|RESTORE_ON_START|SHOW|SAVE-*) ]]; then
 	log -T "Dry-run - Not executing generated commands!"
 fi
 } # -------------------------------------------------------------------------
@@ -3758,19 +3758,18 @@ case "${str_interpreter}" in
 esac
 } # -------------------------------------------------------------------------
 
-_add_rb_line() {
+_add_rb_line() { # add a line to a ruleblock
 local idx=0
 arr_line=()
 for i in ${!arr_templ[*]}; do
 	arr_line[idx]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_templ[i]%%=*} ${arr_templ[i]#*=}" 14 $w_with 2>&1 > /dev/tty )
 	(($? == 0)) || return 1
 	if [[ ${arr_line[idx]} = *[[:blank:]]* ]]; then
-		arr_line[idx]="\\\"${arr_line[idx]}\\\""
-# :"
+		arr_line[idx]="\\\"${arr_line[idx]}\\\"" # :"
 	fi
 	let idx++
 done
-}
+} # -------------------------------------------------------------------------
 
 _edit_rb_line() { # edit an existing ruleblock line
 arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]//\"/\\\\\"}" 2>&1 >/dev/tty ) )
@@ -3778,7 +3777,6 @@ arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a line 
 local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
 local -a arr_line_new=()
 eval set -- "${arr_rb[lnum]}"
-#shift # number was first param
 for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
 	arr_line_new[i]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" 14 $w_with "${!x}" 2>&1 > /dev/tty )
 	(($? == 0)) || return 1
@@ -3793,7 +3791,7 @@ arr_rb[lnum]="${arr_line_new[@]}"
 iactive_ruleblock_builder() { # interactive ruleblock builder
 local arr_title=( --title "$ME ruleblock builder" )
 local str_tmp t_name r_name r_file
-local -i i x idx w_with=90
+local -i i x idx w_with=$IACTIVE_WINDOW_WITH
 local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
 
 str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Select the desired option" 14 $w_with 4 \
@@ -3839,7 +3837,6 @@ elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
 		arr_rb_tmp[idx++]=""
 		let x++
 	done
-	dbg_arr arr_rb_tmp
 	x=0 arr_tmp=()
 	for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
 		if [[ ${arr_templ[i]} = option_list_0* ]]; then
@@ -3879,11 +3876,9 @@ fi
 
 iactive_template_builder() { # interactive template builder
 
-check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
-
 local t_name t_file i x y str_tmp str_x ret
 local arr_title=( --title "$ME template builder" )
-local -i w_with=0
+local -i w_with=$IACTIVE_WINDOW_WITH
 local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
 local -a arr_opts=(
 table "Table name" off
@@ -3932,7 +3927,7 @@ if ((${#xopts[*]})); then
 			;;
 			target)
 				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter the ${xopts[x]} name(s) (comma separated)" 14 $w_with 2>&1 > /dev/tty)"
+					--inputbox "Enter the ${xopts[x]} name(s) (separated by space)" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			load_template)
 				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
@@ -3982,8 +3977,7 @@ if ((${#xopts[*]})); then
 							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
 								--inputbox "Enter a default value for \`${arr_o0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 							if (($? == 0)) && [[ $str_x ]]; then
-								arr_o0[i]="${arr_o0[i]}=\"$str_x\""
-#"
+								arr_o0[i]="${arr_o0[i]}=\"$str_x\"" #"
 							fi
 						done
 					fi
@@ -4021,8 +4015,7 @@ if ((${#xopts[*]})); then
 							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
 								--inputbox "Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 							if (($? == 0)) && [[ $str_x ]]; then
-								arr_o1[i]="${arr_o1[i]}=\"$str_x\""
-#"
+								arr_o1[i]="${arr_o1[i]}=\"$str_x\"" #"
 							fi
 						done
 					fi
@@ -4049,8 +4042,7 @@ if ((${#xopts[*]})); then
 						str_x="$("$WHIPTAIL" "${arr_title[@]}" \
 							--inputbox "Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 						if (($? == 0)) && [[ $str_x ]]; then
-							arr_alw0[i]="${arr_alw0[i]}=\"$str_x\""
-#"
+							arr_alw0[i]="${arr_alw0[i]}=\"$str_x\"" #"
 						fi
 					done
 				fi
@@ -4084,8 +4076,7 @@ if ((${#xopts[*]})); then
 					for i in ${!arr_alw1[*]}; do
 						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 						if (($? == 0)) && [[ $str_x ]]; then
-							arr_alw1[i]="${arr_alw1[i]}=\"$str_x\""
-#"
+							arr_alw1[i]="${arr_alw1[i]}=\"$str_x\"" #"
 						fi
 					done
 				fi
@@ -4099,28 +4090,7 @@ if ((${#xopts[*]})); then
 	y=0
 	for x in ${!xopts[*]}; do
 		case "${xopts[x]}" in
-			table*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			chain*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			target*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			state_match_arg*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			template_msg*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			mandatory_vars*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			reverse_mode*)
-				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
-			;;
-			reverse_condition*)
+			table*|chain*|target*|state_match_arg*|template_msg*|mandatory_vars*|reverse_mode*|reverse_condition*)
 				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
 			;;
 			load_template*)
@@ -4855,6 +4825,7 @@ case "$MAIN_ARG" in
 	compat-check) mode_msg="completed compatibility check" ;;
 	dry-run) mode_msg="completed dry run" ;;
 	diff-last-activated) mode_msg="compared active iptables rulesets" ;;
+	interactive) mode_msg="completed interactive mode" ;;
 	lockdown) mode_msg="locked down" ;;
 	open) mode_msg="opened" ;;
 	parse-xml) mode_msg="parsed XML files" ;;
@@ -5134,6 +5105,12 @@ case "$1" in
 			err_msg "Output is not a terminal. Interactive mode requires a terminal."
 			return $ER_FAIL
 		fi
+		check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
+		start_msg
+		load_pro_epilog_scripts 'prolog'
+		if (( IACTIVE_WINDOW_WITH == 0 )) && dn command -v tput; then
+			IACTIVE_WINDOW_WITH=$(( $( tput cols ) - 1 ))
+		fi
 		str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
 			--menu "Select the desired action" 14 0 4 "Ruleblock builder" "Create or edit XML ruleblocks" \
 			"Template builder" "Create XML templates" 2>&1 > /dev/tty)
@@ -5148,6 +5125,7 @@ case "$1" in
 				done
 			fi
 		fi
+		common_end
 		return 0
 	;;
 	LOCKDOWN)
