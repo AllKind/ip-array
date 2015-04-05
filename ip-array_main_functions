@@ -2374,6 +2374,7 @@ return 0
 # SUB MAIN FUNCTIONS
 # ------------------------------------------------------------------------- #
 
+
 precheck_config() { # (pre)validate configuration entries
 local -i cfg_idx
 log -w "Pre-validating configuration entries"
@@ -2384,8 +2385,8 @@ log -w "Pre-validating configuration entries"
 for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
 	set -- ${CONFIG_ENTRY_ARRAY[cfg_idx]}
 	local conf_var=$1 var_type=$2 # declare name of config entry and its type
-	declare -i conf_mandatory=$3 # config entry is mandatory to be correctly set
-	shift 3
+	local -i conf_mandatory=$3 # config entry is mandatory to be correctly set
+	shift 4
 	local check_cmd="$@"
 	local var_content=${!conf_var} # substitute the content of the desired variable
 	if [[ -z $var_content ]]; then # if substitution returns a non empty variable
@@ -3788,6 +3789,83 @@ arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
 arr_rb[lnum]="${arr_line_new[@]}"
 } # -------------------------------------------------------------------------
 
+_add_conf_var() { # add config variable
+v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a variable" 25 $w_with 15 "${arr_names[@]}" 2>&1 >/dev/tty )
+if (($? == 0)) && [[ $v_name ]]; then
+	for i in ${!arr_names[@]}; do
+		if [[ ${arr_names[i]} = $v_name ]]; then
+			set -- ${arr_conf[i]}
+			v_type=$2 # declare name of config entry and its type
+			v_mandatory=$3 # config entry is mandatory to be correctly set
+			break
+		fi
+	done
+	x=0 arr_content=()
+	if [[ $v_type = @(array|var) ]]; then
+		v_msg=""
+	elif [[ $v_type = bool ]]; then
+		v_msg=" (boolean)"
+	elif [[ $v_type = int ]]; then
+		v_msg=" (integer)"
+	fi
+	if [[ $v_type = array ]]; then
+		while (($? == 0)); do
+			arr_content[x++]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+				"Enter (more) content for variable $v_name.\nCancel to quit." 14 $w_with 2>&1 > /dev/tty) || { 
+				unset arr_content[x-1]
+				break
+			}
+		done
+		if ((${#arr_content[*]})); then
+			printf '%s=\"\n' "$v_name" >> "$c_file"
+			printf "%s\n" "${arr_content[@]}" >> "$c_file"
+			printf '\"\n\n' >> "$c_file"
+		fi
+	else
+		arr_content[0]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter content for variable $v_name$v_msg" 14 $w_with 2>&1 > /dev/tty)
+		if (($? == 0)) && [[ ${arr_content[0]} ]]; then
+			printf '%s=\"%s\"\n\n' "$v_name" "${arr_content[0]}" >> "$c_file"
+		fi
+	fi
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another variable?" 14 $w_with
+} # -------------------------------------------------------------------------
+
+iactive_config_builder() { # interactive config file builder
+((${#CONFIG_ENTRY_ARRAY[@]})) || {
+	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
+	return $ER_NODEF
+}
+local -i i x cfg_idx v_mandatory w_with=$IACTIVE_WINDOW_WITH
+local v_name v_type v_msg
+local -a arr_content
+local arr_title=( --title "$ME configuration file builder" )
+local c_file="${SAVE_DIR}/${me}-conf_$(run_date +%F_%T)_rnd${RANDOM}.conf"
+i=0
+for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
+	set -- ${CONFIG_ENTRY_ARRAY[cfg_idx]}
+	v_name=$1 v_type=$4 # declare name of config entry and its type
+	v_mandatory=$3 # config entry is mandatory to be correctly set
+	arr_names[i]="$1"
+	arr_conf[i]="$1 $4 $3"
+	let i++
+done
+mutex_on || bail_out $?
+create_file "$c_file" || return
+while (($? == 0)); do
+	_add_conf_var
+done
+cleanup_lock
+"$WHIPTAIL" "${arr_title[@]}" \
+	--yesno "The resulting configuration file has been saved to: $c_file\nDo you want to view the created ruleblock?" 14 $w_with
+if (($? == 0)); then
+	if [[ -r "$c_file" ]]; then
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	fi
+fi
+} # -------------------------------------------------------------------------
+
 iactive_ruleblock_builder() { # interactive ruleblock builder
 local arr_title=( --title "$ME ruleblock builder" )
 local str_tmp t_name r_name r_file
@@ -3864,7 +3942,7 @@ if ((${#arr_rb[*]})); then
 	if (($? == 0)); then
 		if [[ -r "$r_file" ]]; then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
-			cat "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 		fi
 	fi
 	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create/edit another ruleblock?" 14 $w_with
@@ -4133,7 +4211,7 @@ if ((${#xopts[*]})); then
 	if (($? == 0)); then
 		if [[ -r "$t_file" ]]; then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
-			cat "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+			"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 		fi
 	fi
 	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another template?" 14 $w_with
@@ -5112,7 +5190,9 @@ case "$1" in
 			IACTIVE_WINDOW_WITH=$(( $( tput cols ) - 1 ))
 		fi
 		str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
-			--menu "Select the desired action" 14 0 4 "Ruleblock builder" "Create or edit XML ruleblocks" \
+			--menu "Select the desired action" 14 0 4 \
+			"Configuration builder" "Create a main configuration file" \
+			"Ruleblock builder" "Create or edit XML ruleblocks" \
 			"Template builder" "Create XML templates" 2>&1 > /dev/tty)
 		if (($? == 0)); then
 			if [[ $str_opt = "Ruleblock builder" ]]; then
@@ -5123,6 +5203,8 @@ case "$1" in
 				while (($? == 0)); do
 					iactive_template_builder
 				done
+			elif [[ $str_opt = "Configuration builder" ]]; then
+				iactive_config_builder
 			fi
 		fi
 		common_end
