@@ -1,0 +1,2 @@
+# Priorize SYN packets
+# Format: output-device:mark [...] (i.e. eth0:1 eth1:2)

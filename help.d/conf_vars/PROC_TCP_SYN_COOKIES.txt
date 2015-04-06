@@ -1,0 +1,1 @@
+# Disable / Enable TCP-SYN-COOKIES (SYN-FLOOD PROTECTION) | Format: 0/1

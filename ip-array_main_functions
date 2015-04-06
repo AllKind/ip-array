@@ -3790,7 +3790,13 @@ arr_rb[lnum]="${arr_line_new[@]}"
 } # -------------------------------------------------------------------------
 
 _add_conf_var() { # add config variable
-v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a variable" 25 $w_with 15 "${arr_names[@]}" 2>&1 >/dev/tty )
+x=0 arr_tmp=()
+for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
+	arr_tmp[x++]="${str_tmp}"
+	arr_tmp[x++]="item" # dummy item entry
+done
+v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+	"Choose a variable" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 if (($? == 0)) && [[ $v_name ]]; then
 	for i in ${!arr_names[@]}; do
 		if [[ ${arr_names[i]} = $v_name ]]; then
@@ -3808,10 +3814,15 @@ if (($? == 0)) && [[ $v_name ]]; then
 	elif [[ $v_type = int ]]; then
 		v_msg=" (integer)"
 	fi
+	if [[ -s ${HELP_DIR}/conf_vars/${v_name}.txt ]]; then
+		v_help="\nHelp for ${v_name}:\n$("$CAT" ${HELP_DIR}/conf_vars/${v_name}.txt)\n"
+	else
+		v_help=""
+	fi
 	if [[ $v_type = array ]]; then
 		while (($? == 0)); do
 			arr_content[x++]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
-				"Enter (more) content for variable $v_name.\nCancel to quit." 14 $w_with 2>&1 > /dev/tty) || { 
+				"Enter (more) content for variable $v_name.\nCancel to quit.${v_help}" 14 $w_with 2>&1 > /dev/tty) || {
 				unset arr_content[x-1]
 				break
 			}
@@ -3820,11 +3831,14 @@ if (($? == 0)) && [[ $v_name ]]; then
 			printf '%s=\"\n' "$v_name" >> "$c_file"
 			printf "%s\n" "${arr_content[@]}" >> "$c_file"
 			printf '\"\n\n' >> "$c_file"
+			unset arr_names[i]
 		fi
 	else
-		arr_content[0]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter content for variable $v_name$v_msg" 14 $w_with 2>&1 > /dev/tty)
+		arr_content[0]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+			"Enter content for variable ${v_name}${v_msg}${v_help}" 14 $w_with 2>&1 > /dev/tty)
 		if (($? == 0)) && [[ ${arr_content[0]} ]]; then
 			printf '%s=\"%s\"\n\n' "$v_name" "${arr_content[0]}" >> "$c_file"
+			unset arr_names[i]
 		fi
 	fi
 fi
@@ -3836,16 +3850,14 @@ iactive_config_builder() { # interactive config file builder
 	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
 	return $ER_NODEF
 }
-local -i i x cfg_idx v_mandatory w_with=$IACTIVE_WINDOW_WITH
-local v_name v_type v_msg
-local -a arr_content
+local -i i x v_mandatory w_with=$IACTIVE_WINDOW_WITH
+local v_name v_type v_msg v_help
+local -a arr_content arr_names arr_conf arr_tmp
 local arr_title=( --title "$ME configuration file builder" )
 local c_file="${SAVE_DIR}/${me}-conf_$(run_date +%F_%T)_rnd${RANDOM}.conf"
 i=0
-for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
-	set -- ${CONFIG_ENTRY_ARRAY[cfg_idx]}
-	v_name=$1 v_type=$4 # declare name of config entry and its type
-	v_mandatory=$3 # config entry is mandatory to be correctly set
+for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
+	set -- ${CONFIG_ENTRY_ARRAY[x]}
 	arr_names[i]="$1"
 	arr_conf[i]="$1 $4 $3"
 	let i++
@@ -3856,13 +3868,15 @@ while (($? == 0)); do
 	_add_conf_var
 done
 cleanup_lock
-"$WHIPTAIL" "${arr_title[@]}" \
-	--yesno "The resulting configuration file has been saved to: $c_file\nDo you want to view the created ruleblock?" 14 $w_with
-if (($? == 0)); then
-	if [[ -r "$c_file" ]]; then
+if [[ -s "$c_file" ]]; then
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?" 14 $w_with
+	if (($? == 0)); then
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 	fi
+else
+	run_rm "$c_file"
 fi
 } # -------------------------------------------------------------------------
 
@@ -3878,7 +3892,7 @@ if (($? != 0)); then
 	return 1
 fi
 if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES ) )
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
 	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 else
 	log -E "Templates must first be parsed (parse-xml -pt)"
@@ -3893,7 +3907,7 @@ for i in ${!arr_templ[*]}; do
 	fi
 done
 if [[ $str_tmp = "Create a new ruleblock" ]]; then
-	r_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the ruleblock (prefix with R_ or RULEBLOCK_)" 14 $w_with R_ 2>&1 > /dev/tty)
+	r_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the ruleblock (prefix with RB_ or RULEBLOCK_)" 14 $w_with R_ 2>&1 > /dev/tty)
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
 	x=0
@@ -3903,16 +3917,21 @@ if [[ $str_tmp = "Create a new ruleblock" ]]; then
 elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
 	load_all_ruleblocks || return
 	# put list of all ruleblocks into an array
-	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES ) )
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
 	# choose one ruleblock
 	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
 	$($copy_array "$r_name" arr_rb) || return 1
 	x=1 idx=0
+	if ! ((${#arr_rb[*]})); then
+		log -E "Ruleblock \`$r_name' is empty or not defined."
+		read -p " Press \`ENTER' to continue"
+		return $ER_NODEF
+	fi
 	for i in ${!arr_rb[*]}; do # add line numbers
 		arr_rb_tmp[idx++]="$x: ${arr_rb[i]}"
-		arr_rb_tmp[idx++]=""
+		arr_rb_tmp[idx++]="item"
 		let x++
 	done
 	x=0 arr_tmp=()
@@ -3981,7 +4000,8 @@ for x in ${!ARG_NAMES_LIST[*]}; do
 done
 
 local -a xopts=()
-t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the template (prefix with T_ or TEMPLATE_)" 14 $w_with T_ 2>&1 > /dev/tty)
+t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+	"Enter a name for the template (prefix with T_, BT_, GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_)" 14 $w_with T_ 2>&1 > /dev/tty)
 
 (($? != 0)) && return 1
 

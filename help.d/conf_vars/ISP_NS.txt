@@ -1,0 +1,3 @@
+# Automatically configure LAN nameserver to IPS nameserver(s) rules
+# Internet Service Provider nameservers
+# Format: subnet-name | nameserver-ip-address[,...] | [ external-net-name ]

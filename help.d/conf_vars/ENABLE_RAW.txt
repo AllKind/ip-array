@@ -1,0 +1,1 @@
+# Disable / Enable raw table rules | Format: 0/1

@@ -1,0 +1,1 @@
+# Disable / Enable TCP windows scaling | Format: 0/1

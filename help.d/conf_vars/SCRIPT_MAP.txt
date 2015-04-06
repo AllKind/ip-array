@@ -1,0 +1,5 @@
+# PROLOG and EPILOG scripts
+# Format:
+# startup-parameter[,...] {prolog|epilog} script-name {prolog|epilog} script-name
+# newline separates entries
+# i.e. start,stop prolog my_prolog_script epilog my_epilog_script

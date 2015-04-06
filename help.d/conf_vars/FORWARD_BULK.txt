@@ -1,0 +1,2 @@
+# Forward Bulk Mark
+# Format: input-device,output-device:mark [...] (i.e. eth1,eth0:6)

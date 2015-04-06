@@ -1,0 +1,2 @@
+# Allow loopback communiction (packets leaving/entering the loopback interface)
+# Format: 0/1

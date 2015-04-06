@@ -1,0 +1,1 @@
+# Disable / Enable ICMP echo broadcasts | Format: 0/1

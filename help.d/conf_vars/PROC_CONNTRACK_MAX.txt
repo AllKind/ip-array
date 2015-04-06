@@ -1,0 +1,3 @@
+# Set maximum number of connections to track
+# (leave unconfigured if PROC_CONNTRACK_HASHSIZE is set to automatic calculation)
+# Format: value (i.e. 8192) | [xX]factor (i.e. x2 to calculate the value automatically and multiply it with 2)

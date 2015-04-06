@@ -1,0 +1,3 @@
+# Deactivate automatic conntrack helper assignment (to all IP addresses) (available since kernel v3.5)
+# instead use -t raw -j CT --helper xyz
+# Format: 0 (default) | 1 (to deactivate)

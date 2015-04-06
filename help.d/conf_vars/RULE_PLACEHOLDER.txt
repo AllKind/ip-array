@@ -1,0 +1,3 @@
+# Rule placeholder character.
+# Used as a placeholder for unused values in the rule configuration file.
+# Valid values are: `_' `-' `.' `,' (defaults to `_')

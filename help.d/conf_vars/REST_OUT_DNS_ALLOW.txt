@@ -1,0 +1,3 @@
+# If RESTRICT_OUTPUT is '1' and the policy of the OUTPUT chain is DROP,
+# allow output (external interface) to nameservers from 'LOCAL_NS' (use /etc/resolv.conf entries)
+# Format: 0/1

@@ -1,0 +1,1 @@
+# Disable / Enable nat table rules | Format: 0/1

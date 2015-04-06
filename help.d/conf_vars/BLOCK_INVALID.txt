@@ -1,0 +1,1 @@
+# Drop packets in invalid state | Format: 0/1

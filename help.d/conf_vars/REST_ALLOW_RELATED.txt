@@ -1,0 +1,2 @@
+# If RESTRICT_OUTPUT is IFBOUND or IPBOUND, allow only ESTABLISHED (0), or ESTABLISHED and RELATED (1) traffic
+# Format: 0/1

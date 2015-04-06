@@ -1,0 +1,1 @@
+# Disable / Enable Ignoring of bogus icmp messages | Format: 0/1
