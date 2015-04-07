@@ -1,0 +1,711 @@
+#!/bin/bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2015 AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                     IP-ARRAY INTERACTIVE FUNCTIONS
+#
+# ------------------------------------------------------------------------- #
+
+_add_rb_line() { # add a line to a ruleblock
+local idx=0
+arr_line=()
+for i in ${!arr_templ[*]}; do
+	arr_line[idx]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
+		"Enter a value for ${arr_templ[i]%%=*} ${arr_templ[i]#*=}" 14 $w_with 2>&1 > /dev/tty )
+	(($? == 0)) || return 1
+	if [[ ${arr_line[idx]} = *[[:blank:]]* ]]; then
+		arr_line[idx]="\\\"${arr_line[idx]}\\\"" # :"
+	fi
+	let idx++
+done
+} # -------------------------------------------------------------------------
+
+_edit_rb_line() { # edit an existing ruleblock line
+arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+	"Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]//\"/\\\\\"}" 2>&1 >/dev/tty ) )
+(($? == 0)) || return 1
+local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
+local -a arr_line_new=()
+eval set -- "${arr_rb[lnum]}"
+for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
+	arr_line_new[i]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
+		"Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" 14 $w_with "${!x}" 2>&1 > /dev/tty )
+	(($? == 0)) || return 1
+	if [[ ${arr_line_new[i]} = *[[:blank:]]* ]]; then
+		arr_line_new[i]="\\\"${arr_line_new[i]}\\\"" # :"
+	fi
+done
+arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
+arr_rb[lnum]="${arr_line_new[@]}"
+} # -------------------------------------------------------------------------
+
+_add_conf_var() { # add config variable
+x=0 arr_tmp=()
+for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
+	arr_tmp[x++]="${str_tmp}"
+	arr_tmp[x++]="item" # dummy item entry
+done
+v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+	"Choose a variable" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+if (($? == 0)) && [[ $v_name ]]; then
+	for i in ${!arr_names[@]}; do
+		if [[ ${arr_names[i]} = $v_name ]]; then
+			set -- ${arr_conf[i]}
+			v_type=$2 # declare name of config entry and its type
+			v_mandatory=$3 # config entry is mandatory to be correctly set
+			break
+		fi
+	done
+	x=0 arr_content=()
+	if [[ $v_type = @(array|var) ]]; then
+		v_msg=""
+	elif [[ $v_type = bool ]]; then
+		v_msg=" (boolean)"
+	elif [[ $v_type = int ]]; then
+		v_msg=" (integer)"
+	fi
+	if [[ -s ${HELP_DIR}/conf_vars/${v_name}.txt ]]; then
+		v_help="\nHelp for ${v_name}:\n$("$CAT" ${HELP_DIR}/conf_vars/${v_name}.txt)\n"
+	else
+		v_help=""
+	fi
+	if [[ $v_type = array ]]; then
+		while (($? == 0)); do
+			arr_content[x++]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+				"Enter (more) content for variable $v_name.\nCancel to quit.${v_help}" 14 $w_with 2>&1 > /dev/tty) || {
+				unset arr_content[x-1]
+				break
+			}
+		done
+		if ((${#arr_content[*]})); then
+			printf '%s=\"\n' "$v_name" >> "$c_file"
+			printf "%s\n" "${arr_content[@]}" >> "$c_file"
+			printf '\"\n\n' >> "$c_file"
+			unset arr_names[i]
+		fi
+	else
+		arr_content[0]=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+			"Enter content for variable ${v_name}${v_msg}${v_help}" 14 $w_with 2>&1 > /dev/tty)
+		if (($? == 0)) && [[ ${arr_content[0]} ]]; then
+			printf '%s=\"%s\"\n\n' "$v_name" "${arr_content[0]}" >> "$c_file"
+			unset arr_names[i]
+		fi
+	fi
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another variable?" 14 $w_with
+} # -------------------------------------------------------------------------
+
+_choose_rule_action() {
+"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 14 $w_with 7 \
+	"ipt tag" "iptables argument tag" on \
+	"rule" "single rule" off \
+	"combined_rule" "Grouped tags rule" off \
+	"template_rule" "Template based rule" off \
+	"close" "Close last opened tag" off \
+	"comment" "Add a comment" off \
+	"view" "View the created rules" off 2>&1 >/dev/tty
+} # -------------------------------------------------------------------------
+
+_add_template_rule() {
+t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+	"Choose a template" 25 $w_with 15 "${arr_templ[@]}" 2>&1 >/dev/tty ) || return
+# choose one ruleblock
+r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+	"Choose a ruleblock" 25 $w_with 15 "${arr_rb[@]}" 2>&1 >/dev/tty ) || return
+str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
+	"Enter a template invocation command.\nLeave it empty, or cancel for none." 14 $w_with 2>&1 >/dev/tty )
+if [[ $t_name && $r_name ]]; then
+	arr_content[content_idx++]="        $t_name $r_name $str_tmp"
+else
+	"$WHIPTAIL" "${arr_title[@]}" --msgbox "Template or ruleblock definition is missing." 14 $w_with
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another template_rule line?" 14 $w_with
+} # -------------------------------------------------------------------------
+
+_add_single_rule_entries () {
+local str_lhs str_rhs
+arr_single_rule=()
+i=0 x=0 arr_tmp=( "${x_args[@]}" )
+while (($? == 0)); do
+	str_lhs=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+		--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+	if (($? == 0)); then
+		for i in ${!arr_tmp[*]}; do # remove dupes from the list
+			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
+				unset arr_tmp[i] arr_tmp[i+1]
+			fi
+		done
+		str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_lhs" 14 $w_with 2>&1 >/dev/tty )"
+		if (($? == 0)) && [[ $str_rhs ]]; then
+			arr_single_rule[x++]="$str_lhs=\"$str_rhs\""  #"
+			"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another iptables argument?" 14 $w_with
+		else
+			return 1
+		fi
+	else
+		return 1
+	fi
+done
+} # -------------------------------------------------------------------------
+
+
+_add_rules() {
+local arr_single_rule
+arr_rules[ridx]=$(_choose_rule_action)
+if [[ ${arr_rules[ridx]} = "template_rule" ]]; then
+	template_rule=1
+	let tag_idx++
+	arr_tags[tag_idx]="template_rule"
+	arr_content[content_idx++]="    <${arr_tags[tag_idx]}>"
+	if ((${#arr_templ[*]} == 0)); then
+		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+			arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+		else
+			log -E "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+			return $ER_USE
+		fi
+	fi
+	if ((${#arr_rb[*]} == 0)); then
+		if [[ -r ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
+			arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+		else
+			log -E "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
+			return $ER_USE
+		fi
+	fi
+	while (($? == 0)); do
+		_add_template_rule
+	done
+	arr_content[content_idx++]="    </${arr_tags[tag_idx]}>"
+	unset arr_tags[tag_idx]
+	let tag_idx--
+elif [[ ${arr_rules[ridx]} = "ipt tag" ]]; then
+	let ipt_tag++
+	i=0 arr_tmp=( "${x_args[@]}" )
+	while (($? == 0)); do
+		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+			--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+		if (($? == 0)); then
+			arr_tags[tag_idx++]="$str_tmp" str_indent+="    "
+			str_tmp="${str_indent}<$str_tmp>"
+			for i in ${!arr_tmp[*]}; do # remove dupes from the list
+				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
+					unset arr_tmp[i] arr_tmp[i+1]
+				fi
+			done
+			str_tmp+=" $( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_tmp" 14 $w_with 2>&1 >/dev/tty )"
+			if (($? == 0)); then
+				arr_content[content_idx++]="$str_tmp"
+				"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another iptables argument?" 14 $w_with
+			else
+				false
+			fi
+		else
+			false
+		fi
+	done
+elif [[ ${arr_rules[ridx]} = "rule" ]]; then
+	single_rule=1
+	i=0 arr_tmp=( "${x_args[@]}" )
+	_add_single_rule_entries
+	if ((${#arr_single_rule[*]})); then
+		arr_content[content_idx++]="${str_indent}    <rule> ${arr_single_rule[*]} </rule>"
+	else
+		false
+	fi
+elif [[ ${arr_rules[ridx]} = "combined_rule" ]]; then
+	combined_rule=1
+elif [[ ${arr_rules[ridx]} = "close" ]]; then
+	if (($tag_idx > 0)); then
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		"$WHIPTAIL" "${arr_title[@]}" --msgbox "Tag \`${arr_tags[tag_idx]}' has been closed." 14 $w_with
+		unset arr_tags[tag_idx]
+	else
+		"$WHIPTAIL" "${arr_title[@]}" --msgbox "There are no tags open." 14 $w_with
+	fi
+elif [[ ${arr_rules[ridx]} = "comment" ]]; then
+	str_tmp="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a comment" 14 $w_with 2>&1 >/dev/tty )"
+	if [[ $str_tmp ]]; then
+		arr_content[content_idx++]="${str_indent}<!-- $str_tmp -->"
+	fi
+elif [[ ${arr_rules[ridx]} = "view" ]]; then
+	printf "\n"
+	printf "%s\n" "${arr_content[@]}"
+	printf "\n"
+	read -p " Press \`ENTER' to continue"
+fi
+
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add/close another tag?" 14 $w_with
+if (($? != 0)); then
+	for i in ${!arr_tags[*]}; do
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		unset arr_tags[tag_idx]
+	done
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+iactive_rule_builder () { # interactive rule file builder
+local -i i x ridx=0 w_with=$IACTIVE_WINDOW_WITH
+local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
+local -i tag_idx=0 content_idx=0
+local -a arr_rules arr_tags arr_tmp arr_templ arr_rb arr_content
+local t_name r_name str_tmp
+local str_indent
+local arr_title=( --title "$ME rule file builder" )
+local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
+i=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+	x_args[i++]="item" # dummy item entry
+done
+
+while (($? == 0)); do
+	_add_rules
+done
+if ((${#arr_content[@]})); then
+	printf '<?xml version="1.0"?>\n\n' > "$r_file"
+	printf '<ip_array_root name="iptables_rules" syntax_version="0.1"\n' >> "$r_file"
+	printf "%s\n" "${arr_content[@]}" >> "$r_file"
+	printf '</ip_array_root>\n' >> "$r_file"
+	if [[ -s "$r_file" ]]; then
+		"$WHIPTAIL" "${arr_title[@]}" \
+			--yesno "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?" 14 $w_with
+		if (($? == 0)); then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+else
+	"$WHIPTAIL" "${arr_title[@]}" --msgbox "No rules have been collected." 14 $w_with
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another rule file?" 14 $w_with
+} # -------------------------------------------------------------------------
+
+iactive_config_builder() { # interactive config file builder
+((${#CONFIG_ENTRY_ARRAY[@]})) || {
+	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
+	return $ER_NODEF
+}
+local -i i x v_mandatory w_with=$IACTIVE_WINDOW_WITH
+local v_name v_type v_msg v_help
+local -a arr_content arr_names arr_conf arr_tmp
+local arr_title=( --title "$ME configuration file builder" )
+local c_file="${SAVE_DIR}/${me}-conf_$(run_date +%F_%T)_rnd${RANDOM}.conf"
+i=0
+for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
+	set -- ${CONFIG_ENTRY_ARRAY[x]}
+	arr_names[i]="$1"
+	arr_conf[i]="$1 $4 $3"
+	let i++
+done
+mutex_on || bail_out $?
+create_file "$c_file" || return
+while (($? == 0)); do
+	_add_conf_var
+done
+cleanup_lock
+if [[ -s "$c_file" ]]; then
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?" 14 $w_with
+	if (($? == 0)); then
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	fi
+else
+	run_rm "$c_file"
+fi
+} # -------------------------------------------------------------------------
+
+iactive_ruleblock_builder() { # interactive ruleblock builder
+local arr_title=( --title "$ME ruleblock builder" )
+local str_tmp t_name r_name r_file
+local -i i x idx w_with=$IACTIVE_WINDOW_WITH
+local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
+
+str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Select the desired option" 14 $w_with 4 \
+	"Create a new ruleblock" "" "Edit an existing ruleblock" "" 2>&1 >/dev/tty )
+if (($? != 0)); then
+	return 1
+fi
+if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+else
+	log -E "Templates must first be parsed (parse-xml -pt)"
+	return $ER_USE
+fi
+load_all_templates || return
+$($copy_array "$t_name" arr_templ) || return 1
+for i in ${!arr_templ[*]}; do
+	if [[ ${arr_templ[i]} != option_list_* ]]; then
+		arr_inf[${#arr_inf[*]}]="${arr_templ[i]}"
+		unset arr_templ[i]
+	fi
+done
+if [[ $str_tmp = "Create a new ruleblock" ]]; then
+	r_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a name for the ruleblock (prefix with RB_ or RULEBLOCK_)" 14 $w_with R_ 2>&1 > /dev/tty)
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	x=0
+	while (($? == 0)); do
+		"$WHIPTAIL" "${arr_title[@]}" --yesno "Add a line to the ruleblock?" 14 $w_with && _add_rb_line && arr_rb[x++]="${arr_line[*]}"
+	done
+elif [[ $str_tmp = "Edit an existing ruleblock" ]]; then
+	load_all_ruleblocks || return
+	# put list of all ruleblocks into an array
+	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+	# choose one ruleblock
+	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	$($copy_array "$r_name" arr_rb) || return 1
+	x=1 idx=0
+	if ! ((${#arr_rb[*]})); then
+		log -E "Ruleblock \`$r_name' is empty or not defined."
+		read -p " Press \`ENTER' to continue"
+		return $ER_NODEF
+	fi
+	for i in ${!arr_rb[*]}; do # add line numbers
+		arr_rb_tmp[idx++]="$x: ${arr_rb[i]}"
+		arr_rb_tmp[idx++]="item"
+		let x++
+	done
+	x=0 arr_tmp=()
+	for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
+		if [[ ${arr_templ[i]} = option_list_0* ]]; then
+			arr_tmp[x++]="${arr_templ[i]}"
+		fi
+	done
+	while (($? == 0)); do # edit line
+		_edit_rb_line && "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to edit another rule?" 14 $w_with
+	done
+fi
+r_file="$SAVE_DIR/${r_name}.txt"
+if ((${#arr_rb[*]})); then
+	mutex_on || bail_out $?
+	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
+	if ((${#arr_inf[*]})); then
+		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
+		printf "\t%s\n" "${arr_inf[@]}" >> "$r_file"
+		printf '\t%s\n' '-->' >> "$r_file"
+	fi
+	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
+	printf '</ruleblock>\n' >> "$r_file"
+	cleanup_lock
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting ruleblock has been saved to: $r_file\nDo you want to view the created ruleblock?" 14 $w_with
+	if (($? == 0)); then
+		if [[ -r "$r_file" ]]; then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create/edit another ruleblock?" 14 $w_with
+else
+	log -W "No ruleblock data has been collected"
+fi
+
+} # -------------------------------------------------------------------------
+
+iactive_template_builder() { # interactive template builder
+
+local t_name t_file i x y str_tmp str_x ret
+local arr_title=( --title "$ME template builder" )
+local -i w_with=$IACTIVE_WINDOW_WITH
+local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
+local -a arr_opts=(
+table "Table name" off
+chain "Chain name" off
+target "Target name" off
+template_msg "Template message" off
+load_template "Load another template" off
+option_list_0 "List of options" off
+option_list_1 "Reverse option list" off
+always_use_0 "List of fixed options" off
+always_use_1 "Reverse list of fixed options" off
+mandatory_vars "Mandatory variables" off
+state_match_arg  "Conntrack states" off
+reverse_mode "Bidirectonal traffic" off
+reverse_condition "Condition for reverse mode" off
+)
+
+y=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[y++]="${ARG_NAMES_LIST[x]}"
+	x_args[y++]=""
+done
+
+local -a xopts=()
+t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+	"Enter a name for the template (prefix with T_, BT_, GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_)" 14 $w_with T_ 2>&1 > /dev/tty)
+
+(($? != 0)) && return 1
+
+[[ $t_name || $t_name != @(T_|TEMPLATE_|T|TEMPLATE) ]] || return 1
+[[ $t_name = @(T|TEMPLATE)_+([[:word:]]) ]] || return 1
+local t_file="$SAVE_DIR/${t_name}.txt"
+
+xopts=( $("$WHIPTAIL" "${arr_title[@]}" --separate-output \
+	--checklist "Choose the options for the template $t_name" 14 $w_with 10 "${arr_opts[@]}" 2>&1 > /dev/tty) )
+
+if ((${#xopts[*]})); then
+	for ((x=0; x<=${#xopts[*]}; x++)); do
+		case "${xopts[x]}" in
+			table)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+					--menu "Choose the table name" 17 $w_with 7 filter "" mangle "" nat "" raw "" security "" rawpost "" 2>&1 > /dev/tty)"
+			;;
+			chain)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			target)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the ${xopts[x]} name(s) (separated by space)" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			load_template)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter the name for the other template(s) to load (separated by space)" 14 $w_with T_ 2>&1 > /dev/tty)"
+			;;
+			state_match_arg)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter one or two comma separated list of conntrack state names" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			template_msg)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a template loading message" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			mandatory_vars)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a comma separated list of required variable names" 14 $w_with 2>&1 > /dev/tty)"
+			;;
+			reverse_mode)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --radiolist "Select a reverse mode." 14 $w_with 10 \
+					reverse "Reverse data from the first option list (bidirectional traffic)" on mirror "Mirror the first option list" off 2>&1 > /dev/tty)"
+			;;
+			reverse_condition)
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
+					--inputbox "Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS)" \
+					14 $w_with 2>&1 > /dev/tty)"
+			;;
+			option_list_0)
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_o0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_o0[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_o0[i-1]
+					fi
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+				done
+				if (($? == 1)); then
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to define default values for one or more of these options?" 14 $w_with
+					if (($? == 0)); then
+						for i in ${!arr_o0[*]}; do
+							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+								--inputbox "Enter a default value for \`${arr_o0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+							if (($? == 0)) && [[ $str_x ]]; then
+								arr_o0[i]="${arr_o0[i]}=\"$str_x\"" #"
+							fi
+						done
+					fi
+				fi
+			;;
+			option_list_1)
+				if ! ((${#arr_o0[*]})); then
+					printf "%s\n" "option_list_0 options have not been set." >&2
+					return 1
+				fi
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_o1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
+						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_o1[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_o1[i-1]
+					fi
+					if (( ${#arr_o1[*]} < ${#arr_o0[*]} )); then # reverse list must not be greater than first
+						"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+					else
+						false
+					fi
+				done
+				if (($? == 1)); then
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to define default values for one or more of these options?" 14 $w_with
+					if (($? == 0)); then
+						for i in ${!arr_o1[*]}; do
+							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+								--inputbox "Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+							if (($? == 0)) && [[ $str_x ]]; then
+								arr_o1[i]="${arr_o1[i]}=\"$str_x\"" #"
+							fi
+						done
+					fi
+				fi
+			;;
+			always_use_0)
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_alw0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_alw0[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_alw0[i-1]
+					fi
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+				done
+				if (($? == 1)); then
+					for i in ${!arr_alw0[*]}; do
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" \
+							--inputbox "Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_alw0[i]="${arr_alw0[i]}=\"$str_x\"" #"
+						fi
+					done
+				fi
+			;;
+			always_use_1)
+				if ! ((${#arr_alw0[*]})); then
+					printf "%s\n" "always_use_0 options have not been set." >&2
+					return 1
+				fi
+				i=0 arr_tmp=( "${x_args[@]}" )
+				while (($? == 0)); do
+					arr_alw1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+						--menu "Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
+						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					if (($? == 0)); then
+						for y in ${!arr_tmp[@]}; do # remove dupes from the list
+							if [[ ${arr_tmp[y]} = ${arr_alw1[i-1]} ]]; then
+								unset arr_tmp[y] arr_tmp[y+1]
+							fi
+						done
+					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+						unset arr_alw1[i-1]
+					fi
+					if (( ${#arr_alw1[*]} < ${#arr_alw0[*]} )); then # reverse list must not be greater than first
+						"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option?" 14 $w_with
+					else
+						false
+					fi
+				done
+				if (($? == 1)); then
+					for i in ${!arr_alw1[*]}; do
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_alw1[i]="${arr_alw1[i]}=\"$str_x\"" #"
+						fi
+					done
+				fi
+			;;
+		esac
+		if (($? != 0)); then return 1; fi
+	done
+	(($? != 0)) && return 1
+	mutex_on || bail_out $?
+	printf '<template name="%s">\n' "$t_name" > "$t_file"
+	y=0
+	for x in ${!xopts[*]}; do
+		case "${xopts[x]}" in
+			table*|chain*|target*|state_match_arg*|template_msg*|mandatory_vars*|reverse_mode*|reverse_condition*)
+				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+			;;
+			load_template*)
+				printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+					for str_tmp in ${xopts[x]#*=}; do
+						printf '\t\t%s\n' "$str_tmp" >> "$t_file"
+					done
+				printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+			;;
+			option_list_0)
+				(( ${#arr_o0[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_o0[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			option_list_1)
+				(( ${#arr_o1[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_o1[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			always_use_0)
+				(( ${#arr_alw0[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_alw0[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+			always_use_1)
+				(( ${#arr_alw1[*]} )) || continue
+				printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+				printf '\t\t%s\n' "${arr_alw1[@]}" >> "$t_file"
+				printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+			;;
+		esac
+	done
+	printf '</template>\n' >> "$t_file"
+	cleanup_lock
+	"$WHIPTAIL" "${arr_title[@]}" \
+		--yesno "The resulting template has been saved to: $t_file\nDo you want to view the created template?" 14 $w_with
+	if (($? == 0)); then
+		if [[ -r "$t_file" ]]; then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another template?" 14 $w_with
+fi
+
+}
+
+

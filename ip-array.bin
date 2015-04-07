@@ -125,6 +125,7 @@ declare -r GLOBAL_DEFS="${me}_global_defs"
 declare -r IPARRAY_MAIN_FUNCTIONS="${me}_main_functions"
 declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions ${me}_ipset_functions"
 declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
+declare -r IPARRAY_IACTIVE_FUNCTIONS="${me}_interactive_functions"
 declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS"
 
 # don't perform autosave, modprobe, proc, compatibility,... check - yes/no
@@ -1459,6 +1460,12 @@ case "$MAIN_ARG" in
 	interactive)
 		MODE='INTERACTIVE'
 		EXEC_COMMANDS=0
+		verbose_msg "Loading interactive functions"
+		. "${LIB_DIR}/$IPARRAY_IACTIVE_FUNCTIONS" || {
+			err_msg "loading functions file: \`${LIB_DIR}/${IPARRAY_IACTIVE_FUNCTIONS}'."
+			bail_out $ER_LOAD
+		}
+
 	;;
 	lockdown) # lockdown network connections
 		MODE='LOCKDOWN'
