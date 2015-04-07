@@ -3845,6 +3845,194 @@ fi
 "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another variable?" 14 $w_with
 } # -------------------------------------------------------------------------
 
+_choose_rule_action() {
+"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 14 $w_with 7 \
+	"ipt tag" "iptables argument tag" on \
+	"rule" "single rule" off \
+	"combined_rule" "Grouped tags rule" off \
+	"template_rule" "Template based rule" off \
+	"close" "Close last opened tag" off \
+	"comment" "Add a comment" off \
+	"view" "View the created rules" off 2>&1 >/dev/tty
+} # -------------------------------------------------------------------------
+
+_add_template_rule() {
+t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" 25 $w_with 15 "${arr_templ[@]}" 2>&1 >/dev/tty ) || return
+# choose one ruleblock
+r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" 25 $w_with 15 "${arr_rb[@]}" 2>&1 >/dev/tty ) || return
+str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a template invocation command.\nLeave it empty, or cancel for none." 14 $w_with 2>&1 >/dev/tty )
+if [[ $t_name && $r_name ]]; then
+	arr_content[content_idx++]="        $t_name $r_name $str_tmp"
+else
+	"$WHIPTAIL" "${arr_title[@]}" --msgbox "Template or ruleblock definition is missing." 14 $w_with
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another template_rule line?" 14 $w_with
+} # -------------------------------------------------------------------------
+
+_add_single_rule_entries () {
+local str_lhs str_rhs
+arr_single_rule=()
+i=0 x=0 arr_tmp=( "${x_args[@]}" )
+while (($? == 0)); do
+	str_lhs=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+		--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+	if (($? == 0)); then
+		for i in ${!arr_tmp[*]}; do # remove dupes from the list
+			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
+				unset arr_tmp[i] arr_tmp[i+1]
+			fi
+		done
+		str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_lhs" 14 $w_with 2>&1 >/dev/tty )"
+		if (($? == 0)) && [[ $str_rhs ]]; then
+			arr_single_rule[x++]="$str_lhs=\"$str_rhs\""  #"
+			"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another iptables argument?" 14 $w_with
+		else
+			return 1
+		fi
+	else
+		return 1
+	fi
+done
+} # -------------------------------------------------------------------------
+
+
+_add_rules() {
+local arr_single_rule
+arr_rules[ridx]=$(_choose_rule_action)
+if [[ ${arr_rules[ridx]} = "template_rule" ]]; then
+	template_rule=1
+	let tag_idx++
+	arr_tags[tag_idx]="template_rule"
+	arr_content[content_idx++]="    <${arr_tags[tag_idx]}>"
+	if ((${#arr_templ[*]} == 0)); then
+		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+			arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+		else
+			log -E "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+			return $ER_USE
+		fi
+	fi
+	if ((${#arr_rb[*]} == 0)); then
+		if [[ -r ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
+			arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+		else
+			log -E "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
+			return $ER_USE
+		fi
+	fi
+	while (($? == 0)); do
+		_add_template_rule
+	done
+	arr_content[content_idx++]="    </${arr_tags[tag_idx]}>"
+	unset arr_tags[tag_idx]
+	let tag_idx--
+elif [[ ${arr_rules[ridx]} = "ipt tag" ]]; then
+	let ipt_tag++
+	i=0 arr_tmp=( "${x_args[@]}" )
+	while (($? == 0)); do
+		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+			--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+		if (($? == 0)); then
+			arr_tags[tag_idx++]="$str_tmp" str_indent+="    "
+			str_tmp="${str_indent}<$str_tmp>"
+			for i in ${!arr_tmp[*]}; do # remove dupes from the list
+				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
+					unset arr_tmp[i] arr_tmp[i+1]
+				fi
+			done
+			str_tmp+=" $( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_tmp" 14 $w_with 2>&1 >/dev/tty )"
+			if (($? == 0)); then
+				arr_content[content_idx++]="$str_tmp"
+				"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another iptables argument?" 14 $w_with
+			else
+				false
+			fi
+		else
+			false
+		fi
+	done
+elif [[ ${arr_rules[ridx]} = "rule" ]]; then
+	single_rule=1
+	i=0 arr_tmp=( "${x_args[@]}" )
+	_add_single_rule_entries
+	if ((${#arr_single_rule[*]})); then
+		arr_content[content_idx++]="${str_indent}    <rule> ${arr_single_rule[*]} </rule>"
+	else
+		false
+	fi
+elif [[ ${arr_rules[ridx]} = "combined_rule" ]]; then
+	combined_rule=1
+elif [[ ${arr_rules[ridx]} = "close" ]]; then
+	if (($tag_idx > 0)); then
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		"$WHIPTAIL" "${arr_title[@]}" --msgbox "Tag \`${arr_tags[tag_idx]}' has been closed." 14 $w_with
+		unset arr_tags[tag_idx]
+	else
+		"$WHIPTAIL" "${arr_title[@]}" --msgbox "There are no tags open." 14 $w_with
+	fi
+elif [[ ${arr_rules[ridx]} = "comment" ]]; then
+	str_tmp="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a comment" 14 $w_with 2>&1 >/dev/tty )"
+	if [[ $str_tmp ]]; then
+		arr_content[content_idx++]="${str_indent}<!-- $str_tmp -->"
+	fi
+elif [[ ${arr_rules[ridx]} = "view" ]]; then
+	printf "\n"
+	printf "%s\n" "${arr_content[@]}"
+	printf "\n"
+	read -p " Press \`ENTER' to continue"
+fi
+
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add/close another tag?" 14 $w_with
+if (($? != 0)); then
+	for i in ${!arr_tags[*]}; do
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		unset arr_tags[tag_idx]
+	done
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+iactive_rule_builder () { # interactive rule file builder
+local -i i x ridx=0 w_with=$IACTIVE_WINDOW_WITH
+local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
+local -i tag_idx=0 content_idx=0
+local -a arr_rules arr_tags arr_tmp arr_templ arr_rb arr_content
+local t_name r_name str_tmp
+local str_indent
+local arr_title=( --title "$ME rule file builder" )
+local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
+i=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+	x_args[i++]="item" # dummy item entry
+done
+
+while (($? == 0)); do
+	_add_rules
+done
+if ((${#arr_content[@]})); then
+	printf '<?xml version="1.0"?>\n\n' > "$r_file"
+	printf '<ip_array_root name="iptables_rules" syntax_version="0.1"\n' >> "$r_file"
+	printf "%s\n" "${arr_content[@]}" >> "$r_file"
+	printf '</ip_array_root>\n' >> "$r_file"
+	if [[ -s "$r_file" ]]; then
+		"$WHIPTAIL" "${arr_title[@]}" \
+			--yesno "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?" 14 $w_with
+		if (($? == 0)); then
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		fi
+	fi
+else
+	"$WHIPTAIL" "${arr_title[@]}" --msgbox "No rules have been collected." 14 $w_with
+fi
+"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another rule file?" 14 $w_with
+} # -------------------------------------------------------------------------
+
 iactive_config_builder() { # interactive config file builder
 ((${#CONFIG_ENTRY_ARRAY[@]})) || {
 	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
@@ -5213,7 +5401,8 @@ case "$1" in
 			--menu "Select the desired action" 14 0 4 \
 			"Configuration builder" "Create a main configuration file" \
 			"Ruleblock builder" "Create or edit XML ruleblocks" \
-			"Template builder" "Create XML templates" 2>&1 > /dev/tty)
+			"Template builder" "Create XML templates" \
+			"Rule builder" "Create a rule file" 2>&1 > /dev/tty)
 		if (($? == 0)); then
 			if [[ $str_opt = "Ruleblock builder" ]]; then
 				while (($? == 0)); do
@@ -5225,6 +5414,10 @@ case "$1" in
 				done
 			elif [[ $str_opt = "Configuration builder" ]]; then
 				iactive_config_builder
+			elif [[ $str_opt = "Rule builder" ]]; then
+				while (($? == 0)); do
+					iactive_rule_builder
+				done
 			fi
 		fi
 		common_end
