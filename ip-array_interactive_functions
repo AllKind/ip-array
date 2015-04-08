@@ -124,11 +124,12 @@ fi
 } # -------------------------------------------------------------------------
 
 _choose_rule_action() {
-"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 14 $w_with 7 \
+"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 14 $w_with 8 \
 	"ipt tag" "iptables argument tag" on \
 	"rule" "single rule" off \
 	"combined_rule" "Grouped tags rule" off \
 	"template_rule" "Template based rule" off \
+	"public_function" "Public function(s)" off \
 	"close" "Close last opened tag" off \
 	"comment" "Add a comment" off \
 	"view" "View the created rules" off 2>&1 >/dev/tty
@@ -179,8 +180,8 @@ done
 
 _add_rules() {
 local arr_single_rule
-arr_rules[ridx]=$(_choose_rule_action)
-if [[ ${arr_rules[ridx]} = "template_rule" ]]; then
+str_rule=$(_choose_rule_action)
+if [[ $str_rule = template_rule ]]; then
 	template_rule=1
 	let tag_idx++
 	arr_tags[tag_idx]="template_rule"
@@ -207,7 +208,7 @@ if [[ ${arr_rules[ridx]} = "template_rule" ]]; then
 	arr_content[content_idx++]="    </${arr_tags[tag_idx]}>"
 	unset arr_tags[tag_idx]
 	let tag_idx--
-elif [[ ${arr_rules[ridx]} = "ipt tag" ]]; then
+elif [[ $str_rule = "ipt tag" ]]; then
 	let ipt_tag++
 	i=0 arr_tmp=( "${x_args[@]}" )
 	while (($? == 0)); do
@@ -232,7 +233,7 @@ elif [[ ${arr_rules[ridx]} = "ipt tag" ]]; then
 			false
 		fi
 	done
-elif [[ ${arr_rules[ridx]} = "rule" ]]; then
+elif [[ $str_rule = rule ]]; then
 	single_rule=1
 	i=0 arr_tmp=( "${x_args[@]}" )
 	_add_single_rule_entries
@@ -241,9 +242,26 @@ elif [[ ${arr_rules[ridx]} = "rule" ]]; then
 	else
 		false
 	fi
-elif [[ ${arr_rules[ridx]} = "combined_rule" ]]; then
+elif [[ $str_rule = combined_rule ]]; then
 	combined_rule=1
-elif [[ ${arr_rules[ridx]} = "close" ]]; then
+elif [[ $str_rule = public_function ]]; then
+	if ((${#arr_pubfunc[*]} == 0)); then x=0
+		for i in ${!PUBLIC_FUNCTION_LIST[@]}; do
+			set -- ${PUBLIC_FUNCTION_LIST[i]}
+			arr_pubfunc[x++]="$1"
+			shift
+			arr_pubfunc[x++]="$*"
+		done
+	fi
+	arr_tmp=()
+	arr_tmp[0]=$("$WHIPTAIL" "${arr_title[@]}" --menu \
+		"Choose a public function." 27 $w_with 20 "${arr_pubfunc[@]}" 2>&1 > /dev/tty)
+	if (($? == 0)); then
+		arr_tmp[1]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
+			"Enter parameters for the function \`${arr_tmp[0]}'. Empty value or cancel for none." 14 $w_with 2>&1 >/dev/tty )
+		arr_content[content_idx++]="${str_indent}<pub_func> ${arr_tmp[*]} </pub_func>"
+	fi
+elif [[ $str_rule = close ]]; then
 	if (($tag_idx > 0)); then
 		let tag_idx--
 		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
@@ -253,12 +271,12 @@ elif [[ ${arr_rules[ridx]} = "close" ]]; then
 	else
 		"$WHIPTAIL" "${arr_title[@]}" --msgbox "There are no tags open." 14 $w_with
 	fi
-elif [[ ${arr_rules[ridx]} = "comment" ]]; then
+elif [[ $str_rule = comment ]]; then
 	str_tmp="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a comment" 14 $w_with 2>&1 >/dev/tty )"
 	if [[ $str_tmp ]]; then
 		arr_content[content_idx++]="${str_indent}<!-- $str_tmp -->"
 	fi
-elif [[ ${arr_rules[ridx]} = "view" ]]; then
+elif [[ $str_rule = view ]]; then
 	printf "\n"
 	printf "%s\n" "${arr_content[@]}"
 	printf "\n"
@@ -281,8 +299,8 @@ iactive_rule_builder () { # interactive rule file builder
 local -i i x ridx=0 w_with=$IACTIVE_WINDOW_WITH
 local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
 local -i tag_idx=0 content_idx=0
-local -a arr_rules arr_tags arr_tmp arr_templ arr_rb arr_content
-local t_name r_name str_tmp
+local -a arr_tags arr_tmp arr_templ arr_rb arr_content arr_pubfunc
+local t_name r_name str_rule str_tmp
 local str_indent
 local arr_title=( --title "$ME rule file builder" )
 local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
