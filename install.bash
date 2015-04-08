@@ -208,6 +208,7 @@ install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/temp
 install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
 install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d/public_functions"
 install_dir -m 0644 help.d/ipt_args/*.txt "${DATAROOTDIR}/${ME}/help.d/ipt_args"
+install_dir -m 0644 help.d/conf_vars/*.txt "${DATAROOTDIR}/${ME}/help.d/conf_vars"
 install_dir -m 0644 help.d/docbook/* "${DOCDIR}/${ME}/docbook"
 install_dir -m 0644 help.d/examples/* "${DOCDIR}/${ME}/examples"
 install_dir -m 0644 help.d/html/* "${DOCDIR}/${ME}/html"
