@@ -351,10 +351,12 @@ while (($? == 0)); do
 	_add_rules
 done
 if ((${#arr_content[@]})); then
+	mutex_on || bail_out $?
 	printf '<?xml version="1.0"?>\n\n' > "$r_file"
 	printf '<ip_array_root name="iptables_rules" syntax_version="0.1"\n' >> "$r_file"
 	printf "%s\n" "${arr_content[@]}" >> "$r_file"
 	printf '</ip_array_root>\n' >> "$r_file"
+	cleanup_lock
 	if [[ -s "$r_file" ]]; then
 		"$WHIPTAIL" "${arr_title[@]}" --yesno \
 			"The resulting file has been saved to: $r_file\nDo you want to view the created rule file?" 14 $w_with
