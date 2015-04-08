@@ -34,7 +34,7 @@
 #
 # ------------------------------------------------------------------------- #
 
-_add_rb_line() { # add a line to a ruleblock
+_add_rb_line() { # sub function of iactive_ruleblock_builder() - add a line to a ruleblock
 local idx=0
 arr_line=()
 for i in ${!arr_templ[*]}; do
@@ -48,7 +48,7 @@ for i in ${!arr_templ[*]}; do
 done
 } # -------------------------------------------------------------------------
 
-_edit_rb_line() { # edit an existing ruleblock line
+_edit_rb_line() { # sub function of iactive_ruleblock_builder() - edit an existing ruleblock line
 arr_line=( $( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
 	"Choose a line to edit" 25 $w_with 15 "${arr_rb_tmp[@]//\"/\\\\\"}" 2>&1 >/dev/tty ) )
 (($? == 0)) || return 1
@@ -67,7 +67,7 @@ arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
 arr_rb[lnum]="${arr_line_new[@]}"
 } # -------------------------------------------------------------------------
 
-_add_conf_var() { # add config variable
+_add_conf_var() { # sub function of iactive_config_builder() - add config variable
 x=0 arr_tmp=()
 for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
 	arr_tmp[x++]="${str_tmp}"
@@ -123,8 +123,8 @@ fi
 "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another variable?" 14 $w_with
 } # -------------------------------------------------------------------------
 
-_choose_rule_action() {
-"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 14 $w_with 8 \
+_choose_rule_action() { # sub function of iactive_rule_builder(). Choose action type for rule building.
+"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" 24 $w_with 8 \
 	"ipt tag" "iptables argument tag" on \
 	"rule" "single rule" off \
 	"combined_rule" "Grouped tags rule" off \
@@ -135,7 +135,7 @@ _choose_rule_action() {
 	"view" "View the created rules" off 2>&1 >/dev/tty
 } # -------------------------------------------------------------------------
 
-_add_template_rule() {
+_add_template_rule() { # sub function of _add_rules() - Add a template rule
 t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
 	"Choose a template" 25 $w_with 15 "${arr_templ[@]}" 2>&1 >/dev/tty ) || return
 # choose one ruleblock
@@ -151,17 +151,17 @@ fi
 "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another template_rule line?" 14 $w_with
 } # -------------------------------------------------------------------------
 
-_add_single_rule_entries () {
-local str_lhs str_rhs
+_add_single_rule_entries () { # sub function of _add_rules() - Collect entries for <rule> or <optlist>
 arr_single_rule=()
-i=0 x=0 arr_tmp=( "${x_args[@]}" )
+x=0 arr_tmp=( "${x_args[@]}" )
 while (($? == 0)); do
 	str_lhs=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-		--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+		--menu "Choose an iptables argument." 24 $w_with 14 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 	if (($? == 0)); then
 		for i in ${!arr_tmp[*]}; do # remove dupes from the list
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
 				unset arr_tmp[i] arr_tmp[i+1]
+				break
 			fi
 		done
 		str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_lhs" 14 $w_with 2>&1 >/dev/tty )"
@@ -177,15 +177,12 @@ while (($? == 0)); do
 done
 } # -------------------------------------------------------------------------
 
-
-_add_rules() {
-local arr_single_rule
-str_rule=$(_choose_rule_action)
+_add_rules() { # sub function of iactive_rule_builder() - add different rule types
+local str_lhs str_rhs
+local -a arr_single_rule arr_attr
+local str_rule=$(_choose_rule_action)
 if [[ $str_rule = template_rule ]]; then
-	template_rule=1
-	let tag_idx++
-	arr_tags[tag_idx]="template_rule"
-	arr_content[content_idx++]="    <${arr_tags[tag_idx]}>"
+	arr_content[content_idx++]="    <template_rule>"
 	if ((${#arr_templ[*]} == 0)); then
 		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 			arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
@@ -205,23 +202,22 @@ if [[ $str_rule = template_rule ]]; then
 	while (($? == 0)); do
 		_add_template_rule
 	done
-	arr_content[content_idx++]="    </${arr_tags[tag_idx]}>"
-	unset arr_tags[tag_idx]
-	let tag_idx--
+	arr_content[content_idx++]="    </template_rule>"
 elif [[ $str_rule = "ipt tag" ]]; then
-	let ipt_tag++
-	i=0 arr_tmp=( "${x_args[@]}" )
+	arr_tmp=( "${x_args[@]}" )
 	while (($? == 0)); do
 		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
 			--menu "Choose an iptables argument." 27 $w_with 20 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 		if (($? == 0)); then
-			arr_tags[tag_idx++]="$str_tmp" str_indent+="    "
-			str_tmp="${str_indent}<$str_tmp>"
 			for i in ${!arr_tmp[*]}; do # remove dupes from the list
 				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
 					unset arr_tmp[i] arr_tmp[i+1]
+					break
 				fi
 			done
+			arr_tags[tag_idx++]="$str_tmp"
+			str_indent+="    "
+			str_tmp="${str_indent}<$str_tmp>"
 			str_tmp+=" $( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_tmp" 14 $w_with 2>&1 >/dev/tty )"
 			if (($? == 0)); then
 				arr_content[content_idx++]="$str_tmp"
@@ -234,8 +230,7 @@ elif [[ $str_rule = "ipt tag" ]]; then
 		fi
 	done
 elif [[ $str_rule = rule ]]; then
-	single_rule=1
-	i=0 arr_tmp=( "${x_args[@]}" )
+	arr_tmp=( "${x_args[@]}" )
 	_add_single_rule_entries
 	if ((${#arr_single_rule[*]})); then
 		arr_content[content_idx++]="${str_indent}    <rule> ${arr_single_rule[*]} </rule>"
@@ -243,7 +238,49 @@ elif [[ $str_rule = rule ]]; then
 		false
 	fi
 elif [[ $str_rule = combined_rule ]]; then
-	combined_rule=1
+	i=0
+	str_indent+="    "
+	arr_tmp=(msg "Log message" reverse_mode "Define reverse mode" reverse_condition "Condition to be true for activation of reverse mode")
+	while (($? == 0)); do
+		if ((${#arr_tmp[*]})); then
+			str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --menu \
+				"Choose a combined rule attribute. Empty value or cancel for none." 25 $w_with 15 "${arr_tmp[@]}" 2>&1 >/dev/tty )
+			if (($? == 0)); then
+				for x in ${!arr_tmp[*]}; do
+					if [[ $str_lhs = ${arr_tmp[x]} ]]; then
+						unset arr_tmp[x] arr_tmp[x+1]
+						break
+					fi
+				done
+				str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_lhs" 14 $w_with 2>&1 >/dev/tty )"
+				if (($? == 0)) && [[ $str_rhs ]]; then
+					arr_attr[i++]="${str_lhs}=\"${str_rhs}\"" #"
+				else
+					false
+				fi
+			else
+				false
+			fi
+		else
+			false
+		fi
+	done
+	if ((${#arr_attr[*]})); then
+		arr_content[content_idx++]="${str_indent}<combined_rule ${arr_attr[*]}>"
+	else
+		arr_content[content_idx++]="${str_indent}<combined_rule>"
+	fi
+	while (($? == 0)); do
+		_add_single_rule_entries
+		if ((${#arr_single_rule[*]})); then
+			arr_content[content_idx++]="${str_indent}    <optlist> ${arr_single_rule[*]} </optlist>"
+			"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another option list?" 14 $w_with
+		else
+			false
+		fi
+	done
+	arr_content[content_idx++]="${str_indent}</combined_rule>"
+	str_indent="${str_indent:0:$((${#str_indent} - 4))}"
 elif [[ $str_rule = public_function ]]; then
 	if ((${#arr_pubfunc[*]} == 0)); then x=0
 		for i in ${!PUBLIC_FUNCTION_LIST[@]}; do
@@ -300,7 +337,7 @@ local -i i x ridx=0 w_with=$IACTIVE_WINDOW_WITH
 local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
 local -i tag_idx=0 content_idx=0
 local -a arr_tags arr_tmp arr_templ arr_rb arr_content arr_pubfunc
-local t_name r_name str_rule str_tmp
+local t_name r_name str_tmp
 local str_indent
 local arr_title=( --title "$ME rule file builder" )
 local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
@@ -319,8 +356,8 @@ if ((${#arr_content[@]})); then
 	printf "%s\n" "${arr_content[@]}" >> "$r_file"
 	printf '</ip_array_root>\n' >> "$r_file"
 	if [[ -s "$r_file" ]]; then
-		"$WHIPTAIL" "${arr_title[@]}" \
-			--yesno "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?" 14 $w_with
+		"$WHIPTAIL" "${arr_title[@]}" --yesno \
+			"The resulting file has been saved to: $r_file\nDo you want to view the created rule file?" 14 $w_with
 		if (($? == 0)); then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
 			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
@@ -356,8 +393,8 @@ while (($? == 0)); do
 done
 cleanup_lock
 if [[ -s "$c_file" ]]; then
-	"$WHIPTAIL" "${arr_title[@]}" \
-		--yesno "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?" 14 $w_with
+	"$WHIPTAIL" "${arr_title[@]}" --yesno \
+		"The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?" 14 $w_with
 	if (($? == 0)); then
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
@@ -443,8 +480,8 @@ if ((${#arr_rb[*]})); then
 	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
 	printf '</ruleblock>\n' >> "$r_file"
 	cleanup_lock
-	"$WHIPTAIL" "${arr_title[@]}" \
-		--yesno "The resulting ruleblock has been saved to: $r_file\nDo you want to view the created ruleblock?" 14 $w_with
+	"$WHIPTAIL" "${arr_title[@]}" --yesno \
+		"The resulting ruleblock has been saved to: $r_file\nDo you want to view the created ruleblock?" 14 $w_with
 	if (($? == 0)); then
 		if [[ -r "$r_file" ]]; then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
@@ -503,47 +540,47 @@ if ((${#xopts[*]})); then
 	for ((x=0; x<=${#xopts[*]}; x++)); do
 		case "${xopts[x]}" in
 			table)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-					--menu "Choose the table name" 17 $w_with 7 filter "" mangle "" nat "" raw "" security "" rawpost "" 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
+					"Choose the table name" 17 $w_with 7 filter "" mangle "" nat "" raw "" security "" rawpost "" 2>&1 > /dev/tty)"
 			;;
 			chain)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)" 14 $w_with 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter the ${xopts[x]} name(s) (max. 2 separated by space)" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			target)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter the ${xopts[x]} name(s) (separated by space)" 14 $w_with 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter the ${xopts[x]} name(s) (separated by space)" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			load_template)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter the name for the other template(s) to load (separated by space)" 14 $w_with T_ 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter the name for the other template(s) to load (separated by space)" 14 $w_with T_ 2>&1 > /dev/tty)"
 			;;
 			state_match_arg)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter one or two comma separated list of conntrack state names" 14 $w_with 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter one or two comma separated list of conntrack state names" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			template_msg)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter a template loading message" 14 $w_with 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter a template loading message" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			mandatory_vars)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter a comma separated list of required variable names" 14 $w_with 2>&1 > /dev/tty)"
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter a comma separated list of required variable names" 14 $w_with 2>&1 > /dev/tty)"
 			;;
 			reverse_mode)
 				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --radiolist "Select a reverse mode." 14 $w_with 10 \
 					reverse "Reverse data from the first option list (bidirectional traffic)" on mirror "Mirror the first option list" off 2>&1 > /dev/tty)"
 			;;
 			reverse_condition)
-				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" \
-					--inputbox "Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS)" \
+				xopts[x]="${xopts[x]}=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+					"Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS)" \
 					14 $w_with 2>&1 > /dev/tty)"
 			;;
 			option_list_0)
 				i=0 arr_tmp=( "${x_args[@]}" )
 				while (($? == 0)); do
-					arr_o0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-						--menu "Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					arr_o0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
+						"Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 					if (($? == 0)); then
 						for y in ${!arr_tmp[@]}; do # remove dupes from the list
 							if [[ ${arr_tmp[y]} = ${arr_o0[i-1]} ]]; then
@@ -575,8 +612,8 @@ if ((${#xopts[*]})); then
 				fi
 				i=0 arr_tmp=( "${x_args[@]}" )
 				while (($? == 0)); do
-					arr_o1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-						--menu "Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
+					arr_o1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
+						"Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
 						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 					if (($? == 0)); then
 						for y in ${!arr_tmp[@]}; do # remove dupes from the list
@@ -597,8 +634,8 @@ if ((${#xopts[*]})); then
 					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to define default values for one or more of these options?" 14 $w_with
 					if (($? == 0)); then
 						for i in ${!arr_o1[*]}; do
-							str_x="$("$WHIPTAIL" "${arr_title[@]}" \
-								--inputbox "Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+							str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+								"Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 							if (($? == 0)) && [[ $str_x ]]; then
 								arr_o1[i]="${arr_o1[i]}=\"$str_x\"" #"
 							fi
@@ -609,8 +646,8 @@ if ((${#xopts[*]})); then
 			always_use_0)
 				i=0 arr_tmp=( "${x_args[@]}" )
 				while (($? == 0)); do
-					arr_alw0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-						--menu "Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
+					arr_alw0[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
+						"Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." 27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 					if (($? == 0)); then
 						for y in ${!arr_tmp[@]}; do # remove dupes from the list
 							if [[ ${arr_tmp[y]} = ${arr_alw0[i-1]} ]]; then
@@ -624,8 +661,8 @@ if ((${#xopts[*]})); then
 				done
 				if (($? == 1)); then
 					for i in ${!arr_alw0[*]}; do
-						str_x="$("$WHIPTAIL" "${arr_title[@]}" \
-							--inputbox "Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+							"Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 						if (($? == 0)) && [[ $str_x ]]; then
 							arr_alw0[i]="${arr_alw0[i]}=\"$str_x\"" #"
 						fi
@@ -639,8 +676,8 @@ if ((${#xopts[*]})); then
 				fi
 				i=0 arr_tmp=( "${x_args[@]}" )
 				while (($? == 0)); do
-					arr_alw1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-						--menu "Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
+					arr_alw1[i++]=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
+						"Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
 						27 $w_with 10 "${arr_tmp[@]}" 2>&1 > /dev/tty)
 					if (($? == 0)); then
 						for y in ${!arr_tmp[@]}; do # remove dupes from the list
@@ -659,7 +696,8 @@ if ((${#xopts[*]})); then
 				done
 				if (($? == 1)); then
 					for i in ${!arr_alw1[*]}; do
-						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
+						str_x="$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
+							"Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none." 14 $w_with 2>&1 > /dev/tty)"
 						if (($? == 0)) && [[ $str_x ]]; then
 							arr_alw1[i]="${arr_alw1[i]}=\"$str_x\"" #"
 						fi
@@ -723,7 +761,5 @@ if ((${#xopts[*]})); then
 	fi
 	"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to create another template?" 14 $w_with
 fi
-
-}
-
+} # -------------------------------------------------------------------------
 
