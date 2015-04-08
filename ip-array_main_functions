@@ -4221,7 +4221,7 @@ case "$MODE" in # act according to runtime mode
 			fi
 		done
 		# merge iptables and ipset command arrays
-		if ((USE_IPSET)) && [[ $MODE != @(TC-START|TC-STOP) ]]; then
+		if ((USE_IPSET)) && [[ $MODE != @(OPEN|TC-START|TC-STOP) ]]; then
 			ipset_merge_arrays
 			rvar="IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
 			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
@@ -4726,8 +4726,14 @@ case "$1" in
 		check_prog "${WHIPTAIL:=/usr/bin/whiptail}" || return $ER_NOEX
 		start_msg
 		load_pro_epilog_scripts 'prolog'
+		if (( IACTIVE_WINDOW_HEIGHT == 0 )) && dn command -v tput; then
+			IACTIVE_WINDOW_HEIGHT=$( tput lines )
+		fi
 		if (( IACTIVE_WINDOW_WITH == 0 )) && dn command -v tput; then
-			IACTIVE_WINDOW_WITH=$(( $( tput cols ) - 1 ))
+			IACTIVE_WINDOW_WITH=$( tput cols )
+		fi
+		if (( IACTIVE_LIST_HEIGHT == 0 )) && dn command -v tput; then
+			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 10 ))
 		fi
 		str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
 			--menu "Select the desired action" 14 0 4 \
@@ -4797,6 +4803,9 @@ case "$1" in
 		policy_all_en_disable 'ACCEPT' || return
 		classification_chains 'chains' 'nat' || return
 		log -T "Loading nat rule files"
+		if ((USE_IPSET)); then
+			log -W "Mode is \`$MODE', ipset configuration will not be modified!"
+		fi
 		load_nat_rules || return
 		classification_chains 'jumps' 'nat' || return
 		apply_rules || return

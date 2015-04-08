@@ -64,7 +64,9 @@ declare -r IF_CON="_to_" 	# string used to separate interface dependant jump tre
 declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
 declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
 declare -r DEFAULT_RULESETFILE="${me}_commands.bash"	# default file to save iptables commands to
+declare IACTIVE_WINDOW_HEIGHT=0		# window height in interacitive mode
 declare IACTIVE_WINDOW_WITH=0		# window with in interacitive mode
+declare IACTIVE_LIST_HEIGHT=0		# list height in interacitive mode
 
 # Various iptables aliases
 declare -r stE="ESTABLISHED"
