@@ -70,9 +70,9 @@
             </listitem>
             <listitem>
                 <para>stop</para>
-                <para>All tables and chains get flushed, no firewalling is active any more. All tc
-                    qdisc are removed, no traffic shaping is active any more. Modules configured to
-                    be loaded are removed.</para>
+                <para>All tables and chains and ipset sets get flushed and destroyed. All tc qdisc
+                    are removed, no traffic shaping is active any more. Modules configured to be
+                    loaded are removed.</para>
             </listitem>
             <listitem>
                 <para>restart</para>
@@ -92,18 +92,21 @@
                 <para>Module probing (if configured) is done first.</para>
                 <para>This mode leaves only the NAT rules active (reads configuration and re-applies
                     them), all other tables are emptied. Policies are set to ACCEPT. An iptables
-                    rule listing is saved for later difference checks.</para>
+                    rule listing is saved for later difference checks. The ipset ruleset will not be
+                    touched.</para>
             </listitem>
             <listitem>
                 <para>tc-start</para>
                 <para>Start traffic shaping only. Mangle table rules will be (re)-applied. An
-                    iptables rule listing is saved for later difference checks.</para>
+                    iptables rule listing is saved for later difference checks.  ipset ruleset will
+                    not be touched.</para>
             </listitem>
             <listitem>
                 <para>tc-stop</para>
                 <para>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
                     interfaces listed in <varname>NET_INTERFACES</varname> will be deleted. An
-                    iptables rule listing is saved for later difference checks.</para>
+                    iptables rule listing is saved for later difference checks. ipset ruleset will
+                    not be touched.</para>
             </listitem>
             <listitem>
                 <para>lockdown</para>
@@ -119,6 +122,21 @@
                         <member>C: If the ALLOW_LOOPBACK variable is set in the main config file,
                             loopback communication will be allowed.</member>
                     </simplelist></para>
+            </listitem>
+            <listitem>
+                <para>interactive</para>
+                <para>In this mode several wizards are available to interactively create or edit the
+                    IP-Array configuration. It is possible to create main configuration files,
+                    templates,  rule files, or create and edit ruleblocks. The
+                        <command>whiptail</command> program is required for this. The global_defs
+                    configuration file holds 3 variables (<varname>IACTIVE_WINDOW_HEIGHT</varname>,
+                        <varname>IACTIVE_WINDOW_WITH</varname>,
+                        <varname>IACTIVE_LIST_HEIGHT</varname>) for configuring the sizes of the
+                    wizards dialog boxes. By default they are set to `0'. If this is kept and the
+                        <command>tput</command> program is available in PATH, it will used to query
+                    and set the required values for window height, window with and list height.
+                    Otherwise it is possible to adjust the window settings there, with the downside
+                    of having static values.</para>
             </listitem>
             <listitem>
                 <para>diff-last-activated</para>

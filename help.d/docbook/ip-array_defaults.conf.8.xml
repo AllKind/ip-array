@@ -500,6 +500,19 @@
                             absolute paths.</para>
                     </listitem>
                 </varlistentry>
+                <varlistentry xmlns:xi="http://www.w3.org/2001/XInclude"
+                    xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <term>
+                        <varname>WHIPTAIL</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no (only required for interactive mode)</para>
+                        <para>Allowed values: A valid path to the <command>whiptail</command>
+                            executable file (i.e: <filename>/usr/bin/whiptail</filename>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
                 <varlistentry>
                     <term>
                         <varname>BASE_DIR</varname>
