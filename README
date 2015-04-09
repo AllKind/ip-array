@@ -11,23 +11,21 @@ Where to get it?
 	The project page is at: http://sourceforge.net/projects/ip-array/.
 	It's homepage is at: http://ip-array.sourceforge.net/.
 
-Why the name IP-Array?
-	The functionality is built around utilizing arrays, hence the name.
-	
 Features
 	It does support most features of iptables and some of xtables-addons.
 
 	- Rules are written in simple XML.
 		They can be written in different ways depending on the need.
-		Either as (grouped / nested) XML tags.
-		Or so called ruleblocks, where only values have to be put
-		(like in i.e. a shorewall configuration file).
+		Either as (grouped / nested) XML tags, or so called ruleblocks,
+		where only values have to be put into.
+		Their structure is defined by custom templates.
 	- Different start modi.
 	- Custom epilog and prolog scripts for each start mode.
-	- Muliple verbose modi with(out) logging to syslog.
+	- Muliple levels of output verbosity with optional syslog logging.
 	- Coloured output (can be disabled).
 	- Various /proc filesystem settings.
 	- Automatic 'jump tree' creation options.
+	- An interactive wizard based mode to create configuration files.
 	- Public functions.
 	- ipset support.
 	- Some autoconfig presets for DNS, FTP, SMTP, NTP, IPSEC, etc.
