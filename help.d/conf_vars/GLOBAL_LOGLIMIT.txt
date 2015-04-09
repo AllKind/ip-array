@@ -1,1 +1,1 @@
-# Global Log Limit
+Global Log Limit

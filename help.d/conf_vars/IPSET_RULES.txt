@@ -1,1 +1,1 @@
-# ipset rules files
+Files holding the ipset rules.

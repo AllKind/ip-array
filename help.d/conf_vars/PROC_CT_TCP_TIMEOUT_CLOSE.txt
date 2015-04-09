@@ -1,0 +1,1 @@
+nf_conntrack_tcp_timeout_close - INTEGER (seconds) default 10

@@ -1,1 +1,6 @@
-# Disable / Enable free route (source routed packets)
+Disable / Enable free route (source routed packets)
+accept_source_route - BOOLEAN
+Accept packets with SRR option.
+conf/all/accept_source_route must also be set to TRUE to accept packets
+with SRR option on the interface
+default TRUE (router)	FALSE (host)

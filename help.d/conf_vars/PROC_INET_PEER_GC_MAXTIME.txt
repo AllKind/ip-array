@@ -1,0 +1,8 @@
+---------------------------------------
+--- INET PEER SETTINGS
+---------------------------------------
+The inet_peer_gc_maxtime variable tells the garbage collector how often to pass over
+the inet peer storage memory pool during low, or absent, memory pressure.
+This value is in effect under the reversed conditions of the inet_peer_gc_mintime in other words.
+It works exactly the same as the inet_peer_gc_mintime, except for the fact that it will be
+in effect under different system loads. This variable is measured in jiffies.

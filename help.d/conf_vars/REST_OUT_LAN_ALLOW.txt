@@ -1,2 +1,2 @@
-# If RESTRICT_OUTPUT is '1', allow all OUTPUT to LAN(s) attached to certain interfaces
-# Format: lan-interface [...]
+If RESTRICT_OUTPUT is '1', allow all OUTPUT to LAN(s) attached to certain interfaces
+Format: lan-interface [...]

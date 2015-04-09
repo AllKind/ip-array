@@ -1,4 +1,2 @@
-#---------------------------------------
-# Administrator remote connection
-#---------------------------------------
-# Format: admin_source-address local_destination-address local_destination-port
+Administrator remote connection
+Format: admin_source-address local_destination-address local_destination-port

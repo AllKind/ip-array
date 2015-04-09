@@ -1,2 +1,2 @@
-# Chains to create
-# Format: table chain-name [...]
+Chains to create
+Format: table chain-name [...]

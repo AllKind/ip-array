@@ -1,1 +1,1 @@
-# Disable / Enable filter table rules | Format: 0/1
+Disable / Enable filter table rules | Format: 0/1

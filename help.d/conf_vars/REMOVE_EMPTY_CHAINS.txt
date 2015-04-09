@@ -1,2 +1,2 @@
-# After applying the ruleset should empty chains be removed?
-# Format: 0/1
+After applying the ruleset should empty chains be removed?
+Format: 0/1

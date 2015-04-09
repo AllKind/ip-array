@@ -1,1 +1,1 @@
-# Names of the base template files
+Names of the base template files

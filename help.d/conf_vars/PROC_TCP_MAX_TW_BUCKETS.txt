@@ -1,0 +1,7 @@
+tcp_max_tw_buckets - INTEGER
+Maximal number of timewait sockets held by system simultaneously.
+If this number is exceeded time-wait socket is immediately destroyed
+and warning is printed. This limit exists only to prevent
+simple DoS attacks, you _must_ not lower the limit artificially,
+but rather increase it (probably, after increasing installed memory),
+if network conditions require more than default value.

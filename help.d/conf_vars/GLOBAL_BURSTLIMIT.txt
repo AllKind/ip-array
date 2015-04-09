@@ -1,1 +1,1 @@
-# Global Burst Limit
+Global Burst Limit

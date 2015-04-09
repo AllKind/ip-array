@@ -1,1 +1,1 @@
-# Disable / Enable IPSEC rules | Format: 0/1
+Disable / Enable IPSEC rules | Format: 0/1

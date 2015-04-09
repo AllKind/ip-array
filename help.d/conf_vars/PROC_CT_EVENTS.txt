@@ -1,0 +1,5 @@
+nf_conntrack_events - BOOLEAN
+0 - disabled
+1 - enabled (default)
+If this option is enabled, the connection tracking code will
+provide userspace with connection tracking events via ctnetlink.

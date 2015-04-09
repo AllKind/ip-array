@@ -1,1 +1,1 @@
-# SECURITY rules file
+Files holding the security table templates

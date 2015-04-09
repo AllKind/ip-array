@@ -1,0 +1,5 @@
+shared_media - BOOLEAN default TRUE
+Send(router) or accept(host) RFC1620 shared media redirects.
+Overrides ip_secure_redirects.
+shared_media for the interface will be enabled if at least one of
+conf/{all,interface}/shared_media is set to TRUE, it will be disabled otherwise

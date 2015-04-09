@@ -1,2 +1,2 @@
-# Output Bulk Mark
-# Format: device:mark [...] (i.e. eth0:6)
+Output Bulk Mark
+Format: device:mark [...] (i.e. eth0:6)

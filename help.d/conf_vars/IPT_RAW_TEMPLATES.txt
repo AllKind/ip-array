@@ -1,1 +1,1 @@
-# RAW rules file
+Files holding the raw table templates

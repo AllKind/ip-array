@@ -1,0 +1,7 @@
+tcp_congestion_control - STRING
+Set the congestion control algorithm to be used for new
+connections. The algorithm "reno" is always available, but
+additional choices may be available based on kernel configuration.
+Default is set as part of kernel configuration.
+For passive connections, the listener congestion control choice
+is inherited.

@@ -1,2 +1,2 @@
-# Set conntrack module hashsize (leave unconfigured if PROC_CONNTRACK_MAX is set to automatic calculation)
-# Format: value (i.e. 8192) | [xX]factor (i.e. x2 to calculate the value automatically and multiply it with 2)
+Set conntrack module hashsize (leave unconfigured if PROC_CONNTRACK_MAX is set to automatic calculation)
+Format: value (i.e. 8192) | [xX]factor (i.e. x2 to calculate the value automatically and multiply it with 2)

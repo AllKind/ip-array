@@ -1,0 +1,5 @@
+nf_conntrack_tcp_loose - BOOLEAN
+0 - disabled
+1 - enabled (default)
+If it is set to zero, we disable picking up already established
+connections.

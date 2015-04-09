@@ -1,0 +1,4 @@
+tcp_stdurg - BOOLEAN Default: FALSE
+Use the Host requirements interpretation of the TCP urgent pointer field.
+Most hosts use the older BSD interpretation, so if you turn this on
+Linux might not communicate correctly with them.

@@ -1,1 +1,5 @@
-# Disable / Enable IP DynAddr | Format: 0/1 or undefined
+Disable / Enable IP DynAddr | Format: 0/1/2 or undefined Default: 0
+ip_dynaddr - BOOLEAN
+If set non-zero, enables support for dynamic addresses.
+If set to 2, a kernel log message will be printed when dynamic
+address rewriting occurs.

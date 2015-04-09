@@ -1,0 +1,3 @@
+tcp_keepalive_probes - INTEGER
+How many keepalive probes TCP sends out, until it decides that the
+connection is broken. Default value: 9.

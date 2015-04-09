@@ -1,1 +1,6 @@
-# Disable / Enable IP forwarding | Format: 0/1 or undefined
+Disable / Enable IP forwarding | Format: 0/1 or undefined
+ip_forward - BOOLEAN
+Forward Packets between interfaces.
+This variable is special, its change resets all configuration
+parameters to their default state (RFC1122 for hosts, RFC1812
+for routers)

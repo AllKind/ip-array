@@ -1,1 +1,1 @@
-# Disable / Enable tcp sack | Format: 0/1
+Disable / Enable tcp select acknowledgments (SACKS)| Format: 0/1

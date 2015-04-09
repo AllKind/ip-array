@@ -1,0 +1,5 @@
+icmp_ratelimit - INTEGER Default: 1000
+Limit the maximal rates for sending ICMP packets whose type matches
+icmp_ratemask (see below) to specific targets.
+0 to disable any limiting,
+otherwise the minimal space between responses in milliseconds.

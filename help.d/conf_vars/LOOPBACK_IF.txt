@@ -1,1 +1,1 @@
-# Loopback Interface - defaults to `lo' if unset
+Loopback Interface - defaults to `lo' if unset

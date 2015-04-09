@@ -1,0 +1,4 @@
+tcp_base_mss - INTEGER
+The initial value of search_low to be used by the packetization layer
+Path MTU discovery (MTU probing).  If MTU probing is enabled,
+this is the initial MSS used by the connection.

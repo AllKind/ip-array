@@ -1,0 +1,4 @@
+proxy_arp - BOOLEAN
+Do proxy arp.
+proxy_arp for the interface will be enabled if at least one of
+conf/{all,interface}/proxy_arp is set to TRUE, it will be disabled otherwise

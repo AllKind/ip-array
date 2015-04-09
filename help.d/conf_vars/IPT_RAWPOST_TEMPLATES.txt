@@ -1,1 +1,1 @@
-# RAWPOST rules file
+Files holding the rawpost table templates

@@ -1,0 +1,7 @@
+tcp_abort_on_overflow - BOOLEAN
+If listening service is too slow to accept new connections,
+reset them. Default state is FALSE. It means that if overflow
+occurred due to a burst, connection will recover. Enable this
+option _only_ if you are really sure that listening daemon
+cannot be tuned to accept connections faster. Enabling this
+option can harm clients of your server.

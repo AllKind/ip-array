@@ -1,1 +1,1 @@
-# MANGLE rules file
+Files holding the mangle table templates

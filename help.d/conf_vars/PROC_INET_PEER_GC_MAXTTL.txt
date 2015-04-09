@@ -1,0 +1,5 @@
+inet_peer_maxttl - INTEGER
+Maximum time-to-live of entries. Unused entries will expire after
+this period of time if there is no memory pressure on the pool (i.e.
+when the number of entries in the pool is very small).
+Measured in seconds.

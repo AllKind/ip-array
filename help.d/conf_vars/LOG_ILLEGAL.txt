@@ -1,1 +1,1 @@
-# Log illegal packets | Format: 0/1
+Log illegal packets | Format: 0/1

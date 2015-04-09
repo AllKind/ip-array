@@ -1,2 +1,2 @@
-# Block DHCP broadcasts to listed interfaces (keep from spamming logs)
-# Format: interface [...]
+Block DHCP broadcasts to listed interfaces (keep from spamming logs)
+Format: interface [...]

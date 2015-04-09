@@ -1,2 +1,2 @@
-# CHAIN TERMINATION - FINAL RULE
-# chain | final-action | [ limit[:burst:value ]] | [ log-level ] | [ log-options ]
+CHAIN TERMINATION - FINAL RULE
+chain | final-action | [ limit[:burst:value ]] | [ log-level ] | [ log-options ]

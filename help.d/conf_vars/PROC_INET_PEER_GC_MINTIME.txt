@@ -1,0 +1,6 @@
+The inet_peer_gc_mintime variable sets the minimum time between garbage collections (gc) passes
+in the inet peer storage under heavy memory pressure. If the system is under heavy utilization
+and there is a lot of constraints on the memory pool, this timer is used to tell the garbage
+collector how often to pass over the memory pool used by the inet peer storage, in jiffies.
+The inet_peer_gc_mintime variable takes an integer value and has a default value of 10 jiffies.
+This should be a fairly good value for most users and servers.

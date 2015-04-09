@@ -1,1 +1,1 @@
-# FILTER rules file
+Files holding the filter table templates

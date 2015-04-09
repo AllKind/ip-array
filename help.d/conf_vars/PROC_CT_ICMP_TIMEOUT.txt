@@ -1,0 +1,2 @@
+nf_conntrack_icmp_timeout - INTEGER (seconds) default 30
+Default for ICMP timeout.

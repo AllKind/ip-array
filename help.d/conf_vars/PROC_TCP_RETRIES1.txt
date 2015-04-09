@@ -1,0 +1,6 @@
+tcp_retries1 - INTEGER
+This value influences the time, after which TCP decides, that
+something is wrong due to unacknowledged RTO retransmissions,
+and reports this suspicion to the network layer.
+See tcp_retries2 for more details.
+RFC 1122 recommends at least 3 retransmissions, which is the default.

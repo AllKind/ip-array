@@ -1,2 +1,4 @@
-# Disable / Enable tcp fack | Format: 0/1
-
+Disable / Enable tcp fack | Format: 0/1
+tcp_fack - BOOLEAN
+Enable FACK congestion avoidance and fast retransmission.
+The value is not used, if tcp_sack is not enabled.

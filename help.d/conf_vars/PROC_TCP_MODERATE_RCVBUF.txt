@@ -1,0 +1,4 @@
+tcp_moderate_rcvbuf - BOOLEAN
+If set, TCP performs receive buffer auto-tuning, attempting to
+automatically size the buffer (no greater than tcp_rmem[2]) to
+match the size required by the path for full throughput. Enabled by default.

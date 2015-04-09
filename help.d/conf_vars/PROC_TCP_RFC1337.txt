@@ -1,0 +1,4 @@
+tcp_rfc1337 - BOOLEAN Default: 0
+If set, the TCP stack behaves conforming to RFC1337. If unset,
+we are not conforming to RFC, but prevent TCP TIME_WAIT
+assassination.

@@ -1,0 +1,1 @@
+nf_conntrack_tcp_timeout_syn_recv - INTEGER (seconds) default 60

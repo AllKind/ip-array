@@ -1,2 +1,2 @@
-# GLOBAL POLICY MAP
-# Format: table chain policy
+GLOBAL POLICY MAP
+Format: table chain policy

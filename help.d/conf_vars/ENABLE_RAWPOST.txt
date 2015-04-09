@@ -1,1 +1,1 @@
-# Disable / Enable rawpost table rules | Format: 0/1
+Disable / Enable rawpost table rules | Format: 0/1

@@ -1,0 +1,6 @@
+tcp_synack_retries - INTEGER
+Number of times SYNACKs for a passive TCP connection attempt will
+be retransmitted. Should not be higher than 255. Default value
+is 5, which corresponds to 31 seconds till the last retransmission
+with the current initial RTO of 1 second. With this the final timeout
+for a passive TCP connection will happen after 63 seconds.

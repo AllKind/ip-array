@@ -1,1 +1,1 @@
-# Exit on configuration and command apply errors
+Exit on configuration and command apply errors
