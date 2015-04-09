@@ -2849,7 +2849,7 @@ done
 # -------------------------------------------------------------------------
 
 xml_interpreter_templates() {
-local -i syntax_version=0,1 tag_max_depth=3 tag_depth=0 root_found=0 template_open=0 IDX=0
+local -i tag_max_depth=3 tag_depth=0 root_found=0 template_open=0 IDX=0
 local -i i tag_idx opt_idx m_count attr_members cont_members
 local str_root_tag="ip_array_root" str_root_attr="iptables_templates"
 local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val template_name str_attributes attr_indicies str_cont tmp_content str_type
@@ -2901,7 +2901,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								return 1
 							}
 							if ! lsearch "${str_syntax_version}" "${TEMPLATE_SYNTAX_VERSION_ARRAY[@]}"; then
-								log -E "Incompatible template syntax version \`${syntax_version}'."
+								log -E "Incompatible template syntax version \`${str_syntax_version}'."
 								return 1
 							fi
 						;;
@@ -3053,7 +3053,7 @@ fi
 # -------------------------------------------------------------------------
 
 xml_interpreter_ruleblocks() {
-local -i syntax_version=0,1 tag_max_depth=2 tag_depth=0 root_found=0 IDX=0 tag_idx i rcount
+local -i tag_max_depth=2 tag_depth=0 root_found=0 IDX=0 tag_idx i rcount
 local str_root_tag="ip_array_root" str_root_attr="ruleblocks" str_valid_tags="ruleblock" str_valid_attr="name"
 local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val attr_indicies str_type
 local -a RESULT_ARR
@@ -3080,7 +3080,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								return 1
 							}
 							if ! lsearch "${str_syntax_version}" "${RULEBLOCK_SYNTAX_VERSION_ARRAY[@]}"; then
-								log -E "Incompatible ruleblock syntax version \`${syntax_version}'."
+								log -E "Incompatible ruleblock syntax version \`${str_syntax_version}'."
 								return 1
 							fi
 						;;
@@ -3159,7 +3159,7 @@ fi
 } # -------------------------------------------------------------------------
 
 xml_interpreter_rules() {
-local -i syntax_version=0,1 root_found=0 tag_depth=0 IDX=0
+local -i root_found=0 tag_depth=0 IDX=0
 local str_root_tag="ip_array_root" str_root_attr="iptables_rules"
 local str_act tag_name str_attr str_attr_name str_attr_val attr_indicies str_cont tmp_content cont_indicies str_app_opts str_type
 local template_name ruleblock_name reverse_mode reverse_condition
@@ -3192,7 +3192,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								return 1
 							}
 							lsearch "${str_syntax_version}" "${RULEFILE_SYNTAX_VERSION_ARRAY[@]}" || {
-								log -E "Incompatible rule file syntax version \`${syntax_version}'."
+								log -E "Incompatible rule file syntax version \`${str_syntax_version}'."
 								return 1
 							}
 						;;

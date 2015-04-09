@@ -2,7 +2,7 @@
 
 <!-- TEMPLATES SKELETON
 
-<ip_array_root name="iptables_templates" syntax_version="0.1">
+<ip_array_root name="iptables_templates" syntax_version="1.0">
 
 	<template name="">
 		<table>

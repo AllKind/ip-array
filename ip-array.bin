@@ -447,9 +447,9 @@ fi
 declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY
 
 # compatible IP-Array xml syntax versions
-declare -a TEMPLATE_SYNTAX_VERSION_ARRAY=( '0.1' )
-declare -a RULEBLOCK_SYNTAX_VERSION_ARRAY=( '0.1' )
-declare -a RULEFILE_SYNTAX_VERSION_ARRAY=( '0.1' )
+declare -a TEMPLATE_SYNTAX_VERSION_ARRAY=( '1.0' )
+declare -a RULEBLOCK_SYNTAX_VERSION_ARRAY=( '1.0' )
+declare -a RULEFILE_SYNTAX_VERSION_ARRAY=( '1.0' )
 
 # Array to hold the names of the arrays, which get filled by the user.
 # Names are taken from the array and arrays get filled use fill_array()

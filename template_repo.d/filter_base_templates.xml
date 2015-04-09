@@ -2,7 +2,7 @@
 
 <!-- BASE FILTER TABLE TEMPLATES -->
 
-<ip_array_root name="iptables_templates" syntax_version="0.1">
+<ip_array_root name="iptables_templates" syntax_version="1.0">
 
 	<!-- filter table with different targets - and combinations of them -->
 

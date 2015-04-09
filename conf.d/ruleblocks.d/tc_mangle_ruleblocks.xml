@@ -4,12 +4,14 @@
 
 <!-- SKELETON
 
-<ip_array_ruleblocks name="ruleblocks" syntax_version="0.1">
+<ip_array_root name="ruleblocks" syntax_version="1.0">
 	<ruleblock name="RB_">
 	</ruleblock>
-</ip_array_ruleblocks>
+</ip_array_root>
 
 -->
+
+<ip_array_root name="ruleblocks" syntax_version="1.0">
 
 <ruleblock name="RB_TOS_OUT_MAP">
 	<!-- 
