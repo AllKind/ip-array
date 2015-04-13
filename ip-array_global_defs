@@ -466,7 +466,7 @@ SYSCTL_ARRAY=(
 
 # Array of configuration entries, including their type and if they are mandatory or not
 # Format:
-# config-entry-name | type { alnum | alpha | bool | digit | graph | print } | mandatory 0/1 | command
+# config-entry-name , type { alnum | alpha | bool | digit | graph | print } , mandatory 0/1 , type2 { arry | bool | int | var } , command
 CONFIG_ENTRY_ARRAY=(
 "NET_INTERFACES print 1 array"
 # config files
