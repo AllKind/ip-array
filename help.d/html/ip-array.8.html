@@ -15,26 +15,40 @@
             is allowed - but required - for ip-array to take any action. </p><p>These parameters control the 'mode' IP-Array runs on.</p><div class="itemizedlist"><ul type="disc"><li><p>start</p><p>All network connections are forbidden (see lockdown mode below) until all
                     configuration has been read. Module probing (if configured) is done first. After
                     all commands are compiled, they are applied at once. An iptables rule listing is
-                    saved for later difference checks.</p></li><li><p>stop</p><p>All tables and chains get flushed, no firewalling is active any more. All tc
-                    qdisc are removed, no traffic shaping is active any more. Modules configured to
-                    be loaded are removed.</p></li><li><p>restart</p><p>Module probing (if configured) is done first. After all commands are compiled,
+                    saved for later difference checks.</p></li><li><p>stop</p><p>All tables and chains and ipset sets get flushed and destroyed. All tc qdisc
+                    are removed, no traffic shaping is active any more. Modules configured to be
+                    loaded are removed.</p></li><li><p>restart</p><p>Module probing (if configured) is done first. After all commands are compiled,
                     they are applied at once. An iptables rule listing is saved for later difference
                     checks.</p></li><li><p>test</p><p>Acts like the 'restart', but will use the testing configuration below the
                     'test' folder. Also it will schedule a restore job (using the `at' command
                     scheduler) for the time specified with <code class="varname">RELOAD_TIME</code> in the
                     defaults file.</p></li><li><p>open</p><p>Module probing (if configured) is done first.</p><p>This mode leaves only the NAT rules active (reads configuration and re-applies
                     them), all other tables are emptied. Policies are set to ACCEPT. An iptables
-                    rule listing is saved for later difference checks.</p></li><li><p>tc-start</p><p>Start traffic shaping only. Mangle table rules will be (re)-applied. An
-                    iptables rule listing is saved for later difference checks.</p></li><li><p>tc-stop</p><p>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
+                    rule listing is saved for later difference checks. The ipset ruleset will not be
+                    touched.</p></li><li><p>tc-start</p><p>Start traffic shaping only. Mangle table rules will be (re)-applied. An
+                    iptables rule listing is saved for later difference checks.  ipset ruleset will
+                    not be touched.</p></li><li><p>tc-stop</p><p>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
                     interfaces listed in <code class="varname">NET_INTERFACES</code> will be deleted. An
-                    iptables rule listing is saved for later difference checks.</p></li><li><p>lockdown</p><p>All filter table policies will be set to DROP, all others will be set to
+                    iptables rule listing is saved for later difference checks. ipset ruleset will
+                    not be touched.</p></li><li><p>lockdown</p><p>All filter table policies will be set to DROP, all others will be set to
                     ACCEPT. All chains get flushed and custom chains are deleted. No more network
                     connections are allowed except:</p><table class="simplelist" border="0" summary="Simple list"><tr><td>A: If the bash environment variable SSH_CONNECTION is set, IP-Array
                             allow connections from that source address to the ssh server
                             port.</td></tr><tr><td>B: If the environment variable is not set, but the ADMIN_CONNECTION
                             variable is set in the main config file, IP-Array will allow the
                             configured connection.</td></tr><tr><td>C: If the ALLOW_LOOPBACK variable is set in the main config file,
-                            loopback communication will be allowed.</td></tr></table></li><li><p>diff-last-activated</p><p>Every time IP-Array is not in 'test' mode and activates an iptables ruleset,
+                            loopback communication will be allowed.</td></tr></table></li><li><p>interactive</p><p>In this mode several wizards are available to interactively create or edit the
+                    IP-Array configuration. It is possible to create main configuration files,
+                    templates,  rule files, or create and edit ruleblocks. The
+                        <span class="command"><strong>whiptail</strong></span> program is required for this. The global_defs
+                    configuration file holds 3 variables (<code class="varname">IACTIVE_WINDOW_HEIGHT</code>,
+                        <code class="varname">IACTIVE_WINDOW_WITH</code>,
+                        <code class="varname">IACTIVE_LIST_HEIGHT</code>) for configuring the sizes of the
+                    wizards dialog boxes. By default they are set to `0'. If this is kept and the
+                        <span class="command"><strong>tput</strong></span> program is available in PATH, it will used to query
+                    and set the required values for window height, window with and list height.
+                    Otherwise it is possible to adjust the window settings there, with the downside
+                    of having static values.</p></li><li><p>diff-last-activated</p><p>Every time IP-Array is not in 'test' mode and activates an iptables ruleset,
                     it saves a listing of the rules to a file. Using this parameter a (simple
                         <code class="filename">diff</code> based) difference check between the currently
                     active ruleset and the listing of the file is performed. Thus allowing to detect
@@ -58,7 +72,7 @@
                     information to display. By default the settings of the main configuration file
                     are shown.</p></li><li><p>version</p><p>Show version information.</p></li><li><p>help, -h, --help, -?</p><p>Show usage information.</p><p>If `--public-functions' is used as second argument, a list of available public
                     functions is printed. If a name of public function is given as third argument, a
-                    brief description of the function is shown.</p></li></ul></div></div><div class="refsect1" lang="en"><a name="d0e241"></a><h2>Options</h2><p>All options are optional. Some require an argument, others do not. All options and
+                    brief description of the function is shown.</p></li></ul></div></div><div class="refsect1" lang="en"><a name="d0e261"></a><h2>Options</h2><p>All options are optional. Some require an argument, others do not. All options and
             their arguments must be separated by blank(s). If an option can be used more than once,
             it is mentioned explicitly. </p><p>
             </p><div class="itemizedlist"><ul type="disc"><li><p>-ct, --ipt-counters</p><p>Save or restore iptables counters when using the `save' or `restore'
@@ -82,18 +96,19 @@
                                 ruleblock names.</td></tr><tr><td> templates[:NAME[,...] display all or just the selected
                                 templates names.</td></tr><tr><td> proc display the /proc filesystem configuration options, paths
                                 and their configured values.</td></tr><tr><td> public_functions[:NAME[,...] display all or just the selected
-                                public functions help.</td></tr></table></li><li><p>-sh, --shell /path/shell</p><p>Specify an alternative shell to run IP-Array.</p></li><li><p>-sv, --syslog-verbose 0-6</p><p>Specify the level of output verbosity to syslog. Allowed values are from
+                                public functions help.</td></tr><tr><td> find_templates:template-entry-glob[,...] find templates
+                                containing all entries of the comma separated search list.</td></tr></table></li><li><p>-sh, --shell /path/shell</p><p>Specify an alternative shell to run IP-Array.</p></li><li><p>-sv, --syslog-verbose 0-6</p><p>Specify the level of output verbosity to syslog. Allowed values are from
                         `0' to `6'. Overrides the value of <code class="varname">SYSLOG_VERBOSE</code> in the
                         defaults file.</p></li><li><p>-v, --verbose 0-9</p><p>Specify the level of output verbosity. Allowed values are from `0' to `9'.
                         Overrides the value of <code class="varname">VERBOSE</code> in the defaults
                         file.</p></li></ul></div><p>
-        </p></div><div class="refsect1" lang="en"><a name="d0e458"></a><h2>Environment</h2><p> If the environment variable <code class="varname">DEBUG_INFO</code> is set, additional
+        </p></div><div class="refsect1" lang="en"><a name="d0e480"></a><h2>Environment</h2><p> If the environment variable <code class="varname">DEBUG_INFO</code> is set, additional
             debugging information is displayed. If in addition the output verbosity is set to
-                <code class="option">8</code> or higher, a debugging <code class="varname">PS4</code> is set. </p></div><div class="refsect1" lang="en"><a name="d0e472"></a><h2>Exit status</h2><p>
+                <code class="option">8</code> or higher, a debugging <code class="varname">PS4</code> is set. </p></div><div class="refsect1" lang="en"><a name="d0e494"></a><h2>Exit status</h2><p>
             </p><div class="variablelist"><dl><dt><span class="term">0</span></dt><dd><p> Success </p></dd><dt><span class="term">1</span></dt><dd><p> Undetermined error. </p></dd><dt><span class="term">3</span></dt><dd><p> Usage error. </p></dd><dt><span class="term">111</span></dt><dd><p> Requested item (file, folder) does not exist error. </p></dd><dt><span class="term">112</span></dt><dd><p> Item (configuration variable) not defined error. </p></dd><dt><span class="term">113</span></dt><dd><p> Failed loading item (script, program) error. </p></dd><dt><span class="term">114</span></dt><dd><p> General fail condition error. </p></dd><dt><span class="term">115</span></dt><dd><p> Configuration error. </p></dd></dl></div><p>
-        </p></div><div class="refsect1" lang="en"><a name="d0e527"></a><h2>Files</h2><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e549"></a><h2>Files</h2><p>
             <code class="filename">/usr/bin/ip-array</code>
-        </p></div><div class="refsect1" lang="en"><a name="d0e535"></a><h2>See also</h2><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e557"></a><h2>See also</h2><p>
             <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
         </p><p>
             <span class="citerefentry"><span class="refentrytitle">iptables</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-save</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-restore</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-htb</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-sfq</span>(8)</span>
