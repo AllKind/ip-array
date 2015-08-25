@@ -190,13 +190,14 @@ fi
 
 # create directories
 create_dirs "${BINDIR}" "${LIBDIR}/$ME" "${DATAROOTDIR}/$ME" "${DOCDIR}/$ME" "${INITDIR}"
-create_dirs "${DATAROOTDIR}/${ME}/"{scripts,template_repo.d} \
-	"${DATAROOTDIR}/${ME}/scripts/"{epilog,prolog} \
-	"${DOCDIR}/${ME}/"{docbook,examples,html} \
+create_dirs "${DATAROOTDIR}/${ME}/template_repo.d" \
+	"${DOCDIR}/${ME}/"{docbook,html} \
 	"${MANDIR}/"{man5,man8}
 create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/"{save.d,help.d,stable,test}
-create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/help.d/"{ipt_args,public_functions}
+create_dirs "${DATAROOTDIR}/${ME}/help.d/"{conf_vars,examples,ipt_args,public_functions}
+create_dirs "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/"{ruleblocks.d,rules.d}
 create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,templates.d}
+create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d"
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
 
 # copy files
@@ -209,13 +210,14 @@ install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
 install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d/public_functions"
 install_dir -m 0644 help.d/ipt_args/*.txt "${DATAROOTDIR}/${ME}/help.d/ipt_args"
 install_dir -m 0644 help.d/conf_vars/*.txt "${DATAROOTDIR}/${ME}/help.d/conf_vars"
+install_dir -m 0644 help.d/examples/config_like_v.0.05.74d/ruleblocks.d/* "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/ruleblocks.d"
+install_dir -m 0644 help.d/examples/config_like_v.0.05.74d/rules.d/* "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/rules.d"
 install_dir -m 0644 help.d/docbook/* "${DOCDIR}/${ME}/docbook"
-install_dir -m 0644 help.d/examples/* "${DOCDIR}/${ME}/examples"
 install_dir -m 0644 help.d/html/* "${DOCDIR}/${ME}/html"
 install_dir -m 0644 help.d/man/*.5 "${MANDIR}/man5"
 install_dir -m 0644 help.d/man/*.8 "${MANDIR}/man8"
-install_dir -m 0644 scripts.d/prolog/* "${DATAROOTDIR}/${ME}/scripts/prolog"
-install_dir -m 0644 scripts.d/epilog/* "${DATAROOTDIR}/${ME}/scripts/epilog"
+install_dir -m 0640 scripts.d/prolog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/prolog"
+install_dir -m 0640 scripts.d/epilog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/epilog"
 install_dir -m 0644 "${ME}"_*_functions "${LIBDIR}/$ME"
 
 install_file -m 0640 defaults.conf "${DEFAULTSDIR}/defaults.conf"
@@ -223,7 +225,9 @@ install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
 
 # create versions file
-"${BINDIR}/$ME" version > "${DEFAULTSDIR}/version"
+if ! [[ $NOACT ]]; then
+	"${BINDIR}/$ME" version > "${DEFAULTSDIR}/version"
+fi
 
 printf "Finished Install\n"
 exit 0
