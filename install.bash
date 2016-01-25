@@ -79,7 +79,7 @@ Options:
 -v, --verbose                    Verbose output.
 --prefix /path                   Prefix directory. Default: /usr/local
 --datarootdir /path              Default: PREFIX/share
---defaultsdir /path              Default: /etc/defaults
+--defaultsdir /path              Default: /etc/default
 --docdir /path                   Default: DATAROOTDIR/doc
 --initdir /path                  Default: /etc/init.d
 --libdir /path                   Default: PREFIX/lib
@@ -163,7 +163,7 @@ done
 : ${BINDIR:=${PREFIX}/bin}
 : ${LIBDIR:=${PREFIX}/lib}
 : ${SYSCONFDIR:=${PREFIX}/etc}
-: ${DEFAULTSDIR:=${SYSCONFDIR}/${ME}}
+: ${DEFAULTSDIR:=/etc/default}
 : ${DOCDIR:=${DATAROOTDIR}/doc}
 : ${MANDIR:=${DATAROOTDIR}/man}
 
@@ -220,9 +220,11 @@ install_dir -m 0640 scripts.d/prolog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/pro
 install_dir -m 0640 scripts.d/epilog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/epilog"
 install_dir -m 0644 "${ME}"_*_functions "${LIBDIR}/$ME"
 
-install_file -m 0640 defaults.conf "${DEFAULTSDIR}/defaults.conf"
+install_file -m 0640 defaults.conf "${DEFAULTSDIR}/$ME"
+install_file -m 0640 ip-array_global_defs "${LIBDIR}/${ME}/ip-array_global_defs"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
+install_file -m 0755 "${ME}".init_pre_net_boot "${INITDIR}/${ME}.init_pre_net_boot"
 
 # create versions file
 if ! [[ $NOACT ]]; then
