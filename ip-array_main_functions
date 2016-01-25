@@ -4026,8 +4026,10 @@ case "$MODE" in
 				header_heredoc_ipsrest "$str_rfile" "ipset ruleset"
 				ipset_save_ruleset "$str_rfile" || return
 				footer_heredoc "$str_rfile"
-				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
-				nfacct_save_ruleset "$str_rfile" || return
+				if arr_populated 'NFACCT_CMD_ARRAY'; then
+					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+					nfacct_save_ruleset "$str_rfile" || return
+				fi
 				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 				iptsave_rulesets "$str_rfile" rules || return
 				footer_heredoc "$str_rfile"
@@ -4036,8 +4038,10 @@ case "$MODE" in
 					header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
 					iptsave_rulesets "$str_rfile" policy || return
 					footer_heredoc "$str_rfile"
-					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
-					nfacct_save_ruleset "$str_rfile" || return
+					if arr_populated 'NFACCT_CMD_ARRAY'; then
+						printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+						nfacct_save_ruleset "$str_rfile" || return
+					fi
 					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 					iptsave_rulesets "$str_rfile" rules || return
 					footer_heredoc "$str_rfile"
@@ -4058,7 +4062,9 @@ case "$MODE" in
 			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
 			save_command_array IPT_POL_ARRAY "$str_rfile" || return
 			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
-			printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+			if arr_populated 'NFACCT_CMD_ARRAY'; then
+				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+			fi
 			save_ipset_command_array "$str_rfile" || return
 			for cmd_array in NFACCT_CMD_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
@@ -4080,7 +4086,9 @@ case "$MODE" in
 				header_heredoc_ipsrest "$str_rfile" "ipset ruleset"
 				ipset_save_ruleset "$str_rfile" || return
 				footer_heredoc "$str_rfile"
-				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+				if arr_populated 'NFACCT_CMD_ARRAY'; then
+					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+				fi
 				nfacct_save_ruleset "$str_rfile" || return
 				header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 				iptsave_rulesets "$str_rfile" rules || return
@@ -4090,7 +4098,9 @@ case "$MODE" in
 					header_heredoc_iptrest "$str_rfile" "iptables policy ruleset"
 					iptsave_rulesets "$str_rfile" policy || return
 					footer_heredoc "$str_rfile"
-					printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+					if arr_populated 'NFACCT_CMD_ARRAY'; then
+						printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+					fi
 					nfacct_save_ruleset "$str_rfile" || return
 					header_heredoc_iptrest "$str_rfile" "iptables ruleset"
 					iptsave_rulesets "$str_rfile" rules || return
@@ -4105,7 +4115,9 @@ case "$MODE" in
 			show_flush_del_pub_save >>"$str_rfile"
 			save_command_array IPT_POL_ARRAY "$str_rfile" || return
 			printf "\n%s\n%s\n" "# flush and delete chains" "flush_del_ipt_chains" >>"$str_rfile"
-			printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+			if arr_populated 'NFACCT_CMD_ARRAY'; then
+				printf "\n%s\n%s\n" "# remove nfacct accounting objects" "nfacct_del_objects" >>"$str_rfile"
+			fi
 			save_ipset_command_array "$str_rfile" || return
 			for cmd_array in NFACCT_CMD_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
 				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
