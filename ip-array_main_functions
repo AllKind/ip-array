@@ -4620,9 +4620,11 @@ load_all_ruleblocks || return
 set_global_policies || return
 flushdel_tables || return
 allow_loopback || return
-log -S "Removing existing and adding new nfacct objects"
-nfacct_del_objects || return
-read_nfacct_obj_map || return
+if [[ $NFACCT_OBJ_MAP ]]; then
+	log -S "Removing existing and adding new nfacct objects"
+	nfacct_del_objects || return
+	read_nfacct_obj_map || return
+fi
 } # -------------------------------------------------------------------------
 
 tc_mode_run() { # tc Mode only actions
