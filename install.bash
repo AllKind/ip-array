@@ -190,10 +190,10 @@ fi
 
 # create directories
 create_dirs "${BINDIR}" "${LIBDIR}/$ME" "${DATAROOTDIR}/$ME" "${DOCDIR}/$ME" "${INITDIR}"
-create_dirs "${DATAROOTDIR}/${ME}/template_repo.d" \
+create_dirs "${DATAROOTDIR}/${ME}/"{help.d,template_repo.d} \
 	"${DOCDIR}/${ME}/"{docbook,html} \
 	"${MANDIR}/"{man5,man8}
-create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/"{save.d,help.d,stable,test}
+create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/"{save.d,stable,test}
 create_dirs "${DATAROOTDIR}/${ME}/help.d/"{conf_vars,examples,ipt_args,public_functions}
 create_dirs "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/"{ruleblocks.d,rules.d}
 create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,templates.d}
