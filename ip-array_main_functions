@@ -2389,7 +2389,7 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 	shift 4
 	local check_cmd="$@"
 	local var_content=${!conf_var} # substitute the content of the desired variable
-	if [[ -z $var_content ]]; then # if substitution returns a non empty variable
+	if [[ -z $var_content || $var_content = +([[:space:]]) ]]; then # if substitution returns a empty variable
 		if ((conf_mandatory == 1)); then
 			log -E "Config entry \`$conf_var' is mandatory, but not defined."
 			return $ER_FAIL
