@@ -1962,7 +1962,7 @@
                 <listitem>
                   <para>Define a terminating rule for custom or builtin chains. Format:
                     <synopsis>chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</synopsis></para>
-                  <para>chain = the name of the chain. action = Can be one of: log, drop,  reject,
+                  <para>chain = the name of the chain. action = Can be one of: log, drop, reject,
                     logdrop, logreject. See the help of the iptables arguments for the other entries
                       (<command>ip-array show -sc ipt_args:limit,log-level,log-options</command>).
                     The default value for limit is defined with GLOBAL_LOGLIMIT and the burst value
@@ -2002,11 +2002,11 @@
               <varlistentry>
                 <term><varname>LAN_FTP</varname></term>
                 <listitem>
-                  <para>Select LAN interface from where FTP traffic is permitted. Format (newline
+                  <para>Select LAN interface from where FTP traffic is permitted. Format (whitespace
                     separates entries):
-                    <synopsis>lan-interface[:external-interface][:active|passive] [...]</synopsis></para>
+                    <synopsis>lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]</synopsis></para>
                   <para>i.e. <code>eth1:eth0:active</code> or <code>eth2</code> or
-                      <code>eth1::passive</code></para>
+                      <code>LAN::passive</code></para>
                 </listitem>
               </varlistentry>
               <varlistentry>

@@ -2,12 +2,12 @@
 Name: lan_ftp
 
 Description:
-	Permit forwarded FTP traffic from certain LAN(s). - Requires `ALLOW_LAN_FTP' variable to be configured.
-	Permit active FTP by setting the `ALLOW_ACTIVE_FTP' and 'ACTIVE_FTP_INTERFACES' variables.
-	Permit passive FTP by setting the `ALLOW_PASSIVE_FTP' and 'PASSIVE_FTP_INTERFACES' variables.
+	Permit forwarded FTP traffic from certain LAN(s). - Requires `LAN_FTP' variable to be configured.
 
 Usage:
-	lan_ftp
+	lan_ftp lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]
 	
 Example:
-	lan_ftp
+	lan_ftp eth0
+	lan_ftp LAN:PUBLIC:passive
+	lan_ftp LAN::active

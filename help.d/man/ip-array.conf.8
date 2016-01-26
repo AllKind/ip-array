@@ -609,13 +609,13 @@ Drop illegal TCP packets\&.
 .PP
 \fILAN_FTP\fR
 .RS 4
-Select LAN interface from where FTP traffic is permitted\&. Format (newline separates entries):
+Select LAN interface from where FTP traffic is permitted\&. Format (whitespace separates entries):
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-lan\-interface[:external\-interface][:active|passive] [\&.\&.\&.]
+lan\-interface|netname[:external\-interface|netname][:active|passive|all|none] [\&.\&.\&.]
 .fi
 .if n \{\
 .RE
@@ -626,7 +626,7 @@ eth1:eth0:active
 or
 eth2
 or
-eth1::passive
+LAN::passive
 .RE
 .PP
 \fILAN_NS\fR

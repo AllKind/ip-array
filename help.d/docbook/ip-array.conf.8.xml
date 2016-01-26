@@ -495,7 +495,7 @@
                             <synopsis xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</synopsis></para>
                         <para xmlns:xi="http://www.w3.org/2001/XInclude"
                             xmlns:xlink="http://www.w3.org/1999/xlink">chain = the name of the
-                            chain. action = Can be one of: log, drop,  reject, logdrop, logreject.
+                            chain. action = Can be one of: log, drop, reject, logdrop, logreject.
                             See the help of the iptables arguments for the other entries
                                 (<command>ip-array show -sc
                                 ipt_args:limit,log-level,log-options</command>). The default value
@@ -536,11 +536,14 @@
                 <varlistentry>
                     <term><varname>LAN_FTP</varname></term>
                     <listitem>
-                        <para>Select LAN interface from where FTP traffic is permitted. Format
-                            (newline separates entries):
-                            <synopsis>lan-interface[:external-interface][:active|passive] [...]</synopsis></para>
-                        <para>i.e. <code>eth1:eth0:active</code> or <code>eth2</code> or
-                                <code>eth1::passive</code></para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">Select LAN interface from
+                            where FTP traffic is permitted. Format (whitespace separates entries):
+                            <synopsis>lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]</synopsis></para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">i.e.
+                                <code>eth1:eth0:active</code> or <code>eth2</code> or
+                                <code>LAN::passive</code></para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>

@@ -70,14 +70,19 @@
                             (return) mode to generate bidirectional rules, define if those are
                             needed (i.e. <code class="varname">KNOWN_TRAFFIC_MAP</code> is not used). This
                             applies to traffic entering the FORWARD chain.</p></dd><dt><span class="term"><code class="varname">FINAL_RULE_MAP</code></span></dt><dd><p>Define a terminating rule for custom or builtin chains. Format:
-                            </p><pre class="synopsis">chain action [ limit:burst:value ] ] [ log-level ] [ log-options ]</pre><p>chain = the name of the chain. action = the target. See the help of
-                            the iptables arguments for the other entries (<span class="command"><strong>ip-array show -sc
-                                ipt_args:limit,log-level,log-options</strong></span>).</p></dd><dt><span class="term"><code class="varname">LOG_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log packets in invalid state. The logging options are defined with the
+                            </p><pre class="synopsis">chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</pre><p>chain = the name of the
+                            chain. action = Can be one of: log, drop, reject, logdrop, logreject.
+                            See the help of the iptables arguments for the other entries
+                                (<span class="command"><strong>ip-array show -sc
+                                ipt_args:limit,log-level,log-options</strong></span>). The default value
+                            for limit is defined with GLOBAL_LOGLIMIT and the burst value uses the
+                            default of GLOBAL_BURSTLIMIT.</p></dd><dt><span class="term"><code class="varname">LOG_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log packets in invalid state. The logging options are defined with the
                             global log options.</p></dd><dt><span class="term"><code class="varname">BLOCK_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop packets in invalid state.</p></dd><dt><span class="term"><code class="varname">LOG_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log illegal TCP packets. The logging options are defined with the
-                            global log options.</p></dd><dt><span class="term"><code class="varname">BLOCK_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop illegal TCP packets.</p></dd><dt><span class="term"><code class="varname">LAN_FTP</code></span></dt><dd><p>Select LAN interface from where FTP traffic is permitted. Format
-                            (newline separates entries):
-                            </p><pre class="synopsis">lan-interface[:external-interface][:active|passive] [...]</pre><p>i.e. <code class="code">eth1:eth0:active</code> or <code class="code">eth2</code> or
-                                <code class="code">eth1::passive</code></p></dd><dt><span class="term"><code class="varname">LAN_NS</code></span></dt><dd><p>Allow DNS (udp and tcp) traffic from nameservers inside one or more
+                            global log options.</p></dd><dt><span class="term"><code class="varname">BLOCK_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop illegal TCP packets.</p></dd><dt><span class="term"><code class="varname">LAN_FTP</code></span></dt><dd><p>Select LAN interface from
+                            where FTP traffic is permitted. Format (whitespace separates entries):
+                            </p><pre class="synopsis">lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]</pre><p>i.e.
+                                <code class="code">eth1:eth0:active</code> or <code class="code">eth2</code> or
+                                <code class="code">LAN::passive</code></p></dd><dt><span class="term"><code class="varname">LAN_NS</code></span></dt><dd><p>Allow DNS (udp and tcp) traffic from nameservers inside one or more
                             local networks to ISP nameservers. Needs the <code class="varname">LAN_NS</code>
                             and <code class="varname">ISP_NS</code> variables to be defined. Purpose: Define
                             name servers (DNS) that are part of a local area network.</p><p>
