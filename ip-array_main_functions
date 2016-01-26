@@ -4235,12 +4235,9 @@ case "$MODE" in # act according to runtime mode
 		# merge iptables and ipset command arrays
 		if ((USE_IPSET)) && [[ $MODE != @(OPEN|TC-START|TC-STOP) ]]; then
 			ipset_merge_arrays
-			rvar="IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
-			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
-		else
-			rvar="IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
-			IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
 		fi
+		rvar="IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
 		for str_arr_name in $rvar; do
 			append_array IPT_CMD_ARRAY $str_arr_name
 		done
@@ -4269,8 +4266,13 @@ case "$MODE" in # act according to runtime mode
 						return $ER_FAIL
 					fi
 					if ((${#IPSET_CMD_ARRAY[@]})); then
-						$IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}") || cmd_err_count ips "$IPSET -R"
+						if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
+						   log -N "ipset commands were successfully applied"
+						else
+						   cmd_err_count ips "$IPSET -R"
+						fi
 					fi
+					RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
 					if iptsave_rulesets "$RULESETFILE" rules; then
 						ipt_restore "${RULESETFILE##*/}" || {
 							[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
@@ -4307,7 +4309,11 @@ case "$MODE" in # act according to runtime mode
 						"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
 					done
 					if ((${#IPSET_CMD_ARRAY[@]})); then
-						$IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}") || cmd_err_count ips "$IPSET -R"
+						if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
+						   log -N "ipset commands were successfully applied"
+						else
+						   cmd_err_count ips "$IPSET -R"
+						fi
 #				for i in ${!IPSET_CMD_ARRAY[@]}; do
 #					eval set -- "${IPSET_CMD_ARRAY[i]}"
 #					run_ipset "$@" &>/dev/null || cmd_err_count ips "$IPSET $*"
