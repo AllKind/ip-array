@@ -245,7 +245,7 @@ if ((${#TC_CLASS[@]})); then
 		set -- ${TC_CLASS[tcc_idx]}
 		local strERR="TC_CLASS ${tcc_idx} ${TC_CLASS[tcc_idx]}"
 		local dev=$1 parent=$2 classid=$3 rate=$4 ceil=$5 burst=$6 \
-			cburst=$7 quantum=$8 mtu=$9 prio=$10
+			cburst=$7 quantum=$8 mtu=$9 prio=${10}
 		check_vars_no_sep dev parent classid rate ceil || { cfg_err $strERR; continue; }
 		tc_add_class -d $dev -p $parent -i $classid -r $rate -c $ceil \
 			-b "$burst" -u "$cburst" -q "$quantum" -m "$mtu" -o "$prio" || cfg_err $strERR
