@@ -1961,10 +1961,12 @@
                 <term><varname>FINAL_RULE_MAP</varname></term>
                 <listitem>
                   <para>Define a terminating rule for custom or builtin chains. Format:
-                    <synopsis>chain action [ limit:burst:value ] ] [ log-level ] [ log-options ]</synopsis></para>
-                  <para>chain = the name of the chain. action = the target. See the help of the
-                    iptables arguments for the other entries (<command>ip-array show -sc
-                      ipt_args:limit,log-level,log-options</command>).</para>
+                    <synopsis>chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</synopsis></para>
+                  <para>chain = the name of the chain. action = Can be one of: log, drop,  reject,
+                    logdrop, logreject. See the help of the iptables arguments for the other entries
+                      (<command>ip-array show -sc ipt_args:limit,log-level,log-options</command>).
+                    The default value for limit is defined with GLOBAL_LOGLIMIT and the burst value
+                    uses the default of GLOBAL_BURSTLIMIT.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -3152,7 +3154,7 @@
           <listitem>
             <para>interactive</para>
             <para>In this mode several wizards are available to interactively create or edit the
-              IP-Array configuration. It is possible to create main configuration files,  templates,
+              IP-Array configuration. It is possible to create main configuration files, templates,
               rule files, or create and edit ruleblocks. The <command>whiptail</command> program is
               required for this. The global_defs configuration file holds 3 variables
                 (<varname>IACTIVE_WINDOW_HEIGHT</varname>, <varname>IACTIVE_WINDOW_WITH</varname>,

@@ -444,9 +444,11 @@
                     (return) mode to generate bidirectional rules, define if those are needed (i.e.
                       <code class="varname">KNOWN_TRAFFIC_MAP</code> is not used). This applies to traffic
                     entering the FORWARD chain.</p></dd><dt><span class="term"><code class="varname">FINAL_RULE_MAP</code></span></dt><dd><p>Define a terminating rule for custom or builtin chains. Format:
-                    </p><pre class="synopsis">chain action [ limit:burst:value ] ] [ log-level ] [ log-options ]</pre><p>chain = the name of the chain. action = the target. See the help of the
-                    iptables arguments for the other entries (<span class="command"><strong>ip-array show -sc
-                      ipt_args:limit,log-level,log-options</strong></span>).</p></dd><dt><span class="term"><code class="varname">LOG_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log packets in invalid state. The logging options are defined with the
+                    </p><pre class="synopsis">chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</pre><p>chain = the name of the chain. action = Can be one of: log, drop,  reject,
+                    logdrop, logreject. See the help of the iptables arguments for the other entries
+                      (<span class="command"><strong>ip-array show -sc ipt_args:limit,log-level,log-options</strong></span>).
+                    The default value for limit is defined with GLOBAL_LOGLIMIT and the burst value
+                    uses the default of GLOBAL_BURSTLIMIT.</p></dd><dt><span class="term"><code class="varname">LOG_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log packets in invalid state. The logging options are defined with the
                     global log options.</p></dd><dt><span class="term"><code class="varname">BLOCK_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop packets in invalid state.</p></dd><dt><span class="term"><code class="varname">LOG_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log illegal TCP packets. The logging options are defined with the global log
                     options.</p></dd><dt><span class="term"><code class="varname">BLOCK_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop illegal TCP packets.</p></dd><dt><span class="term"><code class="varname">LAN_FTP</code></span></dt><dd><p>Select LAN interface from where FTP traffic is permitted. Format (newline
                     separates entries):
@@ -709,7 +711,7 @@
                   is set in the main config file, IP-Array will allow the configured
                   connection.</td></tr><tr><td>C: If the ALLOW_LOOPBACK variable is set in the main config file, loopback
                   communication will be allowed.</td></tr></table></li><li><p>interactive</p><p>In this mode several wizards are available to interactively create or edit the
-              IP-Array configuration. It is possible to create main configuration files,  templates,
+              IP-Array configuration. It is possible to create main configuration files, templates,
               rule files, or create and edit ruleblocks. The <span class="command"><strong>whiptail</strong></span> program is
               required for this. The global_defs configuration file holds 3 variables
                 (<code class="varname">IACTIVE_WINDOW_HEIGHT</code>, <code class="varname">IACTIVE_WINDOW_WITH</code>,
