@@ -1,2 +1,4 @@
 CHAIN TERMINATION - FINAL RULE
-chain | final-action | [ limit[:burst:value ]] | [ log-level ] | [ log-options ]
+# chain | action: (log|drop|reject|logdrop|logreject) | [ limit ] | [ burst ] | [ log-level ] | [ log-options ]
+# default limit is: $GLOBAL_LOGLIMIT
+# default burst is: $GLOBAL_BURSTLIMIT
