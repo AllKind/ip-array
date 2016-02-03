@@ -593,7 +593,7 @@ save-shaping-commands      Save tc and iptables mangle table (mark) commands to 
 parse-xml                  Parse (by default all) XML files.
                            Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
 compat-check               Check compatibility (kernel, supported targets, matches, tables).
-interactive                Interactive ruleblock and template builder.
+interactive                Interactive mode.
 show                       Show configuration or color settings. Option \`-sc' selects type.
 version                    Show version information.
 help, -h, --help, -?       Show this usage instructions.\n
