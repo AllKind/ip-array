@@ -5857,6 +5857,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 						esac
 					;;
 					*) log -i "$tmp_opt_var_value" "$tmp_opt_var descriptor"
+						return 1
 				esac
 				shift 2
 			done
