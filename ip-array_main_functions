@@ -2398,9 +2398,9 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 				case "${var_type}" in # react according to type of variable
 					bool) # config entry should be 0 or 1
 							set_var "$conf_var" '0'
-							log -N "Config entry \`$conf_var' is not defined, setting it to \`0'."
+							log -e "Config entry \`$conf_var' is not defined, setting it to \`0'."
 					;;
-					*) log -N "Config entry \`$conf_var' is not defined." ;;
+					*) log -e "Config entry \`$conf_var' is not defined." ;;
 				esac
 			fi
 			continue
