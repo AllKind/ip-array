@@ -4626,10 +4626,12 @@ load_all_ruleblocks || return
 set_global_policies || return
 flushdel_tables || return
 allow_loopback || return
-if [[ $NFACCT_OBJ_MAP ]]; then
-	log -S "Removing existing and adding new nfacct objects"
-	nfacct_del_objects || return
-	read_nfacct_obj_map || return
+if ((GOT_NFACCT)); then
+	if [[ $NFACCT_OBJ_MAP && $NFACCT_OBJ_MAP != +([[:space:]]) ]]; then
+		log -S "Removing existing and adding new nfacct objects"
+		nfacct_del_objects || return
+		read_nfacct_obj_map || return
+	fi
 fi
 } # -------------------------------------------------------------------------
 

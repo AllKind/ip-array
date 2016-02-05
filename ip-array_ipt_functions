@@ -1079,18 +1079,27 @@ run_nfacct() {
 
 test_nfacct() { # create / delete an nfacct test object
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-((NO_IPT_COMPAT_CHECK == 0)) || return 0
-[[ -x $NFACCT ]] || return 0
+if ((NO_IPT_COMPAT_CHECK == 0)); then
+	GOT_NFACCT=1
+	return 0
+fi
+if ! [[ -x $NFACCT ]]; then
+	GOT_NFACCT=0
+	return 0
+fi
 case "$1" in
 	create)
 		log -w "creating test nfacct object"
 		if dn run_nfacct get ${me}_test_nfacct_obj; then
 			log -W "nfacct object \`${me}_test_nfacct_obj' already exists"
+			GOT_NFACCT=1
 			return 0
 		fi
-		dn run_nfacct add ${me}_test_nfacct_obj || {
+		if dn run_nfacct add ${me}_test_nfacct_obj; then
+			GOT_NFACCT=1
+		else
 			log -f "creating test nfacct object \`${me}_test_nfacct_obj'"
-		}
+		fi
 	;;
 	delete)
 		log -w "deleting test nfacct object"
@@ -1256,7 +1265,11 @@ readonly FINAL_RULE_MAP
 } # -------------------------------------------------------------------------
 
 read_nfacct_obj_map() { # fill NFACCT_OBJ_MAP array and create nfacct objects
-[[ ${NFACCT_OBJ_MAP} ]] || return 0
+if [[ $NFACCT_OBJ_MAP && $NFACCT_OBJ_MAP != +([[:space:]]) ]]; then
+	GOT_NFACCT=0
+	return 0
+ fi
+((GOT_NFACCT)) || return 0
 local -i idx
 log -w "Loading NFACCT_OBJ_MAP"
 fill_array 'NFACCT_OBJ_MAP'
@@ -1293,6 +1306,7 @@ END_OF_FUNC
 
 nfacct_del_objects() { # remove all existing nfacct objects
 local x
+((GOT_NFACCT)) || return 0
 (dn run_nfacct list || exit 1) || {
 	log -N "Cannot list nfacct objects. Disabling nfacct support."
 	GOT_NFACCT=0
