@@ -3490,6 +3490,19 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						# global iptables options (to apply to others, or build rules by their own (on close))
 						((opt_count == 0)) || { log -E "There is an open option list."; return 1; }
 						_validate_ipt_option_name "${tag_name}" || return 1
+						if ((${#attr_indicies} > 1 && ${#cont_indicies} > 1)); then
+							log -E "Attribute and content in tag #$((tag_idx+1)): \`$tag_name'. Only one of them is valid."
+							return 1
+						elif ((${#attr_indicies} > 1)); then
+							log -E "Too many attributes in tag #$((tag_idx+1)): \`$tag_name'. \
+								There is only one attribute allowed in a global iptables argument tag. \
+								The attribute name will ALWAYS BE REPLACED BY THE NAME OF THE TAG!!!"
+							return 1
+						elif ((${#cont_indicies} > 1)); then
+							log -E "Content string out of bounds in tag #$((tag_idx+1)): \`$tag_name'. \
+								There is only one content string allowed in a global iptables argument tag."
+							return 1
+						fi
 						for i in ${cont_indicies}; do
 							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
 							if ((c_rule == 0)); then
