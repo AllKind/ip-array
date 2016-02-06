@@ -2,12 +2,12 @@
 .\"     Title: ip-array_rulefiles
 .\"    Author: AllKind <AllKind@fastest.cc>
 .\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 08/19/2015
+.\"      Date: 02/06/2016
 .\"    Manual: ip-array 1.0
 .\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_RULEFILES" "5" "08/19/2015" "ip-array 1.0" "ip\-array 1\&.0"
+.TH "IP\-ARRAY_RULEFILES" "5" "02/06/2016" "ip-array 1.0" "ip\-array 1\&.0"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -32,7 +32,7 @@ ip-array_rulefiles \- Configure ip\-array rule files
 .SH "SYNOPSIS"
 .sp
 .nf
-/etc/ip\-array/{stable|test}/conf\&.d/ruleblocks/\fIfile\fR
+/etc/ip\-array/{stable|test}/conf\&.d/rules\&.d/\fIfile\fR
 .fi
 .SH "DESCRIPTION"
 .PP
@@ -43,7 +43,7 @@ XML style\&. There are different rule tags available, as well as public function
 .PP
 A rule definition file must contain the root tag including the describing name attribule and the syntax version:
 .PP
-<ip_array_root name="iptables_rules" syntax_version="0\&.1">
+<ip_array_root name="iptables_rules" syntax_version="1\&.0">
 .PP
 The
 \fBname\fR
@@ -51,7 +51,7 @@ attribute tells us it is an iptables rule definition\&.
 .PP
 The
 \fBsyntax_version\fR
-attribute defines the syntax version (only 0\&.1 is available by now)\&.
+attribute defines the syntax version (only 1\&.0 is available by now)\&.
 .PP
 The XML syntax can be used in a
 \fIrelaxed\fR
