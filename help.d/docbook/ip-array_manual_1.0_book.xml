@@ -7,12 +7,12 @@
       <affiliation>
         <orgname>AllKind</orgname>
       </affiliation></author>
-    <pubdate>2014</pubdate>
+    <pubdate>2016</pubdate>
     <legalnotice>
       <para>GPL v.2+</para>
     </legalnotice>
     <copyright>
-      <year>2014 AllKind</year>
+      <year>2016 AllKind</year>
     </copyright>
   </info>
   <chapter xml:id="intro">
@@ -160,7 +160,7 @@
               </itemizedlist></para>
           </listitem>
           <listitem>
-            <para>Avaliable iptables match extensions:<itemizedlist>
+            <para>Available iptables match extensions:<itemizedlist>
                 <listitem>
                   <para>Supported in this version:</para>
                   <para>addrtype, ah, bpf, cluster, comment, connbytes, connlimit, connmark,
@@ -180,7 +180,7 @@
               security.</para>
           </listitem>
           <listitem>
-            <para>Template based rule structure definition (quite a huge list of predifined
+            <para>Template based rule structure definition (quite a huge list of predefined
               templates is provided out of the box) to build ruleblocks (stacks of rules, which just
               contain values).</para>
           </listitem>
@@ -192,6 +192,10 @@
             <para>Options in rules can be grouped to save writing effort.</para>
           </listitem>
           <listitem>
+            <para>An interactive mode, which is wizard based and allows to create (and edit in case
+              of ruleblocks) configuration files.</para>
+          </listitem>
+          <listitem>
             <para>ipset integration. Older ipset versions (4.x, 5.x) are supported. Compatible with
               ipset v. 6 to 6.22+.</para>
           </listitem>
@@ -200,7 +204,7 @@
               variable).</para>
           </listitem>
           <listitem>
-            <para>Different modi of automatic `jump tree' creation in all tables.</para>
+            <para>Different modes of automatic `jump tree' creation in all tables.</para>
           </listitem>
           <listitem>
             <para>Allow an admin connection.</para>
@@ -2477,11 +2481,11 @@
               <para>First a root tag including the describing name attribule and the syntax
                 version:</para>
               <para><code>&lt;ip_array_root name="iptables_templates"
-                syntax_version="0.1"></code></para>
+                syntax_version="1.0"></code></para>
               <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables
                 template.</para>
               <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
-                version (only 0.1 is available by now).</para>
+                version (only 1.0 is available by now).</para>
             </listitem>
             <listitem>
               <para>The actual template tag including the name attribute defining the name of the
@@ -2633,11 +2637,11 @@
             <listitem>
               <para>First a root tag including the describing name attribule and the syntax
                 version:</para>
-              <para><code>&lt;ip_array_root name="ruleblocks" syntax_version="0.1"></code></para>
+              <para><code>&lt;ip_array_root name="ruleblocks" syntax_version="1.0"></code></para>
               <para>The <emphasis role="bold">name</emphasis> attribute tells us it is a ruleblocks
                 definition.</para>
               <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
-                version (only 0.1 is available by now).</para>
+                version (only 1.0 is available by now).</para>
             </listitem>
             <listitem>
               <para>The actual ruleblock tag including the name attribute defining the name of the
@@ -2706,11 +2710,11 @@
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
           attribule and the syntax version:</para>
-        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="0.1"></code></para>
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="1.0"></code></para>
         <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
           definition.</para>
         <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
-          version (only 0.1 is available by now).</para>
+          version (only 1.0 is available by now).</para>
         <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not
           XML compatible). Tags can be closed by a simple `/>'. Attributes can have their value
           enclosed inside single quotes, or not quoted at all.</para>
