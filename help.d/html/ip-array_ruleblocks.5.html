@@ -1,14 +1,14 @@
 <html><head>
       <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-   <title>ip-array_ruleblocks</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array ruleblocks &#8212; Configure ip-array ruleblocks</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/{stable|test}/conf.d/ruleblocks/<em class="replaceable"><code>file</code></em></pre></div><div class="refsect1" lang="en"><a name="d0e44"></a><h2>Description</h2><p>A ruleblock is a group (stack) of rules, containing only the values of each option, to
+   <title>ip-array_ruleblocks</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array ruleblocks &#8212; Configure ip-array ruleblocks</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/{stable|test}/conf.d/ruleblocks.d/<em class="replaceable"><code>file</code></em></pre></div><div class="refsect1" lang="en"><a name="d0e44"></a><h2>Description</h2><p>A ruleblock is a group (stack) of rules, containing only the values of each option, to
             be read in order of occurence. The structure of the ruleblock is defined in a template.
             Each rule entry in a ruleblock is interpreted column-wise. How the values in each column
             are interpreted, is defined in the template called with the ruleblock.</p></div><div class="refsect1" lang="en"><a name="d0e49"></a><h2>Syntax</h2><p>A ruleblock definition file must contain the following:</p><p>
             </p><div class="orderedlist"><ol type="1"><li><p>First a root tag including the describing name attribule and the syntax
                         version:</p><p><code class="code">&lt;ip_array_root name="ruleblocks"
-                        syntax_version="0.1"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is a
+                        syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is a
                         ruleblocks definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the
-                        syntax version (only 0.1 is available by now).</p></li><li><p>The actual ruleblock tag including the name attribute defining the name of
+                        syntax version (only 1.0 is available by now).</p></li><li><p>The actual ruleblock tag including the name attribute defining the name of
                         the ruleblock:</p><p>&lt;ruleblock name="RULEBLOCK_EXAMPLE"&gt;</p><p>The ruleblock name must begin with one of the following prefixes: RB_,
                         RULEBLOCK_.</p></li></ol></div><p>
         </p></div><div class="refsect1" lang="en"><a name="d0e81"></a><h2>Usage guidelines</h2><p>It's a good idea to write down the structure of the template you want to call the

@@ -47,11 +47,11 @@
                     <para>First a root tag including the describing name attribule and the syntax
                         version:</para>
                     <para><code>&lt;ip_array_root name="iptables_templates"
-                            syntax_version="0.1"></code></para>
+                            syntax_version="1.0"></code></para>
                     <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an
                         iptables template.</para>
                     <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the
-                        syntax version (only 0.1 is available by now).</para>
+                        syntax version (only 1.0 is available by now).</para>
                 </listitem>
                 <listitem>
                     <para>The actual template tag including the name attribute defining the name of
@@ -76,7 +76,7 @@
             <varlistentry>
                 <term>target</term>
                 <listitem>
-                    <para>A comma separated list of iptables targets.  Usually the target will be
+                    <para>A comma separated list of iptables targets. Usually the target will be
                         'jumped' (--jump) to. To use a goto (--goto) instead, prefix the target name
                         with `goto:'.</para>
                 </listitem>

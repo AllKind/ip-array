@@ -28,7 +28,7 @@
         <refpurpose>Configure ip-array rule files</refpurpose>
     </refnamediv>
     <refsynopsisdiv>
-        <synopsis>/etc/ip-array/{stable|test}/conf.d/ruleblocks/<replaceable>file</replaceable></synopsis>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/rules.d/<replaceable>file</replaceable></synopsis>
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
@@ -41,11 +41,11 @@
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
             attribule and the syntax version:</para>
-        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="0.1"></code></para>
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="1.0"></code></para>
         <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
             definition.</para>
         <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
-            version (only 0.1 is available by now).</para>
+            version (only 1.0 is available by now).</para>
         <para>The XML syntax can be used in a <emphasis role="italic"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
                 xmlns:xlink="http://www.w3.org/1999/xlink">relaxed</emphasis> way (not XML
