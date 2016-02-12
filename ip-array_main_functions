@@ -3612,20 +3612,18 @@ while read -r; do let line_count+=1
 		}
 		let comment_mode+=1
 		continue
-	elif [[ ${line} = *'-->'* ]]; then # multiline comment ends
+	elif [[ ${line} = *'-->'* ]] && ((comment_mode > 0)); then # multiline comment ends
 		[[ $DEBUG_INFO ]] && pr_str "Comment ends with: '${line}'"
 		tmp_content="${line%'-->'*}"
 		[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
 			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
 		}
 		line="${line#*'-->'}"
-		if ((comment_mode > 0)); then
-			let comment_mode-=1
-		else
-			log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
-			return 1
-		fi
+		let comment_mode-=1
 		[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && pr_str "Leaving comment mode with: '${line}' #${line_count}"
+	elif [[ ${line} = *([[:blank:]])'-->'* ]] && ((comment_mode < 1)); then
+		log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
+		return 1
 	else
 		[[ $DEBUG_INFO ]] && ((comment_mode > 0)) && pr_str "Skipping comment line: '${line}' #${line_count}"
 		((comment_mode > 0)) && {
@@ -3712,6 +3710,12 @@ while read -r; do let line_count+=1
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
 			cont_expect=0 attr_expect=0 comment_idx=0
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${last_tag}'" "Remaining line: '${line}'"
+		elif [[ ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
+			line="${line#*'<!--'}"; line="${line%'-->'*}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			line=""
 		else # either expected attributes, or expected content, or an unmatched line
 			if ((${#ARR_TAGS[@]})); then
 				if [[ ${line} && ${line} != +([[:space:]]) ]]; then
@@ -3735,11 +3739,20 @@ while read -r; do let line_count+=1
 						return 1
 					fi
 					if ((cont_expect == 1)); then
+						if [[ $line = *\<\!--*--\>*([[:blank:]]) ]]; then
+							tmp_content="${line#*'<!--'}"; tmp_content="${tmp_content%'-->'*}"
+							[[ $tmp_content && $tmp_content != +([[:blank:]]) ]] && {
+								eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+							}
+							line="${line%%<\!--*}"
+						fi
 						tmp_content="${line%%<+([[:word:]])*([[:blank:]])>*}"
 						line="${line#*"${tmp_content}"}"
-						strip_blanks_var 'tmp_content'
-						[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
-						eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+						if [[ $tmp_content && $tmp_content != +([[:blank:]]) ]]; then
+							strip_blanks_var 'tmp_content'
+							[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+							eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+						fi
 					else
 						log -E "Unmatched line #${line_count} - no content expected: '${line}'"
 						return 1
