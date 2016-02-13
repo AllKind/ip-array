@@ -3,7 +3,7 @@
 <!-- MANGLE TABLE MARKING FOR TRAFFIC SHAPING -->
 
 <!-- SKELETON
-<ip_array_root name="iptables_rules" syntax_version="1.0">
+<ip_array_root name="iptables_rules" syntax_version="1.1">
 	<pub_func>
 	</pub_func>
 	<template_rule>
@@ -11,7 +11,7 @@
 </ip_array_root>
 -->
 
-<ip_array_root name="iptables_rules" syntax_version="1.0">
+<ip_array_root name="iptables_rules" syntax_version="1.1">
 
 	<pub_func>
 		jump_tree_off
