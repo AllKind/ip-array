@@ -255,7 +255,7 @@ case "$str_type" in
 				netmask)
 					case "$str_type" in
 						hash:ip)
-							((opt_arg >= 1 && <= 32)) || {
+							((opt_arg >= 1 && opt_arg <= 32)) || {
 								log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
 								$str_failcmd
 							}
