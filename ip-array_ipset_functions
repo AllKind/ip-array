@@ -102,6 +102,41 @@ case "$1" in
 esac
 } # -------------------------------------------------------------------------
 
+_ipset_check_common_create_opts() {
+if [[ $option = @(comment|counters|skbinfo) ]]; then
+	if ((IPSET_VERSION[0] < 6)); then
+		log -E "Option \`$option' is not supported: ipset version is too old."
+		return 1
+	fi
+fi
+case "$option" in
+	comment)
+		# ipset -ge v6.20 has comment flag
+		if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 20)); then
+			log -E "Option \`$option' is not supported: ipset version is too old."
+			return 1
+		fi
+	;;
+	counters)
+		# ipset -ge v6.19 has counters flag
+		if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 19)); then
+			log -E "Option \`$option' is not supported: ipset version is too old."
+			return 1
+		fi
+	;;
+	skbinfo)
+		# ipset -ge v6.22 has skbinfo flag
+		if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 22)); then
+			log -E "Option \`$option' is not supported: ipset version is too old."
+			return 1
+		fi
+	;;
+	timeout)
+		val_numeric "$opt_arg" || return 1
+	;;
+esac
+} # -------------------------------------------------------------------------
+
 ipset_create() { # create an ipset set (cache commands)
 [[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 ((USE_IPSET)) || {
@@ -135,11 +170,18 @@ case "$str_type" in
 		local -a arr_opts=("$@")
 		while (($#)); do
 			option="$1" opt_arg="$2"
-			if [[ -z $opt_arg ]]; then
-				log -E "$strERR Missing value to option \`$option' for \`$str_type' set."
-				$str_failcmd
-			fi
 			case "$option" in
+				range|netmask|timeout)
+					if [[ -z $opt_arg ]]; then
+						log -E "$strERR Missing value to option \`$option' for \`$str_type' set."
+						$str_failcmd
+					fi
+				;;
+			esac
+			_ipset_check_common_create_opts || $str_failcmd
+			case "$option" in
+				comment|counters|skbinfo) : ;;
+				timeout) shift ;;
 				range)
 					if [[ $str_type = bitmap:port ]]; then
 						if ((IPSET_VERSION[0] > 6)) || ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] >= 20)); then
@@ -151,11 +193,12 @@ case "$str_type" in
 					else
 						val_ip4_addr "$opt_arg" || $str_failcmd
 					fi
+					shift
 				;;
 				netmask)
 					if [[ $str_type = bitmap:ip ]]; then
 						val_numeric "$opt_arg" || $str_failcmd
-						((opt_arg >= 1 && <= 32)) || {
+						((opt_arg >= 1 && opt_arg <= 32)) || {
 							log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-32."
 							$str_failcmd
 						}
@@ -164,15 +207,13 @@ case "$str_type" in
 						$str_failcmd
 
 					fi
-				;;
-				timeout)
-					val_numeric "$opt_arg" || $str_failcmd
+					shift
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
 					$str_failcmd
 				;;
 			esac
-			shift 2
+			shift
 		done
 	;;
 	hash:ip|hash:net|hash:ip,port|hash:net,port|hash:ip,port,ip|hash:ip,port,net|hash:net,iface|hash:net,port,net|hash:ip,mark|hash:mac)
@@ -185,14 +226,15 @@ case "$str_type" in
 					$str_failcmd
 				fi
 			fi
-			if [[ $option = @(comment|counters|markmask|skbinfo) ]]; then
-				if ((IPSET_VERSION[0] < 6)); then
-					log -E "Option \`$option' is not supported: ipset version is too old."
-					$str_failcmd
-				fi
-			fi
+			_ipset_check_common_create_opts || $str_failcmd
 			case "$option" in
+				comment|counters|skbinfo) : ;;
+				timeout) shift ;;
 				markmask)
+					if ((IPSET_VERSION[0] < 6)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					fi
 					# ipset -ge v6.21 has markmask flag
 					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 21)); then
 						log -E "Option \`$option' is not supported: ipset version is too old."
@@ -208,38 +250,17 @@ case "$str_type" in
 					}
 					shift
 				;;
-				skbinfo)
-					# ipset -ge v6.22 has skbinfo flag
-					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 22)); then
-						log -E "Option \`$option' is not supported: ipset version is too old."
-						$str_failcmd
-					fi
-				;;
-				comment)
-					# ipset -ge v6.20 has comment flag
-					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 20)); then
-						log -E "Option \`$option' is not supported: ipset version is too old."
-						$str_failcmd
-					fi
-				;;
-				counters)
-					# ipset -ge v6.19 has counters flag
-					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 19)); then
-						log -E "Option \`$option' is not supported: ipset version is too old."
-						$str_failcmd
-					fi
-				;;
 				family)
+					if [[ $str_type = hash:mac ]]; then
+						log -E "$strERR Option  \`$option' is not available for hash:mac type of sets."
+						$str_failcmd
+					fi
 					if [[ $opt_arg = inet6 ]]; then
 						log -E "Option argument \`$opt_arg' is not supported."
 						$str_failcmd
 					elif [[ $opt_arg = inet ]]; then :
 					else
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid values: inet|inet6."
-						$str_failcmd
-					fi
-					if [[ $str_type = hash:mac ]]; then
-						log -E "$strERR Option  \`$option' is not available for hash:mac type of sets."
 						$str_failcmd
 					fi
 					shift
@@ -265,10 +286,6 @@ case "$str_type" in
 					esac
 					shift
 				;;
-				timeout)
-					val_numeric "$opt_arg" || $str_failcmd
-					shift
-				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
 					$str_failcmd
 			esac
@@ -279,21 +296,24 @@ case "$str_type" in
 		local -a arr_opts=("$@")
 		while (($#)); do
 			option="$1" opt_arg="$2"
-			if [[ -z $opt_arg ]]; then
-				log -E "$strERR Missing value to option \`$option' for \`$str_type' set."
-				$str_failcmd
+			if [[ $option = @(timeout|size) ]]; then
+				if [[ -z $opt_arg ]]; then
+					log -E "$strERR Missing value to option \`$option' for \`$str_type' set."
+					$str_failcmd
+				fi
 			fi
+			_ipset_check_common_create_opts || $str_failcmd
 			case "$option" in
+				comment|counters|skbinfo) : ;;
+				timeout) shift ;;
 				size)
 					val_numeric "$opt_arg" || $str_failcmd
-				;;
-				timeout)
-					val_numeric "$opt_arg" || $str_failcmd
+					shift
 				;;
 				*) log -E "$strERR Invalid option \`$option' for \`$str_type' set."
 					$str_failcmd
 			esac
-			shift 2
+			shift
 		done
 	;;
 	ipmap)
@@ -318,7 +338,7 @@ case "$str_type" in
 					str_network="--$option $opt_arg"
 				;;
 				netmask)
-					((opt_arg >= 1 && <= 31)) || {
+					((opt_arg >= 1 opt_arg && <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
 						$str_failcmd
 					}
@@ -421,7 +441,7 @@ case "$str_type" in
 					arr_opts[${#arr_opts[@]}]="--$option $opt_arg"
 				;;
 				netmask)
-					((opt_arg >= 1 && <= 31)) || {
+					((opt_arg >= 1 && opt_arg <= 31)) || {
 						log -E "$strERR Invalid value \`$opt_arg' with \`$option' for \`$str_type' set. Valid range: 1-31."
 						$str_failcmd
 					}
