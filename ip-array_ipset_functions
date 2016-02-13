@@ -230,6 +230,17 @@ case "$str_type" in
 			case "$option" in
 				comment|counters|skbinfo) : ;;
 				timeout) shift ;;
+				forceadd)
+					if ((IPSET_VERSION[0] < 6)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					fi
+					# ipset -ge v6.22 has forceadd flag
+					if ((IPSET_VERSION[0] == 6 && IPSET_VERSION[1] < 22)); then
+						log -E "Option \`$option' is not supported: ipset version is too old."
+						$str_failcmd
+					fi
+				;;
 				markmask)
 					if ((IPSET_VERSION[0] < 6)); then
 						log -E "Option \`$option' is not supported: ipset version is too old."
