@@ -3593,50 +3593,54 @@ local line tag_name attributes last_tag tmp_content str_attr str_attr_name str_a
 local -i tag_idx=0 tmp_tag_idx=0 comment_mode=0 comment_idx=0 attr_idx=0 cont_idx=0 cont_expect=0 attr_expect=0 line_count=0 x
 local -a ARR_TAGS ARR_TMP_TAGS
 while read -r; do let line_count+=1
-	line="${REPLY}"
+	line="$REPLY"
+	local -a "ARR_COMMENT_NO_${tag_idx}"
 	[[ $DEBUG_INFO ]] && pr_str "Reading new line #${line_count}: '${line}'"
 	# skip empty, xml version and comment lines
-	local -a "ARR_COMMENT_NO_${tag_idx}"
-	[[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]] && {
-		line="${line#*'<!--'}"; line="${line%'-->'*}"
-		[[ ${line} && ${line} != +([[:blank:]]) ]] && {
-			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
-		}
-		continue
-	}
-	if [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
-		[[ $DEBUG_INFO ]] && pr_str "Comment starts with: '${line}'"
-		line="${line#*'<!--'}"
-		[[ ${line} && ${line} != +([[:blank:]]) ]] && {
-			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
-		}
-		let comment_mode+=1
-		continue
-	elif [[ ${line} = *'-->'* ]] && ((comment_mode > 0)); then # multiline comment ends
-		[[ $DEBUG_INFO ]] && pr_str "Comment ends with: '${line}'"
-		tmp_content="${line%'-->'*}"
-		[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
-			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
-		}
-		line="${line#*'-->'}"
-		let comment_mode-=1
-		[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && pr_str "Leaving comment mode with: '${line}' #${line_count}"
-	elif [[ ${line} = *([[:blank:]])'-->'* ]] && ((comment_mode < 1)); then
-		log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
-		return 1
-	else
-		[[ $DEBUG_INFO ]] && ((comment_mode > 0)) && pr_str "Skipping comment line: '${line}' #${line_count}"
-		((comment_mode > 0)) && {
-			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
-				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
-			}
-			continue
-		}
-	fi
 	[[ ${line} = @(*([[:blank:]])<[?]xml+([[:blank:]])version=*[?]>*) ]] && line="${line#*'>'}"
 	while [[ ${line} && ${line} != +([[:blank:]]) ]]; do # re-iterate until line is blank
 		[[ $DEBUG_INFO ]] && pr_str "NEW LOOP RUN - line: '${line}'"
-		if [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
+		if [[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
+		# comment on its own <!--*-->
+			line="${line#*'<!--'}"; line="${line%'-->'*}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				[[ $DEBUG_INFO ]] && pr_str "Found comment: '${line}'"
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			continue 2
+		elif [[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->!([[:blank:]])) ]]; then
+		# comment before additional data <!--*-->
+			line="${line#*'<!--'}"
+			tmp_content="${line%%'-->'*}" line="${line#*'-->'}"
+			[[ $tmp_content && $tmp_content != +([[:blank:]]) ]] && {
+				[[ $DEBUG_INFO ]] && pr_str "Found comment: '${tmp_content}'"
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+			}
+		elif [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
+			[[ $DEBUG_INFO ]] && pr_str "Comment starts with: '${line}'"
+			line="${line#*'<!--'}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			let comment_mode+=1
+			continue 2
+		elif [[ ${line} = *'-->'* ]] && ((comment_mode > 0)); then # multiline comment ends
+			[[ $DEBUG_INFO ]] && pr_str "Comment ends with: '${line}'"
+			tmp_content="${line%'-->'*}"
+			[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+			}
+			line="${line#*'-->'}"
+			let comment_mode-=1
+			[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && pr_str "Leaving comment mode with: '${line}' #${line_count}"
+		elif [[ ${line} = *([[:blank:]])'-->'* ]] && ((comment_mode < 1)); then
+			log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
+			return 1
+		elif ((comment_mode > 0)); then
+			[[ $DEBUG_INFO ]] && pr_str "Skipping comment line: '${line}' #${line_count}"
+			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			continue 2
+		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag>
 			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"; tag_name="${tag_name//[[:blank:]]/}"
