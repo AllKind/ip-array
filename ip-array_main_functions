@@ -3256,14 +3256,43 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					e|elem|element|elements)
 						((set_rule == 1)) || { log -E "Tag \`${tag_name}' is only valid within an ipset tag."; return 1; }
 						((elem_rule == 0)) || { log -E "Only one \`${tag_name}' tag is valid within an ipset tag."; return 1; }
-						((attr_members > 0)) && {
-							log -E "Only content is allowed in tag \`${tag_name}'."
-							return 1
-						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
 						elem_rule=1
+						str_regex='.*comment[[:blank:]]+([\"])(.*)([\"]).*' # to match comments
+						if ((attr_members > 0)); then
+							while read -r str_attr_name str_attr_val; do
+								case "$str_attr_name" in
+									import_plain)
+										if ! [[ -r $str_attr_val ]]; then
+											log -E "File to import set elements from does not exist: \`$str_attr_val'."
+											return 1
+										fi
+										while read -r -t $GLOBAL_READ_TIMEOUT; do
+											REPLY="${REPLY%%#*}"
+											[[ $REPLY && $REPLY != +([[:blank:]]) ]] || continue
+											if [[ $REPLY =~ $str_regex ]]; then
+												# catch comments and escape the string containing spaces
+												RESULT_ARR[IDX++]="ipset_add $str_set ${REPLY/"${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"/$(printf '%q\n' \""${BASH_REMATCH[2]}\"")}"
+											else
+												RESULT_ARR[IDX++]="ipset_add $str_set $REPLY"
+											fi
+										done < "$str_attr_val"
+									;;
+									import_xml) :
+									;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+							done < <(_get_attribute_data)
+						fi
 						for i in ${cont_indicies}; do
 							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
-							RESULT_ARR[IDX++]="ipset_add $str_set $(re_normalize str_cont)"
+							if [[ $str_cont =~ $str_regex ]]; then
+								# catch comments and escape the string containing spaces
+								RESULT_ARR[IDX++]="ipset_add $str_set ${str_cont/"${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"/$(printf '%q\n' \""${BASH_REMATCH[2]}\"")}"
+							else
+								RESULT_ARR[IDX++]="ipset_add $str_set $str_cont"
+							fi
 						done
 					;;
 					f|pub_func)
