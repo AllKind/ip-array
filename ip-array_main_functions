@@ -3221,7 +3221,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						((global_opts == 0)) || { log -E "Tag \`${tag_name}' is not valid within a global iptables tag."; return 1; }
 						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
 						((cont_members > 0)) && {
-							log -E "Only content is allowed in tag \`${tag_name}'."
+							log -E "Only attributes are allowed in tag \`${tag_name}'."
 							return 1
 						}
 						((attr_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
