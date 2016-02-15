@@ -3248,10 +3248,12 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							log -E "\`name' attribute is needed in an ipset tag."
 							return 1
 						elif [[ -z $str_stype ]]; then
-							log -E "\`type' attribute is needed in an ipset tag."
-							return 1
+							if ! check_set_exist "$str_set"; then # assume we want to add elements
+								log -e "\`type' attribute is empty for set \`$str_set'. Assumuning adding of elements."
+							fi
+						else
+							RESULT_ARR[IDX++]="ipset_create $str_set $str_stype ${arr_set_opts[*]}"
 						fi
-						RESULT_ARR[IDX++]="ipset_create $str_set $str_stype ${arr_set_opts[*]}"
 					;;
 					e|elem|element|elements)
 						((set_rule == 1)) || { log -E "Tag \`${tag_name}' is only valid within an ipset tag."; return 1; }
