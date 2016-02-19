@@ -2919,7 +2919,7 @@ if ((parse_files == 1)); then
 	xml_parser 'templates' < "$template_file" || {
 		exec 7>&-
 		[[ -e $parsed_file ]] && run_rm "$parsed_file"
-		log -E "Failed parsing templates file: \`$template_file'"
+		log -F "parsing templates file: \`$template_file'"
 		return $ER_LOAD
 	}
 	exec 7>&-
@@ -2930,7 +2930,7 @@ if ((parse_files == 1)); then
 	validate_generate_final_templates || {
 		exec 7>&-
 		[[ -e $parsed_file ]] && run_rm "$parsed_file"
-		log -E "Failed parsing templates file: \`$template_file'"
+		log -F "parsing templates file: \`$template_file'"
 		return $ER_LOAD
 	}
 	exec 7>&-

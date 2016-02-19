@@ -3161,7 +3161,7 @@ fi
 xml_interpreter_rules() {
 local -i root_found=0 tag_depth=0 IDX=0
 local str_root_tag="ip_array_root" str_root_attr="iptables_rules"
-local str_act tag_name str_attr str_attr_name str_attr_val attr_indicies str_cont tmp_content cont_indicies str_app_opts str_type str_set
+local str_act tag_name str_attr str_attr_name str_attr_val attr_indicies str_cont tmp_content cont_indicies str_app_opts str_type str_set str_file
 local template_name ruleblock_name reverse_mode reverse_condition
 local -i tag_idx opt_idx attr_members cont_members opt_list_count opt_count global_opts crule_opts templ_idx rblock_idx c_rule q_rule t_rule pf_rule g_rule set_rule elem_rule
 local -a RESULT_ARR ARR_GLOBAL_OPTS ARR_TMP_GLOB_TEMPLATE ARR_GLOB_TMP_RULEBLOCK ARR_CRULE_OPTS arr_set_opts
@@ -3179,10 +3179,10 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
 			cont_indicies=$(arr_indicies "ARR_CONT_NO_${tag_idx}")
 			if ((root_found == 0)); then
-				[[ ${tag_name} = ${str_root_tag} ]] || {
+				if [[ $tag_name != $str_root_tag ]]; then
 					log -E "Root tag \`${str_root_tag}' needed."
 					return 1
-				}
+				fi
 				while read -r str_attr_name str_attr_val; do
 					case "${str_attr_name}" in
 						syntax_version)
@@ -3213,7 +3213,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 			else
 				let ++tag_depth
 				case "${tag_name}" in
-					s|set|ipset)
+					s|set|ipset|ipsets)
 						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
 						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
 						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
@@ -3225,9 +3225,16 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							return 1
 						}
 						((attr_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
-						set_rule=1 str_set="" str_stype="" arr_set_opts=()
+						set_rule=1 str_set="" str_stype="" str_file="" arr_set_opts=()
 						while read -r str_attr_name str_attr_val; do
 							case "$str_attr_name" in
+								import_xml)
+									str_file="$str_attr_val"
+									if ! [[ -r $str_file ]]; then
+										log -x "$str_file"
+										return 1
+									fi
+								;;
 								name)
 									 str_set="$str_attr_val"
 								;;
@@ -3244,15 +3251,19 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									return 1
 							esac
 						done < <(_get_attribute_data)
-						if [[ -z $str_set ]]; then
-							log -E "\`name' attribute is needed in an ipset tag."
-							return 1
-						elif [[ -z $str_stype ]]; then
-							if ! check_set_exist "$str_set"; then # assume we want to add elements
-								log -e "\`type' attribute is empty for set \`$str_set'. Assumuning adding of elements."
-							fi
+						if [[ $str_file ]]; then
+							( xml_parser 'ipsets' < "$str_file" ) || return 1
 						else
-							RESULT_ARR[IDX++]="ipset_create $str_set $str_stype ${arr_set_opts[*]}"
+							if [[ -z $str_set ]]; then
+								log -E "\`name' attribute is needed in an ipset tag."
+								return 1
+							elif [[ -z $str_stype ]]; then
+								if ! check_set_exist "$str_set"; then # assume we want to add elements
+									log -e "\`type' attribute is empty for set \`$str_set'. Assumuning adding of elements."
+								fi
+							else
+								RESULT_ARR[IDX++]="ipset_create $str_set $str_stype ${arr_set_opts[*]}"
+							fi
 						fi
 					;;
 					e|elem|element|elements)
@@ -3264,13 +3275,13 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 						if ((attr_members > 0)); then
 							while read -r str_attr_name str_attr_val; do
 								case "$str_attr_name" in
-									import_plain)
+									import_plain) # import elements from file - newline separated entries
 										if ! [[ -r $str_attr_val ]]; then
 											log -E "File to import set elements from does not exist: \`$str_attr_val'."
 											return 1
 										fi
 										while read -r -t $GLOBAL_READ_TIMEOUT; do
-											REPLY="${REPLY%%#*}"
+											REPLY="${REPLY%%#*}" # remove comments [#]
 											[[ $REPLY && $REPLY != +([[:blank:]]) ]] || continue
 											if [[ $REPLY =~ $str_regex ]]; then
 												# catch comments and escape the string containing spaces
@@ -3279,8 +3290,6 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 												RESULT_ARR[IDX++]="ipset_add $str_set $REPLY"
 											fi
 										done < "$str_attr_val"
-									;;
-									import_xml) :
 									;;
 									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
 										return 1
@@ -3453,18 +3462,18 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_mode=${reverse_mode}\""
 								[[ ${reverse_condition} ]] && ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_condition=\\\"${reverse_condition}\\\"\""
-# "
+	# "
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
 							fi
 							for i in ${!ARR_GLOBAL_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
-# "
+	# "
 							done
 							for i in ${!ARR_CRULE_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
-# "
+	# "
 							done
 							for i in ${cont_indicies}; do
 								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
@@ -3476,11 +3485,11 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									fi
 									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
-# "
+	# "
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 								done
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-# "
+	# "
 							done
 							if ((attr_members > 0)); then
 								for i in ${attr_indicies}; do
@@ -3492,10 +3501,10 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
 									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
-# "
+	# "
 								done
 								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-# "
+	# "
 							fi
 							if ((opt_list_count == max_optlist)); then
 								for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
@@ -3515,7 +3524,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
 							for i in ${!ARR_GLOBAL_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
-# "
+	# "
 								if [[ ${ARR_GLOBAL_OPTS[i]#*=} = *[[:blank:]]* ]]; then
 									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_GLOBAL_OPTS[i]#*=}' "
 								else
@@ -3524,7 +3533,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							done
 							for i in ${!ARR_CRULE_OPTS[@]}; do
 								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
-# "
+	# "
 								if [[ ${ARR_CRULE_OPTS[i]#*=} = *[[:blank:]]* ]]; then
 									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_CRULE_OPTS[i]#*=}' "
 								else
@@ -3536,7 +3545,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								eval 'set -- '"$(re_normalize str_cont)"
 								for str in "$@"; do
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str%%=*}\""
-# "
+	# "
 									if [[ ${str#*=} = *[[:blank:]]* ]]; then
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str#*=}' "
 									else
@@ -3544,23 +3553,23 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 									fi
 								done
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-# "
+	# "
 							done
 							if ((attr_members > 0)); then
 								for i in ${attr_indicies}; do
 									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
 									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
 									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name%%=*}\""
-# "
+	# "
 									if [[ ${str_attr_val} = *[[:blank:]]* ]]; then
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="\\\"${str_attr_val}\\\" "
-# "
+	# "
 									else
 										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
 									fi
 								done
 								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
-# "
+	# "
 							fi
 							for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
 								RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
@@ -3676,6 +3685,93 @@ else
 fi
 } # -------------------------------------------------------------------------
 
+xml_interpreter_ipsets() {
+local -i tag_idx ipset_root_found=0 in_header=0 IDX=0
+local attr_indicies str_act tag_name str_set str_type
+local -a arr_header arr_element RESULT_ARR
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "$str_act" in
+		open)
+			if ((ipset_root_found == 0)) && [[ $tag_name != ipsets ]]; then
+				log -E "Root tag \`ipsets' needed."
+				return 1
+			fi
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+			case "$tag_name" in
+				ipsets) ipset_root_found=1
+				;;
+				ipset) str_set="" str_type="" str_options="" arr_header=()
+					while read -r str_attr_name str_attr_val; do
+						case "$str_attr_name" in
+							name) str_set="$str_attr_val" ;;
+							*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+								return 1
+						esac
+					done < <(_get_attribute_data)
+				;;
+				type)
+					str_type="$str_cont"
+				;;
+				header)
+					in_header=1
+				;;
+				family|hashsize|maxelem|range|netmask)
+					arr_header[${#arr_header[@]}]="$tag_name $str_cont"
+				;;
+				counters|skbinfo|forceadd)
+					str_options+=" $tag_name"
+				;;
+				memsize|references|revision)
+					: # ignoring those
+				;;
+				timeout)
+					if ((in_header)); then
+						arr_header[${#arr_header[@]}]="$tag_name $str_cont"
+					elif ((in_member)); then
+						arr_element[${#arr_element[@]}]="$tag_name $str_cont"
+					fi
+				;;
+				member)
+					in_member=1 arr_element=() str_comment=""
+				;;
+				elem)
+					arr_element[${#arr_element[@]}]="$str_cont"
+				;;
+				comment)
+					str_comment="$tag_name \\\"$str_cont\\\""
+				;;
+				skbmark|skbprio|skbqueue)
+					arr_element[${#arr_element[@]}]="$tag_name $str_cont"
+				;;
+			esac
+		;;
+		close)
+			case "$tag_name" in
+				ipsets) ipset_root_found=0
+				;;
+				header)
+					RESULT_ARR[IDX++]="ipset_create $str_set $str_type ${arr_header[*]} $str_options"
+					in_header=0
+				;;
+				member)
+					in_member=0
+					RESULT_ARR[IDX++]="ipset_add $str_set ${arr_element[*]} $str_comment"
+				;;
+			esac
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No ipsets found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
 xml_parser() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_interpreter="$1"
@@ -3738,6 +3834,16 @@ while read -r; do let line_count+=1
 			cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
 			local -a "ARR_CONT_NO_${tag_idx}"
 			ARR_TAGS[tag_idx++]="open ${tag_name}" ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])/\>* ]]; then
+		# NEW TAG IN LINE and immidiate closing <tag/>
+			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%'/>'*}"; tag_name="${tag_name//[[:blank:]]/}"
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag: '${tag_name}' on line #${line_count}: '${line}'"
+			line="${line#*<*/>}"
+			cont_idx=0 cont_expect=0 attr_expect=0 comment_idx=0
+			ARR_TAGS[tag_idx++]="open ${tag_name}"
+			ARR_TAGS[tag_idx++]="close ${tag_name}"
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
 		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag attrib=val >
@@ -3876,6 +3982,7 @@ case "${str_interpreter}" in
 	rules) xml_interpreter_rules || return ;;
 	ruleblocks) xml_interpreter_ruleblocks || return ;;
 	templates) xml_interpreter_templates || return ;;
+	ipsets) xml_interpreter_ipsets || return ;;
 esac
 } # -------------------------------------------------------------------------
 
