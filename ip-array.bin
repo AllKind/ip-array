@@ -126,7 +126,8 @@ declare -r IPARRAY_MAIN_FUNCTIONS="${me}_main_functions"
 declare -r IPARRAY_IPT_FUNCTIONS="${me}_ipt_functions ${me}_ipset_functions"
 declare -r IPARRAY_TC_FUNCTIONS="${me}_tc_functions"
 declare -r IPARRAY_IACTIVE_FUNCTIONS="${me}_interactive_functions"
-declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS"
+declare -r IPARRAY_XML_FUNCTIONS="${me}_xml_functions"
+declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS $IPARRAY_XML_FUNCTIONS"
 
 # don't perform autosave, modprobe, proc, compatibility,... check - yes/no
 declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
