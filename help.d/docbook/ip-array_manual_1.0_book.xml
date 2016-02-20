@@ -72,7 +72,7 @@
               <para>The <command>iptables</command> program.</para>
             </listitem>
             <listitem>
-              <para>The <command>ipset</command> program (optional) . Version 4.x to 6.22 are
+              <para>The <command>ipset</command> program (optional) . Version 4.x to 6.27 are
                 supported.</para>
             </listitem>
             <listitem>
@@ -185,7 +185,7 @@
               contain values).</para>
           </listitem>
           <listitem>
-            <para>Definition of templates, ruleblocks and rules is done in a simple XML
+            <para>Definition of templates, ruleblocks, rules and ipset sets is done in a simple XML
               dialect.</para>
           </listitem>
           <listitem>
@@ -197,7 +197,7 @@
           </listitem>
           <listitem>
             <para>ipset integration. Older ipset versions (4.x, 5.x) are supported. Compatible with
-              ipset v. 6 to 6.22+.</para>
+              ipset v. 6 to 6.27+.</para>
           </listitem>
           <listitem>
             <para>Chain creation (by adding them in the <varname>CHAIN_MAP</varname>
@@ -419,7 +419,7 @@
           <para>Each <link linkend="name_def_rule">rule</link> entry in a ruleblock is interpreted
             column-wise. How the values in each column are interpreted, is defined in the template
             called with the ruleblock.</para>
-          <para>The following example will show how a rule in a ruleblock , structured according to
+          <para>The following example will show how a rule in a ruleblock, structured according to
             the definitions in a template, may look:</para>
           <table>
             <title>Example of Template and Ruleblock relationship</title>
@@ -685,7 +685,7 @@
         <note>
           <para>There is <emphasis role="bold">no upgrade path</emphasis> from older ip-array
             versions (0.05.xx) available, but in the <filename>examples</filename> directory there
-            is a set of rule and ruleblock files, which is mimics the old configuration almost
+            is a set of rule and ruleblock files, which mimics the old configuration almost
             completely.</para>
         </note>
       </para>
@@ -2710,11 +2710,12 @@
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
           attribule and the syntax version:</para>
-        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="1.0"></code></para>
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="1.1"></code></para>
         <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
           definition.</para>
         <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
-          version (only 1.0 is available by now).</para>
+          version. 1.0 and 1.1 are available by now. The ipset tags were introduced with version
+          1.1.</para>
         <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not
           XML compatible). Tags can be closed by a simple `/>'. Attributes can have their value
           enclosed inside single quotes, or not quoted at all.</para>
@@ -2734,8 +2735,10 @@
                 or single quotes. In both cases the left hand side (left of the `=') is the iptables
                 argument and the right hand side is its value.</para>
               <para>Examples:</para>
-              <para><code>&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+              <para><code>&lt;rule> table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
                   &lt;/rule></code></para>
+              <para><code>&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                  /></code></para>
               <para><code>&lt;r> table=filter chain=INPUT target=LOG log_prefix="my log message"
                   /></code></para>
             </listitem>
@@ -2837,6 +2840,63 @@
               </para>
               <para>
                 <programlisting>&lt;f name="lan_ftp" /></programlisting>
+              </para>
+            </listitem>
+            <listitem>
+              <para>&lt;ipsets> or the short forms: &lt;s>, &lt;set>, &lt;ipset></para>
+              <para>This tag allows to define ipset sets. It is not valid inside any other but the
+                root tag. Only attributes are allowed, no content.</para>
+              <para>The syntax is:
+                <synopsis>&lt;ipsets name="set-name" [ type="set-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option-name" ] >
+    [ &lt;elements> content &lt;/elements> ]
+&lt;/ipsets>
+or
+&lt;ipsets import_xml="file-name" /></synopsis></para>
+              <para>For the first form the attributes <emphasis role="italic">name</emphasis> and
+                  <emphasis role="italic">type</emphasis> are mandatory when creating a set. If only
+                elements are to be added using the &lt;elements> tag, only the name of the set is
+                required. All header options that require a value must be expressed using the form:
+                  <code>option-name=value</code>. All other header options must be put into the
+                  <emphasis role="italic">options</emphasis> attribute.</para>
+              <para>For the second for a file can be imported. This file must be in the format as
+                used with ipset -output xml.</para>
+              <para>Examples:</para>
+              <para>
+                <programlisting>&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" />
+
+&lt;ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules.d/import_ipsets.xml" /></programlisting>
+              </para>
+            </listitem>
+            <listitem>
+              <para>&lt;elements> or the short forms: &lt;e>, &lt;elem>, &lt;element></para>
+              <para>This tags allows to add elements to an ipset set. It is of course only valid
+                inside an &lt;ipsets> tag (see above). </para>
+              <para>The syntax is:
+                <synopsis>&lt;elements [ import_plain="file-name" ] >
+    [ content ]
+    [ ... ]
+&lt;/elements></synopsis></para>
+              <para>The optional import_plain attribute is available inside this tag. It allows to
+                import elements from a file. The file must contain one element per line. Shell style
+                comments (#) are allowed.</para>
+              <para>The syntax for content and inside the file is as with ipset without writing
+                ipset add set-name ... When using the comment option and the comment contains
+                spaces, it must be enclosed inside double quotes.</para>
+              <para>Examples:</para>
+              <para>
+                <programlisting>&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" >
+    &lt;elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules.d/foo-elements.txt" >
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements>
+&lt;/set>
+
+&lt;set name="foo">
+    &lt;elements>
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements>
+&lt;/set></programlisting>
               </para>
             </listitem>
             <listitem>
