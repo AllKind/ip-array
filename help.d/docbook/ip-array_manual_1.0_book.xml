@@ -2900,7 +2900,7 @@ or
               </para>
             </listitem>
             <listitem>
-              <para>All other iptables arguments. We'll call them <emphasis role="italic">global
+              <para>All other iptables arguments. We'll call them <emphasis role="bold">global
                   arguments</emphasis>.</para>
               <para>The list of valid arguments can be retrieved by running: <command>ip-array show
                   -sc ipt_args[,...]</command>.</para>
@@ -2909,7 +2909,7 @@ or
                 the creation of a rule. Except they are terminated by a <emphasis role="underline"
                   >&lt;rule></emphasis> or a <emphasis role="underline"
                   >&lt;combined_rule></emphasis>, in which case their closing will not cause
-                additional rules to be created, unless a new tag is opend (and then closed
+                additional rules to be created, unless a new tag is opened (and then closed
                 afterwards to create a rule), which will start a new counter like before. </para>
               <important>
                 <para>They will not be applied to template rules!</para>
@@ -2925,7 +2925,7 @@ or
               </para>
               <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
               <para>
-                <programlisting>&lt;table> filter &lt;chain name=INPUT>
+                <programlisting>&lt;table> filter &lt;chain name=INPUT/>
     &lt;rule> rule1 />
     &lt;rule> rule2 />
 /> /></programlisting>

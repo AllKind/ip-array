@@ -4,18 +4,20 @@
             style. There are different rule tags available, as well as public functions. For each
             iptables table (if configured to be used) there must be at least one rule file
             defined.</p></div><div class="refsect1" lang="en"><a name="d0e52"></a><h2>Syntax</h2><p>A rule definition file must contain the root tag including the describing name
-            attribule and the syntax version:</p><p><code class="code">&lt;ip_array_root name="iptables_rules" syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an iptables rule
+            attribule and the syntax version:</p><p><code class="code">&lt;ip_array_root name="iptables_rules" syntax_version="1.1"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an iptables rule
             definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
-            version (only 1.0 is available by now).</p><p>The XML syntax can be used in a <span class="italic">relaxed</span> way (not XML
+            version. 1.0 and 1.1 are available by now. The ipset tags were introduced with version
+            1.1.</p><p>The XML syntax can be used in a <span class="italic">relaxed</span> way (not XML
             compatible). Tags can be closed by a simple `/&gt;'. Attributes can have their value
-            enclosed inside single quotes, or not quoted at all.</p></div><div class="refsect1" lang="en"><a name="d0e75"></a><h2>Elements</h2><div class="itemizedlist"><ul type="disc"><li><p>&lt;rule&gt; or the short form &lt;r&gt;</p><p>A <span class="bold"><strong>single rule</strong></span> entry. All iptables arguments
+            enclosed inside single quotes, or not quoted at all.</p></div><div class="refsect1" lang="en"><a name="d0e75"></a><h2>Tags</h2><div class="itemizedlist"><ul type="disc"><li><p>&lt;rule&gt; or the short form &lt;r&gt;</p><p>A <span class="bold"><strong>single rule</strong></span> entry. All iptables arguments
                     can be used inside a rule tag. The list of valid arguments can be retrieved by
                     running: <span class="command"><strong>ip-array show -sc ipt_args[,...]</strong></span>.</p><p>They can be used as attributes of the tag, or as content inside the tag. In
                     the first form they do not need be enclosed inside quotes (relaxed XML), unless
                     the value contains a whitespace. Values with whitespace must be enclosed within
                     double or single quotes. In both cases the left hand side (left of the `=') is
-                    the iptables argument and the right hand side is its value.</p><p>Examples:</p><p><code class="code">&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
-                        &lt;/rule&gt;</code></p><p><code class="code">&lt;r&gt; table=filter chain=INPUT target=LOG log_prefix="my log message"
+                    the iptables argument and the right hand side is its value.</p><p>Examples:</p><p><code class="code">&lt;rule&gt; table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                        &lt;/rule&gt;</code></p><p><code class="code">&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                        /&gt;</code></p><p><code class="code">&lt;r&gt; table=filter chain=INPUT target=LOG log_prefix="my log message"
                         /&gt;</code></p></li><li><p>&lt;combined_rule&gt; or the short form &lt;cr&gt;</p><p>&acute;<span class="bold"><strong>Combined rules</strong></span> allow to create reverse
                     traffic rules like with templates and ruleblocks with the reverse_mode=reverse
                     option, but in a dynamic way.</p><p>It has these attributes available:</p><p>
@@ -77,12 +79,51 @@
 &lt;/pub_func&gt;</pre><p>
                 </p><p>
                     </p><pre class="programlisting">&lt;f name="lan_ftp" /&gt;</pre><p>
-                </p></li><li><p>All other iptables arguments. We'll call them <span class="italic">global
-                        arguments</span>.</p><p>The list of valid arguments can be retrieved by running: <span class="command"><strong>ip-array
+                </p></li><li><p>&lt;ipsets&gt; or the short forms: &lt;s&gt;, &lt;set&gt;, &lt;ipset&gt;</p><p>This tag allows to define ipset sets. It is not valid inside any other but the
+                    root tag. Only attributes are allowed, no content.</p><p>The syntax is:
+                    </p><pre class="synopsis">&lt;ipsets name="set-name" [ type="set-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option-name" ] &gt;
+    [ &lt;elements&gt; content &lt;/elements&gt; ]
+&lt;/ipsets&gt;
+or
+&lt;ipsets import_xml="file-name" /&gt;</pre><p>For the first form the attributes <span class="italic">name</span> and
+                        <span class="italic">type</span> are mandatory when creating a set.
+                    If only elements are to be added using the &lt;elements&gt; tag, only the name of
+                    the set is required. All header options that require a value must be expressed
+                    using the form: <code class="code">option-name=value</code>. All other header options must be
+                    put into the <span class="italic">options</span> attribute.</p><p>For the second for a file can be imported. This file must be in the format as
+                    used with ipset -output xml.</p><p>Examples:</p><p>
+                    </p><pre class="programlisting">&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" /&gt;
+
+&lt;ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules.d/import_ipsets.xml" /&gt;</pre><p>
+                </p></li><li><p>&lt;elements&gt; or the short forms: &lt;e&gt;, &lt;elem&gt;, &lt;element&gt;</p><p>This tags allows to add elements to an ipset set. It is of course only valid
+                    inside an &lt;ipsets&gt; tag (see above). </p><p>The syntax is:
+                    </p><pre class="synopsis">&lt;elements [ import_plain="file-name" ] &gt;
+    [ content ]
+    [ ... ]
+&lt;/elements&gt;</pre><p>The optional import_plain attribute is available inside this tag. It allows to
+                    import elements from a file. The file must contain one element per line. Shell
+                    style comments (#) are allowed.</p><p>The syntax for content and inside the file is as with ipset without writing
+                    ipset add set-name ... When using the comment option and the comment contains
+                    spaces, it must be enclosed inside double quotes.</p><p>Examples:</p><p>
+                    </p><pre class="programlisting">&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" &gt;
+    &lt;elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules.d/foo-elements.txt" &gt;
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements&gt;
+&lt;/set&gt;
+
+&lt;set name="foo"&gt;
+    &lt;elements&gt;
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements&gt;
+&lt;/set&gt;</pre><p>
+                </p></li><li><p>All other iptables arguments. We'll call them <span class="bold"><strong>global
+                        arguments</strong></span>.</p><p>The list of valid arguments can be retrieved by running: <span class="command"><strong>ip-array
                         show -sc ipt_args[,...]</strong></span>.</p><p>These can be used to apply their value to all other rules following
                     (grouping). Or to build rules by their own. In the second case, the closing of a
                     tag will cause the creation of a rule. Except they are terminated by a <span class="underline">&lt;rule&gt;</span> or a <span class="underline">&lt;combined_rule&gt;</span>, in which case their closing will not cause
-                    additional rules to be created, unless a new tag is opend (and then closed
+                    additional rules to be created, unless a new tag is opened (and then closed
                     afterwards to create a rule), which will start a new counter like before. </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>They will not be applied to template rules!</p></div><p>In example:</p><p>
                     </p><pre class="programlisting">&lt;table name="filter"&gt;
     &lt;chain name="INPUT"&gt;
@@ -91,7 +132,7 @@
     &lt;/chain&gt;
 &lt;/table&gt;</pre><p>
                 </p><p>Or in the <span class="italic">relaxed</span> way:</p><p>
-                    </p><pre class="programlisting">&lt;table&gt; filter &lt;chain name=INPUT&gt;
+                    </p><pre class="programlisting">&lt;table&gt; filter &lt;chain name=INPUT/&gt;
     &lt;rule&gt; rule1 /&gt;
     &lt;rule&gt; rule2 /&gt;
 /&gt; /&gt;</pre><p>
@@ -106,6 +147,6 @@
         &lt;target&gt; DROP &lt;/target&gt;
     &lt;/chain&gt;
 &lt;/table&gt;</pre><p>
-                </p></li></ul></div></div><div class="refsect1" lang="en"><a name="d0e250"></a><h2>See also</h2><p>
+                </p></li></ul></div></div><div class="refsect1" lang="en"><a name="d0e305"></a><h2>See also</h2><p>
             <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
         </p></div></div></body></html>

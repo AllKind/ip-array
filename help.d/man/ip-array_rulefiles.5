@@ -2,12 +2,12 @@
 .\"     Title: ip-array_rulefiles
 .\"    Author: AllKind <AllKind@fastest.cc>
 .\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 02/06/2016
+.\"      Date: 02/20/2016
 .\"    Manual: ip-array 1.0
 .\"    Source: ip-array 1.0
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_RULEFILES" "5" "02/06/2016" "ip-array 1.0" "ip\-array 1\&.0"
+.TH "IP\-ARRAY_RULEFILES" "5" "02/20/2016" "ip-array 1.0" "ip\-array 1\&.0"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -43,7 +43,7 @@ XML style\&. There are different rule tags available, as well as public function
 .PP
 A rule definition file must contain the root tag including the describing name attribule and the syntax version:
 .PP
-<ip_array_root name="iptables_rules" syntax_version="1\&.0">
+<ip_array_root name="iptables_rules" syntax_version="1\&.1">
 .PP
 The
 \fBname\fR
@@ -51,12 +51,12 @@ attribute tells us it is an iptables rule definition\&.
 .PP
 The
 \fBsyntax_version\fR
-attribute defines the syntax version (only 1\&.0 is available by now)\&.
+attribute defines the syntax version\&. 1\&.0 and 1\&.1 are available by now\&. The ipset tags were introduced with version 1\&.1\&.
 .PP
 The XML syntax can be used in a
 \fIrelaxed\fR
 way (not XML compatible)\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their value enclosed inside single quotes, or not quoted at all\&.
-.SH "ELEMENTS"
+.SH "TAGS"
 .sp
 .RS 4
 .ie n \{\
@@ -77,7 +77,9 @@ They can be used as attributes of the tag, or as content inside the tag\&. In th
 .sp
 Examples:
 .sp
-<rule table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" </rule>
+<rule> table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" </rule>
+.sp
+<rule table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" />
 .sp
 <r> table=filter chain=INPUT target=LOG log_prefix="my log message" />
 .RE
@@ -337,8 +339,124 @@ Examples:
 .sp -1
 .IP \(bu 2.3
 .\}
+<ipsets> or the short forms: <s>, <set>, <ipset>
+.sp
+This tag allows to define ipset sets\&. It is not valid inside any other but the root tag\&. Only attributes are allowed, no content\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<ipsets name="set\-name" [ type="set\-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option\-name" ] >
+    [ <elements> content </elements> ]
+</ipsets>
+or
+<ipsets import_xml="file\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the first form the attributes
+\fIname\fR
+and
+\fItype\fR
+are mandatory when creating a set\&. If only elements are to be added using the <elements> tag, only the name of the set is required\&. All header options that require a value must be expressed using the form:
+option\-name=value\&. All other header options must be put into the
+\fIoptions\fR
+attribute\&.
+.sp
+For the second for a file can be imported\&. This file must be in the format as used with ipset \-output xml\&.
+.sp
+Examples:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" />
+
+<ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules\&.d/import_ipsets\&.xml" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<elements> or the short forms: <e>, <elem>, <element>
+.sp
+This tags allows to add elements to an ipset set\&. It is of course only valid inside an <ipsets> tag (see above)\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<elements [ import_plain="file\-name" ] >
+    [ content ]
+    [ \&.\&.\&. ]
+</elements>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The optional import_plain attribute is available inside this tag\&. It allows to import elements from a file\&. The file must contain one element per line\&. Shell style comments (#) are allowed\&.
+.sp
+The syntax for content and inside the file is as with ipset without writing ipset add set\-name \&.\&.\&. When using the comment option and the comment contains spaces, it must be enclosed inside double quotes\&.
+.sp
+Examples:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" >
+    <elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules\&.d/foo\-elements\&.txt" >
+        10\&.0\&.0\&.1 packets 3 comment "My sophisticated comment"
+        10\&.0\&.0\&.2
+    </elements>
+</set>
+
+<set name="foo">
+    <elements>
+        10\&.0\&.0\&.1 packets 3 comment "My sophisticated comment"
+        10\&.0\&.0\&.2
+    </elements>
+</set>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 All other iptables arguments\&. We\*(Aqll call them
-\fIglobal arguments\fR\&.
+\fBglobal arguments\fR\&.
 .sp
 The list of valid arguments can be retrieved by running:
 \fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
@@ -346,7 +464,7 @@ The list of valid arguments can be retrieved by running:
 These can be used to apply their value to all other rules following (grouping)\&. Or to build rules by their own\&. In the second case, the closing of a tag will cause the creation of a rule\&. Except they are terminated by a
 \fI<rule>\fR
 or a
-\fI<combined_rule>\fR, in which case their closing will not cause additional rules to be created, unless a new tag is opend (and then closed afterwards to create a rule), which will start a new counter like before\&.
+\fI<combined_rule>\fR, in which case their closing will not cause additional rules to be created, unless a new tag is opened (and then closed afterwards to create a rule), which will start a new counter like before\&.
 .if n \{\
 .sp
 .\}
@@ -391,7 +509,7 @@ way:
 .RS 4
 .\}
 .nf
-<table> filter <chain name=INPUT>
+<table> filter <chain name=INPUT/>
     <rule> rule1 />
     <rule> rule2 />
 /> />
