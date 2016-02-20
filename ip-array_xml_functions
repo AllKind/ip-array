@@ -467,7 +467,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 								type)
 									 str_stype="$str_attr_val"
 								;;
-								timeout|comment|maxelem|hashsize|family|netmask|range|size)
+								timeout|maxelem|hashsize|family|netmask|range|size)
 									arr_set_opts[${#arr_set_opts[@]}]="$str_attr_name $str_attr_val"
 								;;
 								opt|opts|options)
@@ -939,21 +939,41 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					done < <(_get_attribute_data)
 				;;
 				type)
+					if [[ -z $str_set ]]; then
+						log -E "Need \`ipset' tag opened before defining \`$tag_name'."
+						return 1
+					fi
 					str_type="$str_cont"
 				;;
 				header)
+					if [[ -z $str_type ]]; then
+						log -E "Need \`type' tag before defining \`$tag_name'."
+						return 1
+					fi
 					in_header=1
 				;;
 				family|hashsize|maxelem|range|netmask)
+					if ! ((in_header)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' tag."
+						return 1
+					fi
 					arr_header[${#arr_header[@]}]="$tag_name $str_cont"
 				;;
 				counters|skbinfo|forceadd)
+					if ! ((in_header)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' tag."
+						return 1
+					fi
 					str_options+=" $tag_name"
 				;;
 				memsize|references|revision)
 					: # ignoring those
 				;;
 				timeout)
+					if ! ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' or \`member' tag."
+						return 1
+					fi
 					if ((in_header)); then
 						arr_header[${#arr_header[@]}]="$tag_name $str_cont"
 					elif ((in_member)); then
@@ -961,16 +981,44 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 					fi
 				;;
 				member)
+					if ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside an \`ipset' tag."
+						return 1
+					fi
 					in_member=1 arr_element=() str_comment=""
 				;;
 				elem)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
 					arr_element[${#arr_element[@]}]="$str_cont"
 				;;
 				comment)
-					str_comment="$tag_name \\\"$str_cont\\\""
+					if ! ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' or \`member' tag."
+						return 1
+					fi
+					if ((in_header)); then
+						str_options+=" $tag_name"
+					elif ((in_member)); then
+						str_comment="$tag_name \\\"$str_cont\\\""
+					fi
+
 				;;
-				skbmark|skbprio|skbqueue)
+				bytes|packets|skbmark|skbprio|skbqueue)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
 					arr_element[${#arr_element[@]}]="$tag_name $str_cont"
+				;;
+				nomatch)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
+					arr_element[${#arr_element[@]}]="$tag_name"
 				;;
 			esac
 		;;
