@@ -647,7 +647,7 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 		_edit_rb_line && "$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to edit another rule?" $w_height $w_with
 	done
 fi
-r_file="$SAVE_DIR/${r_name}.txt"
+r_file="$SAVE_DIR/${r_name}.xml"
 if ((${#arr_rb[*]})); then
 	mutex_on || bail_out $?
 	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
@@ -709,7 +709,7 @@ t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
 
 [[ $t_name || $t_name != @(T_|TEMPLATE_|T|TEMPLATE) ]] || return 1
 [[ $t_name = @(T|TEMPLATE)_+([[:word:]]) ]] || return 1
-local t_file="$SAVE_DIR/${t_name}.txt"
+local t_file="$SAVE_DIR/${t_name}.xml"
 
 xopts=( $("$WHIPTAIL" "${arr_title[@]}" --separate-output \
 	--checklist "Choose the options for the template $t_name" $w_height $w_with $l_height "${arr_opts[@]}" 2>&1 > /dev/tty) )
