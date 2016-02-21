@@ -719,7 +719,7 @@ t_name=$("$WHIPTAIL" "${arr_title[@]}" --inputbox \
 local t_file="$SAVE_DIR/${t_name}.xml"
 
 xopts=( $("$WHIPTAIL" "${arr_title[@]}" --separate-output \
-	--checklist "Choose the options for the template $t_name" $w_height $w_with $l_height "${arr_opts[@]}" 2>&1 > /dev/tty) )
+	--checklist "Choose the options for the template $t_name.\nMultiple choice." $w_height $w_with $l_height "${arr_opts[@]}" 2>&1 > /dev/tty) )
 
 if ((${#xopts[*]})); then
 	for ((x=0; x<=${#xopts[*]}; x++)); do
