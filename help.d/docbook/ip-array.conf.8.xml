@@ -2,7 +2,7 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
 <refentry xmlns="http://docbook.org/ns/docbook">
     <info><author>
-        <personname>AllKind aka Mart Frauenlob</personname>
+            <personname>AllKind aka Mart Frauenlob</personname>
             <email>AllKind@fastest.cc</email>
             <personblurb>
                 <para>Some guy infront of a screen.</para>
@@ -52,10 +52,10 @@
                             appearence. i.e. CONFIG_FILES="aliases.conf global.conf".</para>
                         <para>
                             <tip>
-                                <para>This is the only variable that needs to be insoide the main
+                                <para>This is the only variable that needs to be inside the main
                                     configuration file. All others can be placed into different
-                                    files of your choice and be listed in the above variable, in
-                                    order to be sourced from there.</para>
+                                    files of your choice and should be listed in the above variable,
+                                    in order to be sourced from there.</para>
                             </tip>
                         </para>
                     </listitem>

@@ -1539,9 +1539,9 @@
                     appearence. i.e. CONFIG_FILES="aliases.conf global.conf".</para>
                   <para>
                     <tip>
-                      <para>This is the only variable that needs to be insoide the main
-                        configuration file. All others can be placed into different files of your
-                        choice and be listed in the above variable, in order to be sourced from
+                      <para>This is the only variable that needs to be inside the main configuration
+                        file. All others can be placed into different files of your choice and
+                        should be listed in the above variable, in order to be sourced from
                         there.</para>
                     </tip>
                   </para>
@@ -1709,7 +1709,8 @@
               <varlistentry>
                 <term><varname>IPSET_RULES</varname></term>
                 <listitem>
-                  <para>Names of the ipset rule files.</para>
+                  <para>Names of the ipset rule files. These ipset rules are table independent.
+                  </para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -2778,7 +2779,7 @@
                 applied to rules outside of the combined rule.</para>
               <para>
                 <note>
-                  <simpara>Inside combined rules the iptables arguments table and chain may be set
+                  <simpara>Inside combined rules the iptables arguments target and chain may be set
                     to a comma separated list (maximum 2 chains can be defined).</simpara>
                 </note>
               </para>

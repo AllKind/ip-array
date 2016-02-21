@@ -114,8 +114,8 @@
                     be applied to rules outside of the combined rule.</para>
                 <para>
                     <note>
-                        <simpara>Inside combined rules the iptables arguments table and chain may be
-                            set to a comma separated list (maximum 2 chains can be
+                        <simpara>Inside combined rules the iptables arguments target and chain may
+                            be set to a comma separated list (maximum 2 chains can be
                             defined).</simpara>
                     </note>
                 </para>
