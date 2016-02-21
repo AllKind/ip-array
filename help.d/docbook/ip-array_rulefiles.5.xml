@@ -263,7 +263,7 @@ or
                 </para>
                 <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
                 <para>
-                    <programlisting>&lt;table> filter &lt;chain name=INPUT/>
+                    <programlisting>&lt;table> filter &lt;chain name=INPUT>
     &lt;rule> rule1 />
     &lt;rule> rule2 />
 /> /></programlisting>

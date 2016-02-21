@@ -135,6 +135,7 @@ _choose_rule_action() { # sub function of iactive_rule_builder(). Choose action 
 	"combined_rule" "Grouped tags rule" off \
 	"template_rule" "Template based rule" off \
 	"public_function" "Public function(s)" off \
+	"ipset" "Create set / add elements" off \
 	"close" "Close last opened tag" off \
 	"comment" "Add a comment" off \
 	"view" "View the created rules" off 2>&1 >/dev/tty
@@ -182,9 +183,54 @@ while (($? == 0)); do
 done
 } # -------------------------------------------------------------------------
 
+_add_set_element() {
+local str_elem
+local -a arr_set_element=()
+x=0
+str_elem="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the element" $w_height $w_with 2>&1 >/dev/tty )"
+if (($? == 0)) && [[ $str_elem ]]; then
+	arr_set_element[x++]="$str_elem"
+else
+	return
+fi
+arr_tmp=( comment x bytes x packets x timeout x skbmark x skbprio x skbqueue x nomatch x )
+while (($? == 0)); do
+	((${#arr_tmp[@]})) || break
+	str_lhs=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
+		--menu "Choose an element option." $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 > /dev/tty)
+	if (($? == 0)); then
+		for i in ${!arr_tmp[*]}; do # remove dupes from the list
+			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
+				unset arr_tmp[i] arr_tmp[i+1]
+				break
+			fi
+		done
+		if [[ $str_lhs != nomatch ]]; then
+			str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for $str_lhs" $w_height $w_with 2>&1 >/dev/tty )"
+			if (($? == 0)) && [[ $str_rhs ]]; then
+				arr_set_element[x++]="$str_lhs"
+				if [[ $str_rhs = *+([[:blank:]])* ]]; then
+					arr_set_element[x++]="\"$str_rhs\"" #"
+				else
+					arr_set_element[x++]="$str_rhs"
+				fi
+			fi
+		else
+			arr_set_element[x++]="$str_lhs"
+		fi
+	else
+		false
+	fi
+done
+if ((${#arr_set_element[*]})); then
+	arr_content[content_idx++]="${str_indent}    <element> ${arr_set_element[*]} </element>"
+fi
+} # -------------------------------------------------------------------------
+
 _add_rules() { # sub function of iactive_rule_builder() - add different rule types
-local str_lhs str_rhs
-local -a arr_single_rule arr_attr
+local str_lhs str_rhs str str_opt str_tmp str_set str_type str_header
+local -a arr_single_rule arr_attr arr_header arr_types arr_tmp
+local -i i x
 local str_rule=$(_choose_rule_action)
 if [[ $str_rule = template_rule ]]; then
 	arr_content[content_idx++]="    <template_rule>"
@@ -303,6 +349,96 @@ elif [[ $str_rule = public_function ]]; then
 			"Enter parameters for the function \`${arr_tmp[0]}'. Empty value or cancel for none." $w_height $w_with 2>&1 >/dev/tty )
 		arr_content[content_idx++]="${str_indent}<pub_func> ${arr_tmp[*]} </pub_func>"
 	fi
+elif [[ $str_rule = ipset ]]; then
+	local str_set="" str_type=""
+	str_rule="$( "$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of ipset action" $w_height $w_with $l_height \
+		"Create set" "Create a set and optionally add elements" on \
+		"Import set" "Import set(s) from an ipset xml saved file" off \
+		"Import elements" "Import elements from file" off \
+		"Add elements" "Add elements to a set" off 2>&1 >/dev/tty )"
+	if [[ $str_rule = "Create set" ]]; then
+		str_set="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the set name" $w_height $w_with 2>&1 >/dev/tty )"
+		if [[ $str_set ]]; then
+			local -i i=0 x
+			local arr_types=()
+			while read -r; do
+				[[ $REPLY = "Supported set types:"* ]] && ((!i)) && i=1 && continue
+				((i)) || continue
+				if [[ $REPLY = *:* ]]; then
+					set -- $REPLY
+					if ! lsearch "$1" "${arr_types[@]}"; then
+						arr_types[${#arr_types[@]}]="$1"
+					fi
+				fi
+			done < <( ( run_ipset help ) 2>/dev/null )
+			arr_types=( $(printf "%s off\n" "${arr_types[@]}"|run_sort) )
+			str_type=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+				"Choose a set type" $w_height $w_with $l_height "${arr_types[@]}" 2>&1 >/dev/tty ) || return
+		fi
+		if [[ $str_type ]]; then
+			"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to set header options?" $w_height $w_with
+			if (($? == 0)); then
+				arr_tmp=() str_tmp="" str_opt=""
+				str_header="family forceadd hashsize markmask maxelem netmask range size counters comment skbinfo timeout"
+				while (($? == 0)); do arr_header=() x=0
+					if [[ $str_lhs ]]; then
+						str_header="${str_header/$str_lhs/}"
+					fi
+					for str in $str_header; do arr_header[x++]="$str off"; done
+					str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+						"Choose a header option" $w_height $w_with $l_height ${arr_header[*]} 2>&1 >/dev/tty ) || break
+					if [[ $str_lhs = @(family|hashsize|markmask|maxelem|netmask|range|size|timeout) ]]; then
+						str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for option $str_lhs" $w_height $w_with 2>&1 >/dev/tty )"
+						if (($? == 0)); then
+							arr_tmp[${#arr_tmp[@]}]="${str_lhs}=\"${str_rhs}\"" #"
+						fi
+					else
+						str_opt+=" $str_lhs"
+					fi
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to set another header option?" $w_height $w_with
+				done
+				if [[ $str_opt ]]; then
+					arr_tmp[${#arr_tmp[@]}]="options=\"${str_opt# }\"" #"
+				fi
+			fi
+			if ((${#arr_tmp[@]})); then
+				arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\" type=\"$str_type\" ${arr_tmp[*]}>" #"
+			else
+				arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\" type=\"$str_type\">" #"
+			fi
+			"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add an element?" $w_height $w_with
+			if (($? == 0)); then
+				while (($? == 0)); do
+					_add_set_element
+					"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another element?" $w_height $w_with
+				done
+			fi
+			arr_content[content_idx++]="${str_indent}</ipset>"
+		fi
+	elif [[ $str_rule = "Import set" ]]; then
+		str_tmp="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the file name" $w_height $w_with 2>&1 >/dev/tty )"
+		if [[ $str_tmp ]]; then
+			arr_content[content_idx++]="${str_indent}<ipset import_xml=\"$str_tmp\"/>" #"
+		fi
+	elif [[ $str_rule = "Import elements" ]]; then
+		str_set="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the set name" $w_height $w_with 2>&1 >/dev/tty )"
+		if [[ $str_set ]]; then
+			str_tmp="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the file name" $w_height $w_with 2>&1 >/dev/tty )"
+		fi
+		if [[ $str_tmp ]]; then
+			arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\" import_plain=\"$str_tmp\"/>" #"
+		fi
+	elif [[ $str_rule = "Add elements" ]]; then
+		str_set="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the set name" $w_height $w_with 2>&1 >/dev/tty )"
+		if [[ $str_set ]]; then
+			arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\">" #"
+			while (($? == 0)); do
+				_add_set_element
+				"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another element?" $w_height $w_with
+			done
+			arr_content[content_idx++]="${str_indent}</ipset>"
+		fi
+	fi
 elif [[ $str_rule = close ]]; then
 	if (($tag_idx > 0)); then
 		let tag_idx--
@@ -358,7 +494,7 @@ done
 if ((${#arr_content[@]})); then
 	mutex_on || bail_out $?
 	printf '<?xml version="1.0"?>\n\n' > "$r_file"
-	printf '<ip_array_root name="iptables_rules" syntax_version="1.0"\n' >> "$r_file"
+	printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
 	printf "%s\n" "${arr_content[@]}" >> "$r_file"
 	printf '</ip_array_root>\n' >> "$r_file"
 	cleanup_lock
