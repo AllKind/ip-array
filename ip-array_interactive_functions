@@ -73,7 +73,7 @@ for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
 	arr_tmp[x++]="${str_tmp}"
 	arr_tmp[x++]="item" # dummy item entry
 done
-v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+v_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
 	"Choose a variable" $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
 if (($? == 0)) && [[ $v_name ]]; then
 	for i in ${!arr_names[@]}; do
@@ -142,10 +142,10 @@ _choose_rule_action() { # sub function of iactive_rule_builder(). Choose action 
 } # -------------------------------------------------------------------------
 
 _add_template_rule() { # sub function of _add_rules() - Add a template rule
-t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
 	"Choose a template" $w_height $w_with $l_height "${arr_templ[@]}" 2>&1 >/dev/tty ) || return
 # choose one ruleblock
-r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist \
+r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
 	"Choose a ruleblock" $w_height $w_with $l_height "${arr_rb[@]}" 2>&1 >/dev/tty ) || return
 str_tmp=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
 	"Enter a template invocation command.\nLeave it empty, or cancel for none." $w_height $w_with 2>&1 >/dev/tty )
@@ -197,7 +197,7 @@ arr_tmp=( comment x bytes x packets x timeout x skbmark x skbprio x skbqueue x n
 while (($? == 0)); do
 	((${#arr_tmp[@]})) || break
 	str_lhs=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-		--menu "Choose an element option. Cancel for none." $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 > /dev/tty)
+		--menu "Choose an element option.\nCancel for none." $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 > /dev/tty)
 	if (($? == 0)); then
 		for i in ${!arr_tmp[*]}; do # remove dupes from the list
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
@@ -257,8 +257,8 @@ if [[ $str_rule = template_rule ]]; then
 elif [[ $str_rule = "ipt tag" ]]; then
 	arr_tmp=( "${x_args[@]}" )
 	while (($? == 0)); do
-		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem \
-			--menu "Choose an iptables argument." $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 > /dev/tty)
+		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Choose an iptables argument." \
+			$w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 > /dev/tty)
 		if (($? == 0)); then
 			for i in ${!arr_tmp[*]}; do # remove dupes from the list
 				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
@@ -294,7 +294,7 @@ elif [[ $str_rule = combined_rule ]]; then
 	arr_tmp=(msg "Log message" reverse_mode "Define reverse mode" reverse_condition "Condition to be true for activation of reverse mode")
 	while (($? == 0)); do
 		if ((${#arr_tmp[*]})); then
-			str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --menu "Choose a combined rule attribute. Cancel for none." \
+			str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --menu "Choose a combined rule attribute.\nCancel for none." \
 				$w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
 			if (($? == 0)); then
 				for x in ${!arr_tmp[*]}; do
@@ -406,10 +406,11 @@ elif [[ $str_rule = ipset ]]; then
 						str_header="${str_header/$str_lhs/}"
 					fi
 					for str in $str_header; do arr_header[x++]="$str off"; done
-					str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu \
-						"Choose a header option" $w_height $w_with $l_height ${arr_header[*]} 2>&1 >/dev/tty ) || break
+					str_lhs=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Choose a header option" \
+						$w_height $w_with $l_height ${arr_header[*]} 2>&1 >/dev/tty ) || break
 					if [[ $str_lhs = @(hashsize|markmask|maxelem|netmask|range|size|timeout) ]]; then
-						str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter a value for option $str_lhs" $w_height $w_with 2>&1 >/dev/tty )"
+						str_rhs="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
+							"Enter a value for option $str_lhs" $w_height $w_with 2>&1 >/dev/tty )"
 						if (($? == 0)); then
 							arr_tmp[${#arr_tmp[@]}]="${str_lhs}=\"${str_rhs}\"" #"
 						fi
@@ -458,12 +459,12 @@ elif [[ $str_rule = ipset ]]; then
 	elif [[ $str_rule = "Add elements" ]]; then
 		str_set="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the set name" $w_height $w_with 2>&1 >/dev/tty )"
 		if [[ $str_set ]]; then
-			arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\">" #"
+			arr_content[content_idx++]="${str_indent}    <ipset name=\"$str_set\">" #"
 			while (($? == 0)); do
 				_add_set_element
 				"$WHIPTAIL" "${arr_title[@]}" --yesno "Do you want to add another element?" $w_height $w_with
 			done
-			arr_content[content_idx++]="${str_indent}</ipset>"
+			arr_content[content_idx++]="${str_indent}    </ipset>"
 		fi
 	fi
 elif [[ $str_rule = close ]]; then
@@ -587,7 +588,7 @@ if (($? != 0)); then
 fi
 if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
-	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a template" $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	t_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Choose a template" $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
 	(($? == 0)) || return 1
 	[[ $t_name ]] || return 1
 else
@@ -622,7 +623,7 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 	# put list of all ruleblocks into an array
 	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
 	# choose one ruleblock
-	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --radiolist "Choose a ruleblock" $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
+	r_name=$( "$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Choose a ruleblock" $w_height $w_with $l_height "${arr_tmp[@]}" 2>&1 >/dev/tty )
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
 	$($copy_array "$r_name" arr_rb) || return 1
