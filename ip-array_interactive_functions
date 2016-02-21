@@ -129,16 +129,16 @@ fi
 } # -------------------------------------------------------------------------
 
 _choose_rule_action() { # sub function of iactive_rule_builder(). Choose action type for rule building.
-"$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of rule action" $w_height $w_with $l_height \
-	"ipt tag" "iptables argument tag" on \
-	"rule" "single rule" off \
-	"combined_rule" "Grouped tags rule" off \
-	"template_rule" "Template based rule" off \
-	"public_function" "Public function(s)" off \
-	"ipset" "Create set / add elements" off \
-	"close" "Close last opened tag" off \
-	"comment" "Add a comment" off \
-	"view" "View the created rules" off 2>&1 >/dev/tty
+"$WHIPTAIL" "${arr_title[@]}" --menu "Select the type of rule action" $w_height $w_with $l_height \
+	"ipt tag" "iptables argument tag" \
+	"rule" "single rule" \
+	"combined_rule" "Grouped tags rule" \
+	"template_rule" "Template based rule" \
+	"public_function" "Public function(s)" \
+	"ipset" "Create set / add elements" \
+	"close" "Close last opened tag" \
+	"comment" "Add a comment" \
+	"view" "View the created rules" 2>&1 >/dev/tty
 } # -------------------------------------------------------------------------
 
 _add_template_rule() { # sub function of _add_rules() - Add a template rule
@@ -351,11 +351,11 @@ elif [[ $str_rule = public_function ]]; then
 	fi
 elif [[ $str_rule = ipset ]]; then
 	local str_set="" str_type=""
-	str_rule="$( "$WHIPTAIL" "${arr_title[@]}" --radiolist "Select the type of ipset action" $w_height $w_with $l_height \
-		"Create set" "Create a set and optionally add elements" on \
-		"Import set" "Import set(s) from an ipset xml saved file" off \
-		"Import elements" "Import elements from file" off \
-		"Add elements" "Add elements to a set" off 2>&1 >/dev/tty )"
+	str_rule="$( "$WHIPTAIL" "${arr_title[@]}" --menu "Select the type of ipset action" $w_height $w_with $l_height \
+		"Create set" "Create a set and optionally add elements" \
+		"Import set" "Import set(s) from an ipset xml saved file" \
+		"Import elements" "Import elements from file" \
+		"Add elements" "Add elements to a set" 2>&1 >/dev/tty )"
 	if [[ $str_rule = "Create set" ]]; then
 		str_set="$( "$WHIPTAIL" "${arr_title[@]}" --inputbox "Enter the set name" $w_height $w_with 2>&1 >/dev/tty )"
 		if [[ $str_set ]]; then
