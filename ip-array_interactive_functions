@@ -37,6 +37,12 @@
 _add_rb_line() { # sub function of iactive_ruleblock_builder() - add a line to a ruleblock
 local idx=0
 arr_line=()
+if ! ((${#arr_templ[@]})); then
+	"$WHIPTAIL" --msgbox \
+		"Template \`$t_name' is not defined!\nMaybe you need to enable the table in the main config?\nOr you may run parse-xml first?" \
+		$w_height $w_with
+	return 1
+fi
 for i in ${!arr_templ[*]}; do
 	arr_line[idx]=$( "$WHIPTAIL" "${arr_title[@]}" --inputbox \
 		"Enter a value for ${arr_templ[i]%%=*} ${arr_templ[i]#*=}" $w_height $w_with 2>&1 > /dev/tty )
