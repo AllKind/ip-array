@@ -3275,9 +3275,9 @@ case "$MODE" in # act according to runtime mode
 			work_arr_sum=$(arr_members_sum $str_arr_name)
 			((work_arr_sum)) || continue
 			if ((EXEC_COMMANDS == 0)); then
-				log -S "Would apply $work_arr_sum $*"
+				log -N "Would apply $work_arr_sum $*"
 			else
-				log -S "Applying $work_arr_sum $*"
+				log -N "Applying $work_arr_sum $*"
 			fi
 		done
 		# merge iptables and ipset command arrays
