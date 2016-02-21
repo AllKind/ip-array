@@ -1,3 +1,3 @@
-Select LAN interfaces from where FTP is permitted
-Format: lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]
-(i.e. "eth1:eth0:active eth2 LAN::passive")
+# Format: lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]
+# ftp mode defaults to `all'.
+# (i.e. "eth1:eth0:active DMZ:PUBLIC eth3::passive")
