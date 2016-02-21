@@ -3805,29 +3805,32 @@ case "$1" in
 		if (( IACTIVE_LIST_HEIGHT == 0 )) && dn command -v tput; then
 			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 10 ))
 		fi
-		str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
-			--menu "Select the desired action" 14 0 4 \
-			"Configuration builder" "Create a main configuration file" \
-			"Ruleblock builder" "Create or edit XML ruleblocks" \
-			"Template builder" "Create XML templates" \
-			"Rule builder" "Create a rule file" 2>&1 > /dev/tty)
-		if (($? == 0)); then
-			if [[ $str_opt = "Ruleblock builder" ]]; then
-				while (($? == 0)); do
-					iactive_ruleblock_builder
-				done
-			elif [[ $str_opt = "Template builder" ]]; then
-				while (($? == 0)); do
-					iactive_template_builder
-				done
-			elif [[ $str_opt = "Configuration builder" ]]; then
-				iactive_config_builder
-			elif [[ $str_opt = "Rule builder" ]]; then
-				while (($? == 0)); do
-					iactive_rule_builder
-				done
+		str_opt=foobar # placeholder for first run
+		while [[ $str_opt && $str_opt != +([[:blank:]]) ]]; do
+			str_opt=$( "$WHIPTAIL" --title "$ME interactive mode" \
+				--menu "Select the desired action" 14 0 4 \
+				"Configuration builder" "Create a main configuration file" \
+				"Ruleblock builder" "Create or edit XML ruleblocks" \
+				"Template builder" "Create XML templates" \
+				"Rule builder" "Create a rule file" 2>&1 > /dev/tty)
+			if (($? == 0)); then
+				if [[ $str_opt = "Ruleblock builder" ]]; then
+					while (($? == 0)); do
+						iactive_ruleblock_builder
+					done
+				elif [[ $str_opt = "Template builder" ]]; then
+					while (($? == 0)); do
+						iactive_template_builder
+					done
+				elif [[ $str_opt = "Configuration builder" ]]; then
+					iactive_config_builder
+				elif [[ $str_opt = "Rule builder" ]]; then
+					while (($? == 0)); do
+						iactive_rule_builder
+					done
+				fi
 			fi
-		fi
+		done
 		common_end
 		return 0
 	;;
