@@ -12,7 +12,7 @@
                         syntax version (only 1.0 is available by now).</p></li><li><p>The actual template tag including the name attribute defining the name of
                         the template:</p><p>&lt;template name="T_EXAMPLE"&gt;</p><p>The template name must begin with one of the following prefixes: T_, BT_,
                         GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_.</p></li></ol></div><p>
-        </p></div><div class="refsect1" lang="en"><a name="d0e82"></a><h2>Elements</h2><p>The following list describes the elements which are valid inside the templates.</p><div class="variablelist"><dl><dt><span class="term">table</span></dt><dd><p>The name of the iptables table (defaults to `filter' if unset).</p></dd><dt><span class="term">target</span></dt><dd><p>A comma separated list of iptables targets. Usually the target will be
+        </p></div><div class="refsect1" lang="en"><a name="d0e82"></a><h2>Tags</h2><p>The following list describes the tags which are valid inside the templates.</p><div class="variablelist"><dl><dt><span class="term">table</span></dt><dd><p>The name of the iptables table (defaults to `filter' if unset).</p></dd><dt><span class="term">target</span></dt><dd><p>A comma separated list of iptables targets. Usually the target will be
                         'jumped' (--jump) to. To use a goto (--goto) instead, prefix the target name
                         with `goto:'.</p></dd><dt><span class="term">chain</span></dt><dd><p>A comma separated list of iptables chains. A maximum of 2 chain names can
                         be specified, if the <code class="varname">reverse_mode</code> is `reverse' or
@@ -41,6 +41,6 @@
                         state/conntrack match. I.e. NEW,ESTABLISHED ESTABLISHED.</p><p>The second one is only used if the reverse_mode is set to
                         `reverse'.</p></dd></dl></div></div><div class="refsect1" lang="en"><a name="d0e218"></a><h2>Usage guidelines</h2><p>It is recommended to build <span class="italic">small chunk</span> templates
             (called <span class="bold"><strong>base templates</strong></span>) and to use them modulary to
-            build your final templates (using the load_template element).</p></div><div class="refsect1" lang="en"><a name="d0e229"></a><h2>See also</h2><p>
+            build your final templates (using the load_template tag).</p></div><div class="refsect1" lang="en"><a name="d0e229"></a><h2>See also</h2><p>
             <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>
         </p></div></div></body></html>

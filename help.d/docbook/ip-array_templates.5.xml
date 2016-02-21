@@ -2,8 +2,8 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
 <refentry xmlns="http://docbook.org/ns/docbook">
     <info><author>
-            <personname>AllKind</personname>
-            <email>AllKind@BonBon.net</email>
+            <personname>AllKind aka Mart Frauenlob</personname>
+            <email>AllKind@fastest.cc</email>
             <personblurb>
                 <para>Some guy infront of a screen.</para>
             </personblurb>
@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.0</productnumber>
+        <productnumber>1.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array_templates</refentrytitle>
         <manvolnum>5</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.0</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.1</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array_templates</refdescriptor>
@@ -64,8 +64,8 @@
         </para>
     </refsect1>
     <refsect1>
-        <title>Elements</title>
-        <para>The following list describes the elements which are valid inside the templates.</para>
+        <title>Tags</title>
+        <para>The following list describes the tags which are valid inside the templates.</para>
         <variablelist>
             <varlistentry>
                 <term>table</term>
@@ -190,7 +190,7 @@
         <title>Usage guidelines</title>
         <para>It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
             (called <emphasis role="bold">base templates</emphasis>) and to use them modulary to
-            build your final templates (using the load_template element).</para>
+            build your final templates (using the load_template tag).</para>
     </refsect1>
     <refsect1>
         <title>See also</title>

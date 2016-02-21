@@ -2,8 +2,8 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbookxi.rng" type="xml"?>
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
   xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
-  <info version="1.0"><title>IP-Array 1.0 Reference Manual</title><author>
-      <personname><firstname>AllKind</firstname><surname/></personname>
+  <info version="1.1"><title>IP-Array 1.1 Reference Manual</title><author>
+      <personname><firstname>AllKind aka Mart Frauenlob</firstname><surname/></personname>
       <affiliation>
         <orgname>AllKind</orgname>
       </affiliation></author>
@@ -20,7 +20,7 @@
     <section xml:id="about_doc">
       <title>About this document</title>
       <para>This document is the <emphasis role="bold">reference manual</emphasis> for <emphasis
-          role="bold">IP-Array version 1.0</emphasis>.</para>
+          role="bold">IP-Array version 1.1</emphasis>.</para>
       <para>It should provide all the information necessary to configure and use IP-Array.</para>
     </section>
     <section xml:id="about_ip-array">
@@ -677,7 +677,7 @@
         install all necessary files at once. Also the destination directories can be given as well
         as the file ownership can be set. It's also possible to create a backup of the old files.
         The installer utilises the <command>install</command> program, for more information about it
-        its man page.</para>
+        consult its man page.</para>
     </section>
     <section>
       <title>Upgrade</title>
@@ -2498,8 +2498,8 @@
         </para>
       </section>
       <section>
-        <title>Template XML elements</title>
-        <para>The following list describes the elements which are valid inside the templates.</para>
+        <title>Template XML tags</title>
+        <para>The following list describes the tags which are valid inside the templates.</para>
         <variablelist>
           <varlistentry>
             <term>table</term>
@@ -2621,7 +2621,7 @@
         <title>Template usage guidelines</title>
         <para>It is recommended to build <emphasis role="italic">small chunk</emphasis> templates
           (called <emphasis role="bold">base templates</emphasis>) and to use them modulary to build
-          your final templates (using the load_template element).</para>
+          your final templates (using the load_template tag).</para>
       </section>
     </section>
     <section xml:id="conf_xml_ruleblocks_howto">
@@ -2706,7 +2706,7 @@
         rules, combined rules, template rules and iptables arguments that may be used globally to be
         applied to all following rules (grouping). For each iptables table (if configured to be
         used) there must be at least one rule file defined.</para>
-      <section>
+      <section xml:id="rule_syntax">
         <title>Syntax</title>
         <para>A rule definition file must contain the root tag including the describing name
           attribule and the syntax version:</para>
@@ -2720,8 +2720,8 @@
           XML compatible). Tags can be closed by a simple `/>'. Attributes can have their value
           enclosed inside single quotes, or not quoted at all.</para>
       </section>
-      <section>
-        <title>Rule file XML elements</title>
+      <section xml:id="rule_xml_tags">
+        <title>Rule file XML tags</title>
         <para>
           <itemizedlist>
             <listitem>
@@ -3124,10 +3124,11 @@ or
           </varlistentry>
         </variablelist>
       </section>
-      <section>
+      <section xml:id="ipset_usage">
         <title>ipset usage</title>
-        <para>ipset sets are controlled with the public functions <emphasis role="bold"
-            >ipset_create</emphasis> and <emphasis role="bold">ipset_add</emphasis>.</para>
+        <para>ipset sets are either controlled with the public functions <emphasis role="bold"
+            >ipset_create</emphasis> and <emphasis role="bold">ipset_add</emphasis>. Or through the
+            <link linkend="rule_xml_tags">ipset related tags</link> in an iptables rule file.</para>
       </section>
     </section>
   </chapter>
