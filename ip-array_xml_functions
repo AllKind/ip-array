@@ -1056,8 +1056,8 @@ while read -r; do let line_count+=1
 	line="$REPLY"
 	local -a "ARR_COMMENT_NO_${tag_idx}"
 	[[ $DEBUG_INFO ]] && pr_str "Reading new line #${line_count}: '${line}'"
-	# skip empty, xml version and comment lines
-	[[ ${line} = @(*([[:blank:]])<[?]xml+([[:blank:]])version=*[?]>*) ]] && line="${line#*'>'}"
+	# skip empty, xml meta and comment lines
+	[[ ${line} = @(*([[:blank:]])<[?]*[?]>*) ]] && line="${line#*'>'}"
 	while [[ ${line} && ${line} != +([[:blank:]]) ]]; do # re-iterate until line is blank
 		[[ $DEBUG_INFO ]] && pr_str "NEW LOOP RUN - line: '${line}'"
 		if [[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
