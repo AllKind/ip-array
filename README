@@ -1,10 +1,18 @@
-
 IP-ARRAY README
 
 
 What is IP-Array?
-	An iptables firewall (IPv4) and traffic shaping script written in bash.
-	It is meant to be used from single hosts to small and mid-sized networks.
+	IP-Array is a command-line program (you may also say `script') written for bash
+	(the bash shell www.gnu.org/software/bash).
+	It's purpose is to configure IPv4 firewalling and traffic shaping of a linux host.
+	To achieve this, IP-Array configures the linux kernels netfilter / traffic control
+	subsystems via the userspace tools iptables / ipset / tc.
+	It also allows to load and / or unload netfilter related kernel modules and
+	configure the kernel via the `/proc' filesystem.
+
+	Intended Audience: Advanced End Users, System Administrators.
+
+	Field of application: From a single host system to a multi-homed router or gateway.
 
 Where to get it?
 	IP-Array is currently hosted at sf.net.
