@@ -136,7 +136,7 @@ fi
 
 _choose_rule_action() { # sub function of iactive_rule_builder(). Choose action type for rule building.
 "$WHIPTAIL" "${arr_title[@]}" --menu "Select the type of rule action" $w_height $w_with $l_height \
-	"ipt tag" "iptables argument tag" \
+	"iptables tag" "iptables argument tag" \
 	"rule" "single rule" \
 	"combined_rule" "Grouped tags rule" \
 	"template_rule" "Template based rule" \
@@ -260,7 +260,7 @@ if [[ $str_rule = template_rule ]]; then
 		_add_template_rule
 	done
 	arr_content[content_idx++]="${str_indent}    </template_rule>"
-elif [[ $str_rule = "ipt tag" ]]; then
+elif [[ $str_rule = "iptables tag" ]]; then
 	arr_tmp=( "${x_args[@]}" )
 	while (($? == 0)); do
 		str_tmp=$("$WHIPTAIL" "${arr_title[@]}" --noitem --menu "Choose an iptables argument." \
