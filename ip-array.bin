@@ -485,6 +485,7 @@ IPARRAY_PROGRAMS=(
 "BC bc 1"
 "CAT cat 1"
 "DATE date 1"
+"DIALOG dialog 0"
 "DIFF diff 1"
 "FIND find 1"
 "GREP grep 1"
