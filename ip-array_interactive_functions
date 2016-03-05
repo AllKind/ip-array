@@ -79,7 +79,7 @@ if [[ $1 = --noitem ]]; then
 	local str_cmd="--noitem --radiolist"
 	shift
 else
-	local str_cmd="---radiolist"
+	local str_cmd="--radiolist"
 fi
 local str="$1"
 shift
@@ -122,10 +122,16 @@ arr_rb[lnum]="${arr_line_new[@]}"
 
 _add_conf_var() { # sub function of iactive_config_builder() - add config variable
 x=0 arr_tmp=()
-for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
-	arr_tmp[x++]="${str_tmp}"
-	arr_tmp[x++]="item" # dummy item entry
-done
+if [[ $DIALOG_PROG = *dialog ]]; then
+	for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
+		arr_tmp[x++]="${str_tmp}"
+	done
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
+		arr_tmp[x++]="${str_tmp}"
+		arr_tmp[x++]="item" # dummy item entry
+	done
+fi
 v_name=$(dia_menu --noitem "Choose a variable" "${arr_tmp[@]}")
 if (($? == 0)) && [[ $v_name ]]; then
 	for i in ${!arr_names[@]}; do
@@ -228,7 +234,11 @@ if (($? == 0)) && [[ $str_elem ]]; then
 else
 	return
 fi
-arr_tmp=( comment x bytes x packets x timeout x skbmark x skbprio x skbqueue x nomatch x )
+if [[ $DIALOG_PROG = *dialog ]]; then
+	arr_tmp=( comment bytes packets timeout skbmark skbprio skbqueue nomatch )
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_tmp=( comment x bytes x packets x timeout x skbmark x skbprio x skbqueue x nomatch x )
+fi
 while (($? == 0)); do
 	((${#arr_tmp[@]})) || break
 	str_lhs=$(dia_menu --noitem "Choose an element option.\nCancel for none." "${arr_tmp[@]}")
@@ -278,23 +288,23 @@ local str_rule=$(dia_menu "Select the type of rule action" \
 	)
 
 if [[ $str_rule = template_rule ]]; then
-	arr_content[content_idx++]="${str_indent}    <template_rule>"
 	if ((${#arr_templ[*]} == 0)); then
 		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 			arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
 		else
-			log -E "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
-			return $ER_USE
+			dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+			return 0
 		fi
 	fi
 	if ((${#arr_rb[*]} == 0)); then
 		if [[ -r ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
 			arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
 		else
-			log -E "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
-			return $ER_USE
+			dia_mbox "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
+			return 0
 		fi
 	fi
+	arr_content[content_idx++]="${str_indent}    <template_rule>"
 	while (($? == 0)); do
 		_add_template_rule
 	done
@@ -412,8 +422,17 @@ elif [[ $str_rule = ipset ]]; then
 					fi
 				fi
 			done < <( ( run_ipset help ) 2>/dev/null )
-			arr_types=( $(printf "%s off\n" "${arr_types[@]}"|run_sort) )
-			str_type=$(dia_menu --noitem "Choose a set type" "${arr_types[@]}") || return
+			if ((${#arr_types[@]})); then
+				if [[ $DIALOG_PROG = *dialog ]]; then
+					arr_types=( $(printf "%s\n" "${arr_types[@]}"|run_sort) )
+				elif [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_types=( $(printf "%s dummy\n" "${arr_types[@]}"|run_sort) )
+				fi
+				str_type=$(dia_menu --noitem "Choose a set type" "${arr_types[@]}") || return
+			else
+				dia_mbox "Unable to retrieve set types!"
+				return $ER_FAIL
+			fi
 		fi
 		if [[ $str_type ]]; then
 			dia_yn "Do you want to set header options?"
@@ -445,7 +464,11 @@ elif [[ $str_rule = ipset ]]; then
 					if [[ $str_lhs ]]; then
 						str_header="${str_header/$str_lhs/}"
 					fi
-					for str in $str_header; do arr_header[x++]="$str off"; done
+					if [[ $DIALOG_PROG = *dialog ]]; then
+						arr_header=( $str_header )
+					elif [[ $DIALOG_PROG = *whiptail ]]; then
+						for str in $str_header; do arr_header[x++]="$str off"; done
+					fi
 					str_lhs=$(dia_menu --noitem "Choose a header option" ${arr_header[*]}) || break
 					if [[ $str_lhs = @(hashsize|markmask|maxelem|netmask|range|size|timeout) ]]; then
 						str_rhs="$( dia_ibox "Enter a value for option $str_lhs")"
@@ -539,7 +562,7 @@ fi
 } # -------------------------------------------------------------------------
 
 iactive_rule_builder () { # interactive rule file builder
-local -i i x w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
+local -i i x
 local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
 local -i tag_idx=0 content_idx=0
 local -a arr_tags arr_tmp arr_templ arr_rb arr_content arr_pubfunc
@@ -548,30 +571,38 @@ local str_indent
 local arr_title=( --title "$ME rule file builder" )
 local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
 i=0
-for x in ${!ARG_NAMES_LIST[*]}; do
-	x_args[i++]="${ARG_NAMES_LIST[x]}"
-	x_args[i++]="item" # dummy item entry
-done
+if [[ $DIALOG_PROG = *dialog ]]; then
+	for x in ${!ARG_NAMES_LIST[*]}; do
+		x_args[i++]="${ARG_NAMES_LIST[x]}"
+	done
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	for x in ${!ARG_NAMES_LIST[*]}; do
+		x_args[i++]="${ARG_NAMES_LIST[x]}"
+		x_args[i++]="item" # dummy item entry
+	done
+fi
 
 while (($? == 0)); do
 	_ia_add_rules
 done
-if ((${#arr_content[@]})); then
-	mutex_on || bail_out $?
-	printf '<?xml version="1.0"?>\n\n' > "$r_file"
-	printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
-	printf "%s\n" "${arr_content[@]}" >> "$r_file"
-	printf '</ip_array_root>\n' >> "$r_file"
-	cleanup_lock
-	if [[ -s "$r_file" ]]; then
-		dia_yn "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
-		if (($? == 0)); then
-			printf "\n" # we use cat as --textbox does not handle indention nicely
-			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+if (($? <= 1)); then
+	if ((${#arr_content[@]})); then
+		mutex_on || bail_out $?
+		printf '<?xml version="1.0"?>\n\n' > "$r_file"
+		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
+		printf "%s\n" "${arr_content[@]}" >> "$r_file"
+		printf '</ip_array_root>\n' >> "$r_file"
+		cleanup_lock
+		if [[ -s "$r_file" ]]; then
+			dia_yn "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
+			if (($? == 0)); then
+				printf "\n" # we use cat as --textbox does not handle indention nicely
+				"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+			fi
 		fi
+	else
+		dia_mbox "No rules have been collected."
 	fi
-else
-	dia_mbox "No rules have been collected."
 fi
 dia_yn "Do you want to create another rule file?"
 } # -------------------------------------------------------------------------
@@ -581,7 +612,7 @@ iactive_config_builder() { # interactive config file builder
 	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
 	return $ER_NODEF
 }
-local -i i x w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
+local -i i x
 local v_name v_type v_msg v_help
 local -a arr_content arr_names arr_conf arr_tmp
 local arr_title=( --title "$ME configuration file builder" )
@@ -613,10 +644,14 @@ fi
 iactive_ruleblock_builder() { # interactive ruleblock builder
 local arr_title=( --title "$ME ruleblock builder" )
 local str_act str_tmp t_name r_name r_file
-local -i i x idx w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
+local -i i x idx
 local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
 
-str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "" "Edit an existing ruleblock" "")
+if [[ $DIALOG_PROG = *dialog ]]; then
+	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "Edit an existing ruleblock")
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "" "Edit an existing ruleblock" "")
+fi
 if (($? != 0)); then
 	return 1
 fi
@@ -626,8 +661,8 @@ if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 	(($? == 0)) || return 1
 	[[ $t_name ]] || return 1
 else
-	log -E "Templates must first be parsed (parse-xml -pt)"
-	return $ER_USE
+	dia_mbox "Templates must first be parsed (parse-xml -pt)"
+	return 1
 fi
 str_tmp=""
 load_all_templates || return
@@ -720,7 +755,7 @@ done
 iactive_template_builder() { # interactive template builder
 local t_name t_file str_tmp str_x
 local arr_title=( --title "$ME template builder" )
-local -i i x y w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
+local -i i x y
 local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
 local -a arr_opts=(
 table "Table name" off
@@ -738,11 +773,17 @@ reverse_mode "Bidirectonal traffic" off
 reverse_condition "Condition for reverse mode" off
 )
 
-y=0
-for x in ${!ARG_NAMES_LIST[*]}; do
-	x_args[y++]="${ARG_NAMES_LIST[x]}"
-	x_args[y++]=""
-done
+i=0
+if [[ $DIALOG_PROG = *dialog ]]; then
+	for x in ${!ARG_NAMES_LIST[*]}; do
+		x_args[i++]="${ARG_NAMES_LIST[x]}"
+	done
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	for x in ${!ARG_NAMES_LIST[*]}; do
+		x_args[i++]="${ARG_NAMES_LIST[x]}"
+		x_args[i++]="dummy" # dummy item entry
+	done
+fi
 
 local -a xopts=()
 t_name=$(dia_ibox \
@@ -760,8 +801,13 @@ if ((${#xopts[*]})); then
 	for ((x=0; x<=${#xopts[*]}; x++)); do
 		case "${xopts[x]}" in
 			table)
-				xopts[x]="${xopts[x]}=$(dia_menu --noitem \
-					"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
+					if [[ $DIALOG_PROG = *dialog ]]; then
+						xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+							"Choose the table name" filter mangle nat raw security rawpost)"
+					elif [[ $DIALOG_PROG = *whiptail ]]; then
+						xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+							"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
+					fi
 			;;
 			chain)
 				xopts[x]="${xopts[x]}=$(dia_ibox \
