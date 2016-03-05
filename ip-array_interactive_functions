@@ -807,12 +807,12 @@ if ((${#xopts[*]})); then
 						"Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
 					if (($? == 0)); then
 						_remove_dupe_templ_entry "${arr_o0[i-1]}"
-					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+					else # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_o0[i-1]
 					fi
 					dia_yn "Do you want to add another option?"
 				done
-				if (($? == 1)); then
+				if (($?)); then
 					dia_yn "Do you want to define default values for one or more of these options?"
 					if (($? == 0)); then
 						for i in ${!arr_o0[*]}; do
@@ -836,7 +836,7 @@ if ((${#xopts[*]})); then
 						"${arr_tmp[@]}")
 					if (($? == 0)); then
 						_remove_dupe_templ_entry "${arr_o1[i-1]}"
-					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+					else # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_o1[i-1]
 					fi
 					if (( ${#arr_o1[*]} < ${#arr_o0[*]} )); then # reverse list must not be greater than first
@@ -845,7 +845,7 @@ if ((${#xopts[*]})); then
 						false
 					fi
 				done
-				if (($? == 1)); then
+				if (($?)); then
 					dia_yn "Do you want to define default values for one or more of these options?"
 					if (($? == 0)); then
 						for i in ${!arr_o1[*]}; do
@@ -865,12 +865,12 @@ if ((${#xopts[*]})); then
 						"Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
 					if (($? == 0)); then
 						_remove_dupe_templ_entry "${arr_alw0[i-1]}"
-					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+					else # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_alw0[i-1]
 					fi
 					dia_yn "Do you want to add another option?"
 				done
-				if (($? == 1)); then
+				if (($?)); then
 					for i in ${!arr_alw0[*]}; do
 						str_x="$(dia_ibox \
 							"Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none.")"
@@ -892,7 +892,7 @@ if ((${#xopts[*]})); then
 						"${arr_tmp[@]}")
 					if (($? == 0)); then
 						_remove_dupe_templ_entry "${arr_alw1[i-1]}"
-					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
+					else # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_alw1[i-1]
 					fi
 					if (( ${#arr_alw1[*]} < ${#arr_alw0[*]} )); then # reverse list must not be greater than first
@@ -901,7 +901,7 @@ if ((${#xopts[*]})); then
 						false
 					fi
 				done
-				if (($? == 1)); then
+				if (($?)); then
 					for i in ${!arr_alw1[*]}; do
 						str_x="$(dia_ibox \
 							"Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none.")"
