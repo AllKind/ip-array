@@ -392,7 +392,7 @@ elif [[ $str_rule = public_function ]]; then
 	fi
 elif [[ $str_rule = ipset ]]; then
 	local str_set="" str_type=""
-	str_rule="$(dia_menu "Select the type of ipset action"
+	str_rule="$(dia_menu "Select the type of ipset action" \
 		"Create set" "Create a set and optionally add elements" \
 		"Add elements" "Add elements to a set" \
 		"Import set" "Import set(s) from an ipset xml saved file" \
