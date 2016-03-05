@@ -1078,8 +1078,8 @@ case "$MAIN_ARG" in
 	prepare-restore-on-start|restart|restore|save|save-commands|save-modprobe-commands|save-proc-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
 		shift
-		if ((UID > 0)); then
-			err_msg "Root check FAILED. You MUST be root (UID 0) to use $ME."
+		if ((EUID > 0)); then
+			err_msg "Root check FAILED. You MUST be root (EUID 0) to use $ME."
 			bail_out $ER_FAIL
 		fi
 	;;
