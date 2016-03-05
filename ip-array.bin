@@ -236,22 +236,22 @@ SYNTAX_CHECK
 RELOAD_TIME
 )
 
-# Valid rule option names
-declare -r ARG_NAMES_LIST=(
+# Valid rule option names (core)
+declare -ar ARG_NAMES_CORE=(
 table target chain
 idev odev
 src dst mac
 core
 proto
+)
+
+# Valid rule option names (matches)
+declare -ar ARG_NAMES_MATCHES=(
 sport dport
 tcp_opt
 icmp_type
-reject_type
 state
 limit
-log_level log_options
-log_prefix
-nflog_opt ulog_opt
 connbytes connlimit
 conntrack
 ahspi espspi
@@ -259,7 +259,6 @@ helper
 length
 owner
 addrtype pkttype
-cluster
 socket
 statistic
 sctp
@@ -268,48 +267,59 @@ hashlimit
 policy
 physdev
 realm
-rpfilter
 string
-nat_opt
 m_connmark
 m_dscp
 m_mark
 m_set
 m_tos
+m_rateest
+m_tcpmss
+m_ttl
 cpu
 ecn
 quota
-m_rateest
-t_rateest
-m_tcpmss
-m_ttl
 devgroup
 nfacct
-nfqueue
 osf
 recent
 time
 u32
-clusterip
-hmark
-led
-t_mark t_connmark t_secmark t_connsecmark
-t_class
-t_set
-t_ttl
-t_dscp
-t_tos
-t_tcpmss
-tee_gw
-tcpoptstrip
-tproxy_opt
-audit
 bpf
 ipvs
 ct_opt
-idletimer
 comment
+cluster
+rpfilter
 )
+
+# Valid rule option names (targets)
+declare -ar ARG_NAMES_TARGETS=(
+audit
+clusterip
+hmark
+idletimer
+led
+log_level log_options log_prefix
+nat_opt
+nflog_opt ulog_opt
+nfqueue
+reject_type
+t_mark t_connmark t_secmark t_connsecmark
+t_class
+t_dscp
+t_rateest
+t_set
+t_tos
+t_tcpmss
+t_ttl
+tcpoptstrip
+tee_gw
+tproxy_opt
+)
+
+# All valid rule option names
+declare -ar ARG_NAMES_LIST=( "${ARG_NAMES_CORE[@]}" "${ARG_NAMES_MATCHES[@]}" "${ARG_NAMES_TARGETS[@]}" )
 
 # Names of arrays which store the rule parameters and log-messages
 declare -r RULELIST_ARRAYS="MSG_LIST_TABLE
@@ -637,8 +647,8 @@ Options:
                            This option is only valid with the \`test' parameter.
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
-     targets, matches, rules, ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
-     templates[:NAME[,...]], proc, public_functions[:NAME[,...]],
+     targets, matches, rules, ipt_args:-[core|matches|targets][,...] ipt_args[:NAME[,...]],
+     proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -1191,6 +1201,9 @@ while (($#)); do
 				;;
 				main|defaults|targets|matches|ruleblocks|templates|proc|public_functions|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
+					cmdline_show_conf+="$opt_arg "
+				;;
+				ipt_args:-+([[:word:]])*(,+([[:word:]])))
 					cmdline_show_conf+="$opt_arg "
 				;;
 				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]]))|find_templates:*)

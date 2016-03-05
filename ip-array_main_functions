@@ -4158,6 +4158,31 @@ case "$1" in
 					printf "%s\n" "${ARG_NAMES_LIST[@]}" | run_sort
 					pr_banner "End of iptables arguments"
 				;;
+				ipt_args:-@(core|matches|targets)*(,@(core|matches|targets)))
+					str_opt="${rvar#ipt_args:-}"
+					for str_opt in ${str_opt//,/ }; do
+						case "$str_opt" in
+							core)
+								pr_banner "Starting dump of core iptables arguments:"
+								printf "%s\n" "${ARG_NAMES_CORE[@]}" | run_sort
+								pr_banner "End of core iptables arguments"
+							;;
+							matches)
+								pr_banner "Starting dump of iptables match arguments:"
+								printf "%s\n" "${ARG_NAMES_MATCHES[@]}" | run_sort
+								pr_banner "End of core iptables match arguments"
+							;;
+							targets)
+								pr_banner "Starting dump of core iptables target arguments:"
+								printf "%s\n" "${ARG_NAMES_TARGETS[@]}" | run_sort
+								pr_banner "End of core iptables target arguments"
+							;;
+							*)
+								log -E "Invalid ipt_args option: \`$str_opt'."
+								return $ER_USE
+						esac
+					done
+				;;
 				ipt_args:+([[:word:]])*(,+([[:word:]])))
 					str_opt="${rvar#ipt_args:}"
 					pr_banner "Starting dump of iptables arguments:"
@@ -4165,7 +4190,7 @@ case "$1" in
 						if [[ -r ${HELP_DIR}/ipt_args/${str_opt}.txt ]]; then
 							"${CAT}" "${HELP_DIR}/ipt_args/${str_opt}.txt" || return $ER_NOEX
 						else
-							err_msg "\`${HELP_DIR}/ipt_args/${str_opt}.txt' does not exist"
+							log -E "\`${HELP_DIR}/ipt_args/${str_opt}.txt' does not exist"
 						fi
 					done
 					pr_banner "End of iptables arguments"

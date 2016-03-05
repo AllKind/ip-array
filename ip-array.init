@@ -183,8 +183,8 @@ Options:
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
-     targets, matches, rules, ipt_args[:NAME[,...]], ruleblocks[:NAME[,...]],
-     templates[:NAME[,...]], proc, public_functions[:NAME[,...]],
+     targets, matches, rules, ipt_args:-[core|matches|targets][,...] ipt_args[:NAME[,...]],
+     proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -260,6 +260,9 @@ while (($#)); do
 			case "$opt_arg" in
 				all|main|defaults|targets|matches|rules|ruleblocks|templates|proc|public_functions|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				ipt_args:-+([[:word:]])*(,+([[:word:]])))
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]]))|find_templates:*)
 					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
