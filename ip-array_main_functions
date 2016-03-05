@@ -3796,7 +3796,11 @@ case "$1" in
 		if ! [[ $DIALOG_PROG ]]; then # see if and what dialog prog we have
 			while :; do
 				if [[ ${DIALOG:=/usr/bin/dialog} && -x $DIALOG ]]; then
-					[[ $($DIALOG --version) != Version:+([[:blank:]])@(0.+([[:digit:]])|1.0|1.1)-* ]] && DIALOG_PROG="$DIALOG" && break
+					if [[ $($DIALOG --version) = Version:+([[:blank:]])@(0.+([[:digit:]])|1.0|1.1)-* ]]; then
+						log -W "dialog program is too old. Version 1.2+ are supported!"
+					else
+						DIALOG_PROG="$DIALOG" && break
+					fi
 				fi
 				if [[ ${WHIPTAIL:=/usr/bin/whiptail} && -x $WHIPTAIL ]]; then
 					DIALOG_PROG="$WHIPTAIL" && break
@@ -3812,10 +3816,18 @@ case "$1" in
 					log -E "No dialog program found! Check \`DIALOG_PROG' variable, or make sure either dialog, or whiptail can be found in PATH."
 					return $ER_CONF
 				fi
+				if [[ $DIALOG_PROG = dialog && $($DIALOG_PROG --version) = Version:+([[:blank:]])@(0.+([[:digit:]])|1.0|1.1)-* ]]; then
+					log -E "dialog program is too old. Version 1.2+ are supported!"
+					return $ER_CONF
+				fi
 				DIALOG_PROG="$(command -v $DIALOG_PROG)"
 			elif [[ $DIALOG_PROG = */@(dialog|whiptail) ]]; then # correctly defined, but does it exist/executable?
 				if ! [[ -x $DIALOG_PROG ]]; then
 					log -E "No dialog program found! Check \`DIALOG_PROG' variable, or make sure either dialog, or whiptail can be found in PATH."
+					return $ER_CONF
+				fi
+				if [[ $DIALOG_PROG = */dialog && $($DIALOG_PROG --version) = Version:+([[:blank:]])@(0.+([[:digit:]])|1.0|1.1)-* ]]; then
+					log -E "dialog program is too old. Version 1.2+ are supported!"
 					return $ER_CONF
 				fi
 			else
