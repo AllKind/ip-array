@@ -566,8 +566,7 @@ if ((${#arr_content[@]})); then
 	printf '</ip_array_root>\n' >> "$r_file"
 	cleanup_lock
 	if [[ -s "$r_file" ]]; then
-		dia_yn \
-			"The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
+		dia_yn "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
 		if (($? == 0)); then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
 			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
@@ -603,8 +602,7 @@ while (($? == 0)); do
 done
 cleanup_lock
 if [[ -s "$c_file" ]]; then
-	dia_yn \
-		"The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?"
+	dia_yn "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?"
 	if (($? == 0)); then
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
@@ -698,8 +696,7 @@ if ((${#arr_rb[*]})); then
 	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
 	printf '</ruleblock>\n' >> "$r_file"
 	cleanup_lock
-	dia_yn \
-		"The resulting ruleblock has been saved to: ${r_file}\nDo you want to view the created ruleblock?"
+	dia_yn "The resulting ruleblock has been saved to: ${r_file}\nDo you want to view the created ruleblock?"
 	if (($? == 0)); then
 		if [[ -r "$r_file" ]]; then
 			printf "\n" # we use cat as --textbox does not handle indention nicely
@@ -826,7 +823,7 @@ if ((${#xopts[*]})); then
 			;;
 			option_list_1)
 				if ! ((${#arr_o0[*]})); then
-					printf "%s\n" "option_list_0 options have not been set." >&2
+					dia_mbox "option_list_0 options have not been set."
 					return 1
 				fi
 				i=0 arr_tmp=( "${x_args[@]}" )
@@ -882,7 +879,7 @@ if ((${#xopts[*]})); then
 			;;
 			always_use_1)
 				if ! ((${#arr_alw0[*]})); then
-					printf "%s\n" "always_use_0 options have not been set." >&2
+					dia_mbox "always_use_0 options have not been set."
 					return 1
 				fi
 				i=0 arr_tmp=( "${x_args[@]}" )
