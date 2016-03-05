@@ -2959,7 +2959,7 @@ if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdo
 fi
 } # -------------------------------------------------------------------------
 
-load_base_templates() { # load ipt base templates
+load_ipt_base_templates() { # load ipt base templates
 for rvar in ${BASE_TEMPLATES}; do
 	load_ipt_templates "$rvar" || return
 done
@@ -3014,7 +3014,7 @@ fi
 } # -------------------------------------------------------------------------
 
 load_all_templates() { # load all templates
-load_base_templates || return
+load_ipt_base_templates || return
 load_ipt_filter_templates || return
 load_ipt_security_templates || return
 load_ipt_mangle_templates || return

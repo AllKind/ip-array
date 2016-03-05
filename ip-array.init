@@ -159,13 +159,13 @@ Options:
 -nm, --no-modprobe         Do not load/unload modules.
 -np, --no-proc             Do not set /proc configuration.
 -ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
--p, --parse-xml            Re-parse all XML configuration files.
+-p, --parse-xml            Re-parse all XML config files (fine grade with -pb, -pr, -pt).
 -pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
-                           types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
+                           Types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
 -pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files.
-                           types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
+                           Types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
 -pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
-                           types: filter, mangle, nat, raw, security, rawpost
+                           Types: base, filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
 -b, --base-dir directory   Base directory to use.
 -c, --config-file file     Main configuration file to use.
