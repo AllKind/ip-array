@@ -338,6 +338,10 @@ case "$log_param" in
 	-i) log -E "Illegal value \`$1' for \`$2'." ;;
 	-l) syslog $LOG_FACILITY notice "$log_message" ;;
 	-m) pr_str "$log_message"; syslog $LOG_FACILITY notice "$log_message" ;;
+	-n) # Notice level without prefix
+		((VERBOSE >= 5)) && print_msg -f "$COLOR_MSG_NOTICE" $log_message
+		((SYSLOG_VERBOSE >= 4)) && syslog $LOG_FACILITY notice "$log_message"
+	;;
 	-o) log -E "Illegal parameter \`$1' for function: ${2}()." ;;
 	-r) log -E "Array \`$log_message' has no members." ;;
 	-s) log -E "System is missing the \`$log_message' match extension." ;;
@@ -2832,7 +2836,7 @@ if ! ((work_arr_sum)); then # if it has members
 	log -W "$cmd_arr is empty, no $appl_msg to save"
 	return 0
 fi
-log -S "Saving $work_arr_sum $appl_msg"
+log -n "Saving $work_arr_sum $appl_msg"
 printf "\n# %s\n" "$appl_msg" >>"$str_rs_file"
 case "$cmd_arr" in
 	(PROC_CMD_ARRAY)
@@ -3275,9 +3279,9 @@ case "$MODE" in # act according to runtime mode
 			work_arr_sum=$(arr_members_sum $str_arr_name)
 			((work_arr_sum)) || continue
 			if ((EXEC_COMMANDS == 0)); then
-				log -N "Would apply $work_arr_sum $*"
+				log -n "Would apply $work_arr_sum $*"
 			else
-				log -N "Applying $work_arr_sum $*"
+				log -n "Applying $work_arr_sum $*"
 			fi
 		done
 		# merge iptables and ipset command arrays
