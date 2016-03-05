@@ -84,7 +84,6 @@ shopt -s extglob
 # Variables
 # -------------------------------------------------------------------------
 declare -x LC_ALL='C'
-declare -x PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin"
 
 # parameters
 declare -r MAIN_ARG="$1"
@@ -92,6 +91,8 @@ declare -a ARR_PARAMS
 
 # error exit codes
 declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
+
+: ${PATH:=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin}
 
 # -------------------------------------------------------------------------
 # FUNCTIONS
