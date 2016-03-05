@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: ip-array_defaults.conf
-.\"    Author: AllKind aka Mart Frauenlob <AllKind@fastest.cc>
+.\"    Author: Mart Frauenlob aka AllKind <AllKind@fastest.cc>
 .\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 02/21/2016
-.\"    Manual: ip-array 1.1
-.\"    Source: ip-array 1.1
+.\"      Date: 03/05/2016
+.\"    Manual: ip-array 1.1.1
+.\"    Source: ip-array 1.1.1
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY_DEFAULTS\&" "8" "02/21/2016" "ip-array 1.1" "ip\-array 1\&.1"
+.TH "IP\-ARRAY_DEFAULTS\&" "8" "03/05/2016" "ip-array 1.1.1" "ip\-array 1\&.1\&.1"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -431,6 +431,19 @@ executable file (i\&.e:
 /bin/date), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
 .RE
 .PP
+\fIDIALOG\fR
+.RS 4
+Mandatory: no (only in interactive mode a dialog program is required, which can be either
+\fBdialog\fR
+or
+\fBwhiptail\fR)
+.sp
+Allowed values: A valid path to the
+\fBdialog\fR
+executable file (i\&.e:
+/usr/bin/dialog), or the just the name of the program, if it\*(Aqs found in $PATH and you do not want to use absolute paths\&.
+.RE
+.PP
 \fIDIFF\fR
 .RS 4
 Mandatory: yes
@@ -597,7 +610,10 @@ executable file (i\&.e:
 .PP
 \fIWHIPTAIL\fR
 .RS 4
-Mandatory: no (only required for interactive mode)
+Mandatory: no (only in interactive mode a dialog program is required, which can be either
+\fBdialog\fR
+or
+\fBwhiptail\fR)
 .sp
 Allowed values: A valid path to the
 \fBwhiptail\fR
@@ -858,6 +874,22 @@ Allowed values: `0\*(Aq or `1\*(Aq\&.
 .sp
 Purpose: Perform a bash grammar check before sourcing or executing files\&. The bash grammar check is done using `bash \-n file\*(Aq\&. Thus the syntax check is very basic and may not catch all errors (as described in `man bash\*(Aq)\&.
 .RE
+.PP
+\fIDIALOG_PROG\fR
+.RS 4
+Mandatory: no \- defaults to `$DIALOG\*(Aq\&.
+.sp
+Allowed values: empty (make sure one of the variables
+\fIDIALOG\fR, or
+\fIWHIPTAIL\fR
+is defined, or automatic detection of programs \- if enabled \- can find them)\&. `dialog\*(Aq or `whiptail\*(Aq\&. The full path to one of them\&.
+.sp
+Purpose: The interactive mode requires a dialog program\&. Either
+\fBdialog\fR
+(version 1\&.2+) or
+\fBwhiptail\fR
+are supported\&.
+.RE
 .SH "SEE ALSO"
 .PP
 
@@ -868,7 +900,7 @@ Purpose: Perform a bash grammar check before sourcing or executing files\&. The 
 \fBip-array_templates\fR(5)
 .SH "AUTHOR"
 .PP
-\fBAllKind aka Mart Frauenlob\fR <\&AllKind@fastest\&.cc\&>
+\fBMart Frauenlob aka AllKind\fR <\&AllKind@fastest\&.cc\&>
 .RS 4
 Some guy infront of a screen\&.
 .RE

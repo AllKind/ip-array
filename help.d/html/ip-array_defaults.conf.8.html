@@ -64,6 +64,13 @@
                             file (i.e: <code class="filename">/bin/date</code>), or the just the name of the
                             program, if it's found in $PATH and you do not want to use absolute
                             paths.</p></dd><dt><span class="term">
+                        <code class="varname">DIALOG</code>
+                    </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <span class="command"><strong>dialog</strong></span> or
+                                <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>dialog</strong></span>
+                            executable file (i.e: <code class="filename">/usr/bin/dialog</code>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</p></dd><dt><span class="term">
                         <code class="varname">DIFF</code>
                     </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>diff</strong></span> executable
                             file (i.e: <code class="filename">/usr/bin/diff</code>), or the just the name of
@@ -148,7 +155,9 @@
                             name of the program, if it's found in $PATH and you do not want to use
                             absolute paths.</p></dd><dt><span class="term">
                         <code class="varname">WHIPTAIL</code>
-                    </span></dt><dd><p>Mandatory: no (only required for interactive mode)</p><p>Allowed values: A valid path to the <span class="command"><strong>whiptail</strong></span>
+                    </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <span class="command"><strong>dialog</strong></span> or
+                                <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>whiptail</strong></span>
                             executable file (i.e: <code class="filename">/usr/bin/whiptail</code>), or the
                             just the name of the program, if it's found in $PATH and you do not want
                             to use absolute paths.</p></dd><dt><span class="term">
@@ -244,7 +253,12 @@
                     </span></dt><dd><p>Mandatory: no - defaults to `1'.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Perform a bash grammar check before sourcing or executing
                             files. The bash grammar check is done using `<code class="code">bash -n file</code>'.
                             Thus the syntax check is very basic and may not catch all errors (as
-                            described in `<code class="code">man bash</code>').</p></dd></dl></div><p>
-        </p></div><div class="refsect1" lang="en"><a name="d0e1225"></a><h2>See also</h2><p>
+                            described in `<code class="code">man bash</code>').</p></dd><dt><span class="term"><code class="varname">DIALOG_PROG</code></span></dt><dd><p>Mandatory: no - defaults to `$DIALOG'.</p><p>Allowed values: empty (make sure one of the variables
+                                <code class="varname">DIALOG</code>, or <code class="varname">WHIPTAIL</code> is
+                            defined, or automatic detection of programs - if enabled - can find
+                            them). `dialog' or `whiptail'. The full path to one of them.</p><p>Purpose: The interactive mode requires a dialog program. Either
+                                <span class="command"><strong>dialog</strong></span> (version 1.2+) or
+                                <span class="command"><strong>whiptail</strong></span> are supported.</p></dd></dl></div><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e1277"></a><h2>See also</h2><p>
             <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
         </p></div></div></body></html>

@@ -2,7 +2,7 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
 <refentry xmlns="http://docbook.org/ns/docbook">
     <info><author>
-        <personname>AllKind aka Mart Frauenlob</personname>
+            <personname>Mart Frauenlob aka AllKind</personname>
             <email>AllKind@fastest.cc</email>
             <personblurb>
                 <para>Some guy infront of a screen.</para>
@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.1</productnumber>
+        <productnumber>1.1.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array</refentrytitle>
         <manvolnum>8</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.1</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.1.1</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array</refdescriptor>
@@ -98,7 +98,7 @@
             <listitem>
                 <para>tc-start</para>
                 <para>Start traffic shaping only. Mangle table rules will be (re)-applied. An
-                    iptables rule listing is saved for later difference checks.  ipset ruleset will
+                    iptables rule listing is saved for later difference checks. ipset ruleset will
                     not be touched.</para>
             </listitem>
             <listitem>
@@ -127,7 +127,7 @@
                 <para>interactive</para>
                 <para>In this mode several wizards are available to interactively create or edit the
                     IP-Array configuration. It is possible to create main configuration files,
-                    templates,  rule files, or create and edit ruleblocks. The
+                    templates, rule files, or create and edit ruleblocks. The
                         <command>whiptail</command> program is required for this. The global_defs
                     configuration file holds 3 variables (<varname>IACTIVE_WINDOW_HEIGHT</varname>,
                         <varname>IACTIVE_WINDOW_WITH</varname>,
@@ -289,18 +289,25 @@
                     <para>Read all XML files and overwrite already compiled bash scripts.</para>
                 </listitem>
                 <listitem>
-                    <para>-pb, --parse-ruleblocks</para>
+                    <para>-pb, --parse-ruleblocks [type[,...]]</para>
                     <para>Read XML ruleblock files and overwrite already compiled bash
                         scripts.</para>
+                    <para>The type argument allows to parse files selectively by type. Available
+                        types are: filter, mangle, nat, raw, security, rawpost, tc,
+                        tc_mangle.</para>
                 </listitem>
                 <listitem>
-                    <para>-pr, --parse-rulefiles</para>
+                    <para>-pr, --parse-rulefiles [type[,...]]</para>
                     <para>Read XML rule files and overwrite already compiled bash scripts.</para>
+                    <para>The type argument allows to parse files selectively by type. Available
+                        types are: filter, mangle, nat, raw, security, rawpost, ipset, vpn.</para>
                 </listitem>
                 <listitem>
-                    <para>-pt, --parse-templates</para>
+                    <para>-pt, --parse-templates [type[,...]]</para>
                     <para>Read XML template files and overwrite already compiled bash
                         scripts.</para>
+                    <para>The type argument allows to parse files selectively by type. Available
+                        types are: filter, mangle, nat, raw, security, rawpost.</para>
                 </listitem>
                 <listitem>
                     <para>-t, --test</para>
@@ -382,22 +389,24 @@
                             <member> ansi_codes (display ANSI codes for coloured shell
                                 output)</member>
                             <member> colors (available colours)</member>
-                            <member> defaults[:NAME[,...] display all or just the selected variable
+                            <member> defaults[:NAME[,...]] display all or just the selected variable
                                 names from the defaults file.</member>
-                            <member> main[:NAME[,...] display all or just the selected variable
+                            <member> main[:NAME[,...]] display all or just the selected variable
                                 names from the main configuration file file.</member>
                             <member> targets (show all available iptables targets).</member>
                             <member> matches (show all available iptables matches).</member>
                             <member> rules (show the compiled iptables rules).</member>
-                            <member> ipt_args[:NAME[,...] display all or just the selected iptables
+                            <member> ipt_args[:-[core|matches|targets][,...]] display iptables
+                                arguments by category.</member>
+                            <member> ipt_args[:NAME[,...]] display all or just the selected iptables
                                 arguments help.</member>
-                            <member> ruleblocks[:NAME[,...] display all or just the selected
+                            <member> ruleblocks[:NAME[,...]] display all or just the selected
                                 ruleblock names.</member>
-                            <member> templates[:NAME[,...] display all or just the selected
+                            <member> templates[:NAME[,...]] display all or just the selected
                                 templates names.</member>
                             <member> proc display the /proc filesystem configuration options, paths
                                 and their configured values.</member>
-                            <member> public_functions[:NAME[,...] display all or just the selected
+                            <member> public_functions[:NAME[,...]] display all or just the selected
                                 public functions help.</member>
                             <member> find_templates:template-entry-glob[,...] find templates
                                 containing all entries of the comma separated search list.</member>

@@ -2,8 +2,8 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbookxi.rng" type="xml"?>
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
   xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
-  <info version="1.1"><title>IP-Array 1.1 Reference Manual</title><author>
-      <personname><firstname>AllKind aka Mart Frauenlob</firstname><surname/></personname>
+  <info version="1.1"><title>IP-Array 1.1.1 Reference Manual</title><author>
+      <personname><firstname>Mart Frauenlob aka AllKind</firstname><surname/></personname>
       <affiliation>
         <orgname>AllKind</orgname>
       </affiliation></author>
@@ -20,7 +20,7 @@
     <section xml:id="about_doc">
       <title>About this document</title>
       <para>This document is the <emphasis role="bold">reference manual</emphasis> for <emphasis
-          role="bold">IP-Array version 1.1</emphasis>.</para>
+          role="bold">IP-Array version 1.1.1</emphasis>.</para>
       <para>It should provide all the information necessary to configure and use IP-Array.</para>
     </section>
     <section xml:id="about_ip-array">
@@ -1060,6 +1060,19 @@
               </varlistentry>
               <varlistentry>
                 <term>
+                  <varname>DIALOG</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: no (only in interactive mode a dialog program is required, which
+                    can be either <command>dialog</command> or <command>whiptail</command>)</para>
+                  <para>Allowed values: A valid path to the <command>dialog</command> executable
+                    file (i.e: <filename>/usr/bin/dialog</filename>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
                   <varname>DIFF</varname>
                 </term>
                 <listitem>
@@ -1249,7 +1262,8 @@
                   <varname>WHIPTAIL</varname>
                 </term>
                 <listitem>
-                  <para>Mandatory: no (only required for interactive mode)</para>
+                  <para>Mandatory: no (only in interactive mode a dialog program is required, which
+                    can be either <command>dialog</command> or <command>whiptail</command>)</para>
                   <para>Allowed values: A valid path to the <command>whiptail</command> executable
                     file (i.e: <filename>/usr/bin/whiptail</filename>), or the just the name of the
                     program, if it's found in $PATH and you do not want to use absolute
@@ -1518,6 +1532,19 @@
                     The bash grammar check is done using `<code>bash -n file</code>'. Thus the
                     syntax check is very basic and may not catch all errors (as described in
                       `<code>man bash</code>').</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>DIALOG_PROG</varname></term>
+                <listitem>
+                  <para>Mandatory: no - defaults to `$DIALOG'.</para>
+                  <para>Allowed values: empty (make sure one of the variables
+                      <varname>DIALOG</varname>, or <varname>WHIPTAIL</varname> is defined, or
+                    automatic detection of programs - if enabled - can find them). `dialog' or
+                    `whiptail'. The full path to one of them.</para>
+                  <para>Purpose: The interactive mode requires a dialog program. Either
+                      <command>dialog</command> (version 1.2+) or <command>whiptail</command> are
+                    supported.</para>
                 </listitem>
               </varlistentry>
             </variablelist>
@@ -3376,16 +3403,22 @@ or
             <para>Read all XML files and overwrite already compiled bash scripts.</para>
           </listitem>
           <listitem>
-            <para>-pb, --parse-ruleblocks</para>
+            <para>-pb, --parse-ruleblocks [type[,...]]</para>
             <para>Read XML ruleblock files and overwrite already compiled bash scripts.</para>
+            <para>The type argument allows to parse files selectively by type. Available types are:
+              filter, mangle, nat, raw, security, rawpost, tc, tc_mangle.</para>
           </listitem>
           <listitem>
-            <para>-pr, --parse-rulefiles</para>
+            <para>-pr, --parse-rulefiles [type[,...]]</para>
             <para>Read XML rule files and overwrite already compiled bash scripts.</para>
+            <para>The type argument allows to parse files selectively by type. Available types are:
+              filter, mangle, nat, raw, security, rawpost, ipset, vpn.</para>
           </listitem>
           <listitem>
-            <para>-pt, --parse-templates</para>
+            <para>-pt, --parse-templates [type[,...]]</para>
             <para>Read XML template files and overwrite already compiled bash scripts.</para>
+            <para>The type argument allows to parse files selectively by type. Available types are:
+              filter, mangle, nat, raw, security, rawpost.</para>
           </listitem>
           <listitem>
             <para>-t, --test</para>
@@ -3476,6 +3509,8 @@ or
                 <member> targets (show all available iptables targets).</member>
                 <member> matches (show all available iptables matches).</member>
                 <member> rules (show the compiled iptables rules).</member>
+                <member> ipt_args[:-[core|matches|targets][,...]] display iptables arguments by
+                  category.</member>
                 <member> ipt_args[:NAME[,...] display all or just the selected iptables arguments
                   help.</member>
                 <member> ruleblocks[:NAME[,...] display all or just the selected ruleblock

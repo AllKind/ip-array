@@ -2,7 +2,7 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
 <refentry xmlns="http://docbook.org/ns/docbook">
     <info><author>
-        <personname>AllKind aka Mart Frauenlob</personname>
+            <personname>Mart Frauenlob aka AllKind</personname>
             <email>AllKind@fastest.cc</email>
             <personblurb>
                 <para>Some guy infront of a screen.</para>
@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.1</productnumber>
+        <productnumber>1.1.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array_defaults.conf</refentrytitle>
         <manvolnum>8</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.1</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.1.1</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array defaults.conf</refdescriptor>
@@ -305,6 +305,20 @@
                 </varlistentry>
                 <varlistentry>
                     <term>
+                        <varname>DIALOG</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <command>dialog</command> or
+                                <command>whiptail</command>)</para>
+                        <para>Allowed values: A valid path to the <command>dialog</command>
+                            executable file (i.e: <filename>/usr/bin/dialog</filename>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
                         <varname>DIFF</varname>
                     </term>
                     <listitem>
@@ -506,7 +520,9 @@
                         <varname>WHIPTAIL</varname>
                     </term>
                     <listitem>
-                        <para>Mandatory: no (only required for interactive mode)</para>
+                        <para>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <command>dialog</command> or
+                                <command>whiptail</command>)</para>
                         <para>Allowed values: A valid path to the <command>whiptail</command>
                             executable file (i.e: <filename>/usr/bin/whiptail</filename>), or the
                             just the name of the program, if it's found in $PATH and you do not want
@@ -769,6 +785,19 @@
                             files. The bash grammar check is done using `<code>bash -n file</code>'.
                             Thus the syntax check is very basic and may not catch all errors (as
                             described in `<code>man bash</code>').</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>DIALOG_PROG</varname></term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `$DIALOG'.</para>
+                        <para>Allowed values: empty (make sure one of the variables
+                                <varname>DIALOG</varname>, or <varname>WHIPTAIL</varname> is
+                            defined, or automatic detection of programs - if enabled - can find
+                            them). `dialog' or `whiptail'. The full path to one of them.</para>
+                        <para>Purpose: The interactive mode requires a dialog program. Either
+                                <command>dialog</command> (version 1.2+) or
+                                <command>whiptail</command> are supported.</para>
                     </listitem>
                 </varlistentry>
             </variablelist>
