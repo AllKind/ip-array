@@ -96,6 +96,7 @@ local -a ARR_TAG_REF=(
 "reverse_mode name"
 "reverse_condition name"
 )
+log -e "Done with xml parsing, interpreting data"
 for tag_idx in ${!ARR_TAGS[@]}; do
 	set -- ${ARR_TAGS[tag_idx]}
 	str_act="$1" tag_name="$2"
@@ -166,6 +167,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 							log -E "Duplicate template name \`${template_name}'."
 							return 1
 						}
+						log -w "${PF}reading template: $template_name"
 						TEMPLATE_NAMES_ARRAY[${#TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
 						TEMP_TEMPLATE_NAMES_ARRAY[${#TEMP_TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
 						RESULT_ARR[IDX++]="${template_name}=("

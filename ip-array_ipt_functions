@@ -2905,7 +2905,7 @@ else
     parse_files=1
 fi
 if ((parse_files == 1)); then
-	log -N "Parsing XML template file: \`$template_file'"
+	log -n "Parsing XML template file: \`$template_file'"
 	if ! ((EXEC_COMMANDS)); then
 		mutex_on || return
 	fi
@@ -2935,7 +2935,7 @@ if ((parse_files == 1)); then
 	}
 	exec 7>&-
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_TEMPLATE_NAMES_ARRAY"
-	log -e "${PF}generated ${#TEMP_TEMPLATE_NAMES_ARRAY[@]} templates"
+	log -e "generated ${#TEMP_TEMPLATE_NAMES_ARRAY[@]} templates"
 	log -w "Saved parsed template file to: \`$parsed_file'"
 	if ! ((EXEC_COMMANDS)); then
 		cleanup_lock
@@ -3044,7 +3044,7 @@ else
     parse_files=1
 fi
 if ((parse_files == 1)); then
-	log -N "Parsing XML ruleblock file: \`$ruleblock_file'"
+	log -n "Parsing XML ruleblock file: \`$ruleblock_file'"
 	if ! ((EXEC_COMMANDS)); then
 		mutex_on || return
 	fi
@@ -3064,7 +3064,7 @@ if ((parse_files == 1)); then
 	}
 	exec 7>&-
 	[[ $DEBUG_INFO ]] && dbg_arr "TEMP_RULEBLOCK_NAMES_ARRAY"
-	log -e "${PF}generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
+	log -e "generated ${#TEMP_RULEBLOCK_NAMES_ARRAY[@]} ruleblocks"
 	log -w "Saved parsed ruleblock file to: \`$parsed_file'"
 	if ! ((EXEC_COMMANDS)); then
 		cleanup_lock
@@ -3172,7 +3172,7 @@ else
     parse_files=1
 fi
 if ((parse_files == 1)); then
-	log -N "Parsing XML rule file: \`${rule_file}'"
+	log -n "Parsing XML rule file: \`${rule_file}'"
 	if ! ((EXEC_COMMANDS)); then
 		mutex_on || return
 	fi
