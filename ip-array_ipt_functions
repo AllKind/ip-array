@@ -3146,6 +3146,7 @@ load_tc_ruleblocks || return
 load_tc_mangle_ruleblocks || return
 load_nat_ruleblocks || return
 load_filter_ruleblocks || return
+load_security_ruleblocks || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
