@@ -3854,6 +3854,7 @@ case "$1" in
 		declare -i w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
 		str_opt=foobar # placeholder for first run
 		while [[ $str_opt && $str_opt != +([[:blank:]]) ]]; do
+			local -a arr_title=( --title "$ME interactive mode" )
 			str_opt=$(dia_menu "Select the desired action" \
 				"Configuration builder" "Create a main configuration file" \
 				"Ruleblock builder" "Create or edit XML ruleblocks" \

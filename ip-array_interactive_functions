@@ -35,7 +35,7 @@
 # ------------------------------------------------------------------------- #
 
 rdia() { # run dialog program
-"$DIALOG_PROG" --title "$ME rule file builder" "$@" 2>&1 > /dev/tty
+"$DIALOG_PROG" "${arr_title[@]:-"$ME interactive mode"}" "$@" 2>&1 > /dev/tty
 }
 
 dia_ibox() { # input box
@@ -568,7 +568,7 @@ local -i tag_idx=0 content_idx=0
 local -a arr_tags arr_tmp arr_templ arr_rb arr_content arr_pubfunc
 local t_name r_name str_tmp
 local str_indent
-local arr_title=( --title "$ME rule file builder" )
+arr_title=( --title "$ME rule file builder" )
 local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
 i=0
 if [[ $DIALOG_PROG = *dialog ]]; then
@@ -615,7 +615,7 @@ iactive_config_builder() { # interactive config file builder
 local -i i x
 local v_name v_type v_msg v_help
 local -a arr_content arr_names arr_conf arr_tmp
-local arr_title=( --title "$ME configuration file builder" )
+arr_title=( --title "$ME configuration file builder" )
 local c_file="${SAVE_DIR}/${me}-conf_$(run_date +%F_%T)_rnd${RANDOM}.conf"
 i=0
 for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
@@ -642,7 +642,7 @@ fi
 } # -------------------------------------------------------------------------
 
 iactive_ruleblock_builder() { # interactive ruleblock builder
-local arr_title=( --title "$ME ruleblock builder" )
+arr_title=( --title "$ME ruleblock builder" )
 local str_act str_tmp t_name r_name r_file
 local -i i x idx
 local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
@@ -754,7 +754,7 @@ done
 
 iactive_template_builder() { # interactive template builder
 local t_name t_file str_tmp str_x
-local arr_title=( --title "$ME template builder" )
+arr_title=( --title "$ME template builder" )
 local -i i x y
 local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
 local -a arr_opts=(
