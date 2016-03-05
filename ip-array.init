@@ -160,9 +160,12 @@ Options:
 -np, --no-proc             Do not set /proc configuration.
 -ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
 -p, --parse-xml            Re-parse all XML configuration files.
--pb, --parse-ruleblocks    Re-parse XML ruleblock configuration files.
--pr, --parse-rulefiles     Re-parse XML rule files.
--pt, --parse-templates     Re-parse XML template configuration files.
+-pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
+                           types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files.
+                           types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
+-pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
+                           types: filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
 -b, --base-dir directory   Base directory to use.
 -c, --config-file file     Main configuration file to use.
@@ -231,10 +234,7 @@ while (($#)); do
 		-ni|--no-iface-check|\
 		-nm|--no-modprobe|\
 		-np|--no-proc|\
-		-p|--parse-xml|\
-		-pb|--parse-ruleblocks|\
-		-pr|--parse-rulefiles|\
-		-pt|--parse-templates)
+		-p|--parse-xml)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
 		;;
@@ -281,6 +281,14 @@ while (($#)); do
 				;;
 				*) continue
 			esac
+		;;
+		-pb|--parse-ruleblocks|-pr|--parse-rulefiles|-pt|--parse-templates)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			if [[ $opt_arg != -* ]]; then
+				ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+			else
+				continue
+			fi
 		;;
 		# options which require an argument
 		-d|--defaults-file) DEFAULTS_FILE="$opt_arg" ;;

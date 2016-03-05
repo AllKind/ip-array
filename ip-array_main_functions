@@ -391,7 +391,6 @@ case "$log_param" in
 	;;
 	*) err_msg "unknow option \`$log_param' for function: ${FUNCNAME}()"
 		return 1
-	;;
 esac
 return 0
 } # -------------------------------------------------------------------------
@@ -3934,17 +3933,46 @@ case "$1" in
 		load_configs || return
 		compatibility_check || return
 		if ((PARSE_TEMPLATES == 1)); then
-			load_all_templates || return
+			if ((${#PARSE_TEMPLATES[@]} > 1)); then
+				[[ $DEBUG_INFO ]] && dbg_arr PARSE_TEMPLATES
+				for ((x=1; x<${#PARSE_TEMPLATES[@]}; x++)); do
+					load_ipt_${PARSE_TEMPLATES[x]}_templates || return 0
+				done
+			else
+				load_all_templates || return
+			fi
 		fi
 		if ((PARSE_RULEBLOCKS == 1)); then
-			load_all_ruleblocks || return
+			if ((${#PARSE_RULEBLOCKS[@]} > 1)); then
+				[[ $DEBUG_INFO ]] && dbg_arr PARSE_RULEBLOCKS
+				for ((x=1; x<${#PARSE_RULEBLOCKS[@]}; x++)); do
+					load_${PARSE_RULEBLOCKS[x]}_ruleblocks || return 0
+				done
+			else
+				load_all_ruleblocks || return
+			fi
 		fi
 		if ((PARSE_RULEFILES == 1)); then
-			load_all_ipt_rulefiles || return
-			if ((ENABLE_IPSEC == 1)); then
-				for rvar in ${IPSEC_RULES}; do
-					load_rule_file "$rvar" || return
+			if ((${#PARSE_RULEFILES[@]} > 1)); then
+				[[ $DEBUG_INFO ]] && dbg_arr PARSE_RULEFILES
+				for ((x=1; x<${#PARSE_RULEFILES[@]}; x++)); do
+					if [[ ${PARSE_RULEFILES[x]} = vpn ]]; then
+						if ((ENABLE_IPSEC == 1)); then
+							for rvar in ${IPSEC_RULES}; do
+								load_rule_file "$rvar" || return
+							done
+						fi
+					else
+						load_${PARSE_RULEFILES[x]}_rules || return
+					fi
 				done
+			else
+				load_all_ipt_rulefiles || return
+				if ((ENABLE_IPSEC == 1)); then
+					for rvar in ${IPSEC_RULES}; do
+						load_rule_file "$rvar" || return
+					done
+				fi
 			fi
 		fi
 		common_end

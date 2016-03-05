@@ -133,7 +133,7 @@ declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IP
 declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
 
 # (re)-parse xml configuration files
-declare -i PARSE_RULEBLOCKS=0 PARSE_RULEFILES=0 PARSE_TEMPLATES=0
+declare -a PARSE_RULEBLOCKS[0]=0 PARSE_RULEFILES[0]=0 PARSE_TEMPLATES[0]=0
 
 # test for availability of /proc settings
 declare -i PROC_COMPAT_CHECK=0
@@ -623,9 +623,12 @@ Options:
 -np, --no-proc             Do not set /proc configuration.
 -ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
 -p, --parse-xml            Re-parse all XML configuration files.
--pb, --parse-ruleblocks    Re-parse XML ruleblock configuration files.
--pr, --parse-rulefiles     Re-parse XML rule files.
--pt, --parse-templates     Re-parse XML template configuration files.
+-pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
+                           types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files.
+                           types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
+-pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
+                           types: filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
 -b, --base-dir directory   Base directory to use.
 -c, --config-file file     Main configuration file to use.
@@ -1163,15 +1166,48 @@ while (($#)); do
 		;;
 		-pb|--parse-ruleblocks) # (re)-parse only XML ruleblocks
 			PARSE_RULEBLOCKS=1
-			continue
+			if [[ $opt_arg != -* ]]; then i=1
+				for rvar in ${opt_arg//,/ }; do
+					if [[ $rvar = @(filter|mangle|nat|raw|security|rawpost|tc|tc_mangle) ]]; then
+						PARSE_RULEBLOCKS[i++]=$rvar
+					else
+						pr_err "Invalid type descriptior \`$rvar' for option: $option."
+						short_usage
+					fi
+				done
+			else
+				continue
+			fi
 		;;
 		-pr|--parse-rulefiles) # (re)-parse only XML rule files
 			PARSE_RULEFILES=1
-			continue
+			if [[ $opt_arg != -* ]]; then i=1
+				for rvar in ${opt_arg//,/ }; do
+					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|vpn) ]]; then
+						PARSE_RULEFILES[i++]=$rvar
+					else
+						pr_err "Invalid type descriptior \`$rvar' for option: $option."
+						short_usage
+					fi
+				done
+			else
+				continue
+			fi
 		;;
 		-pt|--parse-templates) # (re)-parse only XML templates
 			PARSE_TEMPLATES=1
-			continue
+			if [[ $opt_arg != -* ]]; then i=1
+				for rvar in ${opt_arg//,/ }; do
+					if [[ $rvar = @(filter|mangle|nat|raw|security|rawpost) ]]; then
+						PARSE_TEMPLATES[i++]=$rvar
+					else
+						pr_err "Invalid type descriptior \`$rvar' for option: $option."
+						short_usage
+					fi
+				done
+			else
+				continue
+			fi
 		;;
 		-b|--base-dir) cmdline_base_dir="$opt_arg" ;; # custom base directory
 		-c|--config-file) cmdline_conf_file="$opt_arg" ;; # custom main config file
