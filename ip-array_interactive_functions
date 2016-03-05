@@ -180,20 +180,7 @@ fi
 dia_yn "Do you want to add another variable?"
 } # -------------------------------------------------------------------------
 
-_choose_rule_action() { # sub function of iactive_rule_builder(). Choose action type for rule building.
-dia_menu "Select the type of rule action" \
-	"iptables tag" "iptables argument tag" \
-	"rule" "single rule" \
-	"combined_rule" "Grouped tags rule" \
-	"template_rule" "Template based rule" \
-	"public_function" "Public function(s)" \
-	"ipset" "Create set / add elements" \
-	"close" "Close last opened tag" \
-	"comment" "Add a comment" \
-	"view" "View the created rules"
-} # -------------------------------------------------------------------------
-
-_add_template_rule() { # sub function of _add_rules() - Add a template rule
+_add_template_rule() { # sub function of _ia_add_rules() - Add a template rule
 t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
 # choose one ruleblock
 r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
@@ -206,7 +193,7 @@ fi
 dia_yn "Do you want to add another template_rule line?"
 } # -------------------------------------------------------------------------
 
-_add_single_rule_entries () { # sub function of _add_rules() - Collect entries for <rule> or <optlist>
+_add_single_rule_entries () { # sub function of _ia_add_rules() - Collect entries for <rule> or <optlist>
 arr_single_rule=()
 x=0 arr_tmp=( "${x_args[@]}" )
 while (($? == 0)); do
@@ -274,11 +261,22 @@ if ((${#arr_set_element[*]})); then
 fi
 } # -------------------------------------------------------------------------
 
-_add_rules() { # sub function of iactive_rule_builder() - add different rule types
+_ia_add_rules() { # sub function of iactive_rule_builder() - add different rule types
 local str_lhs str_rhs str str_opt str_tmp str_set str_type str_header
 local -a arr_single_rule arr_attr arr_header arr_types arr_tmp
 local -i i x
-local str_rule=$(_choose_rule_action)
+local str_rule=$(dia_menu "Select the type of rule action" \
+	"iptables tag" "iptables argument tag" \
+	"rule" "single rule" \
+	"combined_rule" "Grouped tags rule" \
+	"template_rule" "Template based rule" \
+	"public_function" "Public function(s)" \
+	"ipset" "Create set / add elements" \
+	"close" "Close last opened tag" \
+	"comment" "Add a comment" \
+	"view" "View the created rules"
+	)
+
 if [[ $str_rule = template_rule ]]; then
 	arr_content[content_idx++]="${str_indent}    <template_rule>"
 	if ((${#arr_templ[*]} == 0)); then
@@ -556,7 +554,7 @@ for x in ${!ARG_NAMES_LIST[*]}; do
 done
 
 while (($? == 0)); do
-	_add_rules
+	_ia_add_rules
 done
 if ((${#arr_content[@]})); then
 	mutex_on || bail_out $?
