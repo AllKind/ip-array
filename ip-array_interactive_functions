@@ -713,6 +713,15 @@ fi
 
 } # -------------------------------------------------------------------------
 
+_remove_dupe_templ_entry() { # sub function of iactive_template_builer - remove dupes from the list
+for y in ${!arr_tmp[@]}; do
+	[[ ${arr_tmp[y]} = m_set ]] && continue # set match is allowed multiple times
+	if [[ ${arr_tmp[y]} = $1 ]]; then
+		unset arr_tmp[y] arr_tmp[y+1]
+	fi
+done
+}
+
 iactive_template_builder() { # interactive template builder
 local t_name t_file str_tmp str_x
 local arr_title=( --title "$ME template builder" )
@@ -797,11 +806,7 @@ if ((${#xopts[*]})); then
 					arr_o0[i++]=$(dia_menu --noitem \
 						"Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
 					if (($? == 0)); then
-						for y in ${!arr_tmp[@]}; do # remove dupes from the list
-							if [[ ${arr_tmp[y]} = ${arr_o0[i-1]} ]]; then
-								unset arr_tmp[y] arr_tmp[y+1]
-							fi
-						done
+						_remove_dupe_templ_entry "${arr_o0[i-1]}"
 					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_o0[i-1]
 					fi
@@ -830,11 +835,7 @@ if ((${#xopts[*]})); then
 						"Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
 						"${arr_tmp[@]}")
 					if (($? == 0)); then
-						for y in ${!arr_tmp[@]}; do # remove dupes from the list
-							if [[ ${arr_tmp[y]} = ${arr_o1[i-1]} ]]; then
-								unset arr_tmp[y] arr_tmp[y+1]
-							fi
-						done
+						_remove_dupe_templ_entry "${arr_o1[i-1]}"
 					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_o1[i-1]
 					fi
@@ -863,11 +864,7 @@ if ((${#xopts[*]})); then
 					arr_alw0[i++]=$(dia_menu --noitem \
 						"Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
 					if (($? == 0)); then
-						for y in ${!arr_tmp[@]}; do # remove dupes from the list
-							if [[ ${arr_tmp[y]} = ${arr_alw0[i-1]} ]]; then
-								unset arr_tmp[y] arr_tmp[y+1]
-							fi
-						done
+						_remove_dupe_templ_entry "${arr_alw0[i-1]}"
 					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_alw0[i-1]
 					fi
@@ -894,11 +891,7 @@ if ((${#xopts[*]})); then
 						"Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
 						"${arr_tmp[@]}")
 					if (($? == 0)); then
-						for y in ${!arr_tmp[@]}; do # remove dupes from the list
-							if [[ ${arr_tmp[y]} = ${arr_alw1[i-1]} ]]; then
-								unset arr_tmp[y] arr_tmp[y+1]
-							fi
-						done
+						_remove_dupe_templ_entry "${arr_alw1[i-1]}"
 					elif (($? == 1)); then # if we cancel while selection from list, otherwise we get an empty value into the variable
 						unset arr_alw1[i-1]
 					fi
