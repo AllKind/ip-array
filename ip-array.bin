@@ -650,7 +650,7 @@ Options:
                            This option is only valid with the \`test' parameter.
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
-     targets, matches, rules, ipt_args:-[core|matches|targets][,...] ipt_args[:NAME[,...]],
+     targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
      proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set the \`SHELL' variable.

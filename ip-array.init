@@ -186,7 +186,7 @@ Options:
 -rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
-     targets, matches, rules, ipt_args:-[core|matches|targets][,...] ipt_args[:NAME[,...]],
+     targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
      proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
