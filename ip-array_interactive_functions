@@ -36,11 +36,11 @@
 
 rdia() { # run dialog program
 "$DIALOG_PROG" "${arr_title[@]:-"$ME interactive mode"}" "$@" 2>&1 > /dev/tty
-}
+} # -------------------------------------------------------------------------
 
 dia_ibox() { # input box
 rdia --inputbox "$1" $w_height $w_with "$2"
-}
+} # -------------------------------------------------------------------------
 
 dia_mbox() { # msg box
 rdia --msgbox "$1" $w_height $w_with
@@ -48,43 +48,43 @@ rdia --msgbox "$1" $w_height $w_with
 
 dia_yn() { # yesno
 rdia --yesno "$1" $w_height $w_with
-}
+} # -------------------------------------------------------------------------
 
 dia_menu() { # menu
 if [[ $1 = --noitem ]]; then
-	local str_cmd="--noitem --menu"
+	local str_cmd="--noitem"
 	shift
 else
-	local str_cmd="--menu"
+	local str_cmd=""
 fi
 local str="$1"
 shift
-rdia $str_cmd "$str" $w_height $w_with $l_height "$@"
-}
+rdia $str_cmd --menu "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
 
 dia_clist() { # checklist
 if [[ $1 = --noitem ]]; then
-	local str_cmd="--noitem --separate-output --checklist"
+	local str_cmd="--noitem"
 	shift
 else
-	local str_cmd="--separate-output --checklist"
+	local str_cmd=""
 fi
 local str="$1"
 shift
-rdia $str_cmd "$str" $w_height $w_with $l_height "$@"
-}
+rdia $str_cmd --separate-output --checklist "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
 
 dia_rlist() { # radiolist
 if [[ $1 = --noitem ]]; then
-	local str_cmd="--noitem --radiolist"
+	local str_cmd="--noitem"
 	shift
 else
-	local str_cmd="--radiolist"
+	local str_cmd=""
 fi
 local str="$1"
 shift
-rdia $str_cmd "$str" $w_height $w_with $l_height "$@"
-}
+rdia $str_cmd --radiolist "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
 
 _add_rb_line() { # sub function of iactive_ruleblock_builder() - add a line to a ruleblock
 local idx=0
@@ -290,7 +290,11 @@ local str_rule=$(dia_menu "Select the type of rule action" \
 if [[ $str_rule = template_rule ]]; then
 	if ((${#arr_templ[*]} == 0)); then
 		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-			arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+			if [[ $DIALOG_PROG = *dialog ]]; then
+				arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+			elif [[ $DIALOG_PROG = *whiptail ]]; then
+				arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+			fi
 		else
 			dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
 			return 0
@@ -298,7 +302,11 @@ if [[ $str_rule = template_rule ]]; then
 	fi
 	if ((${#arr_rb[*]} == 0)); then
 		if [[ -r ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
-			arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+			if [[ $DIALOG_PROG = *dialog ]]; then
+				arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+			elif [[ $DIALOG_PROG = *whiptail ]]; then
+				arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+			fi
 		else
 			dia_mbox "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
 			return 0
@@ -656,7 +664,11 @@ if (($? != 0)); then
 	return 1
 fi
 if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+	if [[ $DIALOG_PROG = *dialog ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+	elif [[ $DIALOG_PROG = *whiptail ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+	fi
 	t_name=$(dia_menu --noitem "Choose a template" "${arr_tmp[@]}")
 	(($? == 0)) || return 1
 	[[ $t_name ]] || return 1
@@ -690,9 +702,18 @@ if [[ $str_act = "Create a new ruleblock" ]]; then
 elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 	load_all_ruleblocks || return
 	# put list of all ruleblocks into an array
-	arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+	if [[ $DIALOG_PROG = *dialog ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+	elif [[ $DIALOG_PROG = *whiptail ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+	fi
 	# choose one ruleblock
-	r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_tmp[@]}")
+	if ((${#arr_tmp[@]})); then
+		r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_tmp[@]}")
+	else
+		dia_mbox "No ruleblocks have been found!"
+		return 0
+	fi
 	(($? == 0)) || return 1
 	[[ $r_name ]] || return 1
 	$($copy_array "$r_name" arr_rb) || return 1
@@ -704,7 +725,9 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 	fi
 	for i in ${!arr_rb[*]}; do # add line numbers
 		arr_rb_tmp[idx++]="$x: ${arr_rb[i]}"
-		arr_rb_tmp[idx++]="item"
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			arr_rb_tmp[idx++]="item"
+		fi
 		let x++
 	done
 	x=0 arr_tmp=()
@@ -819,7 +842,7 @@ if ((${#xopts[*]})); then
 			;;
 			load_template)
 				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter the name for the other template(s) to load (separated by space)" T_)"
+					"Enter the name(s) for the template(s) to load (separated by space)" T_)"
 			;;
 			state_match_arg)
 				xopts[x]="${xopts[x]}=$(dia_ibox \
