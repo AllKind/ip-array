@@ -853,6 +853,18 @@ if ((${#xopts[*]})); then
 				fi
 				arr_ltempl=()
 				while (($? == 0)); do
+					for i in ${!arr_ltempl[@]}; do
+						for y in ${!arr_templ[@]}; do
+							[[ ${arr_templ[y]} = off ]] && continue
+							if [[ ${arr_ltempl[i]} = ${arr_templ[y]} ]]; then
+								unset arr_templ[y] # remove dupe entry from previous selection
+								if [[ $DIALOG_PROG = *whiptail ]]; then
+									unset arr_templ[y+1] # remove dupe dummy entry from previous selection
+								fi
+								break
+							fi
+						done
+					done
 					arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s)\nCancel to quit" "${arr_templ[@]}" )
 					if (($?)); then
 						unset arr_ltempl[${#arr_ltempl[@]}-1]
@@ -1001,6 +1013,7 @@ if ((${#xopts[*]})); then
 				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
 			;;
 			load_template)
+				(( ${#arr_ltempl[*]} )) || continue
 				printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
 					for i in ${!arr_ltempl[@]}; do
 						printf '\t\t%s\n' "${arr_ltempl[i]}" >> "$t_file"
@@ -1042,6 +1055,9 @@ if ((${#xopts[*]})); then
 			"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 		fi
 	fi
+	dia_yn "Do you want to create another template?"
+else
+	dia_mbox "No options have been selected."
 	dia_yn "Do you want to create another template?"
 fi
 } # -------------------------------------------------------------------------
