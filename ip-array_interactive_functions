@@ -186,17 +186,13 @@ fi
 dia_yn "Do you want to add another variable?"
 } # -------------------------------------------------------------------------
 
-_add_template_rule() { # sub function of _ia_add_rules() - Add a template rule
-t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
-# choose one ruleblock
-r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
-str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or cancel for none.")
-if [[ $t_name && $r_name ]]; then
-	arr_content[content_idx++]="${str_indent}        $t_name $r_name $str_tmp"
-else
-	dia_mbox "Template or ruleblock definition is missing."
-fi
-dia_yn "Do you want to add another template_rule line?"
+_remove_dupe_templ_entry() { # sub function of iactive_template_builer - remove dupes from the list
+for y in ${!arr_tmp[@]}; do
+	[[ ${arr_tmp[y]} = m_set ]] && continue # set match is allowed multiple times
+	if [[ ${arr_tmp[y]} = $1 ]]; then
+		unset arr_tmp[y] arr_tmp[y+1]
+	fi
+done
 } # -------------------------------------------------------------------------
 
 _add_single_rule_entries () { # sub function of _ia_add_rules() - Collect entries for <rule> or <optlist>
@@ -314,7 +310,16 @@ if [[ $str_rule = template_rule ]]; then
 	fi
 	arr_content[content_idx++]="${str_indent}    <template_rule>"
 	while (($? == 0)); do
-		_add_template_rule
+		t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
+		# choose one ruleblock
+		r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
+		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or cancel for none.")
+		if [[ $t_name && $r_name ]]; then
+			arr_content[content_idx++]="${str_indent}        $t_name $r_name $str_tmp"
+		else
+			dia_mbox "Template or ruleblock definition is missing."
+		fi
+		dia_yn "Do you want to add another template_rule line?"
 	done
 	arr_content[content_idx++]="${str_indent}    </template_rule>"
 elif [[ $str_rule = "iptables tag" ]]; then
@@ -766,20 +771,11 @@ fi
 
 } # -------------------------------------------------------------------------
 
-_remove_dupe_templ_entry() { # sub function of iactive_template_builer - remove dupes from the list
-for y in ${!arr_tmp[@]}; do
-	[[ ${arr_tmp[y]} = m_set ]] && continue # set match is allowed multiple times
-	if [[ ${arr_tmp[y]} = $1 ]]; then
-		unset arr_tmp[y] arr_tmp[y+1]
-	fi
-done
-}
-
 iactive_template_builder() { # interactive template builder
 local t_name t_file str_tmp str_x
 arr_title=( --title "$ME template builder" )
 local -i i x y
-local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_tmp
+local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_templ arr_ltempl arr_tmp
 local -a arr_opts=(
 table "Table name" off
 chain "Chain name" off
@@ -814,8 +810,14 @@ t_name=$(dia_ibox \
 
 (($? != 0)) && return 1
 
-[[ $t_name || $t_name != @(T_|TEMPLATE_|T|TEMPLATE) ]] || return 1
-[[ $t_name = @(T|TEMPLATE)_+([[:word:]]) ]] || return 1
+if [[ -z $t_name || $t_name = @(T_|TEMPLATE_|T|TEMPLATE) ]]; then
+	dia_mbox "\`$t_name' is not a valid template name"
+	return 1
+fi
+if [[ $t_name != @(T|TEMPLATE)_+([[:word:]]) ]]; then
+	dia_mbox "\`$t_name' is not a valid template name"
+	return 1
+fi
 local t_file="$SAVE_DIR/${t_name}.xml"
 
 xopts=( $(dia_clist "Choose the options for the template $t_name.\nMultiple choice." "${arr_opts[@]}") )
@@ -833,28 +835,39 @@ if ((${#xopts[*]})); then
 					fi
 			;;
 			chain)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter the ${xopts[x]} name(s) (max. 2 separated by space)")"
+				xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)")"
 			;;
 			target)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter the ${xopts[x]} name(s) (separated by space)")"
+				xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (separated by space)")"
 			;;
 			load_template)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter the name(s) for the template(s) to load (separated by space)" T_)"
+				if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+					if [[ $DIALOG_PROG = *dialog ]]; then
+						arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+					elif [[ $DIALOG_PROG = *whiptail ]]; then
+						arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+					fi
+				else
+					dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+					return 0
+				fi
+				arr_ltempl=()
+				while (($? == 0)); do
+					arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s)\nCancel to quit" "${arr_templ[@]}" )
+					if (($?)); then
+						unset arr_ltempl[${#arr_ltempl[@]}-1]
+						break
+					fi
+				done
 			;;
 			state_match_arg)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter one or two comma separated list of conntrack state names")"
+				xopts[x]="${xopts[x]}=$(dia_ibox "Enter one or two comma separated list(s) of conntrack state names")"
 			;;
 			template_msg)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter a template loading message")"
+				xopts[x]="${xopts[x]}=$(dia_ibox "Enter a template loading message")"
 			;;
 			mandatory_vars)
-				xopts[x]="${xopts[x]}=$(dia_ibox \
-					"Enter a comma separated list of required variable names")"
+				xopts[x]="${xopts[x]}=$(dia_ibox "Enter a comma separated list of required variable names")"
 			;;
 			reverse_mode)
 				xopts[x]="${xopts[x]}=$(dia_rlist "Select a reverse mode." \
@@ -987,10 +1000,10 @@ if ((${#xopts[*]})); then
 			table*|chain*|target*|state_match_arg*|template_msg*|mandatory_vars*|reverse_mode*|reverse_condition*)
 				printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
 			;;
-			load_template*)
+			load_template)
 				printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
-					for str_tmp in ${xopts[x]#*=}; do
-						printf '\t\t%s\n' "$str_tmp" >> "$t_file"
+					for i in ${!arr_ltempl[@]}; do
+						printf '\t\t%s\n' "${arr_ltempl[i]}" >> "$t_file"
 					done
 				printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
 			;;
