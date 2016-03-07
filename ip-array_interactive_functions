@@ -600,7 +600,7 @@ while (($? == 0)); do
 done
 if (($? <= 1)); then
 	if ((${#arr_content[@]})); then
-		mutex_on || bail_out $?
+		mutex_on || bail_out $ER_FAIL
 		printf '<?xml version="1.0"?>\n\n' > "$r_file"
 		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
 		printf "%s\n" "${arr_content[@]}" >> "$r_file"
@@ -637,8 +637,8 @@ for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
 	arr_conf[i]="$1 $4 $3"
 	let i++
 done
-mutex_on || bail_out $?
-create_file "$c_file" || return
+mutex_on || bail_out $ER_FAIL
+create_file "$c_file" || bail_out $ER_FAIL
 while (($? == 0)); do
 	_add_conf_var
 done
@@ -747,7 +747,7 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 fi
 r_file="$SAVE_DIR/${r_name}.xml"
 if ((${#arr_rb[*]})); then
-	mutex_on || bail_out $?
+	mutex_on || bail_out $ER_FAIL
 	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
 	if ((${#arr_inf[*]})); then
 		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
@@ -826,13 +826,13 @@ if ((${#xopts[*]})); then
 	for ((x=0; x<=${#xopts[*]}; x++)); do
 		case "${xopts[x]}" in
 			table)
-					if [[ $DIALOG_PROG = *dialog ]]; then
-						xopts[x]="${xopts[x]}=$(dia_menu --noitem \
-							"Choose the table name" filter mangle nat raw security rawpost)"
-					elif [[ $DIALOG_PROG = *whiptail ]]; then
-						xopts[x]="${xopts[x]}=$(dia_menu --noitem \
-							"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
-					fi
+				if [[ $DIALOG_PROG = *dialog ]]; then
+					xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+						"Choose the table name" filter mangle nat raw security rawpost)"
+				elif [[ $DIALOG_PROG = *whiptail ]]; then
+					xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+						"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
+				fi
 			;;
 			chain)
 				xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)")"
@@ -1004,7 +1004,8 @@ if ((${#xopts[*]})); then
 		if (($? != 0)); then return 1; fi
 	done
 	(($? != 0)) && return 1
-	mutex_on || bail_out $?
+	mutex_on || bail_out $ER_FAIL
+	create_file "$t_file" || bail_out $ER_FAIL
 	printf '<template name="%s">\n' "$t_name" > "$t_file"
 	y=0
 	for x in ${!xopts[*]}; do
