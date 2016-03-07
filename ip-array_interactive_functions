@@ -1023,9 +1023,7 @@ for x in ${!xopts[*]}; do
 		load_template)
 			(( ${#arr_ltempl[*]} )) || continue
 			printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
-				for i in ${!arr_ltempl[@]}; do
-					printf '\t\t%s\n' "${arr_ltempl[i]}" >> "$t_file"
-				done
+			printf '\t\t%s\n' "${arr_ltempl[@]}" >> "$t_file"
 			printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
 		;;
 		option_list_0)
