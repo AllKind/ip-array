@@ -783,6 +783,19 @@ return 1
 #done
 #} # -------------------------------------------------------------------------
 
+find_x_get_y() { # find a word and echo the next one
+local str_x="$1"
+shift
+while (($#)); do
+	if [[ $1 = $str_x && $2 ]]; then
+		printf "%s\n" "$2"
+		return 0
+	fi
+	shift
+done
+return 1
+} # -------------------------------------------------------------------------
+
 check_var_overlap() { # check for overlapping variable names
 # $1 = name of variable (maybe user config var) to be checked,
 # $2 = local function variable name to be checked against
@@ -1893,7 +1906,8 @@ run_iproute -o route get $1 | my_cut -c '5'
 } # -------------------------------------------------------------------------
 
 get_default_route_iface() { # get and echo the interface of the default route.
-run_iproute route list | lsearch_regex '^default' | my_cut -c '5'
+#run_iproute route list | lsearch_regex '^default' | my_cut -c '5'
+run_iproute route list | lsearch_regex '^default' | find_x_get_y dev
 } # -------------------------------------------------------------------------
 
 #get_default_table_route_iface() { # get and echo the interface of the default route, of a specified table
