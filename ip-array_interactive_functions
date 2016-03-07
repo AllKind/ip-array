@@ -810,15 +810,15 @@ t_name=$(dia_ibox \
 
 (($? != 0)) && return 1
 
-if [[ -z $t_name || $t_name = @(T_|TEMPLATE_|T|TEMPLATE) ]]; then
+if [[ -z $t_name ]]; then
+	dia_mbox "template name must not be empty"
+	return 1
+fi
+if [[ $t_name != @(T|BT|GT|BASE_TEMPLATE|GLOBAL_TEMPLATE|TEMPLATE)_+([[:word:]]) ]]; then
 	dia_mbox "\`$t_name' is not a valid template name"
 	return 1
 fi
-if [[ $t_name != @(T|TEMPLATE)_+([[:word:]]) ]]; then
-	dia_mbox "\`$t_name' is not a valid template name"
-	return 1
-fi
-local t_file="$SAVE_DIR/${t_name}.xml"
+t_file="$SAVE_DIR/${t_name}.xml"
 
 xopts=( $(dia_clist "Choose the options for the template $t_name.\nMultiple choice." "${arr_opts[@]}") )
 
