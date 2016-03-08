@@ -64,9 +64,9 @@ declare -r IF_CON="_to_" 	# string used to separate interface dependant jump tre
 declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
 declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
 declare -r DEFAULT_RULESETFILE="${me}_commands.bash"	# default file to save iptables commands to
-declare IACTIVE_WINDOW_HEIGHT=0		# window height in interacitive mode
-declare IACTIVE_WINDOW_WITH=0		# window with in interacitive mode
-declare IACTIVE_LIST_HEIGHT=0		# list height in interacitive mode
+declare -i IACTIVE_WINDOW_HEIGHT=0		# window height in interacitive mode
+declare -i IACTIVE_WINDOW_WITH=0		# window with in interacitive mode
+declare -i IACTIVE_LIST_HEIGHT=0		# list height in interacitive mode
 
 # Various iptables aliases
 declare -r stE="ESTABLISHED"
@@ -131,7 +131,7 @@ address-mask-reply"
 
 # Array to hold the iptables targets & their syntax
 # Syntax: mandatory 0/1 | target-name | table | chain | command
-IPARRAY_TARGETS=(
+declare -ar IPARRAY_TARGETS=(
 "1 LOG filter -j LOG"
 "0 NFLOG filter -j NFLOG"
 "0 ULOG filter -j ULOG"
@@ -171,7 +171,7 @@ IPARRAY_TARGETS=(
 
 # Array to hold the iptables modules & their syntax
 # Syntax: mandatory 0/1 | module-name | var-name | table | chain | command
-IPARRAY_MODULES=(
+declare -ar IPARRAY_MODULES=(
 "1 state filter -m state --state ESTABLISHED"
 "0 conntrack filter -m conntrack --ctstate ESTABLISHED"
 "0 mac filter -m mac --mac-source AA:BB:CC:DD:EE:FF"
@@ -221,7 +221,7 @@ IPARRAY_MODULES=(
 )
 
 # Array to hold the supported ipset set types
-IPARRAY_IPSET_SETTYPE_LIST=(
+declare -ar IPARRAY_IPSET_SETTYPE_LIST=(
 "ipmap --network 10.0.0.0/24"
 "macipmap --network 10.0.0.0/24"
 "portmap --from 1 --to 7"
@@ -250,7 +250,7 @@ IPARRAY_IPSET_SETTYPE_LIST=(
 )
 
 # Array with match extensions, which are available in all tables
-GLOBAL_MATCH_LIST=(
+declare -ar GLOBAL_MATCH_LIST=(
 CORE
 IDEV ODEV
 MAC SRC DST
@@ -296,7 +296,7 @@ COMMENT
 
 # Array with targets valid in all tables
 # format: target-name target-option [...]
-GLOBAL_TARGET_LIST=(
+declare -ar GLOBAL_TARGET_LIST=(
 "LOG LOG_LEVEL LOG_PREFIX LOG_OPTIONS"
 "ULOG ULOG_OPT LOG_PREFIX"
 "NFLOG NFLOG_OPT LOG_PREFIX"
@@ -313,7 +313,7 @@ GLOBAL_TARGET_LIST=(
 
 # Array with match extensions, which are only valid in certain tables
 # format: table-name[,...] match-name[,...]
-TABLE_DEPEND_MATCH_LIST=(
+declare -ar TABLE_DEPEND_MATCH_LIST=(
 "filter,security CONNTRACK,M_CONNMARK,CONNLIMIT,HELPER,STATE"
 "mangle CONNTRACK,M_CONNMARK,HELPER,RPFILTER,CLUSTER,STATE"
 "nat M_CONNMARK,CONNTRACK,HELPER,STATE"
@@ -322,7 +322,7 @@ TABLE_DEPEND_MATCH_LIST=(
 
 # Array with table dependant targets and their option(s)
 # format: table-name[,...] target-name:target-option[,...] [...]
-TABLE_DEPEND_TARGET_LIST=(
+declare -ar TABLE_DEPEND_TARGET_LIST=(
 "filter REJECT:REJECT_TYPE"
 "mangle CLASSIFY:SET_CLASS CONNMARK:SET_CONNMARK DSCP:SET_DSCP CHECKSUM:CHECKSUM ECN:REM_ECN SECMARK:SET_SECMARK CONNSECMARK:SET_CONNSECMARK TCPOPTSTRIP:TCPOPTSTRIP \
 TCPMSS:SET_TCPMSS TOS:SET_TOS TPROXY:TPROXY_OPT TTL:SET_TTL TEE:TEE_GW"
@@ -346,7 +346,7 @@ TCPMSS:SET_TCPMSS TOS:SET_TOS TPROXY:TPROXY_OPT TTL:SET_TTL TEE:TEE_GW"
 
 # Message colour array for title, subtitle, info, warn, error, notice, etc.
 # Format: msg-name | colour (lowercase)
-MSG_COLOR_ARRAY=(
+declare -ar MSG_COLOR_ARRAY=(
 "COLOR_MSG_MAIN_TITLE magenta"
 "COLOR_MSG_SUBTITLE blue"
 "COLOR_MSG_INFO_TITLE cyan"
@@ -359,7 +359,7 @@ MSG_COLOR_ARRAY=(
 
 # Array to hold the global sysctl names and their values.
 # Format: var-name | var-type | path | msg
-SYSCTL_ARRAY=(
+declare -ar SYSCTL_ARRAY=(
 # networking conf/
 "PROC_ARP_FILTER iface_bool ${PROC_IPV4}/conf arp_filter arp filter"
 "PROC_ICMP_REDIRECTS iface_bool ${PROC_IPV4}/conf accept_redirects icmp redirects"

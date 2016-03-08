@@ -237,6 +237,7 @@ MAX_SETS
 IPTSAVE_FAILS
 SYNTAX_CHECK
 RELOAD_TIME
+DIALOG_PROG
 )
 
 # Valid rule option names (core)
@@ -461,18 +462,18 @@ fi
 declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY
 
 # compatible IP-Array xml syntax versions
-declare -a TEMPLATE_SYNTAX_VERSION_ARRAY=( '1.0' )
-declare -a RULEBLOCK_SYNTAX_VERSION_ARRAY=( '1.0' )
-declare -a RULEFILE_SYNTAX_VERSION_ARRAY=( '1.0' '1.1' )
+declare -ar TEMPLATE_SYNTAX_VERSION_ARRAY=( '1.0' )
+declare -ar RULEBLOCK_SYNTAX_VERSION_ARRAY=( '1.0' )
+declare -ar RULEFILE_SYNTAX_VERSION_ARRAY=( '1.0' '1.1' )
 
 # Array to hold the names of the arrays, which get filled by the user.
 # Names are taken from the array and arrays get filled use fill_array()
 # Format: array-name [...]
-LOCAL_NET_ARRAY=( LAN_NS ISP_NS LOCAL_NS ISP_SMTP TIME_SERVERS VPN_MAP )
+declare -ar LOCAL_NET_ARRAY=( LAN_NS ISP_NS LOCAL_NS ISP_SMTP TIME_SERVERS VPN_MAP )
 
 # Names of the arrays holding the commands to apply
 # Format: array-name | category | message
-CMD_NAMES_ARRAY=(
+declare -ar CMD_NAMES_ARRAY=(
 "MODULE_CMD_ARRAY mod modprobe commands"
 "IPT_POL_ARRAY ipt iptables policy commands"
 "IPT_FLUSH_ARRAY ipt iptables chain flushing/deletion commands"
@@ -493,7 +494,7 @@ CMD_NAMES_ARRAY=(
 
 # Array to hold the program definitions that are mandatory for IP-Array
 # Format: variable-name | program-name | mandatory 0/1
-IPARRAY_PROGRAMS=(
+declare -ar IPARRAY_PROGRAMS=(
 "AT at 1"
 "BC bc 1"
 "CAT cat 1"
@@ -518,7 +519,7 @@ IPARRAY_PROGRAMS=(
 "WHIPTAIL whiptail 0"
 )
 
-PUBLIC_FUNCTION_LIST=(
+declare -ar PUBLIC_FUNCTION_LIST=(
 "log Log (coloured) messages to stdout, stderr and/or syslog"
 "add_rule Add an iptables rule"
 "create_chain Create an iptables chain"
