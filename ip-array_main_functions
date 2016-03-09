@@ -1421,7 +1421,7 @@ then
 	}
 	return 0
 else
-	log -E "Failed scheduling the restore job."
+	log -F "scheduling the restore job."
 	return $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
@@ -1902,13 +1902,12 @@ done
 
 get_route_iface() { # retrieve and echo the interface an IP is routed over
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-run_iproute -o route get $1 | my_cut -c '5'
+find_x_get_y dev $(run_iproute -o route get $1)
 } # -------------------------------------------------------------------------
 
-get_default_route_iface() { # get and echo the interface of the default route.
-#run_iproute route list | lsearch_regex '^default' | my_cut -c '5'
-run_iproute route list | lsearch_regex '^default' | find_x_get_y dev
-} # -------------------------------------------------------------------------
+#get_default_route_iface() { # get and echo the interface of the default route.
+#find_x_get_y dev $(run_iproute route list | lsearch_regex '^default')
+#} # -------------------------------------------------------------------------
 
 #get_default_table_route_iface() { # get and echo the interface of the default route, of a specified table
 #[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
@@ -1980,7 +1979,7 @@ log -I "Enumerating networks data"
 	return $ER_NODEF
 }
 # get default route interface
-readonly DEF_ROUTE_IF="$(get_default_route_iface)"
+readonly DEF_ROUTE_IF="$( find_x_get_y dev $(run_iproute route list | lsearch_regex '^default') )"
 # cycle through networking interface array
 for net_idx in ${!NET_INTERFACES[@]}; do
 	if_regged=0 if_is_ipsec=0
@@ -2712,7 +2711,7 @@ log -w "Loading local network data arrays"
 for net_idx in ${!LOCAL_NET_ARRAY[@]}; do
 	log -w "${PF}loading: ${LOCAL_NET_ARRAY[net_idx]}"
 	fill_array ${LOCAL_NET_ARRAY[net_idx]} || {
-		log -E "Failed filling array ${LOCAL_NET_ARRAY[net_idx]}."
+		log -F "filling array ${LOCAL_NET_ARRAY[net_idx]}."
 		return $ER_FAIL
 	}
 #	readonly ${LOCAL_NET_ARRAY[net_idx]}
@@ -3599,7 +3598,7 @@ if [[ -r $str_file ]]; then
 		log -N "Module state successfully restored from: \`$str_file'"
 		run_rm "$str_file"
 	else
-		log -E "Failed restoring module state."
+		log -F "restoring module state."
 		return $ER_FAIL
 	fi
 fi
@@ -3613,7 +3612,7 @@ if [[ -r $str_file ]]; then
 		log -N "/proc state successfully restored from: \`$str_file'"
 		run_rm "$str_file"
 	else
-		log -E "Failed restoring /proc state."
+		log -F "restoring /proc state."
 		return $ER_FAIL
 	fi
 fi
@@ -4014,7 +4013,7 @@ case "$1" in
 			if "$SHELL" -- "$rvar"; then
 				log -N "Sucessfully restored ruleset from: $rvar."
 			else
-				log -E "Failed restoring ruleset from: \`$rvar'."
+				log -F "restoring ruleset from: \`$rvar'."
 				# TODO: ipt isn't the actually correct err category
 				cmd_err_count 'ipt' "$SHELL -- $rvar"
 			fi

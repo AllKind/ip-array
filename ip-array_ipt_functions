@@ -878,7 +878,7 @@ if [[ -r $str_file ]]; then
 	if run_ipset -R <"$str_file"; then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'ipset rules successfully restored from: $str_file'"
 	else
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring ipset rules from: $str_file.'"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -F 'restoring ipset rules from: $str_file.'"
 		return $ER_FAIL
 	fi
 else
@@ -901,7 +901,7 @@ if [[ -r $str_file ]]; then
 	if "$IPT_RESTORE" $str_c <"$str_file"; then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -N 'iptables rules successfully restored from: $str_file'"
 	else
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'Failed restoring iptables rules from: $str_file.'"
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -F 'restoring iptables rules from: $str_file.'"
 		return $ER_FAIL
 	fi
 else
@@ -921,7 +921,7 @@ if [[ -r $str_file ]]; then
 	if run_ipset -R <"$str_file"; then
 		log -N "ipset rules successfully restored from: \`$str_file'"
 	else
-		log -E "Failed restoring ipset rules from: \`$str_file'."
+		log -F "restoring ipset rules from: \`$str_file'."
 		return $ER_FAIL
 	fi
 else
@@ -944,7 +944,7 @@ if [[ -r $str_file ]]; then
 	if "$IPT_RESTORE" $str_c <"$str_file"; then
 		log -N "iptables rules successfully restored from: \`$str_file'"
 	else
-		log -E "Failed restoring iptables rules from: \`$str_file'."
+		log -F "restoring iptables rules from: \`$str_file'."
 		return $ER_FAIL
 	fi
 else
@@ -997,7 +997,7 @@ log -I "Immediately flushing and deleting existing chains"
 if ! [[ -r $IP_TABLES_NAMES ]]; then
 	log -W "\`$IP_TABLES_NAMES' does not exist, module ip_tables is not loaded. Trying to initialize."
 	dn run_ipt -nL || {
-		log -E "Failed to initialize iptables"
+		log -F "to initialize iptables"
 		return $ER_FAIL
 	}
 fi
@@ -1130,7 +1130,7 @@ case "$1" in
 				continue
 			else
 				run_ipt -t $rvar -N $BIC_TEST_CHAIN || {
-					log -E "Failed creating chain $BIC_TEST_CHAIN in $rvar table"
+					log -F "creating chain $BIC_TEST_CHAIN in $rvar table"
 					return $ER_FAIL
 				}
 			fi
@@ -2664,7 +2664,7 @@ for t_idx in ${!TEMP_TEMPLATE_NAMES_ARRAY[@]}; do
 	local reference_catalog_data="${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}[@]"
 #	local "${!reference_catalog_data}" &>/dev/null || {
 	eval local "${!reference_catalog_data}" &>/dev/null || {
-		log -E "Failed referencing Template: \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'."
+		log -F "referencing Template: \`${TEMP_TEMPLATE_NAMES_ARRAY[t_idx]}'."
 		raise_gen_err_count
 		continue
 	}
@@ -3059,7 +3059,7 @@ if ((parse_files == 1)); then
 	xml_parser 'ruleblocks' < "$ruleblock_file" || {
 		exec 7>&-
 		[[ -e $parsed_file ]] && run_rm "$parsed_file"
-		log -E "Failed parsing ruleblock file: \`$ruleblock_file'"
+		log -F "parsing ruleblock file: \`$ruleblock_file'"
 		return $ER_LOAD
 	}
 	exec 7>&-
@@ -3187,7 +3187,7 @@ if ((parse_files == 1)); then
 	xml_parser 'rules' < "${rule_file}" || {
 		exec 7>&-
 		[[ -e $parsed_file ]] && run_rm "$parsed_file"
-		log -E "Failed parsing rule file: \`${rule_file}'"
+		log -F "parsing rule file: \`${rule_file}'"
 		return $ER_LOAD
 	}
 	exec 7>&-
@@ -8237,7 +8237,7 @@ log -w "Referencing template: ${target_template} using ruleblock: ${target_ruleb
 local reference_catalog_data="${target_template}[@]"
 eval local "${!reference_catalog_data}" &>/dev/null || {
 #local "${!reference_catalog_data}" &>/dev/null || {
-	log -E "Failed referencing template: \`${target_template}'."
+	log -F "referencing template: \`${target_template}'."
 	blacklist_template "${target_template}"
 	raise_gen_err_count
 	return 0
@@ -8257,7 +8257,7 @@ eval local "${!reference_catalog_data}" &>/dev/null || {
 for cmd_to_run in ${commands_to_run}; do
 	log -w "Running template invocation command: ${cmd_to_run//,/ }"
 	${cmd_to_run//,/ } || {
-		log -E "Failed running template invocation command \`${cmd_to_run}'."
+		log -F "running template invocation command \`${cmd_to_run}'."
 		cmd_err_count 'misc' "${cmd_to_run}"
 		return 0
 	}
@@ -8451,7 +8451,7 @@ for tmp_arr_idx in ${!arr_tmp_ruleblock[@]}; do
 		local reference_command_array="option_list_${OPTION_LIST_IDX}[@]"
 		eval local "${!reference_command_array}" &>/dev/null || {
 #		local "${!reference_command_array}" &>/dev/null || {
-			log -E "Failed referencing \`option_list_${OPTION_LIST_IDX}'."
+			log -F "referencing \`option_list_${OPTION_LIST_IDX}'."
 			blacklist_template "${target_template}"
 			raise_gen_err_count
 			return 0
