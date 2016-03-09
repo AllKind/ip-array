@@ -613,6 +613,7 @@ if (($? <= 1)); then
 		if [[ -s "$r_file" ]]; then
 			dia_yn "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
 			if (($? == 0)); then
+				printf "%s:\n" "$r_file"
 				printf "\n" # we use cat as --textbox does not handle indention nicely
 				"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 			fi
@@ -650,6 +651,7 @@ cleanup_lock
 if [[ -s "$c_file" ]]; then
 	dia_yn "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?"
 	if (($? == 0)); then
+		printf "%s:\n" "$c_file"
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 	fi
@@ -764,6 +766,7 @@ if ((${#arr_rb[*]})); then
 	dia_yn "The resulting ruleblock has been saved to: ${r_file}\nDo you want to view the created ruleblock?"
 	if (($? == 0)); then
 		if [[ -r "$r_file" ]]; then
+			printf "%s:\n" "$r_file"
 			printf "\n" # we use cat as --textbox does not handle indention nicely
 			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 		fi
@@ -1057,6 +1060,7 @@ cleanup_lock
 dia_yn "The resulting template has been saved to: $t_file\nDo you want to view the created template?"
 if (($? == 0)); then
 	if [[ -r "$t_file" ]]; then
+		printf "%s:\n" "$t_file"
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 	fi
