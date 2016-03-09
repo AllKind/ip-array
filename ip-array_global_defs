@@ -470,7 +470,7 @@ declare -ar SYSCTL_ARRAY=(
 CONFIG_ENTRY_ARRAY=(
 "NET_INTERFACES print 1 array"
 # config files
-"CONFIG_FILES print 1 var check_str_unique \${CONFIG_FILES}"
+"CONFIG_FILES print 0 var check_str_unique \${CONFIG_FILES}"
 "BASE_TEMPLATES print 0 var check_str_unique \${BASE_TEMPLATES}"
 "IPT_FILTER_TEMPLATES print 0 var check_str_unique \${IPT_FILTER_TEMPLATES}"
 "IPT_MANGLE_TEMPLATES print 0 var check_str_unique \${IPT_MANGLE_TEMPLATES}"
