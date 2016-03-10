@@ -1034,7 +1034,7 @@ done
 (($? != 0)) && return 1
 mutex_on || bail_out $ER_FAIL
 until (set -C; create_file "$t_file") &>/dev/null; do
-	t_file="$(dia_ibox "File \`$t_file' already exists.\nEnter a new file name (without the prefixing path).")"
+	t_file="$(dia_ibox "File \`$t_file' already exists.\nEnter a new file name (without the prefixing path)." T_)"
 	(($?)) && return 1
 	t_file="$SAVE_DIR/${t_file}"
 done
