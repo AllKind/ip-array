@@ -1039,14 +1039,14 @@ builtin enable exit
 exit ${1:-$ER_LOAD}
 } # -------------------------------------------------------------------------
 
-trap_err() {
+trap_err() { # error trap
 if ((${VERBOSE:-6} > 0)); then
 	pr_err "ERROR trap activated - exiting"
 fi
 bail_out $ER_FAIL
 } # -------------------------------------------------------------------------
 
-trap_gen() {
+trap_gen() { # generic caught SIGNAL trap handler
 if ((${VERBOSE:-6} > 0)); then
 	printf "\tReceived \`SIG%s' signal - exiting\n" "$1"
 fi
@@ -1349,7 +1349,9 @@ set_env
 
 # if startup parameter 'diff-last-activated' is used and the '--save-file' option is provided,
 # set the diff-file to the provided file name
-[[ $MAIN_ARG = diff-last-activated && $cmdline_save_file ]] && DIFF_FILE="$cmdline_save_file"
+if [[ $MAIN_ARG = diff-last-activated && $cmdline_save_file ]]; then
+	DIFF_FILE="$cmdline_save_file"
+fi
 
 # set some default values, if variables are unset
 : ${BASE_DIR:=/etc/${me}}
@@ -1425,8 +1427,9 @@ fi
 # -------------------------------------------------------------------------
 # turn on debugging (verbose level is known now)
 # -------------------------------------------------------------------------
-((VERBOSE == 8)) && set -x
-((VERBOSE == 9)) && set -vx
+if ((VERBOSE == 8)); then set -x
+elif ((VERBOSE == 9)); then set -vx
+fi
 
 # -------------------------------------------------------------------------
 # retrieve programs paths
@@ -1578,7 +1581,7 @@ case "$MAIN_ARG" in
 	start) # start mode, enforce lockdown mode with admin allow,
 			# apply commands after reading all rules
 			# if RESTORE_ON_START is enabled, do iptables-restore,
-			# and load previously saved known good scripts
+			# and load previously saved known good script
 		case "${RESTORE_ON_START:=0}" in
 			0) MODE='START' ;;
 			1) # RESTORE_ON_START is enabled - do quick-start
