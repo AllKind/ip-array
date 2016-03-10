@@ -605,7 +605,11 @@ done
 if (($? <= 1)); then
 	if ((${#arr_content[@]})); then
 		mutex_on || bail_out $ER_FAIL
-		create_file "$r_file" || return $ER_FAIL
+		until (set -C; create_file "$r_file") &>/dev/null; do
+			r_file="$(dia_ibox "File \`$r_file' already exists.\nEnter a new file name (without the prefixing path).")"
+			(($?)) && return 1
+			r_file="$SAVE_DIR/${r_file}"
+		done
 		printf '<?xml version="1.0"?>\n\n' > "$r_file"
 		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
 		printf "%s\n" "${arr_content[@]}" >> "$r_file"
@@ -618,6 +622,8 @@ if (($? <= 1)); then
 				printf "\n" # we use cat as --textbox does not handle indention nicely
 				"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 			fi
+		else
+			run_rm "$r_file"
 		fi
 	else
 		dia_mbox "No rules have been collected."
@@ -644,7 +650,11 @@ for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
 	let i++
 done
 mutex_on || bail_out $ER_FAIL
-create_file "$c_file" || return $ER_FAIL
+until (set -C; create_file "$c_file") &>/dev/null; do
+	c_file="$(dia_ibox "File \`$c_file' already exists.\nEnter a new file name (without the prefixing path).")"
+	(($?)) && return 1
+	c_file="$SAVE_DIR/${c_file}"
+done
 while (($? == 0)); do
 	_add_conf_var
 done
@@ -755,7 +765,11 @@ fi
 r_file="$SAVE_DIR/${r_name}.xml"
 if ((${#arr_rb[*]})); then
 	mutex_on || bail_out $ER_FAIL
-	create_file "$r_file" || return $ER_FAIL
+	until (set -C; create_file "$r_file") &>/dev/null; do
+		r_file="$(dia_ibox "File \`$r_file' already exists.\nEnter a new file name (without the prefixing path).")"
+		(($?)) && return 1
+		r_file="$SAVE_DIR/${r_file}"
+	done
 	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
 	if ((${#arr_inf[*]})); then
 		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
@@ -767,10 +781,12 @@ if ((${#arr_rb[*]})); then
 	cleanup_lock
 	dia_yn "The resulting ruleblock has been saved to: ${r_file}\nDo you want to view the created ruleblock?"
 	if (($? == 0)); then
-		if [[ -r "$r_file" ]]; then
+		if [[ -s "$r_file" ]]; then
 			printf "%s:\n" "$r_file"
 			printf "\n" # we use cat as --textbox does not handle indention nicely
 			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		else
+			run_rm "$r_file"
 		fi
 	fi
 	dia_yn "Do you want to create/edit another ruleblock?"
@@ -1017,7 +1033,11 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 done
 (($? != 0)) && return 1
 mutex_on || bail_out $ER_FAIL
-create_file "$t_file" || return $ER_FAIL
+until (set -C; create_file "$t_file") &>/dev/null; do
+	t_file="$(dia_ibox "File \`$t_file' already exists.\nEnter a new file name (without the prefixing path).")"
+	(($?)) && return 1
+	t_file="$SAVE_DIR/${t_file}"
+done
 printf '<template name="%s">\n' "$t_name" > "$t_file"
 y=0
 for x in ${!xopts[*]}; do
@@ -1065,6 +1085,8 @@ if (($? == 0)); then
 		printf "%s:\n" "$t_file"
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	else
+		run_rm "$t_file"
 	fi
 fi
 dia_yn "Do you want to create another template?"
