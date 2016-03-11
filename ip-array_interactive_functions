@@ -190,7 +190,10 @@ _remove_dupe_templ_entry() { # sub function of iactive_template_builer - remove 
 for y in ${!arr_tmp[@]}; do
 	[[ ${arr_tmp[y]} = m_set ]] && continue # set match is allowed multiple times
 	if [[ ${arr_tmp[y]} = $1 ]]; then
-		unset arr_tmp[y] arr_tmp[y+1]
+		unset arr_tmp[y]
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			arr_tmp[y+1]
+		fi
 	fi
 done
 } # -------------------------------------------------------------------------
@@ -203,7 +206,10 @@ while (($? == 0)); do
 	if (($? == 0)); then
 		for i in ${!arr_tmp[*]}; do # remove dupes from the list
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
-				unset arr_tmp[i] arr_tmp[i+1]
+				unset arr_tmp[i]
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_tmp[i+1]
+				fi
 				break
 			fi
 		done
@@ -241,7 +247,10 @@ while (($? == 0)); do
 	if (($? == 0)); then
 		for i in ${!arr_tmp[*]}; do # remove dupes from the list
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
-				unset arr_tmp[i] arr_tmp[i+1]
+				unset arr_tmp[i]
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_tmp[i+1]
+				fi
 				break
 			fi
 		done
@@ -329,7 +338,10 @@ elif [[ $str_rule = "iptables tag" ]]; then
 		if (($? == 0)); then
 			for i in ${!arr_tmp[*]}; do # remove dupes from the list
 				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
-					unset arr_tmp[i] arr_tmp[i+1]
+					unset arr_tmp[i]
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						arr_tmp[i+1]
+					fi
 					break
 				fi
 			done
@@ -365,7 +377,10 @@ elif [[ $str_rule = combined_rule ]]; then
 			if (($? == 0)); then
 				for x in ${!arr_tmp[*]}; do
 					if [[ $str_lhs = ${arr_tmp[x]} ]]; then
-						unset arr_tmp[x] arr_tmp[x+1]
+						unset arr_tmp[x]
+						if [[ $DIALOG_PROG = *whiptail ]]; then
+							arr_tmp[x+1]
+						fi
 						break
 					fi
 				done
