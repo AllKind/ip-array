@@ -1660,14 +1660,18 @@ fi
 # ------------------------------------------------------------------------- #
 
 calc_conntrack_max() { # calculate nf_conntrack_max & conntrack hashsize
+[[ $SYSCTL_CONNTRACK_MAX || $SYSCTL_CONNTRACK_MAX = +([[:blank:]]) ]] || {
+	log -v 'SYSCTL_CONNTRACK_MAX'
+	return 0
+}
 local -i hw=1 factor=1 ramsize
 if [[ $("$UNAME" -m) = *64 ]]; then
 	hw=2
 fi
-case "$PROC_CONNTRACK_MAX" in
-	""|+([[:digit:]])) # empty or manually configured
+case "$SYSCTL_CONNTRACK_MAX" in
+	+([[:digit:]])) # empty or manually configured
 		:
-		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
+		add_sysctl "net.netfilter.nf_conntrack_max=$SYSCTL_CONNTRACK_MAX"
 	;;
 	[xX]+([[:digit:]])) # factor is configured
 		log -w "Calculating maximum conntrack entries and conntrack hashsize"
@@ -1677,15 +1681,15 @@ case "$PROC_CONNTRACK_MAX" in
 			raise_gen_err_count
 			return 0
 		}
-		factor=${PROC_CONNTRACK_MAX#[xX]}
+		factor=${SYSCTL_CONNTRACK_MAX#[xX]}
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
-		PROC_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
+		SYSCTL_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
 #		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
 #		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
-		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
-		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
+		SYSCTL_CONNTRACK_MAX="${SYSCTL_CONNTRACK_MAX%.*}"
+		add_sysctl "net.netfilter.nf_conntrack_max=$SYSCTL_CONNTRACK_MAX"
 	;;
-	*) log -i "$PROC_CONNTRACK_MAX" PROC_CONNTRACK_MAX
+	*) log -i "$SYSCTL_CONNTRACK_MAX" SYSCTL_CONNTRACK_MAX
 		raise_cfg_err_count
 esac
 return 0
@@ -3691,7 +3695,7 @@ case "$MAIN_ARG" in
 	save-commands) mode_msg="saved commands" ;;
 	save-iptables-commands) mode_msg="saved iptables commands" ;;
 	save-modprobe-commands) mode_msg="saved modprobe commands" ;;
-	save-proc-commands) mode_msg="saved proc commands" ;;
+	save-sysctl-commands) mode_msg="saved proc commands" ;;
 	save-tc-commands) mode_msg="saved tc commands" ;;
 	save-shaping-commands) mode_msg="saved traffic shaping commands" ;;
 	show) mode_msg="showed configuration" ;;
