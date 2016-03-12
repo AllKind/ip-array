@@ -1583,13 +1583,14 @@ iface_chains() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local iface oif str_chn
 local -a ARR_CLIST
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in $1 table"
 for iface in ${NET_IFLIST}; do
 	case "$1" in
 		filter|security)
 			ARR_CLIST[${#ARR_CLIST[@]}]="INPUT_${iface}"
 			ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
-			if ((PROC_IP_FORWARD == 1)); then
+			if ((sysc_val == 1)); then
 				for oif in ${NET_IFLIST/${iface}/}; do
 					ARR_CLIST[${#ARR_CLIST[@]}]="${iface}${IF_CON}${oif}"
 				done
@@ -1604,7 +1605,7 @@ for iface in ${NET_IFLIST}; do
 				ARR_CLIST[${#ARR_CLIST[@]}]="OUTPUT_${iface}"
 				ARR_CLIST[${#ARR_CLIST[@]}]="INPUT_${iface}"
 				ARR_CLIST[${#ARR_CLIST[@]}]="POSTROUTING_${iface}"
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for oif in ${NET_IFLIST/${iface}/}; do
 						ARR_CLIST[${#ARR_CLIST[@]}]="${iface}${IF_CON}${oif}"
 					done
@@ -1637,13 +1638,14 @@ iface_jumps() { # create iptables cross interface jump entries
 local str_tbl="$1" iface oif str_jmsg str_chn str_tgt
 local -i i idx
 local -a arr_jcmd
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
 for iface in ${NET_IFLIST}; do
 	case "${str_tbl}" in
 		filter|security)
 			arr_jcmd[${#arr_jcmd[@]}]="INPUT -i ${iface} -j INPUT_${iface}"
 			arr_jcmd[${#arr_jcmd[@]}]="OUTPUT -o ${iface} -j OUTPUT_${iface}"
-			if ((PROC_IP_FORWARD == 1)); then
+			if ((sysc_val == 1)); then
 				for oif in ${NET_IFLIST/${iface}/}; do
 					arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -o ${oif} -j ${iface}${IF_CON}${oif}"
 				done
@@ -1660,7 +1662,7 @@ for iface in ${NET_IFLIST}; do
 				arr_jcmd[${#arr_jcmd[@]}]="PREROUTING -i ${iface} -j PREROUTING_${iface}"
 				arr_jcmd[${#arr_jcmd[@]}]="INPUT -i ${iface} -j INPUT_${iface}"
 				arr_jcmd[${#arr_jcmd[@]}]="POSTROUTING -o ${iface} -j POSTROUTING_${iface}"
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for oif in ${NET_IFLIST/${iface}/}; do
 						arr_jcmd[${#arr_jcmd[@]}]="FORWARD -i ${iface} -o ${oif} -j ${iface}${IF_CON}${oif}"
 					done
@@ -1711,6 +1713,7 @@ create_netname_chains() { # create traffic classification chains by netname or n
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_tbl="$1" str_net str_onet str_clist str_cilist str_chn str_net_iface str_onet_iface
 local -i multi_bound
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - logic differs from local networks
 	multi_bound=0
@@ -1746,7 +1749,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - 
 				for str_chn in "${str_net}_PRE" "${str_net}_POST" "${str_net}_INPUT" "${str_net}_OUTPUT"; do
 					lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 				done
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for str_chn in "${str_net}_FWD_IN" "${str_net}_FWD_OUT"; do
 						lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 					done
@@ -1770,7 +1773,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - 
 			for str_chn in "${str_net}_INPUT" "${str_net}_OUTPUT"; do
 				lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 			done
-			if ((PROC_IP_FORWARD == 1)); then
+			if ((sysc_val == 1)); then
 				for str_chn in "${str_net}_FWD_IN" "${str_net}_FWD_OUT"; do
 					lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 				done
@@ -1820,7 +1823,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 						lsearch "${str_chn}" ${str_cilist} || str_cilist+=" ${str_chn}"
 					done
 				fi
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for str_chn in "${str_net}_FWD_IN" "${str_net}_FWD_OUT"; do
 						lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 					done
@@ -1855,7 +1858,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					lsearch "${str_chn}" ${str_cilist} || str_cilist+=" ${str_chn}"
 				done
 			fi
-			if ((PROC_IP_FORWARD == 1)); then
+			if ((sysc_val == 1)); then
 				for str_chn in "${str_net}_FWD_IN" "${str_net}_FWD_OUT"; do
 					lsearch "${str_chn}" ${str_clist} || str_clist+=" ${str_chn}"
 				done
@@ -1885,6 +1888,7 @@ local str_tbl="$1" str str_net str_net_iface str_netaddr str_clist str_chn str_o
 local str_param str_chn str_tgt str_i str_p str_jmsg str_if_done_list
 local -i i idx ridx multi_bound
 local -a arr_stage1 arr_stage2 arr_stage3 arr_stage4 arr_stage5
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 log -I "Creating ${JUMP_TREE[1]} jump tree in ${str_tbl} table"
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 	multi_bound=0
@@ -1933,7 +1937,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 				fi
 #			fi
 			if ((ALL_MANGLE_CHAINS_PRESENT == 1)); then
-				if ((PROC_IP_FORWARD == 1)); then # to be placed at the end
+				if ((sysc_val == 1)); then # to be placed at the end
 					arr_stage5[${#arr_stage5[@]}]="FORWARD -i ${str_net_iface} -j ${str_net}_FWD_IN"
 					arr_stage5[${#arr_stage5[@]}]="FORWARD -o ${str_net_iface} -j ${str_net}_FWD_OUT"
 				fi
@@ -1959,7 +1963,7 @@ for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 #			else
 				str_clist="dst:INPUT:INPUT src:OUTPUT:OUTPUT"
 #			fi
-			if ((PROC_IP_FORWARD == 1)); then # end rules
+			if ((sysc_val == 1)); then # end rules
 				arr_stage5[${#arr_stage5[@]}]="FORWARD -i ${str_net_iface} -j ${str_net}_FWD_IN"
 				arr_stage5[${#arr_stage5[@]}]="FORWARD -o ${str_net_iface} -j ${str_net}_FWD_OUT"
 			fi
@@ -2029,7 +2033,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					else
 						arr_stage2[${#arr_stage2[@]}]="OUTPUT -o ${str_net_iface} -s ${str_netaddr} -j ${str_net}_OUTPUT"
 					fi
-					if ((PROC_IP_FORWARD == 1)); then
+					if ((sysc_val == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
 							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
@@ -2053,7 +2057,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 						arr_stage2[${#arr_stage2[@]}]="INPUT -i ${str_net_iface} -j INPUT_${str_net_iface}"
 						arr_stage2[${#arr_stage2[@]}]="OUTPUT -o ${str_net_iface} -j OUTPUT_${str_net_iface}"
 					fi
-					if ((PROC_IP_FORWARD == 1)); then
+					if ((sysc_val == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
 							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
@@ -2088,7 +2092,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 						arr_stage2[${#arr_stage2[@]}]="INPUT -i ${str_net_iface} -d ${str_netaddr} -j ${str_net}_INPUT"
 						arr_stage2[${#arr_stage2[@]}]="OUTPUT -o ${str_net_iface} -s ${str_netaddr} -j ${str_net}_OUTPUT"
 					fi
-					if ((PROC_IP_FORWARD == 1)); then
+					if ((sysc_val == 1)); then
 						for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
 							str_onetaddr=$(get_net_addr ${str_onet})
 							if [[ -z ${str_onetaddr} ]]; then
@@ -2144,7 +2148,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					arr_stage2[${#arr_stage2[@]}]="INPUT -i ${str_net_iface} -j INPUT_${str_net_iface}"
 					arr_stage2[${#arr_stage2[@]}]="OUTPUT -o ${str_net_iface} -j OUTPUT_${str_net_iface}"
 				fi
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
 						str_onetaddr=$(get_net_addr ${str_onet})
 						if [[ -z ${str_onetaddr} ]]; then
@@ -2177,7 +2181,7 @@ for str_net in ${LOC_NETNAME_LIST}; do # handle local networks
 					arr_stage2[${#arr_stage2[@]}]="INPUT -i ${str_net_iface} -d ${str_netaddr} -j ${str_net}_INPUT"
 					arr_stage2[${#arr_stage2[@]}]="OUTPUT -o ${str_net_iface} -s ${str_netaddr} -j ${str_net}_OUTPUT"
 				fi
-				if ((PROC_IP_FORWARD == 1)); then
+				if ((sysc_val == 1)); then
 					for str_onet in ${LOC_NETNAME_LIST/${str_net}/}; do
 						str_onetaddr=$(get_net_addr ${str_onet})
 						if [[ -z ${str_onetaddr} ]]; then
@@ -8681,6 +8685,7 @@ run_ipt -I OUTPUT -d ${admin_src} -s ${admin_dst} -p tcp --sport ${admin_dst_por
 global_invalid_chain() {
 ((ENABLE_FILTER)) || return 0
 local -i jt_mode=${JUMP_TREE[0]}
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist
 local TEMPLATE_BUILTIN_GLOBAL_INVALID_CHAIN=(
 "table=filter"
@@ -8692,7 +8697,7 @@ local -a RULEBLOCK_BUILTIN_GLOBAL_INVALID_CHAIN
 if ((LOG_INVALID && BLOCK_INVALID)); then
 	log -e "Creating global INVALID state chain: ${BIC_GLOBAL_INVALID_STATE}"
 	create_chain filter "${BIC_GLOBAL_INVALID_STATE}"
-	if ((PROC_IP_FORWARD == 1)); then
+	if ((sysc_val == 1)); then
 		str_chainlist="INPUT OUTPUT FORWARD"
 	else
 		str_chainlist="INPUT OUTPUT"
@@ -8713,6 +8718,7 @@ log_invalid_state() { # log packets in INVALID state
 	return 0
 }
 local -i jt_mode=${JUMP_TREE[0]}
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist str_lpfix="${LOG_PREFIX}"
 local TEMPLATE_BUILTIN_LOG_INVALID_STATE=(
 "table=filter"
@@ -8729,7 +8735,7 @@ if ((LOG_INVALID && BLOCK_INVALID)); then
 	str_chainlist="${BIC_GLOBAL_INVALID_STATE}"
 	str_lpfix="${str_lpfix}DROP_"
 else
-	if ((PROC_IP_FORWARD == 1)); then
+	if ((sysc_val == 1)); then
 		str_chainlist="INPUT OUTPUT FORWARD"
 	else
 		str_chainlist="INPUT OUTPUT"
@@ -8750,6 +8756,7 @@ drop_invalid_state() { # drop packets in INVALID state
 	return 0
 }
 local -i jt_mode=${JUMP_TREE[0]}
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist
 local TEMPLATE_BUILTIN_DROP_INVALID_STATE=(
 "table=filter"
@@ -8762,7 +8769,7 @@ local -a RULEBLOCK_BUILTIN_DROP_INVALID_STATE
 if ((LOG_INVALID && BLOCK_INVALID)); then
 	str_chainlist="${BIC_GLOBAL_INVALID_STATE}"
 else
-	if ((PROC_IP_FORWARD == 1)); then
+	if ((sysc_val == 1)); then
 		str_chainlist="INPUT OUTPUT FORWARD"
 	else
 		str_chainlist="INPUT OUTPUT"
@@ -8850,12 +8857,13 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP RULEBLOCK_BUILTIN_DROP_I
 log_drop_illegal_tcp() {
 ((ENABLE_FILTER)) || return 0
 local c str_cl="INPUT OUTPUT"
-((PROC_IP_FORWARD)) && str_cl=" FORWARD"
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
+((sysc_val)) && str_cl+=" FORWARD"
 log_illegal_tcp
 drop_illegal_tcp
 # We send all tcp packets through the bad_tcp_packets chain
 if ((BLOCK_ILLEGAL || LOG_ILLEGAL)); then
-	for c in ${str_cl}; do
+	for c in $str_cl; do
 		add_rule filter "$c" -p tcp -j "${BIC_BAD_TCP_PACKETS}"
 	done
 fi
@@ -8863,11 +8871,12 @@ fi
 
 anti_spoof() { # Anti-Spoofing rules in raw table
 ((ENABLE_RAW && RAW_TABLE_PRESENT)) || return 0
-[[ $PROC_RP_FILTER && $PROC_RP_FILTER != 0 ]] && {
-	log -E "\`PROC_RP_FILTER' is set - Anti-Spoofing rules will not be created."
+local -i rp_val=$(get_sysctl_val net.ipv4.conf.all.rp_filter)
+if ((rp_val != 0)); then
+	log -E "\`net.ipv4.conf.all.rp_filter' is set to: \`$rp_val' - Anti-Spoofing rules will not be created."
 	raise_cfg_err_count
 	return 0
-}
+fi
 [[ $EXT_NETNAME_LIST && $LOC_NETNAME_LIST ]] || {
 	log -E "Anti-Spoofing rules need external and local networks to be defined."
 	raise_cfg_err_count
@@ -9844,16 +9853,17 @@ if ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} >= 5)); then
 elif ((${KERN_VER[0]} == 4)); then
 	kern_ok=1
 fi
+local sysc_val=$(get_sysctl_val net.netfilter.nf_conntrack_helper)
 if ((RAW_TABLE_PRESENT && ct_exist && kern_ok)); then
-	if [[ $PROC_CT_HELPER ]]; then
-		if ((PROC_CT_HELPER)); then
+	if [[ $sysc_val ]]; then
+		if ((sysc_val)); then
 			use_ct=1
 		else
-			log -N "\`PROC_CT_HELPER' is set to \`0'. Will not use the CT target for ftp connection tracking."
+			log -N "\`net.netfilter.nf_conntrack_helper' is set to \`0'. Will not use the CT target for ftp connection tracking."
 		fi
 	else
-		log -W "\`PROC_CT_HELPER' is undefined. Setting it to \`1' to use the CT target for ftp connection tracking."
-		set_proc "1" "$PROC_NF/nf_conntrack_helper" "deactivation of automatic conntrack assignment" && use_ct=1
+		log -W "\`net.netfilter.nf_conntrack_helper' is undefined. Setting it to \`1' to use the CT target for ftp connection tracking."
+		add_sysctl net.netfilter.nf_conntrack_helper=1 && use_ct=1
 	fi
 fi
 for rvar in $LAN_FTP; do
@@ -10089,9 +10099,10 @@ for rvar in ${IPSEC_IFLIST}; do
 		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT $RULE_SEP $rvar $str_iface_ip $RULE_SEP 50"
 	done < <(get_if_ipv4_data "$rvar" -i)
 done
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 for rvar in ${IPSEC_INTERFACES}; do
 	RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="INPUT,OUTPUT $rvar"
-	if ((PROC_IP_FORWARD == 1)); then
+	if ((sysc_val == 1)); then
 		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="FORWARD $rvar"
 	fi
 done

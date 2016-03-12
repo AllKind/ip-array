@@ -1048,6 +1048,100 @@ else
 fi
 } # -------------------------------------------------------------------------
 
+xml_interpreter_sysctl() {
+local -i tag_idx attr_members IDX=0 ridx=0
+local attr_indicies str_cont str_act tag_name str_type str_syntax_version str_path
+local str_root_tag="ip_array_root" str_root_attr="sysctl_rules"
+local -a RESULT_ARR arr_path
+local -a SYSCTL_SYNTAX_VERSION_ARRAY=( 1.0 )
+
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "$str_act" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			if ((cont_members > 1)); then
+				log -E "Invalid content in tag: \`$tag_name'. sysctl rules do not allow multi line content."
+				return 1
+			fi
+			if ((root_found == 0)); then
+				if [[ $tag_name != $str_root_tag ]]; then
+					log -E "Root tag \`${str_root_tag}' needed."
+					return 1
+				fi
+				while read -r str_attr_name str_attr_val; do
+					case "$str_attr_name" in
+						syntax_version)
+							str_syntax_version="$str_attr_val"
+							[[ $str_syntax_version = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							lsearch "$str_syntax_version" "${SYSCTL_SYNTAX_VERSION_ARRAY[@]}" || {
+								log -E "Incompatible sysctl rule file syntax version \`${str_syntax_version}'."
+								return 1
+							}
+						;;
+						name)
+							str_type="$str_attr_val"
+							[[ $str_type = $str_root_attr ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ $str_syntax_version ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ $str_type ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1
+			else
+				eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+				arr_path[ridx++]="$tag_name"
+				str_path=$(IFS=. ; printf '%s' "${arr_path[*]}")
+				if ((attr_members > 0)); then
+					while read -r str_attr_name str_attr_val; do
+						if dn "$SYSCTL" "${str_path}.$str_attr_name"; then
+							RESULT_ARR[IDX++]="add_sysctl ${str_path}.$str_attr_name=$str_attr_val"
+						else
+							log -E "sysctl option \`${str_path}.$str_attr_name' does not exist!"
+							return 1
+						fi
+					done < <(_get_attribute_data)
+				fi
+				if [[ $str_cont ]]; then
+					if dn "$SYSCTL" "${str_path}"; then
+						RESULT_ARR[IDX++]="add_sysctl ${str_path}=$str_cont"
+					else
+						log -E "sysctl option \`${str_path}' does not exist!"
+						return 1
+					fi
+				fi
+			fi
+		;;
+		close)
+			if [[ $tag_name = $str_root_tag ]]; then
+				((root_found)) && root_found=0
+			fi
+			if ((ridx)); then unset arr_path[--ridx]; fi
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No sysctl rules have been found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
 xml_parser() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_interpreter="$1"
@@ -1259,6 +1353,7 @@ case "${str_interpreter}" in
 	ruleblocks) xml_interpreter_ruleblocks || return ;;
 	templates) xml_interpreter_templates || return ;;
 	ipsets) xml_interpreter_ipsets || return ;;
+	sysctl) xml_interpreter_sysctl || return ;;
 esac
 } # -------------------------------------------------------------------------
 

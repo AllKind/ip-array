@@ -137,7 +137,7 @@ prepare-restore-on-start   Prepare quick start scripts (modprobe, proc, tc, ipta
 save-commands              Save all commands (modprobe, proc, tc, iptables) to file.
 save-iptables-commands     Save iptables commands to file.
 save-modprobe-commands     Save modprobe commands to file.
-save-proc-commands         Save proc commands to file.
+save-sysctl-commands       Save sysctl commands to file.
 save-tc-commands           Save tc commands to file.
 save-shaping-commands      Save tc and iptables mangle table (mark) commands to file.
 parse-xml                  Parse (by default all) XML files.
@@ -158,13 +158,13 @@ Options:
 -nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
 -ni, --no-iface-check      Do not perform checks for existence of interfaces.
 -nm, --no-modprobe         Do not load/unload modules.
--np, --no-proc             Do not set /proc configuration.
 -ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
+-ny, --no-sysctl           Do not set sysctl configuration.
 -p, --parse-xml            Re-parse all XML config files (fine grade with -pb, -pr, -pt).
 -pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
                            Types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
--pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files.
-                           Types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files. Types:
+                           filter, mangle, nat, raw, security, rawpost, ipset, sysctl, vpn
 -pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
                            Types: base, filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
@@ -188,7 +188,7 @@ Options:
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
      targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
-     proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
+     sysctl, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set an alternate shell to run IP-Array.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -211,7 +211,7 @@ case "$MAIN_ARG" in
 		(($#)) || usage # if there isn't a second arg, show usage
 	;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|\
-	restart|restore|save|save-commands|save-modprobe-commands|save-proc-commands|\
+	restart|restore|save|save-commands|save-modprobe-commands|save-sysctl-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|\
 	interactive|show|start|stop|test|tc-start|tc-stop|version)
 		shift
@@ -234,7 +234,7 @@ while (($#)); do
 		-nc|--no-compat-check|\
 		-ni|--no-iface-check|\
 		-nm|--no-modprobe|\
-		-np|--no-proc|\
+		-ny|--no-sysctl|\
 		-p|--parse-xml)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			continue
@@ -259,7 +259,7 @@ while (($#)); do
 		-sc|--show-config)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
 			case "$opt_arg" in
-				all|main|defaults|targets|matches|rules|ruleblocks|templates|proc|public_functions|ipt_args|ansi_codes|colors)
+				all|main|defaults|targets|matches|rules|ruleblocks|templates|sysctl|public_functions|ipt_args|ansi_codes|colors)
 			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 				;;
 				ipt_args:-+([[:word:]])*(,+([[:word:]])))

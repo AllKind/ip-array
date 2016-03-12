@@ -133,13 +133,13 @@ declare -r IPARRAY_XML_FUNCTIONS="${me}_xml_functions"
 declare -r IPARRAY_FUNCTIONS="$IPARRAY_MAIN_FUNCTIONS $IPARRAY_IPT_FUNCTIONS $IPARRAY_TC_FUNCTIONS $IPARRAY_XML_FUNCTIONS"
 
 # don't perform autosave, modprobe, proc, compatibility,... check - yes/no
-declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_PROC=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
+declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_SYSCTL=0 NO_IPT_COMPAT_CHECK=0 NO_IFACE_CHECK=0 NO_DIFF_SAVE=0
 
 # (re)-parse xml configuration files
 declare -a PARSE_RULEBLOCKS[0]=0 PARSE_RULEFILES[0]=0 PARSE_TEMPLATES[0]=0
 
 # test for availability of /proc settings
-declare -i PROC_COMPAT_CHECK=0
+#declare -i PROC_COMPAT_CHECK=0
 
 # use iptables-save/restore counters
 declare -i USE_COUNTERS=0
@@ -440,7 +440,7 @@ declare -a IPT_POL_ARRAY	# Array to cache the iptables policy commands
 declare -a IPT_FLUSH_ARRAY	# Array to cache the iptables chain flushing commands
 declare -a IPT_CCHAIN_ARRAY	# Array to cache the iptables chain creation commands
 declare -a TC_CMD_ARRAY		# Array to cache the tc commands
-declare -a PROC_CMD_ARRAY	# Array to cache the sysctl commands
+declare -a PROC_SYSCTL_ARRAY	# Array to cache the sysctl commands
 declare -a NFACCT_CMD_ARRAY	# Array to cache the nfacct commands
 # arrays for each iptables table
 declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
@@ -485,7 +485,8 @@ declare -ar CMD_NAMES_ARRAY=(
 "IPT_SECURITY_CMD_ARRAY ipt iptables security table commands"
 "IPT_RAWPOST_CMD_ARRAY ipt iptables rawpost table commands"
 "TC_CMD_ARRAY tc traffic control commands"
-"PROC_CMD_ARRAY proc /proc settings"
+#"PROC_CMD_ARRAY proc /proc settings"
+"SYSCTL_CMD_ARRAY sysctl sysctl settings"
 "IPSET_CMD_ARRAY ipset ipset commands"
 "IPSET_SETS_ARRAY ipset ipset set creation commands"
 "IPSET_ENTRIES_ARRAY ipset ipset entries commands"
@@ -514,6 +515,7 @@ declare -ar IPARRAY_PROGRAMS=(
 "NFACCT nfacct 0"
 "RM rm 1"
 "SORT sort 1"
+"SYSCTL sysctl 1"
 "TC tc 0"
 "UNAME uname 1"
 "WHIPTAIL whiptail 0"
@@ -530,7 +532,6 @@ declare -ar PUBLIC_FUNCTION_LIST=(
 "jump_tree_off Disable classification into jump tree chains"
 "set_var Set a variables value"
 "set_proc Set a /proc value"
-# "log_drop_scans Log and/or drop scans"
 "log_drop_invalid_state Log and/or drop packets in invalid state"
 "log_drop_illegal_tcp Log and/or drop non legal tcp packets"
 "anti_spoof Create Anti-Spoofing rules"
@@ -603,7 +604,7 @@ prepare-restore-on-start   Prepare quick start scripts (modprobe, proc, tc, ipta
 save-commands              Save all commands (modprobe, proc, tc, iptables) to file.
 save-iptables-commands     Save iptables commands to file.
 save-modprobe-commands     Save modprobe commands to file.
-save-proc-commands         Save proc commands to file.
+save-sysctl-commands       Save sysctl commands to file.
 save-tc-commands           Save tc commands to file.
 save-shaping-commands      Save tc and iptables mangle table (mark) commands to file.
 parse-xml                  Parse (by default all) XML files.
@@ -624,13 +625,13 @@ Options:
 -nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
 -ni, --no-iface-check      Do not perform checks for existence of interfaces.
 -nm, --no-modprobe         Do not load/unload modules.
--np, --no-proc             Do not set /proc configuration.
 -ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
+-ny, --no-sysctl           Do not set sysctl configuration.
 -p, --parse-xml            Re-parse all XML config files (fine grade with -pb, -pr, -pt).
 -pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
                            Types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
--pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files.
-                           Types: filter, mangle, nat, raw, security, rawpost, ipset, vpn
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files. Types:
+                           filter, mangle, nat, raw, security, rawpost, ipset, sysctl, vpn
 -pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
                            Types: base, filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
@@ -655,7 +656,7 @@ Options:
 -sc, --show-config [type] [...]   Select type of information to show.
      Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
      targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
-     proc, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
+     sysctl, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
 -sh, --shell /path/shell   Set the \`SHELL' variable.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
@@ -1092,7 +1093,7 @@ case "$MAIN_ARG" in
 		(($#)) || usage # if there isn't a second arg, show usage
 	 ;;
 	compat-check|diff-last-activated|dry-run|interactive|lockdown|open|parse-xml|\
-	prepare-restore-on-start|restart|restore|save|save-commands|save-modprobe-commands|save-proc-commands|\
+	prepare-restore-on-start|restart|restore|save|save-commands|save-modprobe-commands|save-sysctl-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
 		shift
 		if ((EUID > 0)); then
@@ -1153,8 +1154,8 @@ while (($#)); do
 			NO_MODPROBE=1
 			continue
 		;;
-		-np|--no-proc) # do not perform /proc configuration
-			NO_PROC=1
+		-ny|--no-sysctl) # do not perform /proc configuration
+			NO_SYSCTL=1
 			continue
 		;;
 		-ns|--no-scripts) # don't run pro/epilog scripts
@@ -1187,7 +1188,7 @@ while (($#)); do
 			PARSE_RULEFILES=1
 			if [[ $opt_arg && $opt_arg != -* ]]; then i=1
 				for rvar in ${opt_arg//,/ }; do
-					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|vpn) ]]; then
+					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|sysctl|vpn) ]]; then
 						PARSE_RULEFILES[i++]=$rvar
 					else
 						pr_err "Invalid type descriptior \`$rvar' for option: $option."
@@ -1236,10 +1237,10 @@ while (($#)); do
 		-sc|--show-config) # show config summary
 			case "$opt_arg" in
 				all)
-					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates|proc|public_functions)/}"
-					cmdline_show_conf=" defaults main targets matches ipt_args public_functions proc templates ruleblocks rules"
+					cmdline_show_conf="${cmdline_show_conf//@(defaults|main|targets|matches|ipt_args|rules|ruleblocks|templates|sysctl|public_functions)/}"
+					cmdline_show_conf=" defaults main targets matches ipt_args public_functions sysctl templates ruleblocks rules"
 				;;
-				main|defaults|targets|matches|ruleblocks|templates|proc|public_functions|rules|ipt_args|ansi_codes|colors)
+				main|defaults|targets|matches|ruleblocks|templates|sysctl|public_functions|rules|ipt_args|ansi_codes|colors)
 					cmdline_show_conf="${cmdline_show_conf//$opt_arg/}"
 					cmdline_show_conf+="$opt_arg "
 				;;
@@ -1463,6 +1464,7 @@ CONFIG_DIR="${BASE_DIR}/${RUNMODE}/${CONF_DIR}"
 SCRIPT_DIR="${BASE_DIR}/${RUNMODE}/scripts.d"
 RULE_DIR="${CONFIG_DIR}/rules.d"
 RULEBLOCK_DIR="${CONFIG_DIR}/ruleblocks.d"
+SYSCTL_DIR="${CONFIG_DIR}/sysctl.d"
 TEMPLATE_DIR="${CONFIG_DIR}/templates.d"
 MAIN_CONFIG="${CONFIG_DIR}/${CONFIG}"
 
@@ -1558,9 +1560,9 @@ case "$MAIN_ARG" in
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
 		MODE='SAVE-MODPROBE-COMMANDS' EXEC_COMMANDS=0
 	;;
-	save-proc-commands) # save proc commands to file
+	save-sysctl-commands) # save sysctl commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
-		MODE='SAVE-PROC-COMMANDS' EXEC_COMMANDS=0
+		MODE='SAVE-SYSCTL-COMMANDS' EXEC_COMMANDS=0
 	;;
 	save-iptables-commands) # save iptables commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"

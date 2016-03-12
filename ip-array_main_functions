@@ -654,7 +654,7 @@ lsearch() { # search word in list
 local str_search="$1"
 shift
 while (($#)); do
-	[[ $str_search = $1 ]] && return
+	[[ $1 = $str_search ]] && return
 	shift
 done
 return 1
@@ -666,7 +666,7 @@ local str_search="$1"
 while read -r -t $GLOBAL_READ_TIMEOUT; do
 	set -- $REPLY
 	while (($#)); do
-		[[ $str_search = $1 ]] && return
+		[[ $1 = $str_search ]] && return
 		shift
 	done
 done
@@ -680,7 +680,7 @@ while read -r -t $GLOBAL_READ_TIMEOUT; do
 	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ $str_search = $1 ]] && {
+		[[ $1 = $str_search ]] && {
 			printf "%s\n" "$str_input"
 			return 0
 		}
@@ -697,7 +697,7 @@ while read -r -t $GLOBAL_READ_TIMEOUT; do
 	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ $str_search = $1 ]] && {
+		[[ $1 = $str_search ]] && {
 			printf "%s\n" "$str_input"
 			break
 		}
@@ -713,7 +713,7 @@ while read -r -t $GLOBAL_READ_TIMEOUT; do
 	set -- $REPLY
 	str_input="$@"
 	while (($#)); do
-		[[ $str_search = $1 ]] && continue 2
+		[[ $1 = $str_search ]] && continue 2
 		shift
 	done
 	printf "%s\n" "$str_input"
@@ -727,7 +727,7 @@ local -i found_str=0
 while read -r -t $GLOBAL_READ_TIMEOUT; do
 	set -- $REPLY
 	while (($#)); do
-		[[ $str_search = $1 ]] && ((found_str == 0)) && {
+		[[ $1 = $str_search ]] && ((found_str == 0)) && {
 			found_str=1
 			shift
 			continue
@@ -1218,7 +1218,8 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 
 restore_autosave() {
 restore_module_state
-restore_proc_state
+#restore_proc_state
+restore_sysctl_state
 if ((NO_AUTOSAVE == 0)); then
 	if [[ $AUTOSAVE_FILE_IPSET ]]; then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved ipset ruleset from: $AUTOSAVE_FILE_IPSET'"
@@ -1666,6 +1667,7 @@ fi
 case "$PROC_CONNTRACK_MAX" in
 	""|+([[:digit:]])) # empty or manually configured
 		:
+		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
 	;;
 	[xX]+([[:digit:]])) # factor is configured
 		log -w "Calculating maximum conntrack entries and conntrack hashsize"
@@ -1678,9 +1680,10 @@ case "$PROC_CONNTRACK_MAX" in
 		factor=${PROC_CONNTRACK_MAX#[xX]}
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
 		PROC_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
-		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
-		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
+#		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
+#		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
 		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
+		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
 	;;
 	*) log -i "$PROC_CONNTRACK_MAX" PROC_CONNTRACK_MAX
 		raise_cfg_err_count
@@ -1696,6 +1699,9 @@ fi
 case "$PROC_CONNTRACK_HASHSIZE" in
 	""|+([[:digit:]])) # empty or manually configured
 		:
+		if ! lsearch "net.netfilter.nf_conntrack_buckets*" "${SYSCTL_CMD_ARRAY[@]}"; then
+			add_sysctl "net.netfilter.nf_conntrack_buckets=$PROC_CONNTRACK_HASHSIZE"
+		fi
 	;;
 	[xX]+([[:digit:]])) # factor is configured
 		log -w "Calculating maximum conntrack entries and conntrack hashsize"
@@ -1711,12 +1717,46 @@ case "$PROC_CONNTRACK_HASHSIZE" in
 		PROC_CONNTRACK_MAX=$(echo "$PROC_CONNTRACK_HASHSIZE * 8" | run_bc)
 		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
 		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
+		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
+		add_sysctl "net.netfilter.nf_conntrack_buckets=$PROC_CONNTRACK_HASHSIZE"
 	;;
 	*) log -i "$PROC_CONNTRACK_HASHSIZE" PROC_CONNTRACK_HASHSIZE
 		raise_cfg_err_count
 esac
 return 0
 } # -------------------------------------------------------------------------
+
+add_sysctl() { # set a sysctl setting
+if dn "$SYSCTL" "${*%%=*}"; then
+	log -e "${PF}setting ${*%%=*} to: ${*#*=}"
+	SYSCTL_CMD_ARRAY[${#SYSCTL_CMD_ARRAY[@]}]="$*"
+else
+	log -E "sysctl option \`${str_path}' does not exist!"
+	raise_cfg_err_count
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+get_sysctl_val() { # retrieve a sysctl value
+local -i x
+local str_search="$1" sname n val
+if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local system
+	while read sname n val; do
+		if [[ $sname = $str_search ]]; then
+			printf "%s\n" "$val"
+			return 0
+		fi
+	done < <(dn2 "$SYSCTL" -a)
+else
+	for x in ${!SYSCTL_CMD_ARRAY[@]}; do
+		if [[ ${SYSCTL_CMD_ARRAY[x]%%=*} = $str_search ]]; then
+			printf "%s\n" "${SYSCTL_CMD_ARRAY[x]#*=}"
+			return 0
+		fi
+	done
+fi
+return 1
+} # -------------------------------------------------------------------------}
 
 set_proc() { # set the proc values
 [[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
@@ -1876,6 +1916,22 @@ for idx in ${!SYSCTL_ARRAY[@]}; do
 			pr_str "'$vresult' '$ppath' $procmsg"
 		fi
 	fi
+done
+} # -------------------------------------------------------------------------
+
+restore_sysctl_state() { # try to restore initial (remembered) sysctl settings
+((${#SYSCTL_STATE_ARRAY[@]})) || {
+	log -v 'SYSCTL_STATE_ARRAY'
+	return 0
+}
+((NO_AUTOSAVE == 0)) || return 0
+local -i idx
+ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial sysctl configuration"'
+for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
+	"$SYSCTL" -q -w ${SYSCTL_STATE_ARRAY[idx]} || {
+		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -F 'setting ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
+	}
 done
 } # -------------------------------------------------------------------------
 
@@ -2812,12 +2868,75 @@ else
 fi
 } # -------------------------------------------------------------------------
 
+load_sysctl_rule_file() {
+# - parse sysctl xml rule file (if needed)
+# - transform the rules into a bash script
+# - source compiled file
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local rule_file="${SYSCTL_DIR}/${1}" parsed_file="${SYSCTL_DIR}/__parsed_${1%.xml}.bash"
+local -i parse_files=$PARSE_RULEFILES
+[[ -r $rule_file ]] || {
+	log -x "$rule_file"
+	return $ER_NOEX
+}
+if [[ -r $parsed_file ]]; then
+	if ((parse_files == 0)); then
+		log -N "Parsed rulefile \`$parsed_file' already exists, using existing file."
+	fi
+else
+    parse_files=1
+fi
+if ((parse_files == 1)); then
+	log -n "Parsing XML rule file: \`${rule_file}'"
+	if ! ((EXEC_COMMANDS)); then
+		mutex_on || return
+	fi
+	if [[ -e $parsed_file ]]; then
+		run_rm "$parsed_file" || {
+			log -F "removing old parsed file \`$parsed_file'."
+			return $ER_FAIL
+		}
+	fi
+	exec 7> "$parsed_file"
+	printf '#!%s\n\n' "$SHELL" >&7
+	xml_parser 'sysctl' < "$rule_file" || {
+		exec 7>&-
+		[[ -e $parsed_file ]] && run_rm "$parsed_file"
+		log -F "parsing rule file: \`${rule_file}'"
+		return $ER_LOAD
+	}
+	exec 7>&-
+	log -w "Saved parsed rule file to: \`$parsed_file'"
+	if ! ((EXEC_COMMANDS)); then
+		cleanup_lock
+	fi
+fi
+if [[ $MODE = SHOW ]]; then # dump rules in show mode
+	if lsearch sysctl $cmdline_show_conf; then
+		pr_banner "Starting sysctl rules dump from ${parsed_file##/*/}:"
+		while read -r -t $GLOBAL_READ_TIMEOUT; do
+			rvar="${REPLY%%#*}"
+			[[ -z $rvar || $rvar = +([[:space:]]) ]] && continue
+			printf '%s\n' "${REPLY#*+([[:blank:]])}"
+		done < "$parsed_file"
+		pr_banner "End of sysctl rules dump from ${parsed_file##/*/}"
+	fi
+elif [[ $MODE != PARSE-XML ]]; then # if we don't just parse, load rules
+	load_file rule "$parsed_file" || return $ER_LOAD
+fi
+} # -------------------------------------------------------------------------
+
+load_sysctl_rules() { # load all sysctl rule files
+for rvar in $SYSCTL_RULES; do
+	load_sysctl_rule_file "$rvar" || return
+done
+} # -------------------------------------------------------------------------
+
 set_sysctl() { # Set proc stuff
-((NO_PROC == 1)) && return 0
+((NO_SYSCTL == 1)) && return 0
 log -T "Setting sysctl configuration"
 calc_conntrack_max
-calc_conntrack_hashsize
-proc_conf_global || return
+load_sysctl_rules || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -2849,12 +2968,12 @@ fi
 log -n "Saving $work_arr_sum $appl_msg"
 printf "\n# %s\n" "$appl_msg" >>"$str_rs_file"
 case "$cmd_arr" in
-	(PROC_CMD_ARRAY)
-		for idx in ${!PROC_CMD_ARRAY[@]}; do
-			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
-			printf 'echo "%s" > "%s"\n' "$1" "$2" >>"$str_rs_file"
-		done
-	;;
+#	(PROC_CMD_ARRAY)
+#		for idx in ${!PROC_CMD_ARRAY[@]}; do
+#			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
+#			printf 'echo "%s" > "%s"\n' "$1" "$2" >>"$str_rs_file"
+#		done
+#	;;
 	(IPSET_CMD_ARRAY)
 		for idx in ${!IPSET_CMD_ARRAY[@]}; do
 			printf '"$IPSET" %s\n' "${IPSET_CMD_ARRAY[idx]}" >>"$str_rs_file"
@@ -3030,6 +3149,11 @@ printf '\n# %s\n' "$2" >>"$1"
 printf '"$IPSET" -R << %s\n' "'__EOF__'" >>"$1"
 } # -------------------------------------------------------------------------
 
+header_heredoc_sysctl() {
+printf '\n# %s\n' "$2" >>"$1"
+printf '"$SYSCTL" -q -p - << %s\n' "'__EOF__'" >>"$1"
+} # -------------------------------------------------------------------------
+
 footer_heredoc() {
 printf '__EOF__\n\n' >>"$1"
 } # -------------------------------------------------------------------------
@@ -3045,6 +3169,9 @@ printf '#!%s\n\n# Script generated by %s %s at %s\n\n' "$SHELL" "$ME" "$STR_VERS
 	return $ER_FAIL
 }
 # add vars
+if [[ $MODE = @(SAVE-COMMANDS|SAVE-SYSCTL-COMMANDS) ]]; then
+	arr_populated 'SYSCTL_CMD_ARRAY' && construct_assignment SYSCTL >>"$str_rfile"
+fi
 if [[ $MODE = @(SAVE-COMMANDS|SAVE-MODPROBE-COMMANDS) ]]; then
 	arr_populated 'MODULE_CMD_ARRAY' && construct_assignment MODPROBE >>"$str_rfile"
 fi
@@ -3113,12 +3240,17 @@ case "$MODE" in
 					footer_heredoc "$str_rfile"
 				fi
 			fi
-			for cmd_array in TC_CMD_ARRAY PROC_CMD_ARRAY; do
+			for cmd_array in TC_CMD_ARRAY; do
 				if arr_populated $cmd_array; then
 					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
 					save_command_array $cmd_array "$str_rfile" || return
 				fi
 			done
+			if arr_populated SYSCTL_CMD_ARRAY; then
+				header_heredoc_sysctl "$str_rfile" "sysctl settings"
+				save_command_array SYSCTL_CMD_ARRAY "$str_rfile" || return
+				footer_heredoc "$str_rfile"
+			fi
 		elif [[ $GEN_FORMAT = cmd ]]; then
 			show_flush_del_pub_save >>"$str_rfile"
 			save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
@@ -3129,13 +3261,18 @@ case "$MODE" in
 			fi
 			save_ipset_command_array "$str_rfile" || return
 			for cmd_array in NFACCT_CMD_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY \
-				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY
+				IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY TC_CMD_ARRAY
 			do
 				if arr_populated $cmd_array; then
 					[[ $cmd_array = TC_CMD_ARRAY ]] && printf "\n%s\n%s\n" "# remove qdiscs" "remove_tc_qdiscs" >>"$str_rfile"
 					save_command_array $cmd_array "$str_rfile" || return
 				fi
 			done
+			if arr_populated SYSCTL_CMD_ARRAY; then
+				header_heredoc_sysctl "$str_rfile" "sysctl settings"
+				printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}" >> "$str_rfile" || return
+				footer_heredoc "$str_rfile"
+			fi
 		fi
 	;;
 	(SAVE-IPT-COMMANDS) # save iptables commands only
@@ -3193,8 +3330,12 @@ case "$MODE" in
 	(SAVE-MODPROBE-COMMANDS) # save modprobe commands only
 		save_command_array MODULE_CMD_ARRAY "$str_rfile" || return
 	;;
-	(SAVE-PROC-COMMANDS) # save proc commands only
-		save_command_array PROC_CMD_ARRAY "$str_rfile" || return
+	(SAVE-SYSCTL-COMMANDS) # save proc commands only
+		if arr_populated SYSCTL_CMD_ARRAY; then
+			header_heredoc_sysctl "$str_rfile" "sysctl settings"
+			printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}" >> "$str_rfile" || return
+			footer_heredoc "$str_rfile"
+		fi
 	;;
 	(SAVE-TC-COMMANDS) # save tc commands only
 		arr_populated 'TC_CMD_ARRAY' && show_remove_qdisc_pub_save >>"$str_rfile"
@@ -3262,7 +3403,7 @@ if ! ((work_arr_sum)); then
 	return 0
 fi
 case "$MODE" in # act according to runtime mode
-	SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-PROC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
+	SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-SYSCTL-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
 		log -T "Saving generated script to: $RULESETFILE"
 		if ((USE_IPSET)); then
 			ipset_merge_arrays
@@ -3304,7 +3445,7 @@ case "$MODE" in # act according to runtime mode
 			append_array IPT_CMD_ARRAY $str_arr_name
 		done
 		if [[ $DEBUG_INFO ]]; then
-			for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY NFACCT_CMD_ARRAY TC_CMD_ARRAY PROC_CMD_ARRAY; do
+			for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY NFACCT_CMD_ARRAY TC_CMD_ARRAY SYSCTL_CMD_ARRAY; do
 				dbg_arr $str_arr_name
 			done
 		fi
@@ -3429,24 +3570,38 @@ case "$MODE" in # act according to runtime mode
 				"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
 			done
 		fi
-		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
+#		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
+#			local proc_val
+#			for i in ${!PROC_CMD_ARRAY[@]}; do
+#				eval set -- "${PROC_CMD_ARRAY[i]}"
+#				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo $(read p_val < "$2"; echo "$p_val") )' '$2'"
+#				printf "%s\n" "$1" >"$2" 2>/dev/null || cmd_err_count proc "printf %s\n $1 >$2"
+#			done
+#			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
+#		fi
+		if ((${#SYSCTL_CMD_ARRAY[@]})); then # sysctl settings
 			local proc_val
-			for i in ${!PROC_CMD_ARRAY[@]}; do
-				eval set -- "${PROC_CMD_ARRAY[i]}"
-				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo $(read p_val < "$2"; echo "$p_val") )' '$2'"
-				printf "%s\n" "$1" >"$2" 2>/dev/null || cmd_err_count proc "printf %s\n $1 >$2"
+			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
+				SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
+				"$SYSCTL" -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count proc "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
 			done
-			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
+			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
 		fi
 		# save the memorized module and/or /proc settings to be restored if we are in test mode
 		if ((TEST_MODE)); then
-			if ((${#PROC_STATE_ARRAY[@]})); then
+			if ((${#SYSCTL_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$PROC_RESTORE_FILE"
-				for idx in ${!PROC_STATE_ARRAY[@]}; do
-					eval set -- "${PROC_STATE_ARRAY[idx]}"
-					printf 'echo "%s" > "%s"\n' "$1" "$2" >> "${SAVE_DIR}/$PROC_RESTORE_FILE"
+				for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
+					printf '"%s" -q -w %s\n' "$SYSCTL" "${SYSCTL_STATE_ARRAY[i]}" >> "${SAVE_DIR}/$PROC_RESTORE_FILE"
 				done
 			fi
+#			if ((${#PROC_STATE_ARRAY[@]})); then
+#				create_file "${SAVE_DIR}/$PROC_RESTORE_FILE"
+#				for idx in ${!PROC_STATE_ARRAY[@]}; do
+#					eval set -- "${PROC_STATE_ARRAY[idx]}"
+#					printf 'echo "%s" > "%s"\n' "$1" "$2" >> "${SAVE_DIR}/$PROC_RESTORE_FILE"
+#				done
+#			fi
 			if ((${#MOD_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$MODULE_RESTORE_FILE"
 				local unload_arr=()
@@ -3775,13 +3930,14 @@ case "$1" in
 				log -W "\`$rvar' table is not present on the local system."
 			fi
 		done
-		if ((NO_PROC == 0)); then
-			PROC_COMPAT_CHECK=1
-			pr_banner "Dumping /proc settings:"
-			calc_conntrack_max
-			calc_conntrack_hashsize
-			proc_conf_global || return
-			pr_banner "End of /proc dump"
+		if ((NO_SYSCTL == 0)); then
+			pr_banner "Dumping locally available sysctl settings:"
+			while read sname n val; do
+				if [[ $sname = net.* ]]; then
+					printf "%s = %s\n" "$sname" "$val"
+				fi
+			done < <(dn2 "$SYSCTL" -a)
+			pr_banner "End of sysctl dump"
 		fi
 		common_end
 	;;
@@ -3985,6 +4141,7 @@ case "$1" in
 					fi
 				done
 			else
+				load_sysctl_rules || return
 				load_all_ipt_rulefiles || return
 				if ((ENABLE_IPSEC == 1)); then
 					for rvar in ${IPSEC_RULES}; do
@@ -4069,7 +4226,7 @@ case "$1" in
 		apply_rules || return
 		common_end
 	;;
-	SAVE-PROC-COMMANDS)
+	SAVE-SYSCTL-COMMANDS)
 	# /proc commands are saved to file.
 		set_rulesetfile || return
 		start_msg
@@ -4241,13 +4398,14 @@ case "$1" in
 					done
 					pr_banner "End of iptables arguments"
 				;;
-				proc)
-					PROC_COMPAT_CHECK=1
-					pr_banner "Starting dump of /proc filesystem options:"
+				sysctl)
+					load_configs || return
+					pr_banner "Starting dump of sysctl settings:"
 					calc_conntrack_max
-					calc_conntrack_hashsize
-					proc_conf_global
-					pr_banner "End of dump of /proc filesystem options."
+#					calc_conntrack_hashsize
+					printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}"
+					load_sysctl_rules || return
+					pr_banner "End of dump of sysctl settings."
 				;;
 				ruleblocks)
 					load_configs || return
