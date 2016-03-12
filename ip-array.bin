@@ -1170,7 +1170,7 @@ while (($#)); do
 		;;
 		-pb|--parse-ruleblocks) # (re)-parse only XML ruleblocks
 			PARSE_RULEBLOCKS=1
-			if [[ $opt_arg != -* ]]; then i=1
+			if [[ $opt_arg && $opt_arg != -* ]]; then i=1
 				for rvar in ${opt_arg//,/ }; do
 					if [[ $rvar = @(filter|mangle|nat|raw|security|rawpost|tc|tc_mangle) ]]; then
 						PARSE_RULEBLOCKS[i++]=$rvar
@@ -1185,7 +1185,7 @@ while (($#)); do
 		;;
 		-pr|--parse-rulefiles) # (re)-parse only XML rule files
 			PARSE_RULEFILES=1
-			if [[ $opt_arg != -* ]]; then i=1
+			if [[ $opt_arg && $opt_arg != -* ]]; then i=1
 				for rvar in ${opt_arg//,/ }; do
 					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|vpn) ]]; then
 						PARSE_RULEFILES[i++]=$rvar
@@ -1200,7 +1200,7 @@ while (($#)); do
 		;;
 		-pt|--parse-templates) # (re)-parse only XML templates
 			PARSE_TEMPLATES=1
-			if [[ $opt_arg != -* ]]; then i=1
+			if [[ $opt_arg && $opt_arg != -* ]]; then i=1
 				for rvar in ${opt_arg//,/ }; do
 					if [[ $rvar = @(base|filter|mangle|nat|raw|security|rawpost) ]]; then
 						PARSE_TEMPLATES[i++]=$rvar

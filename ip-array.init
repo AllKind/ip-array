@@ -285,7 +285,7 @@ while (($#)); do
 		;;
 		-pb|--parse-ruleblocks|-pr|--parse-rulefiles|-pt|--parse-templates)
 			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
-			if [[ $opt_arg != -* ]]; then
+			if [[ $opt_arg && $opt_arg != -* ]]; then
 				ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
 			else
 				continue
