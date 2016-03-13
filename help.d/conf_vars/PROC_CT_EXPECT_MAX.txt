@@ -1,3 +1,0 @@
-nf_conntrack_expect_max - INTEGER
-Maximum size of expectation table.  Default value is
-nf_conntrack_buckets / 256. Minimum is 1.

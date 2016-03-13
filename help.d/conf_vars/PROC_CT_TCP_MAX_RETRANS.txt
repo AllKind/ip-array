@@ -1,4 +1,0 @@
-nf_conntrack_tcp_max_retrans - INTEGER default 3
-Maximum number of packets that can be retransmitted without
-received an (acceptable) ACK from the destination. If this number
-is reached, a shorter timer will be started.

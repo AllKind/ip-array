@@ -1,6 +1,0 @@
-Set tcp keepalive interval | Format: value (i.e. 1800)
-tcp_keepalive_intvl - INTEGER
-How frequently the probes are send out. Multiplied by
-tcp_keepalive_probes it is time to kill not responding connection,
-after probes started. Default value: 75sec i.e. connection
-will be aborted after ~11 minutes of retries.

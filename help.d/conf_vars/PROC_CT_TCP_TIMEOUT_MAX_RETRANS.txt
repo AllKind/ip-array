@@ -1,1 +1,0 @@
-nf_conntrack_tcp_timeout_max_retrans - INTEGER (seconds) default 300

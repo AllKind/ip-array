@@ -1,5 +1,0 @@
-Disable / Enable Logging of martians
-log_martians - BOOLEAN
-Log packets with impossible addresses to kernel log.
-log_martians for the interface will be enabled if at least one of
-conf/{all,interface}/log_martians is set to TRUE, it will be disabled otherwise

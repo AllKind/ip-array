@@ -1,4 +1,0 @@
-tcp_retrans_collapse - BOOLEAN
-Bug-to-bug compatibility with some broken printers.
-On retransmit try to send bigger packets to work around bugs in
-certain TCP stacks.

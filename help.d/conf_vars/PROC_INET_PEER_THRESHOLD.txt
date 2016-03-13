@@ -1,5 +1,0 @@
-inet_peer_threshold - INTEGER
-The approximate size of the storage. Starting from this threshold
-entries will be thrown aggressively. This threshold also determines
-entries' time-to-live and time intervals between garbage collection
-passes. More entries, less time-to-live, less GC interval.

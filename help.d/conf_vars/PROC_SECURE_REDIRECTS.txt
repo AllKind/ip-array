@@ -1,4 +1,0 @@
-secure_redirects - BOOLEAN default TRUE
-Accept ICMP redirect messages only for gateways, listed in default gateway list.
-secure_redirects for the interface will be enabled if at least one of
-conf/{all,interface}/secure_redirects is set to TRUE, it will be disabled otherwise

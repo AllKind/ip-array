@@ -1,3 +1,0 @@
-tcp_app_win - INTEGER Default: 31
-Reserve max(window/2^tcp_app_win, mss) of window for application
-buffer. Value 0 is special, it means that nothing is reserved.

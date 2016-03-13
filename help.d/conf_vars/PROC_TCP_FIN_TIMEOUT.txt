@@ -1,9 +1,0 @@
-Set FIN timeout - Default: 60 seconds
-tcp_fin_timeout - INTEGER
-The length of time an orphaned (no longer referenced by any
-application) connection will remain in the FIN_WAIT_2 state
-before it is aborted at the local end.  While a perfectly
-valid "receive only" state for an un-orphaned connection, an
-orphaned connection in FIN_WAIT_2 state could otherwise wait
-forever for the remote to close its end of the connection.
-Cf. tcp_max_orphans

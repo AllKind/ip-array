@@ -1,3 +1,0 @@
-tcp_tw_recycle - BOOLEAN
-Enable fast recycling TIME-WAIT sockets. Default value is 0.
-It should not be changed without advice/request of technical experts.

@@ -1,6 +1,0 @@
-tcp_frto - BOOLEAN | Format: 0/1
-Enables Forward RTO-Recovery (F-RTO) defined in RFC5682.
-F-RTO is an enhanced recovery algorithm for TCP retransmission
-timeouts.  It is particularly beneficial in networks where the
-RTT fluctuates (e.g., wireless). F-RTO is sender-side only
-modification. It does not require any support from the peer.

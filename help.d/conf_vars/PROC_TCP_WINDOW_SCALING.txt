@@ -1,2 +1,0 @@
-Disable / Enable TCP windows scaling as defined in RFC1323. | Format: 0/1
-tcp_window_scaling - BOOLEAN

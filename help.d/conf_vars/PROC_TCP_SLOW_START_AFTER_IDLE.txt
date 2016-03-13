@@ -1,5 +1,0 @@
-tcp_slow_start_after_idle - BOOLEAN Default: 1
-If set, provide RFC2861 behavior and time out the congestion
-window after an idle period. An idle period is defined at
-the current RTO. If unset, the congestion window will not
-be timed out after an idle period.

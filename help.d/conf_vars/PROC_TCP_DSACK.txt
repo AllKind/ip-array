@@ -1,2 +1,0 @@
-tcp_dsack - BOOLEAN
-Allows TCP to send "duplicate" SACKs.

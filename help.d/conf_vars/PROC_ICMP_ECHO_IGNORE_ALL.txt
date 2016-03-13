@@ -1,2 +1,0 @@
-icmp_echo_ignore_all - BOOLEAN Default: 0
-If set to 1, then the kernel will ignore all ICMP ECHO requests sent to it.

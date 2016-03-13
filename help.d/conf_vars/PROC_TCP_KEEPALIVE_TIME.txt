@@ -1,3 +1,0 @@
-tcp_keepalive_time - INTEGER
-How often TCP sends out keepalive messages when keepalive is enabled.
-Default: 2hours.

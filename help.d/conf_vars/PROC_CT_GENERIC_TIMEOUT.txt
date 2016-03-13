@@ -1,2 +1,0 @@
-nf_conntrack_generic_timeout - INTEGER (seconds) default 600
-Default for generic timeout. This refers to layer 4 unknown/unsupported protocols.

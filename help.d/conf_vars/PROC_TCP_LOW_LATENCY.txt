@@ -1,6 +1,0 @@
-tcp_low_latency - BOOLEAN Default: 0
-If set, the TCP stack makes decisions that prefer lower
-latency as opposed to higher throughput.  By default, this
-option is not set meaning that higher throughput is preferred.
-An example of an application where this default should be
-changed would be a Beowulf computer cluster.

@@ -1,5 +1,0 @@
-ipfrag_high_thresh - INTEGER
-Maximum memory used to reassemble IP fragments. When
-ipfrag_high_thresh bytes of memory is allocated for this purpose,
-the fragment handler will toss packets until ipfrag_low_thresh
-is reached.

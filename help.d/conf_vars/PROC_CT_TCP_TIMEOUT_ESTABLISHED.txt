@@ -1,1 +1,0 @@
-nf_conntrack_tcp_timeout_established - INTEGER (seconds) default 432000 (5 days)

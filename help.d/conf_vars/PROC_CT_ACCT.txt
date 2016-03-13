@@ -1,5 +1,0 @@
-nf_conntrack_acct - BOOLEAN
-0 - disabled (default)
-1 - enabled
-Enable connection tracking flow accounting. 64-bit byte and packet
-counters per flow are added.

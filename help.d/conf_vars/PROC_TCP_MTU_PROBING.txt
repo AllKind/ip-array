@@ -1,5 +1,0 @@
-tcp_mtu_probing - INTEGER
-Controls TCP Packetization-Layer Path MTU Discovery. Takes three values:
-  0 - Disabled
-  1 - Disabled by default, enabled when an ICMP black hole detected
-  2 - Always enabled, use initial MSS of tcp_base_mss.

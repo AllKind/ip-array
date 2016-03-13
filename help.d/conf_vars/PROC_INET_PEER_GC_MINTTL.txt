@@ -1,5 +1,0 @@
-inet_peer_minttl - INTEGER
-Minimum time-to-live of entries. Should be enough to cover fragment
-time-to-live on the reassembling side. This minimum time-to-live  is
-guaranteed if the pool size is less than inet_peer_threshold.
-Measured in seconds.

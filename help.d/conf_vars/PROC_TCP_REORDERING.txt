@@ -1,2 +1,0 @@
-tcp_reordering - INTEGER Default: 3
-Maximal reordering of packets in a TCP stream.
