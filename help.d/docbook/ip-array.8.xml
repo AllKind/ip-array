@@ -301,7 +301,7 @@
                     <para>Read XML rule files and overwrite already compiled bash scripts.</para>
                     <para>The type argument allows to parse files selectively by type. Available
                         types are: filter, mangle, nat, raw, security, rawpost, ipset, sysctl,
-                        vpn.</para>
+                        tc_mark, vpn.</para>
                 </listitem>
                 <listitem>
                     <para>-pt, --parse-templates [type[,...]]</para>

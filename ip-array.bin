@@ -628,8 +628,8 @@ Options:
 -p, --parse-xml            Re-parse all XML config files (fine grade with -pb, -pr, -pt).
 -pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
                            Types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
--pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files. Types:
-                           filter, mangle, nat, raw, security, rawpost, ipset, sysctl, vpn
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files. Types: filter, mangle, nat,
+                           raw, security, rawpost, ipset, sysctl, tc_mark, vpn
 -pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
                            Types: base, filter, mangle, nat, raw, security, rawpost
 -t, --test                 Schedule restore of active ruleset.
@@ -1186,7 +1186,7 @@ while (($#)); do
 			PARSE_RULEFILES=1
 			if [[ $opt_arg && $opt_arg != -* ]]; then i=1
 				for rvar in ${opt_arg//,/ }; do
-					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|sysctl|vpn) ]]; then
+					if [[ $rvar = @(filter|mangle|nat|raw||rawpost|security|ipset|sysctl|tc_mark|vpn) ]]; then
 						PARSE_RULEFILES[i++]=$rvar
 					else
 						pr_err "Invalid type descriptior \`$rvar' for option: $option."
@@ -1876,6 +1876,9 @@ if ((${#PARSE_RULEFILES[@]} > 1)); then
 			;;
 			sysctl)
 				ARR_RULEFILES_TO_PARSE[idx++]="$SYSCTL_RULES"
+			;;
+			tc_mark)
+				ARR_RULEFILES_TO_PARSE[idx++]="$TC_MARK_RULES"
 			;;
 			vpn)
 				ARR_RULEFILES_TO_PARSE[idx++]="$IPSEC_RULES"

@@ -3901,7 +3901,13 @@ case "$1" in
 			if ((${#PARSE_RULEFILES[@]} > 1)); then
 				[[ $DEBUG_INFO ]] && dbg_arr PARSE_RULEFILES
 				for ((x=1; x<${#PARSE_RULEFILES[@]}; x++)); do
-					if [[ ${PARSE_RULEFILES[x]} = vpn ]]; then
+					if [[ ${PARSE_RULEFILES[x]} = tc_mark ]]; then
+						if ((ENABLE_TC_SHAPING == 1)); then
+							for rvar in ${TC_MARK_RULES}; do
+								load_rule_file "$rvar" || return
+							done
+						fi
+					elif [[ ${PARSE_RULEFILES[x]} = vpn ]]; then
 						if ((ENABLE_IPSEC == 1)); then
 							for rvar in ${IPSEC_RULES}; do
 								load_rule_file "$rvar" || return
