@@ -2667,6 +2667,11 @@ local -i parse_files=$PARSE_RULEFILES
 	log -x "$rule_file"
 	return $ER_NOEX
 }
+if ((${#ARR_RULEFILES_TO_PARSE[@]})); then # cmdline selected only specific files
+	if ! lsearch "$1" ${ARR_RULEFILES_TO_PARSE[@]}; then
+		parse_files=0
+	fi
+fi
 if [[ -r $parsed_file ]]; then
 	if ((parse_files == 0)); then
 		log -N "Parsed rulefile \`$parsed_file' already exists, using existing file."
