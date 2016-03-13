@@ -32,10 +32,9 @@
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
-        <para>A ruleblock is a group (stack) of rules, containing only the values of each option, to
-            be read in order of occurence. The structure of the ruleblock is defined in a template.
-            Each rule entry in a ruleblock is interpreted column-wise. How the values in each column
-            are interpreted, is defined in the template called with the ruleblock.</para>
+        <para>The sysctl rule files the system settings are stored. They are written in simple XML.
+            By parsing them IP-Array composes command line arguments for the
+                <command>sysctl</command> program.</para>
     </refsect1>
     <refsect1>
         <title>Syntax</title>
@@ -103,7 +102,9 @@
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_templates</refentrytitle>
                 <manvolnum>5</manvolnum>
-            </citerefentry>
-        </para>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>sysctl</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry></para>
     </refsect1>
 </refentry>
