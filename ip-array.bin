@@ -138,9 +138,6 @@ declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_SYSCTL=0 NO_IPT_COMPAT_CHECK=0 NO_IFAC
 # (re)-parse xml configuration files
 declare -a PARSE_RULEBLOCKS[0]=0 PARSE_RULEFILES[0]=0 PARSE_TEMPLATES[0]=0
 
-# test for availability of /proc settings
-#declare -i PROC_COMPAT_CHECK=0
-
 # use iptables-save/restore counters
 declare -i USE_COUNTERS=0
 
@@ -205,7 +202,7 @@ declare IPSTRING		# To classify address specifications (ip, ip-range, ip/mask)
 declare AT_JOB			# id of the restore job
 declare UNSUPPORTED_SETLIST		# list of unsupported ipset set types
 declare MODULE_RESTORE_FILE="${me}_modprobe_restore_commands-pid-$PID"
-declare PROC_RESTORE_FILE="${me}_proc_restore_commands-pid-$PID"	# files to save modprobe and /proc commands to
+declare SYSCTL_RESTORE_FILE="${me}_proc_restore_commands-pid-$PID"	# files to save modprobe and /proc commands to
 declare -r INLINE_FUNCTION_LIST="add_rule|create_chain|insert_ipt_rule"
 declare -i OUTPUT_RULES_REQUIRED=1	# Will output rules be required?
 declare -i IPA_DID_LOCK=0	# Did we turn on mutex?
@@ -440,14 +437,14 @@ declare -a IPT_POL_ARRAY	# Array to cache the iptables policy commands
 declare -a IPT_FLUSH_ARRAY	# Array to cache the iptables chain flushing commands
 declare -a IPT_CCHAIN_ARRAY	# Array to cache the iptables chain creation commands
 declare -a TC_CMD_ARRAY		# Array to cache the tc commands
-declare -a PROC_SYSCTL_ARRAY	# Array to cache the sysctl commands
+declare -a SYSCTL_CMD_ARRAY	# Array to cache the sysctl commands
 declare -a NFACCT_CMD_ARRAY	# Array to cache the nfacct commands
 # arrays for each iptables table
 declare -a IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
 declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ipset commands
 
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
-declare -a PROC_STATE_ARRAY	# Remember initial proc state, to restore on error
+declare -a SYSCTL_STATE_ARRAY	# Remember initial sysctl state, to restore on error
 
 # save if match extensions exist or not
 if ((BASH_VERSINFO[0] < 4)); then
@@ -465,6 +462,7 @@ declare -a TEMPLATE_NAMES_ARRAY RULEBLOCK_NAMES_ARRAY
 declare -ar TEMPLATE_SYNTAX_VERSION_ARRAY=( '1.0' )
 declare -ar RULEBLOCK_SYNTAX_VERSION_ARRAY=( '1.0' )
 declare -ar RULEFILE_SYNTAX_VERSION_ARRAY=( '1.0' '1.1' )
+declare -ar SYSCTL_SYNTAX_VERSION_ARRAY=( 1.0 )
 
 # Array to hold the names of the arrays, which get filled by the user.
 # Names are taken from the array and arrays get filled use fill_array()
@@ -1017,9 +1015,9 @@ if ((TEST_MODE && EXEC_COMMANDS)); then
 			verbose_msg "Removing saved modules-restore file \`${SAVE_DIR}/$MODULE_RESTORE_FILE"
 			run_rm "${SAVE_DIR}/$MODULE_RESTORE_FILE" || :
 		fi
-		if [[ -f ${SAVE_DIR}/$PROC_RESTORE_FILE ]]; then
-			verbose_msg "Removing saved /proc-restore file \`${SAVE_DIR}/$PROC_RESTORE_FILE"
-			run_rm "${SAVE_DIR}/$PROC_RESTORE_FILE" || :
+		if [[ -f ${SAVE_DIR}/$SYSCTL_RESTORE_FILE ]]; then
+			verbose_msg "Removing saved /proc-restore file \`${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
+			run_rm "${SAVE_DIR}/$SYSCTL_RESTORE_FILE" || :
 		fi
 	fi
 fi

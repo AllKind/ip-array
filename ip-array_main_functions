@@ -1403,7 +1403,7 @@ fi
 ipt_save "$str_file" || return # save currently active iptables ruleset
 ips_save "$str_ips_f" || return # save currently active ipset ruleset
 if str_job=$(printf '"%s" -- "%s" %s -d "%s" -s "%s" -si "%s" -sm "%s" -sp "%s" -v 2 -o EXIT_ON_ERROR=0\n"%s" -f "%s" "%s" "%s" 2>&1 >/dev/null\n' \
-	"$SHELL" "$str_mybin" restore "$str_tmp_def_f" "$str_file" "$str_ips_f" "$MODULE_RESTORE_FILE" "$PROC_RESTORE_FILE" \
+	"$SHELL" "$str_mybin" restore "$str_tmp_def_f" "$str_file" "$str_ips_f" "$MODULE_RESTORE_FILE" "$SYSCTL_RESTORE_FILE" \
 	"$RM" "$str_tmp_def_f" "${SAVE_DIR}/$str_file" "${SAVE_DIR}/$str_ips_f" | "$AT" now + $RELOAD_TIME minutes 2>&1)
 then
 	str_job="${str_job#*$'\n'}"
@@ -1656,10 +1656,10 @@ fi
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #
-# PROC SETTINGS
+# SYSCTL SETTINGS
 # ------------------------------------------------------------------------- #
 
-calc_conntrack_max() { # calculate nf_conntrack_max & conntrack hashsize
+calc_conntrack_max() { # calculate nf_conntrack_max
 [[ $SYSCTL_CONNTRACK_MAX || $SYSCTL_CONNTRACK_MAX = +([[:blank:]]) ]] || {
 	log -v 'SYSCTL_CONNTRACK_MAX'
 	return 0
@@ -1670,7 +1670,6 @@ if [[ $("$UNAME" -m) = *64 ]]; then
 fi
 case "$SYSCTL_CONNTRACK_MAX" in
 	+([[:digit:]])) # empty or manually configured
-		:
 		add_sysctl "net.netfilter.nf_conntrack_max=$SYSCTL_CONNTRACK_MAX"
 	;;
 	[xX]+([[:digit:]])) # factor is configured
@@ -1684,47 +1683,10 @@ case "$SYSCTL_CONNTRACK_MAX" in
 		factor=${SYSCTL_CONNTRACK_MAX#[xX]}
 		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
 		SYSCTL_CONNTRACK_MAX=$(echo "$ramsize / 16384 / $hw * $factor" | run_bc)
-#		PROC_CONNTRACK_HASHSIZE=$(echo "$PROC_CONNTRACK_MAX / 8" | run_bc)
-#		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
 		SYSCTL_CONNTRACK_MAX="${SYSCTL_CONNTRACK_MAX%.*}"
 		add_sysctl "net.netfilter.nf_conntrack_max=$SYSCTL_CONNTRACK_MAX"
 	;;
 	*) log -i "$SYSCTL_CONNTRACK_MAX" SYSCTL_CONNTRACK_MAX
-		raise_cfg_err_count
-esac
-return 0
-} # -------------------------------------------------------------------------
-
-calc_conntrack_hashsize() { # calculate nf_conntrack hashsize & nf_conntrack_max
-local -i hw=1 factor=1 ramsize
-if [[ $("$UNAME" -m) = *64 ]]; then
-	hw=2
-fi
-case "$PROC_CONNTRACK_HASHSIZE" in
-	""|+([[:digit:]])) # empty or manually configured
-		:
-		if ! lsearch "net.netfilter.nf_conntrack_buckets*" "${SYSCTL_CMD_ARRAY[@]}"; then
-			add_sysctl "net.netfilter.nf_conntrack_buckets=$PROC_CONNTRACK_HASHSIZE"
-		fi
-	;;
-	[xX]+([[:digit:]])) # factor is configured
-		log -w "Calculating maximum conntrack entries and conntrack hashsize"
-		ramsize=$(( $(read foo rvar bar </proc/meminfo && printf "%d\n" "$rvar") * 1024 )) || ramsize=""
-		[[ -n $ramsize ]] || {
-			log -F "retrieving RAM size from /proc/meminfo."
-			raise_gen_err_count
-			return 0
-		}
-		factor=${PROC_CONNTRACK_HASHSIZE#[xX]}
-		# formula taken from http://antmeetspenguin.blogspot.co.at/2011/01/high-performance-linux-router.html
-		PROC_CONNTRACK_HASHSIZE=$(echo "$ramsize / 131072 / $hw" * $factor | run_bc)
-		PROC_CONNTRACK_MAX=$(echo "$PROC_CONNTRACK_HASHSIZE * 8" | run_bc)
-		PROC_CONNTRACK_MAX="${PROC_CONNTRACK_MAX%.*}"
-		PROC_CONNTRACK_HASHSIZE="${PROC_CONNTRACK_HASHSIZE%.*}"
-		add_sysctl "net.netfilter.nf_conntrack_max=$PROC_CONNTRACK_MAX"
-		add_sysctl "net.netfilter.nf_conntrack_buckets=$PROC_CONNTRACK_HASHSIZE"
-	;;
-	*) log -i "$PROC_CONNTRACK_HASHSIZE" PROC_CONNTRACK_HASHSIZE
 		raise_cfg_err_count
 esac
 return 0
@@ -1762,167 +1724,6 @@ fi
 return 1
 } # -------------------------------------------------------------------------}
 
-set_proc() { # set the proc values
-[[ $3 ]] || { reqparm $FUNCNAME 3; return 1; }
-local proc_val="$1" proc_path="$2" proc_msg="$3" proc_mode_msg
-[[ -f $proc_path ]] || {
-	log -x "$proc_path"
-	raise_cfg_err_count
-	return 0
-}
-proc_file_writable "$proc_path" ] || {
-	log -E "\`$proc_path' is not writable."
-	raise_cfg_err_count
-	return 0
-}
-case "$proc_val" in
-	(0) proc_mode_msg="disabling $proc_msg" ;;
-	(1) proc_mode_msg="enabling $proc_msg" ;;
-	(+([[:digit:]]) | \
-		+(*([[:space:]])+([[:word:]])*([[:space:]])) | \
-		@(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])))
-		proc_mode_msg="setting $proc_msg to: $proc_val"
-	;;
-	(*) log -i "$proc_val" 'proc_val'
-		raise_cfg_err_count
-		return 0
-esac
-log -e "${PF}$proc_mode_msg"
-PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="\"$proc_val\" \"$proc_path\""
-#PROC_CMD_ARRAY[${#PROC_CMD_ARRAY[@]}]="$(escape_varname proc_val) $(escape_varname proc_path)"
-} # -------------------------------------------------------------------------
-
-proc_conf_global() { # set user defined /proc settings
-if ! ((${#SYSCTL_ARRAY[@]})); then
-	log -r "SYSCTL_ARRAY"
-	return 1
-fi
-local oIFS="$IFS"
-local -i idx path_found
-local vsingle proc_dev proc_set vname vtype ppath epath procmsg vresult
-
-for idx in ${!SYSCTL_ARRAY[@]}; do
-	set -- ${SYSCTL_ARRAY[idx]}
-	vname="$1" vtype="$2" ppath="$3"
-	shift 3
-	if [[ $vtype = iface_bool ]]; then
-		epath="$1"
-		shift
-	fi
-	path_found=0
-	procmsg=$* # message to display
-	vresult="${!vname}" # substitue sysctl variable names
-	[[ $vresult ]] || {
-		log -w "\`$vname' is not defined."
-		continue
-	}
-	IFS="|"
-	for rvar in $ppath; do
-		if [[ -e $rvar ]]; then
-			ppath="$rvar"
-			path_found=1
-			break
-		fi
-	done
-	IFS="${oIFS}"
-	((path_found)) || {
-		log -E "\`$vname' could not be found in \`$ppath'."
-		raise_cfg_err_count
-		continue
-	}
-	case "$vtype" in
-		iface_bool) # interface depending
-			case "$vresult" in
-				(0|1) # enable / disable for all interfaces
-					if ((PROC_COMPAT_CHECK == 0)); then
-						set_proc "$vresult" "${ppath}/all/${epath}" "$procmsg on all interfaces"
-					else
-						if [[ $MODE = SHOW ]]; then
-							pr_str "${vname}: '$vresult' '$ppath/all/${epath}' $procmsg on all interfaces"
-						else
-							pr_str "'$vresult' '${ppath}/all/${epath}' $procmsg on all interfaces"
-						fi
-					fi
-				;;
-				(+(*([[:space:]])+([[:graph:]])[:][0-1]*([[:space:]]))) # valid config string
-					for vsingle in $vresult; do # for every interface entry
-						set -- ${vsingle//:/ }
-						proc_dev="$1" proc_set="$2"
-						check_iface "${proc_dev}" || {
-							log -i "$vresult" "$vname"
-							raise_cfg_err_count
-							continue
-						}
-						# set (queue) the proc command for the specific interface
-						if ((PROC_COMPAT_CHECK == 0)); then
-							set_proc "$proc_set" "${ppath}/${proc_dev}/${epath}" "$procmsg on $proc_dev"
-						else
-							if [[ $MODE = SHOW ]]; then
-								pr_str "${vname}: '$vresult' '$ppath/${proc_dev}/${epath}' $procmsg on ${proc_dev}"
-							else
-								pr_str "'$proc_set' '${ppath}/${proc_dev}/${epath}' $procmsg on $proc_dev"
-							fi
-						fi
-					done
-				;;
-				*) log -i "$vresult" $vname
-					raise_cfg_err_count
-					continue
-			esac
-			continue
-		;;
-		# GLOBAL SETTINGS
-		bool)
-			val_bool_bin "$vresult" || {
-				log -i "$vresult" "$vname"
-				raise_cfg_err_count
-				continue
-			}
-		;;
-		int)
-			val_numeric "$vresult" || {
-				log -i "$vresult" "$vname"
-				raise_cfg_err_count
-				continue
-			}
-		;;
-		multi_int)
-			[[ $vresult = @(*([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])+([[:space:]])+([[:digit:]])*([[:space:]])) ]] || {
-				log -i "$vresult" "$vname"
-				raise_cfg_err_count
-				continue
-			}
-		;;
-		range:+([[:digit:]])-+([[:digit:]]))
-			[[ $vresult = [${vtype#range:}] ]] || {
-				log -E "$vname is not in range of: \`${vtype#range:}'"
-				raise_cfg_err_count
-				continue
-			}
-		;;
-		words)
-			[[ $vresult = +(*([[:space:]])+([[:word:]])*([[:space:]])) ]] || {
-				log -i "$vresult" "$vname"
-				raise_cfg_err_count
-				continue
-			}
-		;;
-		*) log -o "$vtype" $FUNCNAME
-			return 1
-	esac
-	# all checks are done, ready to set (queue) the proc command
-	if ((PROC_COMPAT_CHECK == 0)); then
-		set_proc "$vresult" "$ppath" "$procmsg"
-	else
-		if [[ $MODE = SHOW ]]; then
-			pr_str "${vname}: '$vresult' '$ppath' $procmsg"
-		else
-			pr_str "'$vresult' '$ppath' $procmsg"
-		fi
-	fi
-done
-} # -------------------------------------------------------------------------
-
 restore_sysctl_state() { # try to restore initial (remembered) sysctl settings
 ((${#SYSCTL_STATE_ARRAY[@]})) || {
 	log -v 'SYSCTL_STATE_ARRAY'
@@ -1935,23 +1736,6 @@ for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
 	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
 	"$SYSCTL" -q -w ${SYSCTL_STATE_ARRAY[idx]} || {
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -F 'setting ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
-	}
-done
-} # -------------------------------------------------------------------------
-
-restore_proc_state() { # try to restore initial (remembered) /proc settings
-((${#PROC_STATE_ARRAY[@]})) || {
-	log -v 'PROC_STATE_ARRAY'
-	return 0
-}
-((NO_AUTOSAVE == 0)) || return 0
-local -i idx
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial proc configuration"'
-for idx in ${!PROC_STATE_ARRAY[@]}; do
-	eval set -- "${PROC_STATE_ARRAY[idx]}"
-	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: $2 to $1'"
-	printf "%s\n" "$1" >"$2" || {
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -E 'failed setting $2 to $1'"
 	}
 done
 } # -------------------------------------------------------------------------
@@ -2468,7 +2252,7 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 			log -E "Config entry \`$conf_var' is mandatory, but not defined."
 			return $ER_FAIL
 		else
-			if [[ ${conf_var%%_*} != PROC ]]; then
+			if [[ ${conf_var%%_*} != SYSCTL ]]; then
 				case "${var_type}" in # react according to type of variable
 					bool) # config entry should be 0 or 1
 							set_var "$conf_var" '0'
@@ -2972,12 +2756,6 @@ fi
 log -n "Saving $work_arr_sum $appl_msg"
 printf "\n# %s\n" "$appl_msg" >>"$str_rs_file"
 case "$cmd_arr" in
-#	(PROC_CMD_ARRAY)
-#		for idx in ${!PROC_CMD_ARRAY[@]}; do
-#			eval 'set -- '"${PROC_CMD_ARRAY[idx]}"
-#			printf 'echo "%s" > "%s"\n' "$1" "$2" >>"$str_rs_file"
-#		done
-#	;;
 	(IPSET_CMD_ARRAY)
 		for idx in ${!IPSET_CMD_ARRAY[@]}; do
 			printf '"$IPSET" %s\n' "${IPSET_CMD_ARRAY[idx]}" >>"$str_rs_file"
@@ -3574,15 +3352,6 @@ case "$MODE" in # act according to runtime mode
 				"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
 			done
 		fi
-#		if ((${#PROC_CMD_ARRAY[@]})); then # /proc settings
-#			local proc_val
-#			for i in ${!PROC_CMD_ARRAY[@]}; do
-#				eval set -- "${PROC_CMD_ARRAY[i]}"
-#				PROC_STATE_ARRAY[${#PROC_STATE_ARRAY[@]}]="'$(echo $(read p_val < "$2"; echo "$p_val") )' '$2'"
-#				printf "%s\n" "$1" >"$2" 2>/dev/null || cmd_err_count proc "printf %s\n $1 >$2"
-#			done
-#			[[ $DEBUG_INFO ]] && dbg_arr "PROC_STATE_ARRAY" || :
-#		fi
 		if ((${#SYSCTL_CMD_ARRAY[@]})); then # sysctl settings
 			local proc_val
 			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
@@ -3594,18 +3363,11 @@ case "$MODE" in # act according to runtime mode
 		# save the memorized module and/or /proc settings to be restored if we are in test mode
 		if ((TEST_MODE)); then
 			if ((${#SYSCTL_STATE_ARRAY[@]})); then
-				create_file "${SAVE_DIR}/$PROC_RESTORE_FILE"
+				create_file "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
 				for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
-					printf '"%s" -q -w %s\n' "$SYSCTL" "${SYSCTL_STATE_ARRAY[i]}" >> "${SAVE_DIR}/$PROC_RESTORE_FILE"
+					printf '"%s" -q -w %s\n' "$SYSCTL" "${SYSCTL_STATE_ARRAY[i]}" >> "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
 				done
 			fi
-#			if ((${#PROC_STATE_ARRAY[@]})); then
-#				create_file "${SAVE_DIR}/$PROC_RESTORE_FILE"
-#				for idx in ${!PROC_STATE_ARRAY[@]}; do
-#					eval set -- "${PROC_STATE_ARRAY[idx]}"
-#					printf 'echo "%s" > "%s"\n' "$1" "$2" >> "${SAVE_DIR}/$PROC_RESTORE_FILE"
-#				done
-#			fi
 			if ((${#MOD_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$MODULE_RESTORE_FILE"
 				local unload_arr=()
@@ -3695,7 +3457,7 @@ case "$MAIN_ARG" in
 	save-commands) mode_msg="saved commands" ;;
 	save-iptables-commands) mode_msg="saved iptables commands" ;;
 	save-modprobe-commands) mode_msg="saved modprobe commands" ;;
-	save-sysctl-commands) mode_msg="saved proc commands" ;;
+	save-sysctl-commands) mode_msg="saved sysctl commands" ;;
 	save-tc-commands) mode_msg="saved tc commands" ;;
 	save-shaping-commands) mode_msg="saved traffic shaping commands" ;;
 	show) mode_msg="showed configuration" ;;

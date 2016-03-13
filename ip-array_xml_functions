@@ -1053,7 +1053,6 @@ local -i tag_idx attr_members IDX=0 ridx=0
 local attr_indicies str_cont str_act tag_name str_type str_syntax_version str_path
 local str_root_tag="ip_array_root" str_root_attr="sysctl_rules"
 local -a RESULT_ARR arr_path
-local -a SYSCTL_SYNTAX_VERSION_ARRAY=( 1.0 )
 
 for tag_idx in ${!ARR_TAGS[@]}; do
 	set -- ${ARR_TAGS[tag_idx]}
