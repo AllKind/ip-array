@@ -582,9 +582,8 @@
           <term>BASE_DIR</term>
           <listitem>
             <para>Base directory for IP-Array.</para>
-            <para>Default location of the defaults directory, saving directory, help
+            <para>Default location of the saving directory and `stable' and `test' (RUNMODE)
               directory.</para>
-            <para>`stable' and `test' (OP_DIR) directory (describing runmode).</para>
             <para>i.e. <filename>`/usr/local/etc/ip-array/'</filename></para>
           </listitem>
         </varlistentry>
@@ -610,32 +609,24 @@
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term>OP_DIR</term>
-          <listitem>
-            <para>Operation directory according to runmode. Can be either `stable' or `test' (if
-              startup parameter `test' is used).</para>
-            <para><code>OP_DIR="${BASE_DIR}/${rmode}"</code></para>
-          </listitem>
-        </varlistentry>
-        <varlistentry>
           <term>CONFIG_DIR</term>
           <listitem>
             <para>Directory containing configuration files and sub-directories.</para>
-            <para><code>CONFIG_DIR="${OP_DIR}/conf.d"</code></para>
+            <para><code>CONFIG_DIR="${BASE_DIR}/${RUNMODE}/conf.d"</code></para>
           </listitem>
         </varlistentry>
         <varlistentry>
           <term>RULE_DIR</term>
           <listitem>
             <para>Directory to put the rule files into.</para>
-            <para><code>RULE_DIR="${OP_DIR}/rules.d"</code></para>
+            <para><code>RULE_DIR="${CONFIG_DIR}/rules.d"</code></para>
           </listitem>
         </varlistentry>
         <varlistentry>
-          <term>SCRIPT_DIR</term>
+          <term>SYSCTL_DIR</term>
           <listitem>
-            <para>Directory for the prolog / epilog scripts.</para>
-            <para><code>SCRIPT_DIR="${OP_DIR}/scripts.d"</code></para>
+            <para>Directory to put the sysctl rule files into.</para>
+            <para><code>SYSCTL_DIR="${CONFIG_DIR}/sysctl.d"</code></para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -657,6 +648,13 @@
           <listitem>
             <para>Directory used to save commands, scripts or rulesets.</para>
             <para><code>SAVE_DIR="${BASE_DIR}/save.d"</code></para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SCRIPT_DIR</term>
+          <listitem>
+            <para>Directory for the prolog / epilog scripts.</para>
+            <para><code>SCRIPT_DIR="${BASE_DIR}/${RUNMODE}/scripts.d"</code></para>
           </listitem>
         </varlistentry>
         <varlistentry>
@@ -1237,6 +1235,18 @@
               </varlistentry>
               <varlistentry>
                 <term>
+                  <varname>SYSCTL</varname>
+                </term>
+                <listitem>
+                  <para>Mandatory: yes</para>
+                  <para>Allowed values: A valid path to the <command>sysctl</command> executable
+                    file (i.e: <filename>/sbin/sysctl</filename>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term>
                   <varname>TC</varname>
                 </term>
                 <listitem>
@@ -1552,11 +1562,7 @@
         </section>
         <section xml:id="conf_file_main_conf">
           <title>Main configuration file (ip-array.conf)</title>
-          <para>This file is the main IP-Array configuration file. The various settings for the
-            /proc filesystem are not listed here. Please stick to the comments in the configuration
-            file and the kernel documentation for further explanations. The list of the settings
-            names and their path inside the /proc filesystem can be retrieved by running:
-              <command>ip-array show -sc proc</command>.</para>
+          <para>This file is the main IP-Array configuration file.</para>
           <para>
             <variablelist>
               <varlistentry>
@@ -2468,6 +2474,24 @@
                   <para>Format: <synopsis>nfacct-name [...]</synopsis></para>
                 </listitem>
               </varlistentry>
+              <varlistentry>
+                <term><varname>SYSCTL_RULES</varname></term>
+                <listitem>
+                  <para>Names of the files holding the sysctl rules.</para>
+                </listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>SYSCTL_CONNTRACK_MAX</varname></term>
+                <listitem>
+                  <para>Maximum number of connection to track (conntrack). This can also be set in
+                    your sysctl rules, but this variable is here to allow automatic
+                    calculation.</para>
+                  <para>Formatting:</para>
+                  <para>value (integer) |  (x|X)factor (factor = integer)</para>
+                  <para>Using (x|X)factor, the conntrack max value will be automatically calculated
+                    and then multiplied with factor (i.e. x2 - double the auto value).</para>
+                </listitem>
+              </varlistentry>
             </variablelist>
           </para>
         </section>
@@ -3159,6 +3183,50 @@ or
             <link linkend="rule_xml_tags">ipset related tags</link> in an iptables rule file.</para>
       </section>
     </section>
+    <section xml:id="conf_xml_sysctl_rule_files_howto">
+      <title>sysctl rule files</title>
+      <subtitle>How to configure XML sysctl rule files</subtitle>
+      <para>The sysctl rule files define what system settings are to be modified.</para>
+      <section xml:id="sysctl_rule_syntax">
+        <title>Syntax</title>
+        <para>A rule definition file must contain the root tag including the describing name
+          attribule and the syntax version:</para>
+        <para><code>&lt;ip_array_root name="sysctl_rules" syntax_version="1.0"></code></para>
+        <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an sysctl rule
+          definition.</para>
+        <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+          version. 1.0 is available by now.</para>
+        <para>The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not
+          XML compatible). Tags can be closed by a simple `/>'. Attributes can have their value
+          enclosed inside single quotes, or not quoted at all.</para>
+      </section>
+      <section xml:id="sysctl_rule_xml_tags">
+        <title>sysctl rule file XML tags</title>
+        <para>The XML tags used in sysctl rule files are an exact representation of the names used
+          with the <command>sysctl</command> program. Each of the names used by the
+            <command>sysctl</command> program, which are separated by a dots, will be the name of
+          the XML tag, or the attribute if it is the actual setting. Example:</para>
+        <para><code>net.ipv4.ip_forward=1</code> from sysctl will be described in XML like
+          this:</para>
+        <para>
+          <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;ip_forward> 1 &lt;/ip_forward>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para>or as attribute:</para>
+        <para>
+          <programlisting>&lt;net>
+    &lt;ipv4 ip_forward="1">
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para>You can mix both ways as you wish. To see all the available types of your local
+          system, run either <command>sysctl -a</command> or <command>ip-array
+            compat-check</command>.</para>
+      </section>
+    </section>
   </chapter>
   <chapter xml:id="traffic_shaping">
     <title>Traffic shaping</title>
@@ -3300,8 +3368,8 @@ or
             <para>Save the generated modprobe commands to a file.</para>
           </listitem>
           <listitem>
-            <para>save-proc-commands</para>
-            <para>Save the generated /proc commands to a file.</para>
+            <para>save-sysctl-commands</para>
+            <para>Save the generated sysctl commands to a file.</para>
           </listitem>
           <listitem>
             <para>save-tc-commands</para>
@@ -3329,7 +3397,7 @@ or
           <listitem>
             <para>compat-check</para>
             <para>A compatibility check will be performed. IP-Array will probe the kernel version,
-              supported iptables tables, targets and matches, available proc settings, modules and
+              supported iptables tables, targets and matches, available sysctl settings, modules and
               programs. The result will be printed to stdout.</para>
           </listitem>
           <listitem>
@@ -3395,8 +3463,8 @@ or
             <para>Do not perform load or unload kernel modules.</para>
           </listitem>
           <listitem>
-            <para>-np, --no-proc</para>
-            <para>Do not set the /proc filesystem configuration.</para>
+            <para>-ny, --no-sysctl</para>
+            <para>Do not set the sysctl configuration.</para>
           </listitem>
           <listitem>
             <para>-p, --parse-xml</para>
@@ -3412,7 +3480,7 @@ or
             <para>-pr, --parse-rulefiles [type[,...]]</para>
             <para>Read XML rule files and overwrite already compiled bash scripts.</para>
             <para>The type argument allows to parse files selectively by type. Available types are:
-              filter, mangle, nat, raw, security, rawpost, ipset, vpn.</para>
+              filter, mangle, nat, raw, security, rawpost, ipset, sysctl, vpn.</para>
           </listitem>
           <listitem>
             <para>-pt, --parse-templates [type[,...]]</para>
@@ -3497,33 +3565,31 @@ or
             <para>Select type of information to show. If type is omitted, the settings of the <link
                 xlink:href="#conf_file_main_conf">main configuration file</link> will be displayed.
               This option can be used multible times.</para>
-            <para>Available types are: <simplelist>
-                <member> all (everything will be displayed)</member>
-                <member> ansi_codes (display ANSI codes for coloured shell output)</member>
-                <member> colors (available colours)</member>
-                <member> defaults[:NAME[,...] display all or just the selected variable names from
-                  the <link xlink:href="#conf_file_defaults">defaults</link> file.</member>
-                <member> main[:NAME[,...] display all or just the selected variable names from the
-                    <link xlink:href="#conf_file_main_conf">main configuration file</link>
-                  file.</member>
-                <member> targets (show all available iptables targets).</member>
-                <member> matches (show all available iptables matches).</member>
-                <member> rules (show the compiled iptables rules).</member>
-                <member> ipt_args[:-[core|matches|targets][,...]] display iptables arguments by
+            <para><simplelist>
+                <member> all - everything will be displayed.</member>
+                <member> ansi_codes - display ANSI codes for coloured shell output.</member>
+                <member> colors - available colours.</member>
+                <member> defaults[:NAME[,...]] - display all or just the selected variable names
+                  from the defaults file.</member>
+                <member> main[:NAME[,...]] - display all or just the selected variable names from
+                  the main configuration file file.</member>
+                <member> targets - show all available iptables targets.</member>
+                <member> matches - show all available iptables matches.</member>
+                <member> rules - show the compiled iptables rules.</member>
+                <member> ipt_args[:-[core|matches|targets][,...]] - display iptables arguments by
                   category.</member>
-                <member> ipt_args[:NAME[,...] display all or just the selected iptables arguments
+                <member> ipt_args[:NAME[,...]] - display all or just the selected iptables arguments
                   help.</member>
-                <member> ruleblocks[:NAME[,...] display all or just the selected ruleblock
+                <member> ruleblocks[:NAME[,...]] - display all or just the selected ruleblock
                   names.</member>
-                <member> templates[:NAME[,...] display all or just the selected templates
+                <member> templates[:NAME[,...]] - display all or just the selected templates
                   names.</member>
-                <member> proc display the /proc filesystem configuration options, paths and their
-                  configured values.</member>
-                <member> public_functions[:NAME[,...] display all or just the selected public
+                <member> sysctl - display the sysctl configuration.</member>
+                <member> public_functions[:NAME[,...]] - display all or just the selected public
                   functions help.</member>
-                <member> find_templates:template-entry-glob[,...] find templates containing all
+                <member> find_templates:template-entry-glob[,...] - find templates containing all
                   entries of the comma separated search list.</member>
-              </simplelist></para>
+              </simplelist>Available types are: </para>
           </listitem>
           <listitem>
             <para>-sh, --shell /path/shell</para>

@@ -36,10 +36,6 @@
         <para> This file is the main configuration file of ip-array. It holds all the variables
             needed to find the other configuration files and many settings about the host and what
             to configure.</para>
-        <para>The various settings for the /proc filesystem are not listed here. Please stick to the
-            comments in the configuration file and the kernel documentation for further
-            explanations. The list of the settings names and their path inside the /proc filesystem
-            can be retrieved by running: <command>ip-array show -sc proc</command></para>
     </refsect1>
     <refsect1>
         <title>Variables</title>
@@ -975,6 +971,25 @@
                     <listitem>
                         <para>Netfilter accounting objects (nfacct)</para>
                         <para>Format: <synopsis>nfacct-name [...]</synopsis></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SYSCTL_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the files holding the sysctl rules.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SYSCTL_CONNTRACK_MAX</varname></term>
+                    <listitem>
+                        <para>Maximum number of connection to track (conntrack). This can also be
+                            set in your sysctl rules, but this variable is here to allow automatic
+                            calculation.</para>
+                        <para>Formatting:</para>
+                        <para>value (integer) |  (x|X)factor (factor = integer)</para>
+                        <para>Using (x|X)factor, the conntrack max value will be automatically
+                            calculated and then multiplied with factor (i.e. x2 - double the auto
+                            value).</para>
                     </listitem>
                 </varlistentry>
             </variablelist>
