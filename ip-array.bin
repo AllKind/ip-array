@@ -1786,103 +1786,53 @@ fi
 # -------------------------------------------------------------------------
 # enumerate files to parse (selected by category in cmdline)
 # -------------------------------------------------------------------------
-idx=0
+
 declare -a ARR_TEMPLATES_TO_PARSE
-if ((${#PARSE_TEMPLATES[@]} > 1)); then
+if ((${#PARSE_TEMPLATES[@]} > 1)); then idx=0
 	for ((i=1; i<${#PARSE_TEMPLATES[@]}; i++)); do
 		case "${PARSE_TEMPLATES[i]}" in
-			filter)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_FILTER_TEMPLATES"
-			;;
-			mangle)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_MANGLE_TEMPLATES"
-			;;
-			nat)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_NAT_TEMPLATES"
-			;;
-			raw)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_RAW_TEMPLATES"
-			;;
-			security)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_SECURITY_TEMPLATES"
-			;;
-			rawpost)
-				ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_RAWPOST_TEMPLATES"
-			;;
+			filter) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_FILTER_TEMPLATES" ;;
+			mangle) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_MANGLE_TEMPLATES" ;;
+			nat) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_NAT_TEMPLATES" ;;
+			raw) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_RAW_TEMPLATES" ;;
+			security) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_SECURITY_TEMPLATES" ;;
+			rawpost) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_RAWPOST_TEMPLATES" ;;
 		esac
 	done
 fi
 readonly ARR_TEMPLATES_TO_PARSE
 
-idx=0
 declare -a ARR_RULEBLOCKS_TO_PARSE
-if ((${#PARSE_RULEBLOCKS[@]} > 1)); then
+if ((${#PARSE_RULEBLOCKS[@]} > 1)); then idx=0
 	for ((i=1; i<${#PARSE_RULEBLOCKS[@]}; i++)); do
 		case "${PARSE_RULEBLOCKS[i]}" in
-			filter)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$FILTER_RULEBLOCKS"
-			;;
-			mangle)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$MANGLE_RULEBLOCKS"
-			;;
-			nat)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$NAT_RULEBLOCKS"
-			;;
-			raw)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$NAT_RULEBLOCKS"
-			;;
-			security)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$SECURITY_RULEBLOCKS"
-			;;
-			rawpost)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$RAWPOST_RULEBLOCKS"
-			;;
-			tc)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_RULEBLOCKS"
-			;;
-			tc_mangle)
-				ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_MANGLE_RULEBLOCKS"
-			;;
+			filter) ARR_RULEBLOCKS_TO_PARSE[idx++]="$FILTER_RULEBLOCKS" ;;
+			mangle) ARR_RULEBLOCKS_TO_PARSE[idx++]="$MANGLE_RULEBLOCKS" ;;
+			nat) ARR_RULEBLOCKS_TO_PARSE[idx++]="$NAT_RULEBLOCKS" ;;
+			raw) ARR_RULEBLOCKS_TO_PARSE[idx++]="$RAW_RULEBLOCKS" ;;
+			security) ARR_RULEBLOCKS_TO_PARSE[idx++]="$SECURITY_RULEBLOCKS" ;;
+			rawpost) ARR_RULEBLOCKS_TO_PARSE[idx++]="$RAWPOST_RULEBLOCKS" ;;
+			tc) ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_RULEBLOCKS" ;;
+			tc_mangle) ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_MANGLE_RULEBLOCKS" ;;
 		esac
 	done
 fi
 readonly ARR_RULEBLOCKS_TO_PARSE
 
-idx=0
 declare -a ARR_RULEFILES_TO_PARSE
-if ((${#PARSE_RULEFILES[@]} > 1)); then
+if ((${#PARSE_RULEFILES[@]} > 1)); then idx=0
 	for ((i=1; i<${#PARSE_RULEFILES[@]}; i++)); do
 		case "${PARSE_RULEFILES[i]}" in
-			filter)
-				ARR_RULEFILES_TO_PARSE[idx++]="$FILTER_RULES"
-			;;
-			mangle)
-				ARR_RULEFILES_TO_PARSE[idx++]="$MANGLE_RULES"
-			;;
-			nat)
-				ARR_RULEFILES_TO_PARSE[idx++]="$NAT_RULES"
-			;;
-			raw)
-				ARR_RULEFILES_TO_PARSE[idx++]="$NAT_RULES"
-			;;
-			security)
-				ARR_RULEFILES_TO_PARSE[idx++]="$SECURITY_RULES"
-			;;
-			rawpost)
-				ARR_RULEFILES_TO_PARSE[idx++]="$RAWPOST_RULES"
-			;;
-			ipset)
-				ARR_RULEFILES_TO_PARSE[idx++]="$IPSET_RULES"
-			;;
-			sysctl)
-				ARR_RULEFILES_TO_PARSE[idx++]="$SYSCTL_RULES"
-			;;
-			tc_mark)
-				ARR_RULEFILES_TO_PARSE[idx++]="$TC_MARK_RULES"
-			;;
-			vpn)
-				ARR_RULEFILES_TO_PARSE[idx++]="$IPSEC_RULES"
-			;;
+			filter) ARR_RULEFILES_TO_PARSE[idx++]="$FILTER_RULES" ;;
+			mangle) ARR_RULEFILES_TO_PARSE[idx++]="$MANGLE_RULES" ;;
+			nat) ARR_RULEFILES_TO_PARSE[idx++]="$NAT_RULES" ;;
+			raw) ARR_RULEFILES_TO_PARSE[idx++]="$RAW_RULES" ;;
+			security) ARR_RULEFILES_TO_PARSE[idx++]="$SECURITY_RULES" ;;
+			rawpost) ARR_RULEFILES_TO_PARSE[idx++]="$RAWPOST_RULES" ;;
+			ipset) ARR_RULEFILES_TO_PARSE[idx++]="$IPSET_RULES" ;;
+			sysctl) ARR_RULEFILES_TO_PARSE[idx++]="$SYSCTL_RULES" ;;
+			tc_mark) ARR_RULEFILES_TO_PARSE[idx++]="$TC_MARK_RULES" ;;
+			vpn) ARR_RULEFILES_TO_PARSE[idx++]="$IPSEC_RULES" ;;
 		esac
 	done
 fi
