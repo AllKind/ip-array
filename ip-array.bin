@@ -137,6 +137,7 @@ declare -i NO_AUTOSAVE=0 NO_MODPROBE=0 NO_SYSCTL=0 NO_IPT_COMPAT_CHECK=0 NO_IFAC
 
 # (re)-parse xml configuration files
 declare -a PARSE_RULEBLOCKS[0]=0 PARSE_RULEFILES[0]=0 PARSE_TEMPLATES[0]=0
+declare -a ARR_TEMPLATES_TO_PARSE ARR_RULEBLOCKS_TO_PARSE ARR_RULEFILES_TO_PARSE
 
 # use iptables-save/restore counters
 declare -i USE_COUNTERS=0
@@ -1791,7 +1792,6 @@ fi
 # enumerate files to parse (selected by category in cmdline)
 # -------------------------------------------------------------------------
 
-declare -a ARR_TEMPLATES_TO_PARSE
 if ((${#PARSE_TEMPLATES[@]} > 1)); then idx=0 # category selection from cmdline
 	for ((i=1; i<${#PARSE_TEMPLATES[@]}; i++)); do
 		case "${PARSE_TEMPLATES[i]}" in
@@ -1830,9 +1830,8 @@ elif ((PARSE_TEMPLATES[0])); then # no category selected
 		fi
 	done
 fi
-readonly ARR_TEMPLATES_TO_PARSE
+readonly ARR_TEMPLATES_TO_PARSE PARSE_TEMPLATES
 
-declare -a ARR_RULEBLOCKS_TO_PARSE
 if ((${#PARSE_RULEBLOCKS[@]} > 1)); then idx=0
 	for ((i=1; i<${#PARSE_RULEBLOCKS[@]}; i++)); do
 		case "${PARSE_RULEBLOCKS[i]}" in
@@ -1868,9 +1867,8 @@ elif ((PARSE_RULEBLOCKS[0])); then
 		done
 	fi
 fi
-readonly ARR_RULEBLOCKS_TO_PARSE
+readonly ARR_RULEBLOCKS_TO_PARSE PARSE_RULEBLOCKS
 
-declare -a ARR_RULEFILES_TO_PARSE
 if ((${#PARSE_RULEFILES[@]} > 1)); then idx=0
 	for ((i=1; i<${#PARSE_RULEFILES[@]}; i++)); do
 		case "${PARSE_RULEFILES[i]}" in
@@ -1887,7 +1885,7 @@ if ((${#PARSE_RULEFILES[@]} > 1)); then idx=0
 		esac
 	done
 fi
-readonly ARR_RULEFILES_TO_PARSE
+readonly ARR_RULEFILES_TO_PARSE PARSE_RULEFILES
 
 # -------------------------------------------------------------------------
 # preparation done - run main function
