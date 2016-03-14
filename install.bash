@@ -196,7 +196,7 @@ create_dirs "${DATAROOTDIR}/${ME}/"{help.d,template_repo.d} \
 create_dirs "${DEFAULTSDIR}" "${SYSCONFDIR}/${ME}/"{save.d,stable,test}
 create_dirs "${DATAROOTDIR}/${ME}/help.d/"{conf_vars,examples,ipt_args,public_functions}
 create_dirs "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/"{ruleblocks.d,rules.d}
-create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,templates.d}
+create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,sysctl.d,templates.d}
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d"
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
 
@@ -204,6 +204,7 @@ create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
 install_dir -m 0640 conf.d/*.conf "${SYSCONFDIR}/${ME}/stable/conf.d"
 install_dir -m 0640 conf.d/ruleblocks.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/ruleblocks.d"
 install_dir -m 0640 conf.d/rules.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/rules.d"
+install_dir -m 0640 conf.d/sysctl.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/sysctl.d"
 install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/templates.d"
 
 install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
