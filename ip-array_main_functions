@@ -3805,7 +3805,8 @@ case "$1" in
 				"Configuration builder" "Create a main configuration file" \
 				"Ruleblock builder" "Create or edit XML ruleblocks" \
 				"Template builder" "Create XML templates" \
-				"Rule builder" "Create a rule file")
+				"Rule builder" "Create a rule file" \
+				"sysctl builder" "Create a sysctl rule file")
 			if (($? == 0)); then
 				if [[ $str_opt = "Ruleblock builder" ]]; then
 					while (($? == 0)); do
@@ -3820,6 +3821,10 @@ case "$1" in
 				elif [[ $str_opt = "Rule builder" ]]; then
 					while (($? == 0)); do
 						iactive_rule_builder
+					done
+				elif [[ $str_opt = "sysctl builder" ]]; then
+					while (($? == 0)); do
+						iactive_sysctl_builder
 					done
 				fi
 			fi

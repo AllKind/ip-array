@@ -192,7 +192,7 @@ for y in ${!arr_tmp[@]}; do
 	if [[ ${arr_tmp[y]} = $1 ]]; then
 		unset arr_tmp[y]
 		if [[ $DIALOG_PROG = *whiptail ]]; then
-			arr_tmp[y+1]
+			unset arr_tmp[y+1]
 		fi
 	fi
 done
@@ -208,7 +208,7 @@ while (($? == 0)); do
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
 				unset arr_tmp[i]
 				if [[ $DIALOG_PROG = *whiptail ]]; then
-					arr_tmp[i+1]
+					unset arr_tmp[i+1]
 				fi
 				break
 			fi
@@ -249,7 +249,7 @@ while (($? == 0)); do
 			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
 				unset arr_tmp[i]
 				if [[ $DIALOG_PROG = *whiptail ]]; then
-					arr_tmp[i+1]
+					unset arr_tmp[i+1]
 				fi
 				break
 			fi
@@ -340,7 +340,7 @@ elif [[ $str_rule = "iptables tag" ]]; then
 				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
 					unset arr_tmp[i]
 					if [[ $DIALOG_PROG = *whiptail ]]; then
-						arr_tmp[i+1]
+						unset arr_tmp[i+1]
 					fi
 					break
 				fi
@@ -684,6 +684,165 @@ if [[ -s "$c_file" ]]; then
 else
 	run_rm "$c_file"
 fi
+} # -------------------------------------------------------------------------
+
+_ia_add_sysctl() {
+local str_choice str_tmp
+local -i ret new_index args
+local -a arr_tmp
+str_choice=$(dia_menu "Select an option" \
+	"Add tag" "Add a sysctl tag" \
+	"Close tag" "Close last opened tag" \
+	"Add comment" "Add a comment" \
+	"View" "View the created rules")
+ret=$?
+((ret)) && return $ret
+if [[ $str_choice = "Add tag" ]]; then
+	while (($? == 0)); do
+		str_choice=$(dia_menu --noitem "Choose an sysctl tag." "${arr_sysctl[@]}")
+		if (($? == 0)); then
+			for i in ${!arr_sysctl[*]}; do # remove dupes from the list
+				if [[ ${arr_sysctl[i]} = $str_choice ]]; then
+					unset arr_sysctl[i]
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						unset arr_sysctl[i+1]
+					fi
+					break
+				fi
+			done
+			local oIFS="$IFS"
+			IFS='.'
+			set -- $str_choice
+			IFS="$oIFS"
+			local -i new_index=0 args=$#
+			if ((${#arr_tags[@]})); then
+				for ((i=0; i<$((args - 1)); i++)); do
+					if [[ ${arr_tags[i]} = $1 ]]; then
+						new_index=$(($i + 1))
+						shift
+					else
+						new_index=$i
+						break
+					fi
+				done
+				for ((i=$((tag_idx - 1)); i>=new_index; i--)); do let tag_idx--
+					arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+					str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+					unset arr_tags[i]
+				done
+			fi
+			for str_tmp; do
+				str_indent+="    "
+				arr_tags[tag_idx++]="$str_tmp"
+				arr_content[content_idx++]="${str_indent}<$str_tmp>"
+			done
+			if (($# > 1)); then
+				shift $(($# - 1))
+			fi
+			str_tmp="$(dia_ibox "Enter a value for $1")"
+			if (($? == 0)); then
+				arr_content[content_idx-1]+=" $str_tmp </$1>"
+				str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+				unset arr_tags[--tag_idx]
+			else
+				unset arr_content[--content_idx]
+				unset arr_tags[--tag_idx]
+				break
+			fi
+		else
+			break
+		fi
+	done
+elif [[ $str_choice = "Close tag" ]]; then
+	if (($tag_idx > 0)); then
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		dia_mbox "Tag \`${arr_tags[tag_idx]}' has been closed."
+		unset arr_tags[tag_idx]
+	else
+		dia_mbox "There are no tags open."
+	fi
+elif [[ $str_choice = "Add comment" ]]; then
+	str_choice="$(dia_ibox "Enter a comment")"
+	if [[ $str_tmp ]]; then
+		arr_content[content_idx++]="${str_indent}    <!-- $str_choice -->"
+	fi
+elif [[ $str_choice = "View" ]]; then
+	printf "\n"
+	printf "%s\n" "${arr_content[@]}"
+	printf "\n"
+	read -p " Press \`ENTER' to continue"
+fi
+dia_yn "Do you want to add/close another tag?"
+if (($? != 0)); then
+	for i in ${!arr_tags[*]}; do
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		unset arr_tags[tag_idx]
+	done
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+build_wt_dummy_list() {
+while (($#)); do
+	printf "%s item\n" "$1"
+	shift
+done
+} # -------------------------------------------------------------------------
+
+iactive_sysctl_builder() { # interactive sysctl rule file builder
+local str_indent
+local -i tag_idx=0 content_idx=0
+local -a arr_tags arr_content
+arr_title=( --title "$ME sysctl rule file builder" )
+local c_file="${SAVE_DIR}/${me}-sysctl_rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
+local -a arr_sysctl=( $(while read -r -t $GLOBAL_READ_TIMEOUT; do \
+	if [[ $REPLY = net.* && $REPLY != net.ipv6.* ]]; then printf "${REPLY#net.}\n"; fi \
+	done < <(dn2 run_sctl -N -a) ) )
+if ((${#arr_sysctl[@]} == 0)); then
+	dia_mbox "Could not retrieve any sysctl data!"
+	return $ER_FAIL
+fi
+
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_sysctl=( $(build_wt_dummy_list "${arr_sysctl[@]}") )
+fi
+while (($? == 0)); do
+	_ia_add_sysctl
+done
+if (($? <= 1)); then
+	if ((${#arr_content[@]})); then
+		mutex_on || bail_out $ER_FAIL
+		until (set -C; create_file "$c_file") &>/dev/null; do
+			c_file="$(dia_ibox "File \`$c_file' already exists.\nEnter a new file name (without the prefixing path).")"
+			(($?)) && return 1
+			c_file="$SAVE_DIR/${c_file}"
+		done
+		printf '<?xml version="1.0"?>\n\n' > "$c_file"
+		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$c_file"
+		printf '<net>\n' >> "$c_file"
+		printf "%s\n" "${arr_content[@]}" >> "$c_file"
+		printf '</net>\n' >> "$c_file"
+		printf '</ip_array_root>\n' >> "$c_file"
+		cleanup_lock
+	else
+		dia_mbox "No rules have been collected."
+	fi
+fi
+if [[ -s "$c_file" ]]; then
+	dia_yn "The resulting sysctl rule file has been saved to: $c_file\nDo you want to view the created file?"
+	if (($? == 0)); then
+		printf "%s:\n" "$c_file"
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	fi
+else
+	run_rm "$c_file"
+fi
+dia_yn "Do you want to create another sysctl rule file?"
 } # -------------------------------------------------------------------------
 
 iactive_ruleblock_builder() { # interactive ruleblock builder
