@@ -2893,8 +2893,9 @@ load_ipt_templates() {
 # - load nested templates
 # - compile final bash arrays templates
 # - source compiled file
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local template_file="${TEMPLATE_DIR}/${1}" parsed_file="${TEMPLATE_DIR}/__parsed_${1%.xml}.bash"
+local template_names="${TEMPLATE_DIR}/__parsed_${2}_TEMPLATE_NAMES"
 local -i parse_files=${PARSE_TEMPLATES}
 local -a TEMP_TEMPLATE_NAMES_ARRAY
 [[ -r $template_file ]] || {
@@ -2964,20 +2965,20 @@ if ((${#TEMP_TEMPLATE_NAMES_ARRAY[@]})); then # dump generated templates to stdo
 		pr_banner "End of template dump."
 	fi
 	# save template names for usage in show mode
-	printf '%s\n' "${TEMP_TEMPLATE_NAMES_ARRAY[@]}" >> "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+	printf '%s\n' "${TEMP_TEMPLATE_NAMES_ARRAY[@]}" >> "$template_names"
 fi
 } # -------------------------------------------------------------------------
 
 load_ipt_base_templates() { # load ipt base templates
 for rvar in ${BASE_TEMPLATES}; do
-	load_ipt_templates "$rvar" || return
+	load_ipt_templates "$rvar" base || return
 done
 } # -------------------------------------------------------------------------
 
 load_ipt_filter_templates() { # load ipt filter templates
 if ((ENABLE_FILTER)); then
 	for rvar in ${IPT_FILTER_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" filter || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2985,7 +2986,7 @@ fi
 load_ipt_security_templates() { # load ipt security templates
 if ((ENABLE_SECURITY)); then
 	for rvar in ${IPT_SECURITY_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" security || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -2993,7 +2994,7 @@ fi
 load_ipt_mangle_templates() { # load ipt mangle templates
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${IPT_MANGLE_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" mangle || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3001,7 +3002,7 @@ fi
 load_ipt_nat_templates() { # load ipt nat templates
 if ((ENABLE_NAT)); then
 	for rvar in ${IPT_NAT_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" nat || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3009,7 +3010,7 @@ fi
 load_ipt_raw_templates() { # load ipt raw templates
 if ((ENABLE_RAW)); then
 	for rvar in ${IPT_RAW_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" raw || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3017,9 +3018,32 @@ fi
 load_ipt_rawpost_templates() { # load ipt rawpost templates
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${IPT_RAWPOST_TEMPLATES}; do
-		load_ipt_templates "$rvar" || return
+		load_ipt_templates "$rvar" rawpost || return
 	done
 fi
+} # -------------------------------------------------------------------------
+
+join_template_names() { # join the different categories to one file
+((PARSE_TEMPLATES)) || return 0
+create_file "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES" || return $ER_FAIL
+if [[ -r ${TEMPLATE_DIR}/__parsed_base_TEMPLATE_NAMES ]]; then
+	log -w "Adding base templates to: ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+	"$CAT" "${TEMPLATE_DIR}/__parsed_base_TEMPLATE_NAMES" | run_sort >> "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+fi
+if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
+	if [[ -r ${TEMPLATE_DIR}/__parsed_mangle_TEMPLATE_NAMES ]]; then
+		log -w "Adding mangle templates to: ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+		"$CAT" "${TEMPLATE_DIR}/__parsed_mangle_TEMPLATE_NAMES" | run_sort >> "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+	fi
+fi
+for rvar in filter nat raw security rawpost; do
+	if (($(subst_var ENABLE_$(string_toupper "$rvar") ) )); then
+		if [[ -r ${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES ]]; then
+			log -w "Adding $rvar templates to: ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+			"$CAT" "${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES" | run_sort >> "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+		fi
+	fi
+done
 } # -------------------------------------------------------------------------
 
 load_all_templates() { # load all templates
@@ -3030,6 +3054,7 @@ load_ipt_mangle_templates || return
 load_ipt_nat_templates || return
 load_ipt_raw_templates || return
 load_ipt_rawpost_templates || return
+join_template_names || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3039,6 +3064,7 @@ load_ipt_rawpost_templates || return
 load_ruleblock_conf() {
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local ruleblock_file="${RULEBLOCK_DIR}/$1" parsed_file="${RULEBLOCK_DIR}/__parsed_${1%.xml}.bash"
+local ruleblock_names="${RULEBLOCK_DIR}/__parsed_${2}_RULEBLOCK_NAMES"
 local -i parse_files=${PARSE_RULEBLOCKS}
 local -a TEMP_RULEBLOCK_NAMES_ARRAY
 [[ -r $ruleblock_file ]] || {
@@ -3100,14 +3126,14 @@ if ((${#TEMP_RULEBLOCK_NAMES_ARRAY[@]})); then # dump generated ruleblocks to st
 		pr_banner "End of ruleblock dump."
 	fi
 	# save ruleblock names for usage in show mode
-	printf '%s\n' "${TEMP_RULEBLOCK_NAMES_ARRAY[@]}" >> "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+	printf '%s\n' "${TEMP_RULEBLOCK_NAMES_ARRAY[@]}" >> "$ruleblock_names"
 fi
 } # -------------------------------------------------------------------------
 
 load_filter_ruleblocks() {
 if ((ENABLE_FILTER)); then
 	for rvar in ${FILTER_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" filter || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3115,7 +3141,7 @@ fi
 load_security_ruleblocks() {
 if ((ENABLE_SECURITY)); then
 	for rvar in ${SECURITY_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" security || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3123,7 +3149,7 @@ fi
 load_mangle_ruleblocks() {
 if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
 	for rvar in ${MANGLE_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" mangle || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3131,7 +3157,7 @@ fi
 load_nat_ruleblocks() {
 if ((ENABLE_NAT)); then
 	for rvar in ${NAT_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" nat || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3139,7 +3165,7 @@ fi
 load_raw_ruleblocks() {
 if ((ENABLE_RAW)); then
 	for rvar in ${RAW_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" raw || return
 	done
 fi
 } # -------------------------------------------------------------------------
@@ -3147,9 +3173,30 @@ fi
 load_rawpost_ruleblocks() {
 if ((ENABLE_RAWPOST)); then
 	for rvar in ${RAWPOST_RULEBLOCKS}; do
-		load_ruleblock_conf "$rvar" || return
+		load_ruleblock_conf "$rvar" rawpost || return
 	done
 fi
+} # -------------------------------------------------------------------------
+
+join_ruleblock_names() { # join the different categories to one file
+((PARSE_RULEBLOCKS)) || return 0
+create_file "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES" || return $ER_FAIL
+if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
+	for rvar in mangle tc_mangle tc; do
+		if [[ -r ${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES ]]; then
+			log -w "Adding $rvar ruleblocks to: ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+			"$CAT" "${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES" | run_sort >> "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+		fi
+	done
+fi
+for rvar in filter nat raw security rawpost; do
+	if (($(subst_var ENABLE_$(string_toupper "$rvar") ) )); then
+		if [[ -r ${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES ]]; then
+			log -w "Adding $rvar ruleblocks to: ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+			"$CAT" "${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES" | run_sort >> "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+		fi
+	fi
+done
 } # -------------------------------------------------------------------------
 
 load_all_ruleblocks() {
@@ -3161,6 +3208,7 @@ load_tc_mangle_ruleblocks || return
 load_nat_ruleblocks || return
 load_filter_ruleblocks || return
 load_security_ruleblocks || return
+join_ruleblock_names || return
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------

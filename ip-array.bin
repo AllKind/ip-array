@@ -1772,13 +1772,13 @@ fi
 # -------------------------------------------------------------------------
 if ((PARSE_TEMPLATES == 1)); then
 	if [[ -e ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-		log -w "Removing remembered templates names file \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
+		log -w "Removing remembered templates names file: \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'"
 		run_rm "${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES"
 	fi
 fi
 if ((PARSE_RULEBLOCKS == 1)); then
 	if [[ -e ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
-		log -w "Removing remembered ruleblocks names file \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
+		log -w "Removing remembered ruleblocks names file: \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'"
 		run_rm "${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES"
 	fi
 fi
@@ -1788,9 +1788,10 @@ fi
 # -------------------------------------------------------------------------
 
 declare -a ARR_TEMPLATES_TO_PARSE
-if ((${#PARSE_TEMPLATES[@]} > 1)); then idx=0
+if ((${#PARSE_TEMPLATES[@]} > 1)); then idx=0 # category selection from cmdline
 	for ((i=1; i<${#PARSE_TEMPLATES[@]}; i++)); do
 		case "${PARSE_TEMPLATES[i]}" in
+			base) ARR_TEMPLATES_TO_PARSE[idx++]="$BASE_TEMPLATES" ;;
 			filter) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_FILTER_TEMPLATES" ;;
 			mangle) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_MANGLE_TEMPLATES" ;;
 			nat) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_NAT_TEMPLATES" ;;
@@ -1798,6 +1799,31 @@ if ((${#PARSE_TEMPLATES[@]} > 1)); then idx=0
 			security) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_SECURITY_TEMPLATES" ;;
 			rawpost) ARR_TEMPLATES_TO_PARSE[idx++]="$IPT_RAWPOST_TEMPLATES" ;;
 		esac
+		if [[ -e ${TEMPLATE_DIR}/__parsed_${PARSE_TEMPLATES[i]}_TEMPLATE_NAMES ]]; then
+			log -w "Removing remembered templates names file: \`${TEMPLATE_DIR}/__parsed_${PARSE_TEMPLATES[i]}_TEMPLATE_NAMES'"
+			run_rm "${TEMPLATE_DIR}/__parsed_${PARSE_TEMPLATES[i]}_TEMPLATE_NAMES"
+		fi
+	done
+elif ((PARSE_TEMPLATES[0])); then # no category selected
+	for rvar in base; do
+		if [[ -e ${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES ]]; then
+			log -w "Removing remembered templates names file: \`${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES'"
+			run_rm "${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES"
+		fi
+	done
+	if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
+		if [[ -e ${TEMPLATE_DIR}/__parsed_mangle_TEMPLATE_NAMES ]]; then
+			log -w "Removing remembered templates names file: \`${TEMPLATE_DIR}/__parsed_mangle_TEMPLATE_NAMES'"
+			run_rm "${TEMPLATE_DIR}/__parsed_mangle_TEMPLATE_NAMES"
+		fi
+	fi
+	for rvar in filter nat raw security rawpost; do
+		if (($(subst_var ENABLE_$(string_toupper "$rvar") ) )); then
+			if [[ -e ${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES ]]; then
+				log -w "Removing remembered templates names file: \`${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES'"
+				run_rm "${TEMPLATE_DIR}/__parsed_${rvar}_TEMPLATE_NAMES"
+			fi
+		fi
 	done
 fi
 readonly ARR_TEMPLATES_TO_PARSE
@@ -1815,7 +1841,28 @@ if ((${#PARSE_RULEBLOCKS[@]} > 1)); then idx=0
 			tc) ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_RULEBLOCKS" ;;
 			tc_mangle) ARR_RULEBLOCKS_TO_PARSE[idx++]="$TC_MANGLE_RULEBLOCKS" ;;
 		esac
+		if [[ -e ${RULEBLOCK_DIR}/__parsed_${PARSE_RULEBLOCKS[i]}_RULEBLOCK_NAMES ]]; then
+			log -w "Removing remembered ruleblocks names file: \`${RULEBLOCK_DIR}/__parsed_${PARSE_RULEBLOCKS[i]}_RULEBLOCK_NAMES'"
+			run_rm "${RULEBLOCK_DIR}/__parsed_${PARSE_RULEBLOCKS[i]}_RULEBLOCK_NAMES"
+		fi
 	done
+elif ((PARSE_RULEBLOCKS[0])); then
+	for rvar in filter nat raw security rawpost; do
+		if (($(subst_var ENABLE_$(string_toupper "$rvar") ) )); then
+			if [[ -e ${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES ]]; then
+				log -w "Removing remembered ruleblocks names file: \`${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES'"
+				run_rm "${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES"
+			fi
+		fi
+	done
+	if ((ENABLE_MANGLE || ENABLE_TC_SHAPING)); then
+		for rvar in mangle tc_mangle tc; do
+			if [[ -e ${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES ]]; then
+				log -w "Removing remembered ruleblocks names file: \`${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES'"
+				run_rm "${RULEBLOCK_DIR}/__parsed_${rvar}_RULEBLOCK_NAMES"
+			fi
+		done
+	fi
 fi
 readonly ARR_RULEBLOCKS_TO_PARSE
 

@@ -443,14 +443,14 @@ esac
 load_tc_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in $TC_RULEBLOCKS; do
-	load_ruleblock_conf "$rvar" || return
+	load_ruleblock_conf "$rvar" tc || return
 done
 } # -------------------------------------------------------------------------
 
 load_tc_mangle_ruleblocks() {
 ((ENABLE_TC_SHAPING == 1)) || return 0
 for rvar in $TC_MANGLE_RULEBLOCKS; do
-	load_ruleblock_conf "$rvar" || return
+	load_ruleblock_conf "$rvar" tc_mangle || return
 done
 } # -------------------------------------------------------------------------
 

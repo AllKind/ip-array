@@ -3034,8 +3034,9 @@ case "$MODE" in
 				fi
 			done
 			if arr_populated SYSCTL_CMD_ARRAY; then
+				log -n "Saving ${#SYSCTL_CMD_ARRAY[@]} sysctl settings"
 				header_heredoc_sysctl "$str_rfile" "sysctl settings"
-				save_command_array SYSCTL_CMD_ARRAY "$str_rfile" || return
+				printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}" >> "$str_rfile" || return
 				footer_heredoc "$str_rfile"
 			fi
 		elif [[ $GEN_FORMAT = cmd ]]; then
@@ -3056,6 +3057,7 @@ case "$MODE" in
 				fi
 			done
 			if arr_populated SYSCTL_CMD_ARRAY; then
+				log -n "Saving ${#SYSCTL_CMD_ARRAY[@]} sysctl settings"
 				header_heredoc_sysctl "$str_rfile" "sysctl settings"
 				printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}" >> "$str_rfile" || return
 				footer_heredoc "$str_rfile"
@@ -3119,6 +3121,7 @@ case "$MODE" in
 	;;
 	(SAVE-SYSCTL-COMMANDS) # save proc commands only
 		if arr_populated SYSCTL_CMD_ARRAY; then
+			log -n "Saving ${#SYSCTL_CMD_ARRAY[@]} sysctl settings"
 			header_heredoc_sysctl "$str_rfile" "sysctl settings"
 			printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}" >> "$str_rfile" || return
 			footer_heredoc "$str_rfile"
@@ -3627,6 +3630,7 @@ tc_mode_run() { # tc Mode only actions
 minimal_run || return
 load_ipt_base_templates || return
 load_ipt_mangle_templates || return
+join_template_names || return
 } # -------------------------------------------------------------------------
 
 common_stop() { # Common stop procedure
@@ -3857,7 +3861,9 @@ case "$1" in
 		set_chain_classification || return
 		load_ipt_base_templates || return
 		load_ipt_nat_templates || return
+		join_template_names || return
 		load_nat_ruleblocks || return
+		join_ruleblock_names || return
 		remove_qdiscs
 		flushdel_tables || return
 		policy_all_en_disable 'ACCEPT' || return
@@ -3883,6 +3889,7 @@ case "$1" in
 				for ((x=1; x<${#PARSE_TEMPLATES[@]}; x++)); do
 					load_ipt_${PARSE_TEMPLATES[x]}_templates || return 0
 				done
+				join_template_names || return
 			else
 				load_all_templates || return
 			fi
@@ -3893,6 +3900,7 @@ case "$1" in
 				for ((x=1; x<${#PARSE_RULEBLOCKS[@]}; x++)); do
 					load_${PARSE_RULEBLOCKS[x]}_ruleblocks || return 0
 				done
+				join_ruleblock_names || return
 			else
 				load_all_ruleblocks || return
 			fi
@@ -4021,6 +4029,7 @@ case "$1" in
 		common_start || return
 		handle_network_data || return
 		load_tc_ruleblocks || return	
+		join_ruleblock_names || return
 		remove_qdiscs
 		enable_traffic_shaping
 		apply_rules || return
@@ -4038,6 +4047,7 @@ case "$1" in
 		tc_mode_run || return
 		load_tc_ruleblocks || return
 		load_tc_mangle_ruleblocks || return
+		join_ruleblock_names || return
 		flush_table 'mangle'
 		remove_qdiscs
 		classification_chains 'chains' 'mangle' || return
@@ -4297,6 +4307,7 @@ case "$1" in
 		load_mangle_ruleblocks || return
 		load_tc_mangle_ruleblocks || return
 		load_tc_ruleblocks || return
+		join_ruleblock_names || return
 		flush_table 'mangle'
 		remove_qdiscs
 		classification_chains 'chains' 'mangle' || return
@@ -4322,7 +4333,9 @@ case "$1" in
 		set_chain_classification || return
 		load_ipt_base_templates || return
 		load_ipt_mangle_templates || return
+		join_template_names || return
 		load_mangle_ruleblocks || return
+		join_ruleblock_names || return
 		flush_table 'mangle' || return
 		remove_qdiscs
 		classification_chains 'chains' 'mangle' || return
