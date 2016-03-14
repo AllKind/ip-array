@@ -308,7 +308,7 @@
                     <para>Read XML template files and overwrite already compiled bash
                         scripts.</para>
                     <para>The type argument allows to parse files selectively by type. Available
-                        types are: filter, mangle, nat, raw, security, rawpost.</para>
+                        types are: base, filter, mangle, nat, raw, security, rawpost.</para>
                 </listitem>
                 <listitem>
                     <para>-t, --test</para>

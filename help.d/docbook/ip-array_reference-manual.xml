@@ -2487,7 +2487,7 @@
                     your sysctl rules, but this variable is here to allow automatic
                     calculation.</para>
                   <para>Formatting:</para>
-                  <para>value (integer) |  (x|X)factor (factor = integer)</para>
+                  <para>value (integer) | (x|X)factor (factor = integer)</para>
                   <para>Using (x|X)factor, the conntrack max value will be automatically calculated
                     and then multiplied with factor (i.e. x2 - double the auto value).</para>
                 </listitem>
@@ -3486,7 +3486,7 @@ or
             <para>-pt, --parse-templates [type[,...]]</para>
             <para>Read XML template files and overwrite already compiled bash scripts.</para>
             <para>The type argument allows to parse files selectively by type. Available types are:
-              filter, mangle, nat, raw, security, rawpost.</para>
+              base, filter, mangle, nat, raw, security, rawpost.</para>
           </listitem>
           <listitem>
             <para>-t, --test</para>
