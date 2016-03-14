@@ -1693,7 +1693,8 @@ return 0
 } # -------------------------------------------------------------------------
 
 add_sysctl() { # set a sysctl setting
-if dn "$SYSCTL" "${*%%=*}"; then
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+if dn run_sctl "${*%%=*}"; then
 	log -e "${PF}setting ${*%%=*} to: ${*#*=}"
 	SYSCTL_CMD_ARRAY[${#SYSCTL_CMD_ARRAY[@]}]="$*"
 else
@@ -1704,6 +1705,7 @@ fi
 } # -------------------------------------------------------------------------
 
 get_sysctl_val() { # retrieve a sysctl value
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i x
 local str_search="$1" sname n val
 if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local system
@@ -1712,7 +1714,7 @@ if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local sys
 			printf "%s\n" "$val"
 			return 0
 		fi
-	done < <(dn2 "$SYSCTL" -a)
+	done < <(dn2 run_sctl -a)
 else
 	for x in ${!SYSCTL_CMD_ARRAY[@]}; do
 		if [[ ${SYSCTL_CMD_ARRAY[x]%%=*} = $str_search ]]; then
@@ -1734,7 +1736,7 @@ local -i idx
 ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial sysctl configuration"'
 for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
 	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
-	"$SYSCTL" -q -w ${SYSCTL_STATE_ARRAY[idx]} || {
+	run_sctl -q -w ${SYSCTL_STATE_ARRAY[idx]} || {
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -F 'setting ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
 	}
 done
@@ -3364,7 +3366,7 @@ case "$MODE" in # act according to runtime mode
 			local proc_val
 			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
 				SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
-				"$SYSCTL" -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count proc "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
+				run_sctl -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count proc "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
 		fi
@@ -3711,7 +3713,7 @@ case "$1" in
 				if [[ $sname = net.* ]]; then
 					printf "%s = %s\n" "$sname" "$val"
 				fi
-			done < <(dn2 "$SYSCTL" -a)
+			done < <(dn2 run_sctl -a)
 			pr_banner "End of sysctl dump"
 		fi
 		common_end

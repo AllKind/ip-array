@@ -886,6 +886,10 @@ run_iproute() {
 "${IP:-/sbin/ip}" "$@"
 } # -------------------------------------------------------------------------
 
+run_sctl() {
+"${SYSCTL:-/sbin/sysctl}" "$@"
+} # -------------------------------------------------------------------------
+
 check_dirs() { # check for existence of directories declared by varname
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 while (($#)); do

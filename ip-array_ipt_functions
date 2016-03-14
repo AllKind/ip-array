@@ -3062,7 +3062,7 @@ join_template_names || return
 # -------------------------------------------------------------------------
 
 load_ruleblock_conf() {
-[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+[[ $2 ]] || { reqparm $FUNCNAME 2; return 1; }
 local ruleblock_file="${RULEBLOCK_DIR}/$1" parsed_file="${RULEBLOCK_DIR}/__parsed_${1%.xml}.bash"
 local ruleblock_names="${RULEBLOCK_DIR}/__parsed_${2}_RULEBLOCK_NAMES"
 local -i parse_files=${PARSE_RULEBLOCKS}
