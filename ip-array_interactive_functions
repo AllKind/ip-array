@@ -581,7 +581,8 @@ elif [[ $str_rule = view ]]; then
 	read -p " Press \`ENTER' to continue"
 fi
 
-dia_yn "Do you want to add/close another tag?"
+dia_yn "Do you want to continue working on this rule file?\n\
+If you CANCEL, all open tags will be closed and the file will be written."
 if (($? != 0)); then
 	for i in ${!arr_tags[*]}; do
 		let tag_idx--
@@ -686,14 +687,16 @@ _ia_add_sysctl() {
 local str_choice str_tmp oIFS
 local -i i new_index args
 local -a arr_tmp
-str_choice=$(dia_menu "Select an option" \
+str_choice=$(dia_menu "Select an option." \
 	"Add tag" "Add a sysctl tag" \
 	"Close tag" "Close last opened tag" \
-	"Add comment" "Add a comment" \
+	"Enter comment" "Add a comment" \
 	"View" "View the created rules")
 if [[ $str_choice = "Add tag" ]]; then
 	while (($? == 0)); do
-		str_choice=$(dia_menu --noitem "Choose an sysctl tag." "${arr_sysctl[@]}")
+		str_choice=$(dia_menu --noitem "Choose a sysctl setting.\n\
+XML code will be automatically generated.\n\
+CANCEL to return to the main window." "${arr_sysctl[@]}")
 		if (($? == 0)); then
 			for i in ${!arr_sysctl[*]}; do # remove dupes from the list
 				if [[ ${arr_sysctl[i]} = $str_choice ]]; then
@@ -733,7 +736,7 @@ if [[ $str_choice = "Add tag" ]]; then
 			if (($# > 1)); then
 				shift $(($# - 1))
 			fi
-			str_tmp="$(dia_ibox "Enter a value for $1")"
+			str_tmp="$(dia_ibox "Enter a value for: \`$1'")"
 			if (($? == 0)); then
 				arr_content[content_idx-1]+=" $str_tmp </$1>"
 				str_indent="${str_indent:0:$((${#str_indent} - 4))}"
@@ -760,7 +763,7 @@ elif [[ $str_choice = "Close tag" ]]; then
 	else
 		dia_mbox "There are no tags open."
 	fi
-elif [[ $str_choice = "Add comment" ]]; then
+elif [[ $str_choice = "Enter comment" ]]; then
 	str_choice="$(dia_ibox "Enter a comment")"
 	if [[ $str_choice ]]; then
 		arr_content[content_idx++]="${str_indent}    <!-- $str_choice -->"
@@ -771,7 +774,8 @@ elif [[ $str_choice = "View" ]]; then
 	printf "\n"
 	read -p " Press \`ENTER' to continue"
 fi
-dia_yn "Do you want to add/close another tag?"
+dia_yn "Do you want to continue working on this sysctl rule file?\n\
+If you CANCEL, all open tags will be closed and the file will be written."
 if (($? != 0)); then
 	for i in ${!arr_tags[*]}; do
 		let tag_idx--
@@ -1087,7 +1091,7 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				else # if we cancel while selection from list, otherwise we get an empty value into the variable
 					unset arr_o0[i-1]
 				fi
-				dia_yn "Do you want to add another option?"
+				dia_yn "Do you want to add another option to option_list_0?"
 			done
 			if (($?)); then
 				dia_yn "Do you want to define default values for one or more of these options?"
@@ -1117,7 +1121,7 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 					unset arr_o1[i-1]
 				fi
 				if (( ${#arr_o1[*]} < ${#arr_o0[*]} )); then # reverse list must not be greater than first
-					dia_yn "Do you want to add another option?"
+					dia_yn "Do you want to add another option to option_list_1?"
 				else
 					false
 				fi
@@ -1145,7 +1149,7 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				else # if we cancel while selection from list, otherwise we get an empty value into the variable
 					unset arr_alw0[i-1]
 				fi
-				dia_yn "Do you want to add another option?"
+				dia_yn "Do you want to add another option to always_use_0?"
 			done
 			if (($?)); then
 				for i in ${!arr_alw0[*]}; do
@@ -1173,7 +1177,7 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 					unset arr_alw1[i-1]
 				fi
 				if (( ${#arr_alw1[*]} < ${#arr_alw0[*]} )); then # reverse list must not be greater than first
-					dia_yn "Do you want to add another option?"
+					dia_yn "Do you want to add another option to always_use_1?"
 				else
 					false
 				fi
