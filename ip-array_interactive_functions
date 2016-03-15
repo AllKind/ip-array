@@ -86,6 +86,13 @@ shift
 rdia $str_cmd --radiolist "$str" $w_height $w_with $l_height "$@"
 } # -------------------------------------------------------------------------
 
+build_wt_dummy_list() { # dialog and whiptail behave differently
+while (($#)); do
+	printf "%s item\n" "$1" # add dummy item entry
+	shift
+done
+} # -------------------------------------------------------------------------
+
 _add_rb_line() { # sub function of iactive_ruleblock_builder() - add a line to a ruleblock
 local idx=0
 arr_line=()
@@ -122,15 +129,11 @@ arr_rb[lnum]="${arr_line_new[@]}"
 
 _add_conf_var() { # sub function of iactive_config_builder() - add config variable
 x=0 arr_tmp=()
-if [[ $DIALOG_PROG = *dialog ]]; then
-	for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
-		arr_tmp[x++]="${str_tmp}"
-	done
-elif [[ $DIALOG_PROG = *whiptail ]]; then
-	for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
-		arr_tmp[x++]="${str_tmp}"
-		arr_tmp[x++]="item" # dummy item entry
-	done
+for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
+	arr_tmp[x++]="${str_tmp}"
+done
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
 fi
 v_name=$(dia_menu --noitem "Choose a variable" "${arr_tmp[@]}")
 if (($? == 0)) && [[ $v_name ]]; then
@@ -236,10 +239,9 @@ if (($? == 0)) && [[ $str_elem ]]; then
 else
 	return
 fi
-if [[ $DIALOG_PROG = *dialog ]]; then
-	arr_tmp=( comment bytes packets timeout skbmark skbprio skbqueue nomatch )
-elif [[ $DIALOG_PROG = *whiptail ]]; then
-	arr_tmp=( comment x bytes x packets x timeout x skbmark x skbprio x skbqueue x nomatch x )
+arr_tmp=( comment bytes packets timeout skbmark skbprio skbqueue nomatch )
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
 fi
 while (($? == 0)); do
 	((${#arr_tmp[@]})) || break
@@ -379,7 +381,7 @@ elif [[ $str_rule = combined_rule ]]; then
 					if [[ $str_lhs = ${arr_tmp[x]} ]]; then
 						unset arr_tmp[x]
 						if [[ $DIALOG_PROG = *whiptail ]]; then
-							arr_tmp[x+1]
+							unset arr_tmp[x+1]
 						fi
 						break
 					fi
@@ -451,10 +453,9 @@ elif [[ $str_rule = ipset ]]; then
 				fi
 			done < <( ( run_ipset help ) 2>/dev/null )
 			if ((${#arr_types[@]})); then
-				if [[ $DIALOG_PROG = *dialog ]]; then
-					arr_types=( $(printf "%s\n" "${arr_types[@]}"|run_sort) )
-				elif [[ $DIALOG_PROG = *whiptail ]]; then
-					arr_types=( $(printf "%s dummy\n" "${arr_types[@]}"|run_sort) )
+				arr_types=( $(printf "%s\n" "${arr_types[@]}"|run_sort) )
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_types=( $(build_wt_dummy_list "${arr_types[@]}") )
 				fi
 				str_type=$(dia_menu --noitem "Choose a set type" "${arr_types[@]}") || return
 			else
@@ -492,10 +493,9 @@ elif [[ $str_rule = ipset ]]; then
 					if [[ $str_lhs ]]; then
 						str_header="${str_header/$str_lhs/}"
 					fi
-					if [[ $DIALOG_PROG = *dialog ]]; then
-						arr_header=( $str_header )
-					elif [[ $DIALOG_PROG = *whiptail ]]; then
-						for str in $str_header; do arr_header[x++]="$str off"; done
+					arr_header=( $str_header )
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						arr_header=( $(build_wt_dummy_list "${arr_header[@]}") )
 					fi
 					str_lhs=$(dia_menu --noitem "Choose a header option" ${arr_header[*]}) || break
 					if [[ $str_lhs = @(hashsize|markmask|maxelem|netmask|range|size|timeout) ]]; then
@@ -603,15 +603,11 @@ local str_indent
 arr_title=( --title "$ME rule file builder" )
 local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
 i=0
-if [[ $DIALOG_PROG = *dialog ]]; then
-	for x in ${!ARG_NAMES_LIST[*]}; do
-		x_args[i++]="${ARG_NAMES_LIST[x]}"
-	done
-elif [[ $DIALOG_PROG = *whiptail ]]; then
-	for x in ${!ARG_NAMES_LIST[*]}; do
-		x_args[i++]="${ARG_NAMES_LIST[x]}"
-		x_args[i++]="item" # dummy item entry
-	done
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+done
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	x_args=( $(build_wt_dummy_list "${x_args[@]}") )
 fi
 
 while (($? == 0)); do
@@ -688,15 +684,13 @@ fi
 
 _ia_add_sysctl() {
 local str_choice str_tmp oIFS
-local -i i ret new_index args
+local -i i new_index args
 local -a arr_tmp
 str_choice=$(dia_menu "Select an option" \
 	"Add tag" "Add a sysctl tag" \
 	"Close tag" "Close last opened tag" \
 	"Add comment" "Add a comment" \
 	"View" "View the created rules")
-ret=$?
-((ret)) && return $ret
 if [[ $str_choice = "Add tag" ]]; then
 	while (($? == 0)); do
 		str_choice=$(dia_menu --noitem "Choose an sysctl tag." "${arr_sysctl[@]}")
@@ -787,13 +781,6 @@ if (($? != 0)); then
 	done
 	return 1
 fi
-} # -------------------------------------------------------------------------
-
-build_wt_dummy_list() {
-while (($#)); do
-	printf "%s item\n" "$1"
-	shift
-done
 } # -------------------------------------------------------------------------
 
 iactive_sysctl_builder() { # interactive sysctl rule file builder
@@ -995,15 +982,11 @@ reverse_condition "Condition for reverse mode" off
 )
 
 i=0
-if [[ $DIALOG_PROG = *dialog ]]; then
-	for x in ${!ARG_NAMES_LIST[*]}; do
-		x_args[i++]="${ARG_NAMES_LIST[x]}"
-	done
-elif [[ $DIALOG_PROG = *whiptail ]]; then
-	for x in ${!ARG_NAMES_LIST[*]}; do
-		x_args[i++]="${ARG_NAMES_LIST[x]}"
-		x_args[i++]="dummy" # dummy item entry
-	done
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+done
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	x_args=( $(build_wt_dummy_list "${x_args[@]}") )
 fi
 
 local -a xopts=()
