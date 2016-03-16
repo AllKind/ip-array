@@ -2,7 +2,7 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbookxi.rng" type="xml"?>
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
   xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
-  <info version="1.1"><title>IP-Array 1.1.1 Reference Manual</title><author>
+  <info version="1.1"><title>IP-Array 1.2.0 Reference Manual</title><author>
       <personname><firstname>Mart Frauenlob aka AllKind</firstname><surname/></personname>
       <affiliation>
         <orgname>AllKind</orgname>
@@ -20,7 +20,7 @@
     <section xml:id="about_doc">
       <title>About this document</title>
       <para>This document is the <emphasis role="bold">reference manual</emphasis> for <emphasis
-          role="bold">IP-Array version 1.1.1</emphasis>.</para>
+          role="bold">IP-Array version 1.2.0</emphasis>.</para>
       <para>It should provide all the information necessary to configure and use IP-Array.</para>
     </section>
     <section xml:id="about_ip-array">
@@ -41,7 +41,7 @@
         <para>It also allows to <emphasis role="bold">load and / or unload</emphasis> netfilter
           related <emphasis role="bold">kernel</emphasis>
           <emphasis role="bold">modules</emphasis> and <emphasis role="bold">configure</emphasis>
-          the kernel via the <emphasis role="bold">`/proc' filesystem</emphasis>.</para>
+          the kernel via the <emphasis role="bold">sysctl program</emphasis>.</para>
         <para><emphasis role="bold">Intended Audience:</emphasis> Advanced End Users, System
           Administrators.</para>
         <para><emphasis role="bold">Field of application:</emphasis> From a single host system to a
@@ -86,6 +86,9 @@
               <para>The <command>tc</command> program (optional). To enable traffic shaping.</para>
             </listitem>
             <listitem>
+              <para>The <command>sysctl</command> program. For system settings.</para>
+            </listitem>
+            <listitem>
               <para>The <command>logger</command> utility (optional). To write messages to
                 syslog.</para>
             </listitem>
@@ -94,6 +97,10 @@
             </listitem>
             <listitem>
               <para>The <command>bc</command> (bash calculator) utility.</para>
+            </listitem>
+            <listitem>
+              <para>The <command>dialog</command> or <command>whiptail</command> program. To create
+                the dialogs in the interactive mode.</para>
             </listitem>
             <listitem>
               <para>Decent understanding of the netfilter concept. Tables, chains (and their order
@@ -114,7 +121,7 @@
         <title>Goals</title>
         <orderedlist>
           <listitem>
-            <para>Provide a configuration interface to iptables, ipset and tc.</para>
+            <para>Provide a configuration interface to iptables, ipset, tc and sysctl.</para>
           </listitem>
           <listitem>
             <para>Allowing flexible configuration from simple to complex setups.</para>
@@ -3225,6 +3232,8 @@ or
         <para>You can mix both ways as you wish. To see all the available types of your local
           system, run either <command>sysctl -a</command> or <command>ip-array
             compat-check</command>.</para>
+        <para>XML style comments are valid inside sysctl rule files. Public functions etc. are
+          not.</para>
       </section>
     </section>
   </chapter>
@@ -3316,15 +3325,15 @@ or
             <para>interactive</para>
             <para>In this mode several wizards are available to interactively create or edit the
               IP-Array configuration. It is possible to create main configuration files, templates,
-              rule files, or create and edit ruleblocks. The <command>whiptail</command> program is
-              required for this. The global_defs configuration file holds 3 variables
-                (<varname>IACTIVE_WINDOW_HEIGHT</varname>, <varname>IACTIVE_WINDOW_WITH</varname>,
-                <varname>IACTIVE_LIST_HEIGHT</varname>) for configuring the sizes of the wizards
-              dialog boxes. By default they are set to `0'. If this is kept and the
-                <command>tput</command> program is available in PATH, it will used to query and set
-              the required values for window height, window with and list height. Otherwise it is
-              possible to adjust the window settings there, with the downside of having static
-              values.</para>
+              iptables/ipset and sysctl rule files, or create and edit ruleblocks. The
+                <command>whiptail</command> program is required for this. The global_defs
+              configuration file holds 3 variables (<varname>IACTIVE_WINDOW_HEIGHT</varname>,
+                <varname>IACTIVE_WINDOW_WITH</varname>, <varname>IACTIVE_LIST_HEIGHT</varname>) for
+              configuring the sizes of the wizards dialog boxes. By default they are set to `0'. If
+              this is kept and the <command>tput</command> program is available in PATH, it will
+              used to query and set the required values for window height, window with and list
+              height. Otherwise it is possible to adjust the window settings there, with the
+              downside of having static values.</para>
           </listitem>
           <listitem>
             <para>diff-last-activated</para>
@@ -3437,7 +3446,7 @@ or
           </listitem>
           <listitem>
             <para>-ex, --err-exit</para>
-            <para>Set bash to exit onsimple command failure (set -e) and to inherit the ER trap to
+            <para>Set bash to exit on simple command failure (set -e) and to inherit the ER trap to
               functions, etc.</para>
           </listitem>
           <listitem>

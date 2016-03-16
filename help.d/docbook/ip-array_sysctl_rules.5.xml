@@ -20,7 +20,7 @@
     <refmeta>
         <refentrytitle>ip-array_sysctl_rules</refentrytitle>
         <manvolnum>5</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.1.1</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.2.0</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array sysctl rules</refdescriptor>
@@ -53,6 +53,9 @@
             >The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not XML
             compatible). Tags can be closed by a simple `/>'. Attributes can have their value
             enclosed inside single quotes, or not quoted at all.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</para>
     </refsect1>
     <refsect1>
         <title>XML tags</title>
