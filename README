@@ -27,7 +27,7 @@ Features
 		Either as (grouped / nested) XML tags, or so called ruleblocks,
 		where only values have to be put into.
 		Their structure is defined by custom templates.
-    - sysctl rules are written in XML.
+	- sysctl rules are written in XML.
 	- Different start modi.
 	- Custom epilog and prolog scripts for each start mode.
 	- Muliple levels of output verbosity with optional syslog logging.
