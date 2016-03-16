@@ -854,9 +854,7 @@ if [[ $DIALOG_PROG = *dialog ]]; then
 elif [[ $DIALOG_PROG = *whiptail ]]; then
 	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "" "Edit an existing ruleblock" "")
 fi
-if (($? != 0)); then
-	return 1
-fi
+(($?)) && return 1
 if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 	if [[ $DIALOG_PROG = *dialog ]]; then
 		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
@@ -913,8 +911,7 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 	$($copy_array "$r_name" arr_rb) || return 1
 	x=1 idx=0
 	if ! ((${#arr_rb[*]})); then
-		log -E "Ruleblock \`$r_name' is empty or not defined."
-		read -p " Press \`ENTER' to continue"
+		dia_mbox "Ruleblock \`$r_name' is empty or not defined."
 		return $ER_NODEF
 	fi
 	for i in ${!arr_rb[*]}; do # add line numbers
