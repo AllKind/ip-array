@@ -8,7 +8,7 @@ What is IP-Array?
 	To achieve this, IP-Array configures the linux kernels netfilter / traffic control
 	subsystems via the userspace tools iptables / ipset / tc.
 	It also allows to load and / or unload netfilter related kernel modules and
-	configure the kernel via the `/proc' filesystem.
+	configure the kernel using the sysctl program.
 
 	Intended Audience: Advanced End Users, System Administrators.
 
@@ -22,11 +22,12 @@ Where to get it?
 Features
 	It does support most features of iptables and some of xtables-addons.
 
-	- Rules are written in simple XML.
+	- iptables rules are written in simple XML.
 		They can be written in different ways depending on the need.
 		Either as (grouped / nested) XML tags, or so called ruleblocks,
 		where only values have to be put into.
 		Their structure is defined by custom templates.
+    - sysctl rules are written in XML.
 	- Different start modi.
 	- Custom epilog and prolog scripts for each start mode.
 	- Muliple levels of output verbosity with optional syslog logging.
@@ -37,10 +38,10 @@ Features
 	- Public functions.
 	- ipset support.
 	- Some autoconfig presets for DNS, FTP, SMTP, NTP, IPSEC, etc.
-	- The ability to save the generated iptables / ipset, tc rules, modprobe,
-		or /proc commands to a file.
-	- Error handling. Previous system states can be restored on error.
 	- Traffic shaping.
+	- The ability to save the generated iptables / ipset, tc rules, modprobe,
+		or sysctl commands to a file.
+	- Error handling. Previous system states can be restored on error.
 	
 Installation, Configuration, System Requirements, etc.
 	Please read the reference manual.
