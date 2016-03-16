@@ -86,6 +86,10 @@ shift
 rdia $str_cmd --radiolist "$str" $w_height $w_with $l_height "$@"
 } # -------------------------------------------------------------------------
 
+ia_needopt() {
+dia_mbox "The option is mandatory. Quitting and returning to main screen."
+} # -------------------------------------------------------------------------
+
 build_wt_dummy_list() { # dialog and whiptail behave differently
 while (($#)); do
 	printf "%s item\n" "$1" # add dummy item entry
@@ -324,7 +328,7 @@ if [[ $str_rule = template_rule ]]; then
 		t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
 		# choose one ruleblock
 		r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
-		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or cancel for none.")
+		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or CANCEL for none.")
 		if [[ $t_name && $r_name ]]; then
 			arr_content[content_idx++]="${str_indent}        $t_name $r_name $str_tmp"
 		else
@@ -427,7 +431,7 @@ elif [[ $str_rule = public_function ]]; then
 	arr_tmp=()
 	arr_tmp[0]=$(dia_menu "Choose a public function." "${arr_pubfunc[@]}")
 	if (($? == 0)); then
-		arr_tmp[1]=$(dia_ibox "Enter parameters for the function \`${arr_tmp[0]}'. Empty value or cancel for none.")
+		arr_tmp[1]=$(dia_ibox "Enter parameters for the function \`${arr_tmp[0]}'. Empty value or CANCEL for none.")
 		arr_content[content_idx++]="${str_indent}    <pub_func> ${arr_tmp[*]} </pub_func>"
 	fi
 elif [[ $str_rule = ipset ]]; then
@@ -975,10 +979,10 @@ chain "Chain name" off
 target "Target name" off
 template_msg "Template message" off
 load_template "Load another template" off
-option_list_0 "List of options" off
-option_list_1 "Reverse option list" off
 always_use_0 "List of fixed options" off
 always_use_1 "Reverse list of fixed options" off
+option_list_0 "List of options" off
+option_list_1 "Reverse option list" off
 mandatory_vars "Mandatory variables" off
 state_match_arg  "Conntrack states" off
 reverse_mode "Bidirectonal traffic" off
@@ -1025,12 +1029,24 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				xopts[x]="${xopts[x]}=$(dia_menu --noitem \
 					"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
 			fi
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		chain)
 			xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		target)
 			xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (separated by space)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		load_template)
 			if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
@@ -1041,7 +1057,11 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				fi
 			else
 				dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
-				return 0
+				return 1
+			fi
+			if ! ((${#arr_templ[@]})); then
+				dia_mbox "No template names have been collected!"
+				return 1
 			fi
 			arr_ltempl=()
 			while (($? == 0)); do
@@ -1057,7 +1077,7 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 						fi
 					done
 				done
-				arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s)\nCancel to quit" "${arr_templ[@]}" )
+				arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s) to load.\nCANCEL to quit." "${arr_templ[@]}" )
 				if (($?)); then
 					unset arr_ltempl[${#arr_ltempl[@]}-1]
 					break
@@ -1065,21 +1085,41 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 			done
 		;;
 		state_match_arg)
-			xopts[x]="${xopts[x]}=$(dia_ibox "Enter one or two comma separated list(s) of conntrack state names")"
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter one or two comma separated list(s) of conntrack state names.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		template_msg)
-			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a template loading message")"
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a template loading message.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		mandatory_vars)
-			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a comma separated list of required variable names")"
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a comma separated list of required variable names.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		reverse_mode)
 			xopts[x]="${xopts[x]}=$(dia_rlist "Select a reverse mode." \
 				reverse "Reverse data from the first option list (bidirectional traffic)" on mirror "Mirror the first option list" off)"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		reverse_condition)
 			xopts[x]="${xopts[x]}=$(dia_ibox \
-				"Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS)")"
+				"Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS.)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
 		;;
 		option_list_0)
 			i=0 arr_tmp=( "${x_args[@]}" )
@@ -1089,20 +1129,23 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				if (($? == 0)); then
 					_remove_dupe_templ_entry "${arr_o0[i-1]}"
 				else # if we cancel while selection from list, otherwise we get an empty value into the variable
-					unset arr_o0[i-1]
+					unset arr_o0[--i]
 				fi
-				dia_yn "Do you want to add another option to option_list_0?"
+				dia_yn "Do you want to add another option to ${xopts[x]}?"
 			done
-			if (($?)); then
+			if ((${#arr_o0[@]})); then
 				dia_yn "Do you want to define default values for one or more of these options?"
 				if (($? == 0)); then
 					for i in ${!arr_o0[*]}; do
-						str_x="$(dia_ibox "Enter a default value for \`${arr_o0[i]}'. Empty value or cancel for none.")"
+						str_x="$(dia_ibox "Enter a default value for \`${arr_o0[i]}'. Empty value or CANCEL for none.")"
 						if (($? == 0)) && [[ $str_x ]]; then
 							arr_o0[i]="${arr_o0[i]}=\"$str_x\"" #"
 						fi
 					done
 				fi
+			else
+				dia_mbox "No ${xopts[x]} options have been collected!"
+				return 1
 			fi
 		;;
 		option_list_1)
@@ -1113,30 +1156,30 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 			i=0 arr_tmp=( "${x_args[@]}" )
 			while (($? == 0)); do
 				arr_o1[i++]=$(dia_menu --noitem \
-					"Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}" \
+					"Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}\nNeed ${#arr_o0[*]} from option_list_0, got: ${#arr_o1[*]}." \
 					"${arr_tmp[@]}")
 				if (($? == 0)); then
 					_remove_dupe_templ_entry "${arr_o1[i-1]}"
-				else # if we cancel while selection from list, otherwise we get an empty value into the variable
-					unset arr_o1[i-1]
-				fi
-				if (( ${#arr_o1[*]} < ${#arr_o0[*]} )); then # reverse list must not be greater than first
-					dia_yn "Do you want to add another option to option_list_1?"
 				else
-					false
+					ia_needopt
+					return 1
 				fi
+				(( ${#arr_o1[*]} < ${#arr_o0[*]} )) # reverse list must not be greater than first
 			done
-			if (($?)); then
+			if ((${#arr_o0[*]} == ${#arr_o1[*]})); then
 				dia_yn "Do you want to define default values for one or more of these options?"
 				if (($? == 0)); then
 					for i in ${!arr_o1[*]}; do
 						str_x="$(dia_ibox \
-							"Enter a default value for \`${arr_o1[i]}'. Empty value or cancel for none.")"
+							"Enter a default value for \`${arr_o1[i]}'. Empty value or CANCEL for none.")"
 						if (($? == 0)) && [[ $str_x ]]; then
 							arr_o1[i]="${arr_o1[i]}=\"$str_x\"" #"
 						fi
 					done
 				fi
+			else
+				dia_mbox "${xopts[x]} options count does not match option_list_0 sum!"
+				return 1
 			fi
 		;;
 		always_use_0)
@@ -1147,18 +1190,24 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				if (($? == 0)); then
 					_remove_dupe_templ_entry "${arr_alw0[i-1]}"
 				else # if we cancel while selection from list, otherwise we get an empty value into the variable
-					unset arr_alw0[i-1]
+					unset arr_alw0[--i]
 				fi
-				dia_yn "Do you want to add another option to always_use_0?"
+				dia_yn "Do you want to add another option to ${xopts[x]}?"
 			done
-			if (($?)); then
+			if ((${#arr_alw0[@]})); then
 				for i in ${!arr_alw0[*]}; do
 					str_x="$(dia_ibox \
-						"Enter a default value for \`${arr_alw0[i]}'. Empty value or cancel for none.")"
+						"Enter a default value for \`${arr_alw0[i]}'.")"
 					if (($? == 0)) && [[ $str_x ]]; then
 						arr_alw0[i]="${arr_alw0[i]}=\"$str_x\"" #"
+					else
+						ia_needopt
+						return 1
 					fi
 				done
+			else
+				dia_mbox "No ${xopts[x]} options have been collected!"
+				return 1
 			fi
 		;;
 		always_use_1)
@@ -1169,33 +1218,40 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 			i=0 arr_tmp=( "${x_args[@]}" )
 			while (($? == 0)); do
 				arr_alw1[i++]=$(dia_menu --noitem \
-					"Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}" \
+					"Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}\nNeed ${#arr_alw0[*]} from always_use_0, got: ${#arr_alw1[*]}" \
 					"${arr_tmp[@]}")
 				if (($? == 0)); then
 					_remove_dupe_templ_entry "${arr_alw1[i-1]}"
-				else # if we cancel while selection from list, otherwise we get an empty value into the variable
-					unset arr_alw1[i-1]
-				fi
-				if (( ${#arr_alw1[*]} < ${#arr_alw0[*]} )); then # reverse list must not be greater than first
-					dia_yn "Do you want to add another option to always_use_1?"
 				else
-					false
+					ia_needopt
+					return 1
 				fi
+				(( ${#arr_alw1[*]} < ${#arr_alw0[*]} )) # reverse list must not be greater than first
 			done
-			if (($?)); then
+			if ((${#arr_alw0[*]} == ${#arr_alw1[*]})); then
 				for i in ${!arr_alw1[*]}; do
 					str_x="$(dia_ibox \
-						"Enter a default value for \`${arr_alw1[i]}'. Empty value or cancel for none.")"
+						"Enter a default value for \`${arr_alw1[i]}'.")"
 					if (($? == 0)) && [[ $str_x ]]; then
 						arr_alw1[i]="${arr_alw1[i]}=\"$str_x\"" #"
+					else
+						ia_needopt
+						return 1
 					fi
 				done
+			else
+				dia_mbox "${xopts[x]} options count does not match always_use_0 sum!"
+				return 1
 			fi
 		;;
 	esac
 	if (($? != 0)); then return 1; fi
 done
 (($? != 0)) && return 1
+if ((${#xopts[*]} == 0)); then
+	dia_mbox "No options have been collected."
+	return 1
+fi
 mutex_on || bail_out $ER_FAIL
 until (set -C; create_file "$t_file") &>/dev/null; do
 	t_file="$(dia_ibox "File \`$t_file' already exists.\nEnter a new file name (without the prefixing path)." T_)"
@@ -1203,7 +1259,6 @@ until (set -C; create_file "$t_file") &>/dev/null; do
 	t_file="$SAVE_DIR/${t_file}"
 done
 printf '<template name="%s">\n' "$t_name" > "$t_file"
-y=0
 for x in ${!xopts[*]}; do
 	case "${xopts[x]}" in
 		table*|chain*|target*|state_match_arg*|template_msg*|mandatory_vars*|reverse_mode*|reverse_condition*)
@@ -1214,18 +1269,6 @@ for x in ${!xopts[*]}; do
 			printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
 			printf '\t\t%s\n' "${arr_ltempl[@]}" >> "$t_file"
 			printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
-		;;
-		option_list_0)
-			(( ${#arr_o0[*]} )) || continue
-			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
-			printf '\t\t%s\n' "${arr_o0[@]}" >> "$t_file"
-			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
-		;;
-		option_list_1)
-			(( ${#arr_o1[*]} )) || continue
-			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
-			printf '\t\t%s\n' "${arr_o1[@]}" >> "$t_file"
-			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
 		;;
 		always_use_0)
 			(( ${#arr_alw0[*]} )) || continue
@@ -1239,6 +1282,18 @@ for x in ${!xopts[*]}; do
 			printf '\t\t%s\n' "${arr_alw1[@]}" >> "$t_file"
 			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
 		;;
+		option_list_0)
+			(( ${#arr_o0[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_o0[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
+		option_list_1)
+			(( ${#arr_o1[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_o1[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
 	esac
 done
 printf '</template>\n' >> "$t_file"
@@ -1250,7 +1305,8 @@ if (($? == 0)); then
 		printf "\n" # we use cat as --textbox does not handle indention nicely
 		"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
 	else
-		run_rm "$t_file"
+		dia_mbox "Unknown error reading \`$t_file'."
+		return $ER_FAIL
 	fi
 fi
 dia_yn "Do you want to create another template?"

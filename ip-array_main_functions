@@ -3791,7 +3791,7 @@ case "$1" in
 			IACTIVE_WINDOW_WITH=$( tput cols )
 		fi
 		if (( IACTIVE_LIST_HEIGHT == 0 )) && dn command -v tput; then
-			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 10 ))
+			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 12 ))
 		fi
 		if [[ $DIALOG_PROG != *@(dialog|whiptail) ]]; then
 			log -f "retrieving type of dialog program. Was looking for \`*dialog' or \`*whiptail' in \`DIALOG_PROG' variable."
@@ -4196,7 +4196,6 @@ case "$1" in
 					load_configs || return
 					pr_banner "Starting dump of sysctl settings:"
 					calc_conntrack_max
-#					calc_conntrack_hashsize
 					printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}"
 					load_sysctl_rules || return
 					pr_banner "End of dump of sysctl settings."
