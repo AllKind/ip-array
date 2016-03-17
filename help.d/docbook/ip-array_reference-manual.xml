@@ -3043,13 +3043,6 @@ or
             </listitem>
           </varlistentry>
           <varlistentry>
-            <term>set_proc</term>
-            <listitem>
-              <para>Set a configuration value in the `/proc' filesystem (add command to the command
-                queue).</para>
-            </listitem>
-          </varlistentry>
-          <varlistentry>
             <term>ipset_create</term>
             <listitem>
               <para>Create an ipset set.</para>
