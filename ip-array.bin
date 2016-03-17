@@ -530,7 +530,6 @@ declare -ar PUBLIC_FUNCTION_LIST=(
 "jump_tree_on Enable classification into jump tree chains"
 "jump_tree_off Disable classification into jump tree chains"
 "set_var Set a variables value"
-"set_proc Set a /proc value"
 "log_drop_invalid_state Log and/or drop packets in invalid state"
 "log_drop_illegal_tcp Log and/or drop non legal tcp packets"
 "anti_spoof Create Anti-Spoofing rules"
