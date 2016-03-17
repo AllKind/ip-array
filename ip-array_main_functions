@@ -1292,7 +1292,7 @@ shift
 case "$err_category" in
 	ipt) prog_msg="iptables" ;;
 	ips) prog_msg="ipset" ;;
-	proc) prog_msg="sysctl" ;;
+	sysctl) prog_msg="sysctl" ;;
 	tc) prog_msg="tc" ;;
 	inline) prog_msg="inline" ;;
 	misc) prog_msg="this" ;;
@@ -3366,7 +3366,7 @@ case "$MODE" in # act according to runtime mode
 			local proc_val
 			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
 				SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
-				run_sctl -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count proc "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
+				run_sctl -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count sysctl "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
 		fi
