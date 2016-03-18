@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+
+<!-- TRAFFIC MARKING TEMPLATES -->
+<!--
+	These are the templates used in the pre-defined TC_MANGLE_RULES file
+	tc_mark_rules.xml. Of course they all are available in template_repo.d.
+-->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<!-- BASIC TEMPLATE CHUNKS -->
+
+	<template name="BT_IDEV_ODEV">
+		<option_list_0> idev odev </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_SRC_ADDR">
+		<option_list_0> odev src </option_list_0>
+	</template>
+	
+	<template name="BT_SRC_DST_ADDR">
+		<option_list_0> src dst </option_list_0>
+	</template>
+	
+	<template name="BT_PROTO_SRC_DST_PORT">
+		<option_list_0> proto sport dport </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_SRC_DST_ADDR">
+		<load_template> BT_ODEV_SRC_ADDR </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_SRC_DST_ADDR">
+		<load_template> BT_ODEV_SRC_ADDR </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_ODEV_SRC_DST_ADDR">
+		<load_template> BT_IDEV_ODEV BT_SRC_DST_ADDR </load_template>
+	</template>
+	
+	<template name="BT_BASIC_MATCH_SET_EGRESS">
+		<!-- 
+		Purpose: Basic match set for egress (outgoing) rules
+		+ (includes only output device)
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		-->
+		<load_template> BT_ODEV_SRC_DST_ADDR BT_PROTO_SRC_DST_PORT </load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD">
+		<!-- 
+		Purpose: Basic match set for forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		-->
+		<load_template>
+			BT_IDEV_ODEV_SRC_DST_ADDR
+			BT_PROTO_SRC_DST_PORT
+		</load_template>
+	</template>
+
+	<!-- BASE TEMPLATES SPECIFIC TO TC-MARKING -->
+
+	<template name="BT_SET_CLASS">
+		<option_list_0> t_class </option_list_0>
+	</template>
+
+	<template name="BT_IPT_MARK">
+		<option_list_0> t_mark </option_list_0>
+	</template>
+
+	<template name="BT_MARK_TOS">
+		<option_list_0> t_mark m_tos </option_list_0>
+	</template>
+
+	<template name="BT_MANGLE_MARK_RETURN">
+		<table> mangle </table>
+		<target>
+			MARK
+			RETURN
+		</target>
+	</template>
+
+	<template name="BT_MANGLE_CLASSIFY_RETURN">
+		<table> mangle </table>
+		<target>
+			CLASSIFY
+			RETURN
+		</target>
+	</template>
+
+	<!-- MAIN TRAFFIC MARKING TEMPLATES -->
+
+	<template name="TEMPLATE_MANGLE_TOS_OUTPUT_MARK">
+		<!-- 
+		Purpose: Mark OUTPUT packets based on Type of Service
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: type of service
+		3: output device
+		4: source address
+		5: destination address
+		Mandatory options: mark, type of service
+		-->
+		<chain> ${BIC_TC_OUTPUT} </chain>
+		<template_msg>
+			${ADDMSG} OUTPUT MARK rules based on Type of Service
+		</template_msg>
+		<mandatory_vars> t_mark,m_tos </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_MARK_TOS
+			BT_ODEV_SRC_DST_ADDR
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_OUTPUT_CLASSIFY">
+		<!-- 
+		Purpose: Stateless CLASSIFY OUTPUT IP packets
+		Template options:
+		+ mangle table
+		+ CLASSIFY and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: class value = major:minor
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: class value 
+		-->
+		<chain> OUTPUT </chain>
+		<template_msg> ${ADDMSG} stateless IP OUTPUT CLASSIFY rules </template_msg>
+		<mandatory_vars> t_class </mandatory_vars>
+		<load_template>
+			BT_MANGLE_CLASSIFY_RETURN
+			BT_SET_CLASS
+			BT_BASIC_MATCH_SET_EGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_OUTPUT_MARK">
+		<!-- 
+		Purpose: Stateless MARK OUTPUT IP packets
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: mark
+		-->
+		<chain> ${BIC_TC_OUTPUT} </chain>
+		<template_msg> ${ADDMSG} stateless IP OUTPUT MARK rules </template_msg>
+		<mandatory_vars> t_mark </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_IPT_MARK
+			BT_BASIC_MATCH_SET_EGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_TOS_MARK_FORWARD">
+		<!-- 
+		Purpose: Mark FORWARD packets based on Type of Service
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ FORWARD chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: type of service
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		Mandatory options: mark, type of service
+		-->
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
+		<template_msg>
+			${ADDMSG} FORWARD MARK rules based on Type of Service
+		</template_msg>
+		<mandatory_vars> t_mark,m_tos </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_MARK_TOS
+			BT_IDEV_ODEV_SRC_DST_ADDR
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_MARK_FORWARD">
+		<!-- 
+		Purpose: Stateless FORWARD IP packet marking
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ FORWARD chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: input device
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: mark
+		-->
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
+		<template_msg> ${ADDMSG} stateless IP FORWARD MARK rules </template_msg>
+		<mandatory_vars> t_mark </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_IPT_MARK
+			BT_BASIC_MATCH_SET_FORWARD
+		</load_template>
+	</template>
+
+</ip_array_root>
+
