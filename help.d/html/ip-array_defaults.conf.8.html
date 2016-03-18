@@ -185,18 +185,19 @@
                         <code class="varname">SAVE_FILE</code>
                     </span></dt><dd><p>Mandatory: no - defaults to
                             <code class="filename">iptables_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
-                                <code class="filename">iptables_ruleset.save</code>).</p><p>File to put the iptables-save output into, when executing IP-Array
-                            with the 'save' startup parameter.</p></dd><dt><span class="term">
+                                <code class="filename">iptables_ruleset.save</code>).</p><p>File to save the ruleset into. Applies to all the save*
+                            parameters.</p></dd><dt><span class="term">
                         <code class="varname">IPSET_SAVE_FILE</code>
                     </span></dt><dd><p>Mandatory: no - defaults to
                             <code class="filename">ipset_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
                                 <code class="filename">ipset_ruleset.save</code>).</p><p>File to put the ipset save output into, when executing IP-Array with
-                            the 'save' startup parameter.</p></dd><dt><span class="term">
+                            the 'save' startup parameter. Or to load, when restoring with the
+                            'restore' parameter.</p></dd><dt><span class="term">
                         <code class="varname">RULESETFILE</code>
                     </span></dt><dd><p>Mandatory: no - defaults to
                                 <code class="filename">ip-array_commands.bash</code>.</p><p>Allowed values: A valid filename (i.e.:
                                 <code class="filename">ip-array_commands.bash</code>).</p><p>File where the generated commands will be saved, if executing IP-Array
-                            with one of the 'save[ -iptables | -modprobe | -proc | -tc | -shaping
+                            with one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping
                             ]-commands' parameters. The target directory will be
                                 <span class="command"><strong>$BASE_DIR/save.d</strong></span>.</p></dd><dt><span class="term">
                         <code class="varname">DIFF_FILE</code>
@@ -227,7 +228,7 @@
                             if IP-Array is loaded with the `start' parameter (faster startup also
                             called quick start).</p></dd><dt><span class="term">
                         <code class="varname">RELOAD_TIME</code>
-                    </span></dt><dd><p>Mandatory: no - defaults to 7.</p><p>Allowed values: Any value from 1 to 15.</p><p>Time period until the previously saved ruleset will be restored, when
+                    </span></dt><dd><p>Mandatory: no - defaults to 7.</p><p>Allowed values: Any value greater than 1.</p><p>Time period until the previously saved ruleset will be restored, when
                             using the 'test' startup parameter.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>If <span class="command"><strong>iptables-save</strong></span> or
                                         <span class="command"><strong>iptables-restore</strong></span> fails for some reason,
                                     the 'test' parameter will not work, thus this setting will not
@@ -260,5 +261,5 @@
                                 <span class="command"><strong>dialog</strong></span> (version 1.2+) or
                                 <span class="command"><strong>whiptail</strong></span> are supported.</p></dd></dl></div><p>
         </p></div><div class="refsect1" lang="en"><a name="d0e1277"></a><h2>See also</h2><p>
-            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
+            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_sysctl_rules</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
         </p></div></div></body></html>
