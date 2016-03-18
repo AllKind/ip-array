@@ -794,20 +794,27 @@ fi
 iactive_sysctl_builder() { # interactive sysctl rule file builder
 local str_indent
 local -i tag_idx=0 content_idx=0
-local -a arr_tags arr_content
-arr_title=( --title "$ME sysctl rule file builder" )
+local -a arr_tags arr_content arr_sysctl=()
 local c_file="${SAVE_DIR}/${me}-sysctl_rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
-local -a arr_sysctl=( $(while read -r -t $GLOBAL_READ_TIMEOUT; do \
-	if [[ $REPLY = net.* && $REPLY != net.ipv6.* ]]; then printf "${REPLY#net.}\n"; fi \
-	done < <(dn2 run_sctl -N -a) ) )
+arr_title=( --title "$ME sysctl rule file builder" )
+
+while read -r -t $GLOBAL_READ_TIMEOUT; do # retrieve sysctl keys
+	if [[ $REPLY = net.* && $REPLY != net.ipv6.* ]]; then
+		if [[ -e /proc/sys/${REPLY//.//} ]]; then
+			[[ -w /proc/sys/${REPLY//.//} ]] && arr_sysctl[${#arr_sysctl[@]}]="${REPLY#net.}"
+		else
+			arr_sysctl[${#arr_sysctl[@]}]="${REPLY#net.}"
+		fi
+	fi
+done < <(dn2 run_sctl -N -a)
 if ((${#arr_sysctl[@]} == 0)); then
 	dia_mbox "Could not retrieve any sysctl data!"
 	return $ER_FAIL
 fi
-
 if [[ $DIALOG_PROG = *whiptail ]]; then
 	arr_sysctl=( $(build_wt_dummy_list "${arr_sysctl[@]}") )
 fi
+
 while (($? == 0)); do
 	_ia_add_sysctl
 done
