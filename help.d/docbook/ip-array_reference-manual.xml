@@ -53,7 +53,7 @@
         <para>
           <itemizedlist>
             <listitem>
-              <para>Bash version 3.0 or higher.</para>
+              <para>Bash version 3.1 or higher.</para>
             </listitem>
             <listitem>
               <para>Linux kernel 2.4 or higher.</para>
@@ -111,7 +111,7 @@
                 sfq), classes, filters and how they work together.</para>
             </listitem>
             <listitem>
-              <para>Decent understanding of the `/proc' filesystems networking (netfilter) options
+              <para>Decent understanding of the `sysctl' networking (netfilter) options
                 (optional)</para>
             </listitem>
           </itemizedlist>
@@ -192,8 +192,8 @@
               contain values).</para>
           </listitem>
           <listitem>
-            <para>Definition of templates, ruleblocks, rules and ipset sets is done in a simple XML
-              dialect.</para>
+            <para>Definition of sysctl settings, templates, ruleblocks, iptables rules and ipset
+              sets is done in a simple XML dialect.</para>
           </listitem>
           <listitem>
             <para>Options in rules can be grouped to save writing effort.</para>
@@ -324,7 +324,7 @@
               </itemizedlist></para>
           </listitem>
           <listitem>
-            <para>Prolog and Epilog scripts</para>
+            <para>Prolog and epilog scripts</para>
             <para>Prolog and epilog scripts can be configured selectively for any startup
               mode.</para>
           </listitem>
@@ -332,14 +332,9 @@
             <para>Loading and unloading of kernel modules (with optional parameters).</para>
           </listitem>
           <listitem>
-            <para>/proc filesystem configuration</para>
-            <para>There are many networking related options available in IP-Array, to configure the
-              system using the /proc filesystem.</para>
-          </listitem>
-          <listitem>
             <para>Saving restore rulesets / commands / system state.</para>
             <para>There are various ways available to save the generated rulesets and or commands
-              selectivly (iptables, ipset, tc, modprobe, /proc) or all at once. The saved files may
+              selectivly (iptables, ipset, tc, modprobe, sysctl) or all at once. The saved files may
               be used to restore the configured system state.</para>
           </listitem>
           <listitem>
@@ -408,14 +403,21 @@
                 command.</para>
             </listitem>
             <listitem>
-              <para>An entity in a XML rule or combined rule.</para>
+              <para>An entity in a XML iptables rule or combined rule.</para>
+            </listitem>
+            <listitem>
+              <para>An entity in a XML ipset rule.</para>
+            </listitem>
+            <listitem>
+              <para>An entity in a XML sysctl rule.</para>
             </listitem>
           </orderedlist>
         </listitem>
         <listitem xml:id="name_def_ruleblock">
           <para>ruleblock</para>
-          <para>A ruleblock is a group (stack) of <link linkend="name_def_rule">rules</link>,
-            containing only the values of each option, to be read in order of occurence.</para>
+          <para>A ruleblock is a group (stack) of <link linkend="name_def_rule">iptables
+              rules</link>, containing only the values of each option, to be read in order of
+            occurence.</para>
           <para>The structure of the ruleblock is defined in a <link linkend="name_def_template"
               >template</link>.</para>
         </listitem>
@@ -458,13 +460,13 @@
         <title>Starting behaviour</title>
         <para>If IP-Array is run with the `<emphasis role="bold">start</emphasis>' parameter, a
             <emphasis role="underline">lockdown</emphasis> mode is enforced until the configuration
-          is read and all iptables, ipset, tc and /proc rules have been generated. During this
+          is read and all iptables, ipset, tc and sysctl rules have been generated. During this
           lockdown mode only localhost and the administrator connection are allowed. After all rules
           are collected, they are applied at once. If the config variable
-            <varname>RESTORE_ON_START</varname> is set to `1' and previously saved rulesets are
+            <varname>RESTORE_ON_START</varname> is set to `1' and the previously saved ruleset is
           available, those will be sourced and thus activated immediatly.</para>
         <para>In any other mode, that actually runs commands to configure the system, IP-Array will
-          not touch the currently active iptables, tc rules or /proc configuration until all rules
+          not touch the currently active iptables, tc rules or sysctl configuration until all rules
           and / or commands have been generated.</para>
         <para>After all rules / commands are collected, they are applied at once. This should keep
           the time, the system is in an unconfigured or partly configured state, to a minimum.
@@ -482,13 +484,13 @@
           named <varname>EXIT_ON_ERROR</varname> exists to control IP-Arrays behaviour on errors. If
           it set to `1', the program will exit on any configuration and command apply error it can
           detect. In case the system state has already been changed by, either loading / unloading
-          modules, or setting values in the /proc filesystem, IP-Array will try to revert those
-          changes. If iptables commands have already been applied, a lockdown mode will be enforced
-          first, before attempting a restore. All policies will be set to DROP and all chains get
-          emptied. Depending on the configuration, only the current administrative connection (if
-          present taken from the bash environment variable <varname>SSH_CONNECTION</varname>, or if
-          not, if configured from the configuration variable <varname>ADMIN_CONNECTION</varname>)
-          and localhost traffic (configuration variable <varname>ALLOW_LOOPBACK</varname>) may be
+          modules, or changing sysctl settings, IP-Array will try to revert those changes. If
+          iptables commands have already been applied, a lockdown mode will be enforced first,
+          before attempting a restore. All policies will be set to DROP and all chains get emptied.
+          Depending on the configuration, only the current administrative connection (if present
+          taken from the bash environment variable <varname>SSH_CONNECTION</varname>, or if not, if
+          configured from the configuration variable <varname>ADMIN_CONNECTION</varname>) and
+          localhost traffic (configuration variable <varname>ALLOW_LOOPBACK</varname>) may be
           allowed. If <varname>EXIT_ON_ERROR</varname> is set to `0', IP-Array only sends error
           messages and keeps on going.</para>
         <section xml:id="autosave">
@@ -678,11 +680,17 @@
     <title>Installation</title>
     <section>
       <title>Installer</title>
-      <para>An installation program comes with IP-Array. It is called install.bash and allows to
-        install all necessary files at once. Also the destination directories can be given as well
-        as the file ownership can be set. It's also possible to create a backup of the old files.
-        The installer utilises the <command>install</command> program, for more information about it
-        consult its man page.</para>
+      <para>An installation program comes with IP-Array. It is called
+          <filename>install.bash</filename> and allows to install all necessary files at once. Also
+        the destination directories can be given as well as the file ownership can be set. It's also
+        possible to create a backup of the old files. The installer utilises the
+          <command>install</command> program, for more information about it consult its man
+        page.</para>
+      <para>After installation you need to configure variables in the header of the init script.
+        Telling the path to the defaults file and to the IP-Array executable. Maybe you need to
+        adjust some path and programs settings in the defaults file. Then you can start to configure
+        the main configuration file. There the NET_<varname>INTERFACES</varname> variable must be
+        configured, before IP-Array is ready to run.</para>
     </section>
     <section>
       <title>Upgrade</title>
@@ -1366,8 +1374,7 @@
                     <filename>iptables_ruleset.save</filename>.</para>
                   <para>Allowed values: A valid filename (i.e.:
                       <filename>iptables_ruleset.save</filename>).</para>
-                  <para>File to put the iptables-save output into, when executing IP-Array with the
-                    'save' startup parameter.</para>
+                  <para>File to save the ruleset into. Applies to all the save* parameters.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1379,7 +1386,8 @@
                   <para>Allowed values: A valid filename (i.e.:
                       <filename>ipset_ruleset.save</filename>).</para>
                   <para>File to put the ipset save output into, when executing IP-Array with the
-                    'save' startup parameter.</para>
+                    'save' startup parameter. Or to load, when restoring with the 'restore'
+                    parameter.</para>
                 </listitem>
               </varlistentry>
               <varlistentry>
@@ -1392,7 +1400,7 @@
                   <para>Allowed values: A valid filename (i.e.:
                       <filename>ip-array_commands.bash</filename>).</para>
                   <para>File where the generated commands will be saved, if executing IP-Array with
-                    one of the 'save[ -iptables | -modprobe | -proc | -tc | -shaping ]-commands'
+                    one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping ]-commands'
                     parameters. The target directory will be
                     <command>$BASE_DIR/save.d</command>.</para>
                 </listitem>
@@ -1480,9 +1488,9 @@
                 </term>
                 <listitem>
                   <para>Mandatory: no - defaults to 7.</para>
-                  <para>Allowed values: Any value from 1 to 15.</para>
+                  <para>Allowed values: Any value greater than 1.</para>
                   <para>Time period until the previously saved ruleset will be restored, when using
-                    the 'test' startup parameter.<warning>
+                    the 'test' startup parameter, or the -t | --test option.<warning>
                       <para>If <command>iptables-save</command> or
                           <command>iptables-restore</command> fails for some reason, the 'test'
                         parameter will not work, thus this setting will not produce the desired
@@ -3227,12 +3235,15 @@ or
             compat-check</command>.</para>
         <para>XML style comments are valid inside sysctl rule files. Public functions etc. are
           not.</para>
+        <para>In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+          listed.</para>
       </section>
     </section>
   </chapter>
   <chapter xml:id="traffic_shaping">
     <title>Traffic shaping</title>
-    <para>IP-Array has basic traffic shaping support built in.</para>
+    <para>IP-Array has basic traffic shaping support built in. The creation of htb, and sfq qdiscs
+      as well as classes and filters is , with a limited set of options, supported.</para>
     <para>When traffic shaping is enabled by setting the <varname>ENABLE_TC_SHAPING</varname>
       variable to `1', a number of predifined ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> -
       the iptables mangle table marking and <varname>TC_RULEBLOCKS</varname> - the queue discs,
@@ -3359,7 +3370,7 @@ or
           </listitem>
           <listitem>
             <para>save-commands</para>
-            <para>Save all commands (modprobe, proc, tc, iptables, ipset) to a file.</para>
+            <para>Save all commands (modprobe, sysctl, tc, iptables, ipset) to a file.</para>
           </listitem>
           <listitem>
             <para>save-iptables-commands</para>
@@ -3617,6 +3628,8 @@ or
       <para>Usually IP-Array is called from the init script. But it can also be started directly by
         running the executable. In that case you must specify a path to the defaults file on the
         command line.</para>
+      <para>The header of the init script contains some variables to configure. You need to set the
+        path to the defaults file and the IP-Array executable.</para>
       <para>There is also a second init script provided, called
           <filename>ip-array.init_pre_net_boot</filename>, this should be executed before the
         network configuration takes place. It will apply `lockdown' mode, in order to make sure

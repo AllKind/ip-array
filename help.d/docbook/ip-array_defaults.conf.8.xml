@@ -607,8 +607,8 @@
                             <filename>iptables_ruleset.save</filename>.</para>
                         <para>Allowed values: A valid filename (i.e.:
                                 <filename>iptables_ruleset.save</filename>).</para>
-                        <para>File to put the iptables-save output into, when executing IP-Array
-                            with the 'save' startup parameter.</para>
+                        <para>File to save the ruleset into. Applies to all the save*
+                            parameters.</para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -621,7 +621,8 @@
                         <para>Allowed values: A valid filename (i.e.:
                                 <filename>ipset_ruleset.save</filename>).</para>
                         <para>File to put the ipset save output into, when executing IP-Array with
-                            the 'save' startup parameter.</para>
+                            the 'save' startup parameter. Or to load, when restoring with the
+                            'restore' parameter.</para>
                     </listitem>
                 </varlistentry>
                 <varlistentry>
@@ -634,7 +635,7 @@
                         <para>Allowed values: A valid filename (i.e.:
                                 <filename>ip-array_commands.bash</filename>).</para>
                         <para>File where the generated commands will be saved, if executing IP-Array
-                            with one of the 'save[ -iptables | -modprobe | -proc | -tc | -shaping
+                            with one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping
                             ]-commands' parameters. The target directory will be
                                 <command>$BASE_DIR/save.d</command>.</para>
                     </listitem>
@@ -713,7 +714,7 @@
                     </term>
                     <listitem>
                         <para>Mandatory: no - defaults to 7.</para>
-                        <para>Allowed values: Any value from 1 to 15.</para>
+                        <para>Allowed values: Any value greater than 1.</para>
                         <para>Time period until the previously saved ruleset will be restored, when
                             using the 'test' startup parameter.<warning>
                                 <para>If <command>iptables-save</command> or
