@@ -716,8 +716,8 @@ CANCEL to return to the main window." "${arr_sysctl[@]}")
 			set -- $str_choice
 			IFS="$oIFS"
 			new_index=0 args=$#
-			if ((${#arr_tags[@]})); then
-				for ((i=0; i<$((args - 1)); i++)); do
+			if ((${#arr_tags[@]})); then # we have tags open
+				for ((i=0; i<$((args - 1)); i++)); do # see if the new setting has same path
 					if [[ ${arr_tags[i]} = $1 ]]; then
 						new_index=$(($i + 1))
 						shift
@@ -726,17 +726,20 @@ CANCEL to return to the main window." "${arr_sysctl[@]}")
 						break
 					fi
 				done
+				# close tags if needed
 				for ((i=$((tag_idx - 1)); i>=new_index; i--)); do let tag_idx--
 					arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
 					str_indent="${str_indent:0:$((${#str_indent} - 4))}"
 					unset arr_tags[i]
 				done
 			fi
+			# open (new) tags
 			for str_tmp; do
 				str_indent+="    "
 				arr_tags[tag_idx++]="$str_tmp"
 				arr_content[content_idx++]="${str_indent}<$str_tmp>"
 			done
+			# leave only last name of path = key name
 			if (($# > 1)); then
 				shift $(($# - 1))
 			fi
