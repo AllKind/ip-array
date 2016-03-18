@@ -32,8 +32,8 @@
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
-        <para>The sysctl rule files the system settings are stored. They are written in simple XML.
-            By parsing them IP-Array composes command line arguments for the
+        <para>Inside the sysctl rule files the system settings are stored. They are written in
+            simple XML. By parsing them IP-Array composes command line arguments for the
                 <command>sysctl</command> program.</para>
     </refsect1>
     <refsect1>

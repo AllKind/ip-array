@@ -2,12 +2,12 @@
 .\"     Title: ip-array
 .\"    Author: Mart Frauenlob aka AllKind <AllKind@fastest.cc>
 .\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 03/05/2016
-.\"    Manual: ip-array 1.1.1
+.\"      Date: 03/18/2016
+.\"    Manual: ip-array 1.2.0
 .\"    Source: ip-array 1.1.1
 .\"  Language: English
 .\"
-.TH "IP\-ARRAY" "8" "03/05/2016" "ip-array 1.1.1" "ip\-array 1\&.1\&.1"
+.TH "IP\-ARRAY" "8" "03/18/2016" "ip-array 1.1.1" "ip\-array 1\&.2\&.0"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -34,7 +34,7 @@ ip-array \- Firewall and Traffic control Configuration utility
 \fBip\-array\fR parameter [\fIoption\fR\ [\ \fIoption_argument\fR\ ]...]
 .SH "DESCRIPTION"
 .PP
-ip\-array is a command generator for netfilter (currently only iptables), tc, /proc filesystem and kernel module configuration\&.
+ip\-array is a command generator for netfilter (currently only iptables), tc, sysctl and kernel module configuration\&.
 .PP
 It is written in bash\&. Bash version 3\&.1 or higher is required\&.
 .PP
@@ -165,7 +165,7 @@ All filter table policies will be set to DROP, all others will be set to ACCEPT\
 .\}
 interactive
 .sp
-In this mode several wizards are available to interactively create or edit the IP\-Array configuration\&. It is possible to create main configuration files, templates, rule files, or create and edit ruleblocks\&. The
+In this mode several wizards are available to interactively create or edit the IP\-Array configuration\&. It is possible to create main configuration files, templates, iptables/ipset and sysctl rule files, or create and edit ruleblocks\&. The
 \fBwhiptail\fR
 program is required for this\&. The global_defs configuration file holds 3 variables (\fIIACTIVE_WINDOW_HEIGHT\fR,
 \fIIACTIVE_WINDOW_WITH\fR,
@@ -292,9 +292,9 @@ Save the generated modprobe commands to a file\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-save\-proc\-commands
+save\-sysctl\-commands
 .sp
-Save the generated /proc commands to a file\&.
+Save the generated sysctl commands to a file\&.
 .RE
 .sp
 .RS 4
@@ -360,7 +360,7 @@ Compile bash scripts from the XML files\&. By default templates, ruleblocks and 
 .\}
 compat\-check
 .sp
-A compatibility check will be performed\&. IP\-Array will probe the kernel version, supported iptables tables, targets and matches, available proc settings, modules and programs\&. The result will be printed to stdout\&.
+A compatibility check will be performed\&. IP\-Array will probe the kernel version, supported iptables tables, targets and matches, available sysctl settings, modules and programs\&. The result will be printed to stdout\&.
 .RE
 .sp
 .RS 4
@@ -458,7 +458,7 @@ Commands will not be applied\&.
 .\}
 \-ex, \-\-err\-exit
 .sp
-Set bash to exit onsimple command failure (set \-e) and to inherit the ER trap to functions, etc\&.
+Set bash to exit on simple command failure (set \-e) and to inherit the ER trap to functions, etc\&.
 .RE
 .sp
 .RS 4
@@ -534,9 +534,9 @@ Do not perform load or unload kernel modules\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\-np, \-\-no\-proc
+\-ny, \-\-no\-sysctl
 .sp
-Do not set the /proc filesystem configuration\&.
+Do not set the sysctl configuration\&.
 .RE
 .sp
 .RS 4
@@ -579,7 +579,7 @@ The type argument allows to parse files selectively by type\&. Available types a
 .sp
 Read XML rule files and overwrite already compiled bash scripts\&.
 .sp
-The type argument allows to parse files selectively by type\&. Available types are: filter, mangle, nat, raw, security, rawpost, ipset, vpn\&.
+The type argument allows to parse files selectively by type\&. Available types are: filter, mangle, nat, raw, security, rawpost, ipset, sysctl, tc_mark, vpn\&.
 .RE
 .sp
 .RS 4
@@ -594,7 +594,7 @@ The type argument allows to parse files selectively by type\&. Available types a
 .sp
 Read XML template files and overwrite already compiled bash scripts\&.
 .sp
-The type argument allows to parse files selectively by type\&. Available types are: filter, mangle, nat, raw, security, rawpost\&.
+The type argument allows to parse files selectively by type\&. Available types are: base, filter, mangle, nat, raw, security, rawpost\&.
 .RE
 .sp
 .RS 4
@@ -819,7 +819,7 @@ Time in minutes until the saved ruleset will be restored\&.
 Select type of information to show\&. If type is omitted, the settings of the main configuration file will be displayed\&.
 .sp
 Available types are:
-.RS 4 all (everything will be displayed) .RE .RS 4 ansi_codes (display ANSI codes for coloured shell output) .RE .RS 4 colors (available colours) .RE .RS 4 defaults[:NAME[,\&.\&.\&.]] display all or just the selected variable names from the defaults file\&. .RE .RS 4 main[:NAME[,\&.\&.\&.]] display all or just the selected variable names from the main configuration file file\&. .RE .RS 4 targets (show all available iptables targets)\&. .RE .RS 4 matches (show all available iptables matches)\&. .RE .RS 4 rules (show the compiled iptables rules)\&. .RE .RS 4 ipt_args[:\-[core|matches|targets][,\&.\&.\&.]] display iptables arguments by category\&. .RE .RS 4 ipt_args[:NAME[,\&.\&.\&.]] display all or just the selected iptables arguments help\&. .RE .RS 4 ruleblocks[:NAME[,\&.\&.\&.]] display all or just the selected ruleblock names\&. .RE .RS 4 templates[:NAME[,\&.\&.\&.]] display all or just the selected templates names\&. .RE .RS 4 proc display the /proc filesystem configuration options, paths and their configured values\&. .RE .RS 4 public_functions[:NAME[,\&.\&.\&.]] display all or just the selected public functions help\&. .RE .RS 4 find_templates:template\-entry\-glob[,\&.\&.\&.] find templates containing all entries of the comma separated search list\&. .RE
+.RS 4 all \- everything will be displayed\&. .RE .RS 4 ansi_codes \- display ANSI codes for coloured shell output\&. .RE .RS 4 colors \- available colours\&. .RE .RS 4 defaults[:NAME[,\&.\&.\&.]] \- display all or just the selected variable names from the defaults file\&. .RE .RS 4 main[:NAME[,\&.\&.\&.]] \- display all or just the selected variable names from the main configuration file file\&. .RE .RS 4 targets \- show all available iptables targets\&. .RE .RS 4 matches \- show all available iptables matches\&. .RE .RS 4 rules \- show the compiled iptables rules\&. .RE .RS 4 ipt_args[:\-[core|matches|targets][,\&.\&.\&.]] \- display iptables arguments by category\&. .RE .RS 4 ipt_args[:NAME[,\&.\&.\&.]] \- display all or just the selected iptables arguments help\&. .RE .RS 4 ruleblocks[:NAME[,\&.\&.\&.]] \- display all or just the selected ruleblock names\&. .RE .RS 4 templates[:NAME[,\&.\&.\&.]] \- display all or just the selected templates names\&. .RE .RS 4 sysctl \- display the sysctl configuration\&. .RE .RS 4 public_functions[:NAME[,\&.\&.\&.]] \- display all or just the selected public functions help\&. .RE .RS 4 find_templates:template\-entry\-glob[,\&.\&.\&.] \- find templates containing all entries of the comma separated search list\&. .RE
 .RE
 .sp
 .RS 4
@@ -926,7 +926,8 @@ Configuration error\&.
 \fBip-array_defaults.conf\fR(8),
 \fBip-array.conf\fR(8),
 \fBip-array_ruleblocks\fR(5),
-\fBip-array_rulefiles\fR(5),
+\fBip-array_rulefiles\fR(5),,
+\fBip-array_sysctl_rules\fR(5)
 \fBip-array_templates\fR(5)
 .PP
 
