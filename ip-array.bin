@@ -763,6 +763,11 @@ val_bool_bin() { # check if a value is either '0' or '1'
 [[ $1 = [0-1] ]]
 } # -------------------------------------------------------------------------
 
+val_int() { # check if a value is integer
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+[[ $1 = +([[:digit:]]) ]]
+} # -------------------------------------------------------------------------
+
 prog_in_path() { # check wether a program exists in path
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 dn command -v "$1"
@@ -1385,6 +1390,14 @@ declare -r CL_FILE_VARIANTS="${CL_FILE_VARIANTS}_bash${BASH_VERSINFO[0]}"
 for rvar in ENABLE_SYSLOG IPTSAVE_FAILS SYNTAX_CHECK RESTORE_ON_START USE_IPSET; do
 	val_bool_bin ${!rvar} || {
 		err_msg "\`$rvar' is not in range of 0-1."
+		bail_out $ER_CONF
+	}
+done
+
+# check for integer defaults
+for rvar in MAX_SETS; do
+	val_int "${!rvar}" || {
+		err_msg "\`$rvar' is not an integer."
 		bail_out $ER_CONF
 	}
 done
