@@ -3370,7 +3370,7 @@ case "$MODE" in # act according to runtime mode
 			done
 			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
 		fi
-		# save the memorized module and/or /proc settings to be restored if we are in test mode
+		# save the memorized module and/or sysctl settings to be restored if we are in test mode
 		if ((TEST_MODE)); then
 			if ((${#SYSCTL_STATE_ARRAY[@]})); then
 				create_file "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
@@ -3535,15 +3535,15 @@ if [[ -r $str_file ]]; then
 fi
 } # -------------------------------------------------------------------------
 
-proc_restore() { # to restore remembered /proc state (scheduled)
+proc_restore() { # to restore remembered sysctl state (scheduled)
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local str_file="${SAVE_DIR}/$1"
 if [[ -r $str_file ]]; then
 	if source "$str_file"; then
-		log -N "/proc state successfully restored from: \`$str_file'"
+		log -N "sysctl state successfully restored from: \`$str_file'"
 		run_rm "$str_file"
 	else
-		log -F "restoring /proc state."
+		log -F "restoring sysctl state."
 		return $ER_FAIL
 	fi
 fi
@@ -3858,7 +3858,7 @@ case "$1" in
 	# Filter, raw and mangle table chains get flushed/deleted.
 	# Policy is set to accept.
 	# NAT is preserved.
-	# /proc configuration is not touched
+	# sysctl configuration is not touched
 	# Traffic shaping is removed
 		set_placeholder || return
 		set_global_log_params || return
@@ -4019,7 +4019,7 @@ case "$1" in
 		common_end
 	;;
 	SAVE-SYSCTL-COMMANDS)
-	# /proc commands are saved to file.
+	# sysctl commands are saved to file.
 		set_rulesetfile || return
 		start_msg
 		load_pro_epilog_scripts 'prolog'
@@ -4287,7 +4287,7 @@ case "$1" in
 	STOP)
 	# Tables are flushed/deleted.
 	# Policy is set to accept.
-	# /proc configuration is not touched
+	# sysctl configuration is not touched
 		common_stop || return
 		((NO_MODPROBE == 0)) && fill_loadmod_list_array
 		check_mod_dir || return
@@ -4302,7 +4302,7 @@ case "$1" in
 	;;
 	TC-START)
 	# Start traffic shaping only
-	# /proc configuration is not touched
+	# sysctl configuration is not touched
 	# mangle table is reloaded
 		set_placeholder || return
 		set_global_log_params || return
