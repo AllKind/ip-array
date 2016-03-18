@@ -115,9 +115,17 @@ done
 } # -------------------------------------------------------------------------
 
 _edit_rb_line() { # sub function of iactive_ruleblock_builder() - edit an existing ruleblock line
-arr_line=( $(dia_rlist --noitem "Choose a line to edit" "${arr_rb_tmp[@]//\"/\\\\\"}") )
-(($? == 0)) || return 1
-local -i lnum=$(( ${arr_line[0]%:} - 1 )) # real position in array
+if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_rb_tmp[@]} == 1)); then
+	dia_mbox "Found only one line. Selecting it."
+	arr_line=( "${arr_rb_tmp[0]//\"/\\\\\"}" )
+elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_rb_tmp[@]} == 2)); then
+	dia_mbox "Found only one line. Selecting it."
+	arr_line=( "${arr_rb_tmp[0]//\"/\\\\\"}" )
+else
+	arr_line=( $(dia_rlist --noitem "Choose a line to edit" "${arr_rb_tmp[@]//\"/\\\\\"}") )
+	(($? == 0)) || return 1
+fi
+local -i lnum=$(( ${arr_line[0]%%:*} - 1 )) # real position in array
 local -a arr_line_new=()
 eval set -- "${arr_rb[lnum]}"
 for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
@@ -132,10 +140,8 @@ arr_rb[lnum]="${arr_line_new[@]}"
 } # -------------------------------------------------------------------------
 
 _add_conf_var() { # sub function of iactive_config_builder() - add config variable
-x=0 arr_tmp=()
-for str_tmp in $(printf "%s\n" "${arr_names[@]}"|run_sort); do
-	arr_tmp[x++]="${str_tmp}"
-done
+x=0
+arr_tmp=( $(printf "%s\n" "${arr_names[@]}"|run_sort) )
 if [[ $DIALOG_PROG = *whiptail ]]; then
 	arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
 fi
@@ -325,9 +331,25 @@ if [[ $str_rule = template_rule ]]; then
 	fi
 	arr_content[content_idx++]="${str_indent}    <template_rule>"
 	while (($? == 0)); do
-		t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_templ[@]} == 1)); then
+			dia_mbox "Only one template has been found. Selecting it."
+			t_name="${arr_templ[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_templ[@]} == 2)); then
+			dia_mbox "Only one template has been found. Selecting it."
+			t_name="${arr_templ[0]}"
+		else
+			t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
+		fi
 		# choose one ruleblock
-		r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_rb[@]} == 1)); then
+			dia_mbox "Only one template has been found. Selecting it."
+			r_name="${arr_rb[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_rb[@]} == 2)); then
+			dia_mbox "Only one template has been found. Selecting it."
+			r_name="${arr_rb[0]}"
+		else
+			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
+		fi
 		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or CANCEL for none.")
 		if [[ $t_name && $r_name ]]; then
 			arr_content[content_idx++]="${str_indent}        $t_name $r_name $str_tmp"
@@ -911,7 +933,15 @@ elif [[ $str_act = "Edit an existing ruleblock" ]]; then
 	fi
 	# choose one ruleblock
 	if ((${#arr_tmp[@]})); then
-		r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_tmp[@]}")
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_tmp[@]} == 1)); then
+			dia_mbox "Got only one ruleblock. Selecting it."
+			r_name="${arr_tmp[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_tmp[@]} == 2)); then
+			dia_mbox "Got only one ruleblock. Selecting it."
+			r_name="${arr_tmp[0]}"
+		else
+			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_tmp[@]}")
+		fi
 	else
 		dia_mbox "No ruleblocks have been found!"
 		return 0
@@ -1070,26 +1100,34 @@ for ((x=0; x<=${#xopts[*]}; x++)); do
 				dia_mbox "No template names have been collected!"
 				return 1
 			fi
-			arr_ltempl=()
-			while (($? == 0)); do
-				for i in ${!arr_ltempl[@]}; do
-					for y in ${!arr_templ[@]}; do
-						[[ ${arr_templ[y]} = off ]] && continue
-						if [[ ${arr_ltempl[i]} = ${arr_templ[y]} ]]; then
-							unset arr_templ[y] # remove dupe entry from previous selection
-							if [[ $DIALOG_PROG = *whiptail ]]; then
-								unset arr_templ[y+1] # remove dupe dummy entry from previous selection
+			if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_templ[@]} == 1)); then
+				dia_mbox "Only one template has been found. Selecting it."
+				arr_ltempl=( ${arr_templ[0]} )
+			elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_templ[@]} == 2)); then
+				dia_mbox "Only one template has been found. Selecting it."
+				arr_ltempl=( ${arr_templ[0]} )
+			else
+				arr_ltempl=()
+				while (($? == 0)); do
+					for i in ${!arr_ltempl[@]}; do
+						for y in ${!arr_templ[@]}; do
+							[[ ${arr_templ[y]} = off ]] && continue
+							if [[ ${arr_ltempl[i]} = ${arr_templ[y]} ]]; then
+								unset arr_templ[y] # remove dupe entry from previous selection
+								if [[ $DIALOG_PROG = *whiptail ]]; then
+									unset arr_templ[y+1] # remove dupe dummy entry from previous selection
+								fi
+								break
 							fi
-							break
-						fi
+						done
 					done
+					arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s) to load.\nCANCEL to quit." "${arr_templ[@]}" )
+					if (($?)); then
+						unset arr_ltempl[${#arr_ltempl[@]}-1]
+						break
+					fi
 				done
-				arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s) to load.\nCANCEL to quit." "${arr_templ[@]}" )
-				if (($?)); then
-					unset arr_ltempl[${#arr_ltempl[@]}-1]
-					break
-				fi
-			done
+			fi
 		;;
 		state_match_arg)
 			xopts[x]="${xopts[x]}=$(dia_ibox "Enter one or two comma separated list(s) of conntrack state names.")"
