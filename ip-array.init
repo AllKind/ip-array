@@ -121,8 +121,8 @@ printf "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
 Parameters:
 start                      Start mode. Lockdown mode until all rules are collected.
 stop                       Stop mode. Delete all iptables rules and tc qdiscs.
-restart                    Restart mode. Reload config, and reapply.
-test                       Test mode. Like 'restart', but with test configuration.
+restart                    Restart mode. Reload configuration, and re-apply.
+test                       Test mode. Like restart, but with test configuration.
 open                       Stop firewalling and traffic shaping, while preserving NAT.
 tc-start                   Start traffic shaping.
 tc-stop                    Stop traffic shaping.
@@ -132,9 +132,8 @@ dry-run                    No acting mode. Commands are not applied.
 diff-last-activated        Compare active iptables ruleset with a saved rule listing.
 save                       Save active iptables rules to file using iptables-save.
 restore                    Restore a previously saved iptables rules using iptables-restore.
-prepare-restore-on-start   Prepare quick start scripts (modprobe, proc, tc, iptables).
-                           Those will be loaded, if \`RESTORE_ON_START' is enabled.
-save-commands              Save all commands (modprobe, proc, tc, iptables) to file.
+prepare-restore-on-start   Prepare quick start script.
+save-commands              Save all commands to file.
 save-iptables-commands     Save iptables commands to file.
 save-modprobe-commands     Save modprobe commands to file.
 save-sysctl-commands       Save sysctl commands to file.
@@ -190,7 +189,7 @@ Options:
      targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
      sysctl, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
      find_templates:template-entry-glob[,...]
--sh, --shell /path/shell   Set an alternate shell to run IP-Array.
+-sh, --shell /path/shell   Set the \`SHELL' variable, to run with an alternative shell.
 -sv, --syslog-verbose 0-6  Set syslog verbosity level.
 -v, --verbose 0-9          Set verbosity level.
 --                         Stop further options processing.
