@@ -204,20 +204,18 @@ exit 0
 
 # check for valid main arg
 case "$MAIN_ARG" in
-	"") usage ;;
-	'-?'|-h|help|--help)
-		shift
-		(($#)) || usage # if there isn't a second arg, show usage
+	""|'-?'|-h|help|--help)
+		usage
 	;;
 	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|\
 	restart|restore|save|save-commands|save-modprobe-commands|save-sysctl-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|\
 	interactive|show|start|stop|test|tc-start|tc-stop|version)
-		shift
 	;;
 	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
 		short_usage
 esac
+shift
 
 # get additional option arguments provided
 while (($#)); do

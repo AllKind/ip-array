@@ -770,17 +770,8 @@ dn command -v "$1"
 
 which_prog() { # find a program in $PATH
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-local s_prog="$1" oIFS="$IFS"
-IFS=":"
-for rvar in $PATH; do
-	[[ -x ${rvar}/${s_prog} ]] && {
-		IFS="$oIFS"
-		pr_str "${rvar}/${s_prog}"
-		return 0
-	}
-done
-IFS="$oIFS"
-return 1
+command -v "$1"
+
 } # -------------------------------------------------------------------------
 
 bin_ok() { # check for an executable file
@@ -796,9 +787,6 @@ create_file() {
 
 get_prog_paths() { # check for programs used by ip-array
 local prog_auto prog_var prog_name prog_mandatory prog_path
-if [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]]; then
-	notice_msg "Checking for mandatory programs"
-fi
 val_bool_bin "${AUTO_GET_PROGS:=1}" || {
 	err_msg "Illegal value \`$AUTO_GET_PROGS' for \`AUTO_GET_PROGS'"
 	return $ER_CONF
@@ -809,36 +797,28 @@ for idx in ${!IPARRAY_PROGRAMS[@]}; do # read program data from array
 	case "$AUTO_GET_PROGS" in
 		0) # no automatic detection
 			prog_path="${!prog_var}"
-			[[ $prog_path ]] && { # user has defined the according variable
+			if [[ $prog_path ]]; then # user has defined the according variable
 				bin_ok "$prog_path" && {
-					[[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-						verbose_msg "found $prog_name at: $prog_path"
-					}
+					verbose_msg "found $prog_name at: $prog_path"
 					continue
 				}
-			}
+			fi
 		;;
 		1) # automatic detection
-			prog_in_path "$prog_name" && {
+			if prog_in_path "$prog_name"; then
 				prog_path=$(which_prog "$prog_name") || {
 					err_msg "Failed locating the program \`$prog_name' in \$PATH."
 					return $ER_FAIL
 				}
 				printf -v "$prog_var" "$prog_path" # set global program variable
-				[[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-					verbose_msg "found $prog_name at: $prog_path"
-				}
+				verbose_msg "found $prog_name at: $prog_path"
 				continue
-			}
+			fi
 		;;
 	esac
 	# positive cases are done, this is only run if program was not found
 	case "$prog_mandatory" in
-		0) [[ $MAIN_ARG != @('-?'|-h|help|--help|version) ]] && {
-				warn_msg "Path for program \`$prog_name' was not found."
-			}
-			continue
-		;;
+		0) continue ;;
 		1) err_msg "Path for program \`$prog_name' was not found."
 			return $ER_FAIL
 		;;
@@ -1087,15 +1067,12 @@ trap "trap_gen TERM" TERM
 # check for valid main arg
 # -------------------------------------------------------------------------
 case "$MAIN_ARG" in
-	"") usage ;;
-	'-?'|-h|help|--help)
-		 shift
-		(($#)) || usage # if there isn't a second arg, show usage
+	""|'-?'|-h|help|--help)
+		usage
 	 ;;
 	compat-check|diff-last-activated|dry-run|interactive|lockdown|open|parse-xml|\
 	prepare-restore-on-start|restart|restore|save|save-commands|save-modprobe-commands|save-sysctl-commands|\
 	save-iptables-commands|save-tc-commands|save-shaping-commands|show|start|stop|test|tc-start|tc-stop)
-		shift
 		if ((EUID > 0)); then
 			err_msg "Root check FAILED. You MUST be root (EUID 0) to use $ME."
 			bail_out $ER_FAIL
@@ -1107,6 +1084,7 @@ case "$MAIN_ARG" in
 	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
 		short_usage
 esac
+shift
 
 # -------------------------------------------------------------------------
 # get additional options
@@ -1505,7 +1483,6 @@ readonly SYSCTL_ARRAY IPARRAY_TARGETS IPARRAY_MODULES IPARRAY_IPSET_SETTYPE_LIST
 case "$MAIN_ARG" in
 	'-?'|-h|help|--help)
 		usage
-		quit_welldone
 	;;
 	compat-check)
 		MODE='COMPAT_CHECK'
@@ -1718,7 +1695,7 @@ fi
 set_syslog_mode
 set_message_colors || bail_out $?
 precheck_config || bail_out $?
-[[ $MODE = SHOW ]] || fill_script_map
+[[ $MODE = @(INTERACTIVE|SHOW) ]] || fill_script_map
 check_kern_ver || bail_out $?
 
 # -------------------------------------------------------------------------
