@@ -1620,7 +1620,9 @@ restore_module_state() { # try to restore initial (remembered) module state
 local module_state module_name module_params
 local -a unload_arr
 local -i idx
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial module state"'
+if ((${#MOD_STATE_ARRAY[@]})); then
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial module state"'
+fi
 for idx in ${!MOD_STATE_ARRAY[@]}; do
 	set -- ${MOD_STATE_ARRAY[idx]}
 	module_state="$1" module_name="$2"
@@ -1731,7 +1733,9 @@ restore_sysctl_state() { # try to restore initial (remembered) sysctl settings
 }
 ((NO_AUTOSAVE == 0)) || return 0
 local -i idx
-ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial sysctl configuration"'
+if ((${#SYSCTL_STATE_ARRAY[@]})); then
+	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]='log -I "Trying to restore initial sysctl configuration"'
+fi
 for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
 	ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -e '${PF}restoring: ${SYSCTL_STATE_ARRAY[idx]%%=*} to ${SYSCTL_STATE_ARRAY[idx]#*=}'"
 	run_sctl -q -w ${SYSCTL_STATE_ARRAY[idx]} || {
