@@ -3893,6 +3893,8 @@ case "$1" in
 		if ((PARSE_TEMPLATES == 1)); then
 			if ((${#PARSE_TEMPLATES[@]} > 1)); then
 				[[ $DEBUG_INFO ]] && dbg_arr PARSE_TEMPLATES
+				log -N "Loading base templates because they may be needed by other templates."
+				load_ipt_base_templates || return
 				for ((x=1; x<${#PARSE_TEMPLATES[@]}; x++)); do
 					load_ipt_${PARSE_TEMPLATES[x]}_templates || return 0
 				done
