@@ -1408,15 +1408,21 @@ case "$str_tables" in
 			JUMP_TREE[2]+="$str_tbl "
 		done
 esac
+JUMP_TREE_INIT=${JUMP_TREE[0]}
+readonly JUMP_TREE_INIT
 if [[ $DEBUG_INFO ]]; then dbg_arr JUMP_TREE; fi
 } # -------------------------------------------------------------------------
 
-jump_tree_on() {
-JUMP_TREE[0]=1
+jump_tree_on() { # turn jump tree on, if it was initialized enabled
+if ((JUMP_TREE_INIT != 0)); then
+	JUMP_TREE[0]=1
+fi
 } # -------------------------------------------------------------------------
 
-jump_tree_off() {
-JUMP_TREE[0]=0
+jump_tree_off() { # turn jump tree off, if it was initialized enabled
+if ((JUMP_TREE_INIT == 1)); then
+	JUMP_TREE[0]=0
+fi
 } # -------------------------------------------------------------------------
 
 set_policy() { # set iptables policies
@@ -8745,7 +8751,6 @@ run_ipt -I OUTPUT -d ${admin_src} -s ${admin_dst} -p tcp --sport ${admin_dst_por
 
 global_invalid_chain() {
 ((ENABLE_FILTER)) || return 0
-local -i jt_mode=${JUMP_TREE[0]}
 local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist
 local TEMPLATE_BUILTIN_GLOBAL_INVALID_CHAIN=(
@@ -8766,9 +8771,9 @@ if ((LOG_INVALID && BLOCK_INVALID)); then
 	for str_chain in ${str_chainlist}; do
 		RULEBLOCK_BUILTIN_GLOBAL_INVALID_CHAIN[${#RULEBLOCK_BUILTIN_GLOBAL_INVALID_CHAIN[@]}]="${str_chain}"
 	done
-	((jt_mode == 1)) && jump_tree_off
+	jump_tree_off
 	process_ipt_ruleblock TEMPLATE_BUILTIN_GLOBAL_INVALID_CHAIN RULEBLOCK_BUILTIN_GLOBAL_INVALID_CHAIN
-	((jt_mode == 0)) || jump_tree_on
+	jump_tree_on
 fi
 } # -------------------------------------------------------------------------
 
@@ -8778,7 +8783,6 @@ log_invalid_state() { # log packets in INVALID state
 	log -w "Not logging packets in INVALID state"
 	return 0
 }
-local -i jt_mode=${JUMP_TREE[0]}
 local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist str_lpfix="${LOG_PREFIX}"
 local TEMPLATE_BUILTIN_LOG_INVALID_STATE=(
@@ -8805,9 +8809,9 @@ fi
 for str_chain in ${str_chainlist}; do
 	RULEBLOCK_BUILTIN_LOG_INVALID_STATE[${#RULEBLOCK_BUILTIN_LOG_INVALID_STATE[@]}]="${str_chain} ${str_lpfix}INVALID-STATE:"
 done
-((jt_mode == 1)) && jump_tree_off
+jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_LOG_INVALID_STATE RULEBLOCK_BUILTIN_LOG_INVALID_STATE
-((jt_mode == 0)) || jump_tree_on
+jump_tree_on
 } # -------------------------------------------------------------------------
 
 drop_invalid_state() { # drop packets in INVALID state
@@ -8816,7 +8820,6 @@ drop_invalid_state() { # drop packets in INVALID state
 	log -w "Not dropping packets in INVALID state"
 	return 0
 }
-local -i jt_mode=${JUMP_TREE[0]}
 local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward)
 local str_chain str_chainlist
 local TEMPLATE_BUILTIN_DROP_INVALID_STATE=(
@@ -8839,9 +8842,9 @@ fi
 for str_chain in ${str_chainlist}; do
 	RULEBLOCK_BUILTIN_DROP_INVALID_STATE[${#RULEBLOCK_BUILTIN_DROP_INVALID_STATE[@]}]="${str_chain}"
 done
-((jt_mode == 1)) && jump_tree_off
+jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_INVALID_STATE RULEBLOCK_BUILTIN_DROP_INVALID_STATE
-((jt_mode == 0)) || jump_tree_on
+jump_tree_on
 } # -------------------------------------------------------------------------
 
 log_drop_invalid_state() {
@@ -8862,7 +8865,6 @@ log_illegal_tcp() { # log illegal packets
 	log -w "Not logging illegal TCP packets"
 	return 0
 }
-local -i jt_mode=${JUMP_TREE[0]}
 local str_lpfix="${LOG_PREFIX}"
 ((BLOCK_ILLEGAL)) && str_lpfix="${str_lpfix}DROP_"
 local TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP=(
@@ -8882,9 +8884,9 @@ local -a RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
 RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="flags:SYN,ACK-SYN,ACK ${str_lpfix}SYNACK:"
 # then state new !syn
 RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP[@]}]="!syn ${str_lpfix}NEW-not-SYN:"
-((jt_mode == 1)) && jump_tree_off
+jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_LOG_ILLEGAL_TCP RULEBLOCK_BUILTIN_LOG_ILLEGAL_TCP
-((jt_mode == 0)) || jump_tree_on
+jump_tree_on
 } # -------------------------------------------------------------------------
 
 drop_illegal_tcp() { # drop illegal packets
@@ -8893,7 +8895,6 @@ drop_illegal_tcp() { # drop illegal packets
 	log -w "Not dropping illegal TCP packets"
 	return 0
 }
-local -i jt_mode=${JUMP_TREE[0]}
 local TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP=(
 "table=filter"
 "chain[0]=${BIC_BAD_TCP_PACKETS}"
@@ -8910,9 +8911,9 @@ local -a RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
 RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="REJECT flags:SYN,ACK-SYN,ACK tcp-reset"
 # then state new !syn
 RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[${#RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP[@]}]="DROP !syn"
-((jt_mode == 1)) && jump_tree_off
+jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_DROP_ILLEGAL_TCP RULEBLOCK_BUILTIN_DROP_ILLEGAL_TCP
-((jt_mode == 0)) || jump_tree_on
+jump_tree_on
 } # -------------------------------------------------------------------------
 
 log_drop_illegal_tcp() {
@@ -10225,7 +10226,6 @@ apply_final_rule() {
 	log -w "Not applying final rules"
 	return 0
 }
-local -i idx jt_mode=${JUMP_TREE[0]}
 local str_tmp_act
 local TEMPLATE_BUILTIN_FINAL_RULE=(
 "table=filter"
@@ -10267,9 +10267,9 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 			continue
 	esac
 done
-((jt_mode == 1)) && jump_tree_off
+jump_tree_off
 process_ipt_ruleblock TEMPLATE_BUILTIN_FINAL_RULE RULEBLOCK_BUILTIN_FINAL_RULE
-((jt_mode == 0)) || jump_tree_on
+jump_tree_on
 } # -------------------------------------------------------------------------
 
 # compute multiple rules, if a multiple option type was provided

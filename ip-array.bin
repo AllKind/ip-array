@@ -447,6 +447,9 @@ declare -a IPSET_CMD_ARRAY IPSET_SETS_ARRAY IPSET_ENTRIES_ARRAY		# cache the ips
 declare -a MOD_STATE_ARRAY	# Remember initial module state, to restore on error
 declare -a SYSCTL_STATE_ARRAY	# Remember initial sysctl state, to restore on error
 
+declare -a JUMP_TREE     # holds the jump tree data
+declare JUMP_TREE_INIT   # initial state on/off of jump tree
+
 # save if match extensions exist or not
 if ((BASH_VERSINFO[0] < 4)); then
 	declare -a ARR_MATCH_EXIST
