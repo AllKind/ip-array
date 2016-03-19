@@ -1694,11 +1694,12 @@ return 0
 
 add_sysctl() { # set a sysctl setting
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-if dn run_sctl "${*%%=*}"; then
-	log -e "${PF}setting ${*%%=*} to: ${*#*=}"
-	SYSCTL_CMD_ARRAY[${#SYSCTL_CMD_ARRAY[@]}]="$*"
+local str="$*"
+if dn run_sctl "${str%%=*}"; then
+	log -e "${PF}setting ${str%%=*} to: ${str#*=}"
+	SYSCTL_CMD_ARRAY[${#SYSCTL_CMD_ARRAY[@]}]="$str"
 else
-	log -E "sysctl option \`${str_path}' does not exist!"
+	log -E "sysctl option \`${str%%=*}' does not exist!"
 	raise_cfg_err_count
 	return 1
 fi
@@ -3363,11 +3364,10 @@ case "$MODE" in # act according to runtime mode
 			done
 		fi
 		if ((${#SYSCTL_CMD_ARRAY[@]})); then # sysctl settings
-			local proc_val
 			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
 				SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
-				run_sctl -q -w ${SYSCTL_CMD_ARRAY[i]} || cmd_err_count sysctl "$SYSCTL -q -w ${SYSCTL_CMD_ARRAY[i]}"
 			done
+			run_sctl -q -p - < <(printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}") || cmd_err_count sysctl "$SYSCTL -q -p - ${SYSCTL_CMD_ARRAY[@]}"
 			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
 		fi
 		# save the memorized module and/or sysctl settings to be restored if we are in test mode
