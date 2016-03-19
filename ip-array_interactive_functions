@@ -307,10 +307,13 @@ local str_rule=$(dia_menu "Select the type of rule action" \
 if [[ $str_rule = Template ]]; then
 	if ((${#arr_templ[*]} == 0)); then
 		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-			if [[ $DIALOG_PROG = *dialog ]]; then
-				arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
-			elif [[ $DIALOG_PROG = *whiptail ]]; then
-				arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+			while read -t $GLOBAL_READ_TIMEOUT; do
+				if [[ $REPLY != BT_* ]]; then # don't show base templates
+					arr_templ[i++]="$REPLY"
+				fi
+			done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort )
+			if [[ $DIALOG_PROG = *whiptail ]]; then
+				arr_templ=( $(build_wt_dummy_list "${arr_templ[@]}") )
 			fi
 		else
 			dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
@@ -338,7 +341,10 @@ if [[ $str_rule = Template ]]; then
 			dia_mbox "Only one template has been found: \`${arr_templ[0]}'. Selecting it."
 			t_name="${arr_templ[0]}"
 		else
-			t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || return
+			t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || {
+				unset arr_content[--content_idx]
+				return 0
+			}
 		fi
 		# choose one ruleblock
 		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_rb[@]} == 1)); then
@@ -348,7 +354,10 @@ if [[ $str_rule = Template ]]; then
 			dia_mbox "Only one ruleblock has been found: \`${arr_rb[0]}'. Selecting it."
 			r_name="${arr_rb[0]}"
 		else
-			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || return
+			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || {
+				unset arr_content[--content_idx]
+				return 0
+			}
 		fi
 		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or CANCEL for none.")
 		if [[ $t_name && $r_name ]]; then
