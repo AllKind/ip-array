@@ -32,7 +32,6 @@ Features
 	- Custom epilog and prolog scripts for each start mode.
 	- Muliple levels of output verbosity with optional syslog logging.
 	- Coloured output (can be disabled).
-	- Various /proc filesystem settings.
 	- Automatic 'jump tree' creation options.
 	- An interactive wizard based mode to create configuration files.
 	- Public functions.
