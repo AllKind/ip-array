@@ -298,7 +298,7 @@ local str_rule=$(dia_menu "Select the type of rule action" \
 	"Grouped" "Combined tags iptables rule" \
 	"Template" "Template based iptables rule" \
 	"Function" "Public function" \
-	"Ipset" "Create set / add elements" \
+	"Set" "Create an ipset set / add elements" \
 	"Close" "Close last opened tag" \
 	"Enter comment" "Add a comment" \
 	"View" "View the created rules"
@@ -465,7 +465,7 @@ elif [[ $str_rule = Function ]]; then
 		arr_tmp[1]=$(dia_ibox "Enter parameters for the function \`${arr_tmp[0]}'. Empty value or CANCEL for none.")
 		arr_content[content_idx++]="${str_indent}    <pub_func> ${arr_tmp[*]} </pub_func>"
 	fi
-elif [[ $str_rule = Ipset ]]; then
+elif [[ $str_rule = Set ]]; then
 	local str_set="" str_type=""
 	str_rule="$(dia_menu "Select the type of ipset action" \
 		"Create set" "Create a set and optionally add elements" \
