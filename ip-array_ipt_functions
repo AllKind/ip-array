@@ -1430,7 +1430,7 @@ if [[ ${POLICY_MAP} ]]; then
 	log -w "Loading POLICY_MAP"
 	fill_array 'POLICY_MAP'
 	((${#POLICY_MAP[@]})) || {
-		log -u 'POLICY_MAP'
+		log -r 'POLICY_MAP'
 		raise_cfg_err_count
 		return $ER_NODEF
 	}
@@ -1441,7 +1441,7 @@ if [[ ${POLICY_MAP} ]]; then
 	}
 	readonly POLICY_MAP
 else
-	log -u 'POLICY_MAP'
+	log -r 'POLICY_MAP'
 	return $ER_NODEF
 fi
 } # -------------------------------------------------------------------------
