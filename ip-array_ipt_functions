@@ -408,8 +408,6 @@ case "${str_tgt}" in
 		log -E "Iptables does support space class characters in chain or target names, but ${ME} forbids it."
 		return 1
 	;;
-#	*) log -E "Invalid iptables chain or target name \`${str_tgt}'."
-#		return 1
 esac
 return 0
 } # -------------------------------------------------------------------------
