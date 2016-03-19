@@ -887,11 +887,14 @@ elif [[ $DIALOG_PROG = *whiptail ]]; then
 	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "" "Edit an existing ruleblock" "")
 fi
 (($?)) && return 1
-if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
-	if [[ $DIALOG_PROG = *dialog ]]; then
-		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
-	elif [[ $DIALOG_PROG = *whiptail ]]; then
-		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then i=0
+	while read -t $GLOBAL_READ_TIMEOUT; do
+		if [[ $REPLY != BT_* ]]; then # don't show base templates
+			arr_tmp[i++]="$REPLY"
+		fi
+	done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort )
+	if [[ $DIALOG_PROG = *whiptail ]]; then
+		arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
 	fi
 	t_name=$(dia_menu --noitem "Choose a template" "${arr_tmp[@]}")
 	(($? == 0)) || return 1
