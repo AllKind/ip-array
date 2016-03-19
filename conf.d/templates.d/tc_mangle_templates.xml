@@ -54,7 +54,7 @@
 		7: destination port
 		Mandatory options: class value 
 		-->
-		<chain> OUTPUT </chain>
+		<chain> ${BIC_TC_OUTPUT} </chain>
 		<template_msg> ${ADDMSG} stateless IP OUTPUT CLASSIFY rules </template_msg>
 		<mandatory_vars> t_class </mandatory_vars>
 		<load_template>

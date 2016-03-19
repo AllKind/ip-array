@@ -164,7 +164,7 @@
 		8: state
 		Mandatory options: mark
 		-->
-		<chain> OUTPUT </chain>
+		<chain> ${BIC_TC_OUTPUT} </chain>
 		<template_msg> ${ADDMSG} stateful IP OUTPUT MARK rules </template_msg>
 		<mandatory_vars> t_mark </mandatory_vars>
 		<load_template>
@@ -344,7 +344,7 @@
 		9: state
 		Mandatory options: mark
 		-->
-		<chain> FORWARD </chain>
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
 		<template_msg> ${ADDMSG} stateful IP FORWARD MARK rules </template_msg>
 		<mandatory_vars> t_mark </mandatory_vars>
 		<load_template>
@@ -373,7 +373,7 @@
 		9: state
 		Mandatory options: mark
 		-->
-		<chain> FORWARD </chain>
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
 		<template_msg> ${ADDMSG} stateful IP FORWARD CONNMARK rules </template_msg>
 		<mandatory_vars> t_mark </mandatory_vars>
 		<load_template>
@@ -403,7 +403,7 @@
 		10: state
 		Mandatory options: mark
 		-->
-		<chain> FORWARD </chain>
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
 		<template_msg>
 			${ADDMSG} stateful IP FORWARD MARK rules with source mac option
 		</template_msg>
@@ -491,7 +491,7 @@
 		7: destination port
 		Mandatory options: class value 
 		-->
-		<chain> OUTPUT </chain>
+		<chain> ${BIC_TC_OUTPUT} </chain>
 		<template_msg> ${ADDMSG} stateless IP OUTPUT CLASSIFY rules </template_msg>
 		<mandatory_vars> t_class </mandatory_vars>
 		<load_template>
@@ -510,7 +510,7 @@
 		+ protocol = tcp
 		+ tcp syn match
 		Resulting ruleblock structure:
-		1: chain (OUTPUT / FORWARD)
+		1: chain
 		2: output device
 		3: tcpmss (pmtu|value)
 		Mandatory options: chain, tcpmss
