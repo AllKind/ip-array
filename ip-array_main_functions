@@ -1216,25 +1216,6 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 } # -------------------------------------------------------------------------
 # end of borrowed functions
 
-restore_autosave() {
-restore_module_state
-#restore_proc_state
-restore_sysctl_state
-if ((NO_AUTOSAVE == 0)); then
-	if [[ $AUTOSAVE_FILE_IPSET ]]; then
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved ipset ruleset from: $AUTOSAVE_FILE_IPSET'"
-		emerge_ips_restore "$AUTOSAVE_FILE_IPSET" || :
-	fi
-	if [[ $AUTOSAVE_FILE ]]; then
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved iptables ruleset from: $AUTOSAVE_FILE'"
-		emerge_ipt_restore "$AUTOSAVE_FILE" || :
-	fi
-	if [[ $AUTOSAVE_FILE_IPSET || $AUTOSAVE_FILE ]]; then
-		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Restored auto-saved ruleset'"
-	fi
-fi
-} # -------------------------------------------------------------------------
-
 trap_err() {
 if ((${VERBOSE:-6} > 0)); then
 	pr_err "ERROR trap activated - exiting"
@@ -1248,8 +1229,24 @@ if ((EXEC_COMMANDS)); then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
 		fail_lockdown
 	fi
-	if [[ $MODE != RESTORE_ON_START ]]; then
-		restore_autosave
+	if [[ $MODE != RESTORE_ON_START ]]; then # restore auto-saved files
+		restore_module_state
+		restore_sysctl_state
+		if ((NO_AUTOSAVE == 0)); then
+			if ((ipt_err_count > 0 || ips_err_count > 0)); then
+				if [[ $AUTOSAVE_FILE_IPSET ]]; then
+					ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved ipset ruleset from: $AUTOSAVE_FILE_IPSET'"
+					emerge_ips_restore "$AUTOSAVE_FILE_IPSET" || :
+				fi
+				if [[ $AUTOSAVE_FILE ]]; then
+					ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -I 'Restoring automatically saved iptables ruleset from: $AUTOSAVE_FILE'"
+					emerge_ipt_restore "$AUTOSAVE_FILE" || :
+				fi
+				if [[ $AUTOSAVE_FILE_IPSET || $AUTOSAVE_FILE ]]; then
+					ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Restored auto-saved ruleset'"
+				fi
+			fi
+		fi
 	fi
 fi
 calc_err
