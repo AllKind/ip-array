@@ -906,11 +906,16 @@ if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then i=0
 			arr_tmp[i++]="$REPLY"
 		fi
 	done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort )
-	if [[ $DIALOG_PROG = *whiptail ]]; then
-		arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
+	if ((${#arr_tmp[@]} == 1)); then
+		dia_mbox "Got only one template: \`${arr_tmp[0]}'. Selecting it."
+		t_name="${arr_tmp[0]}"
+	else
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
+		fi
+		t_name=$(dia_menu --noitem "Choose a template" "${arr_tmp[@]}")
+		(($? == 0)) || return 1
 	fi
-	t_name=$(dia_menu --noitem "Choose a template" "${arr_tmp[@]}")
-	(($? == 0)) || return 1
 	[[ $t_name ]] || return 1
 else
 	dia_mbox "Templates must first be parsed (parse-xml -pt)"
