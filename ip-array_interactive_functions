@@ -293,18 +293,18 @@ local str_lhs str_rhs str str_opt str_tmp str_set str_type str_header
 local -a arr_single_rule arr_attr arr_header arr_types arr_tmp
 local -i i x
 local str_rule=$(dia_menu "Select the type of rule action" \
-	"iptables tag" "iptables argument tag" \
-	"rule" "single rule" \
-	"combined_rule" "Grouped tags rule" \
-	"template_rule" "Template based rule" \
-	"public_function" "Public function(s)" \
-	"ipset" "Create set / add elements" \
-	"close" "Close last opened tag" \
-	"comment" "Add a comment" \
-	"view" "View the created rules"
+	"Iptables tag" "iptables argument tag" \
+	"Rule" "Single iptables rule" \
+	"Grouped" "Combined tags iptables rule" \
+	"Template" "Template based iptables rule" \
+	"Function" "Public function" \
+	"Ipset" "Create set / add elements" \
+	"Close" "Close last opened tag" \
+	"Enter comment" "Add a comment" \
+	"View" "View the created rules"
 	)
 
-if [[ $str_rule = template_rule ]]; then
+if [[ $str_rule = Template ]]; then
 	if ((${#arr_templ[*]} == 0)); then
 		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
 			if [[ $DIALOG_PROG = *dialog ]]; then
@@ -359,7 +359,7 @@ if [[ $str_rule = template_rule ]]; then
 		dia_yn "Do you want to add another template_rule line?"
 	done
 	arr_content[content_idx++]="${str_indent}    </template_rule>"
-elif [[ $str_rule = "iptables tag" ]]; then
+elif [[ $str_rule = "Iptables tag" ]]; then
 	arr_tmp=( "${x_args[@]}" )
 	while (($? == 0)); do
 		str_tmp=$(dia_menu --noitem "Choose an iptables argument." "${arr_tmp[@]}")
@@ -387,7 +387,7 @@ elif [[ $str_rule = "iptables tag" ]]; then
 			false
 		fi
 	done
-elif [[ $str_rule = rule ]]; then
+elif [[ $str_rule = Rule ]]; then
 	arr_tmp=( "${x_args[@]}" )
 	_add_single_rule_entries
 	if ((${#arr_single_rule[*]})); then
@@ -395,7 +395,7 @@ elif [[ $str_rule = rule ]]; then
 	else
 		false
 	fi
-elif [[ $str_rule = combined_rule ]]; then
+elif [[ $str_rule = Grouped ]]; then
 	i=0
 	str_indent+="    "
 	arr_tmp=(msg "Log message" reverse_mode "Define reverse mode" reverse_condition "Condition to be true for activation of reverse mode")
@@ -441,7 +441,7 @@ elif [[ $str_rule = combined_rule ]]; then
 	done
 	arr_content[content_idx++]="${str_indent}</combined_rule>"
 	str_indent="${str_indent:0:$((${#str_indent} - 4))}"
-elif [[ $str_rule = public_function ]]; then
+elif [[ $str_rule = Function ]]; then
 	if ((${#arr_pubfunc[*]} == 0)); then x=0
 		for i in ${!PUBLIC_FUNCTION_LIST[@]}; do
 			set -- ${PUBLIC_FUNCTION_LIST[i]}
@@ -456,7 +456,7 @@ elif [[ $str_rule = public_function ]]; then
 		arr_tmp[1]=$(dia_ibox "Enter parameters for the function \`${arr_tmp[0]}'. Empty value or CANCEL for none.")
 		arr_content[content_idx++]="${str_indent}    <pub_func> ${arr_tmp[*]} </pub_func>"
 	fi
-elif [[ $str_rule = ipset ]]; then
+elif [[ $str_rule = Ipset ]]; then
 	local str_set="" str_type=""
 	str_rule="$(dia_menu "Select the type of ipset action" \
 		"Create set" "Create a set and optionally add elements" \
@@ -585,7 +585,7 @@ elif [[ $str_rule = ipset ]]; then
 			arr_content[content_idx++]="${str_indent}    </ipset>"
 		fi
 	fi
-elif [[ $str_rule = close ]]; then
+elif [[ $str_rule = Close ]]; then
 	if (($tag_idx > 0)); then
 		let tag_idx--
 		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
@@ -595,12 +595,12 @@ elif [[ $str_rule = close ]]; then
 	else
 		dia_mbox "There are no tags open."
 	fi
-elif [[ $str_rule = comment ]]; then
+elif [[ $str_rule = "Enter comment" ]]; then
 	str_tmp="$(dia_ibox "Enter a comment")"
 	if [[ $str_tmp ]]; then
 		arr_content[content_idx++]="${str_indent}    <!-- $str_tmp -->"
 	fi
-elif [[ $str_rule = view ]]; then
+elif [[ $str_rule = View ]]; then
 	printf "\n"
 	printf "%s\n" "${arr_content[@]}"
 	printf "\n"
@@ -713,9 +713,13 @@ _ia_add_sysctl() {
 local str_choice str_tmp oIFS
 local -i i new_index args
 local -a arr_tmp
+#str_choice=$(dia_menu "Select an option." \
+#	"Add tag" "Add a sysctl tag" \
+#	"Close tag" "Close last opened tag" \
+#	"Enter comment" "Add a comment" \
+#	"View" "View the created rules")
 str_choice=$(dia_menu "Select an option." \
 	"Add tag" "Add a sysctl tag" \
-	"Close tag" "Close last opened tag" \
 	"Enter comment" "Add a comment" \
 	"View" "View the created rules")
 if [[ $str_choice = "Add tag" ]]; then
@@ -782,16 +786,16 @@ CANCEL to return to the main window." "${arr_sysctl[@]}")
 			break
 		fi
 	done
-elif [[ $str_choice = "Close tag" ]]; then
-	if (($tag_idx > 0)); then
-		let tag_idx--
-		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
-		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
-		dia_mbox "Tag \`${arr_tags[tag_idx]}' has been closed."
-		unset arr_tags[tag_idx]
-	else
-		dia_mbox "There are no tags open."
-	fi
+#elif [[ $str_choice = "Close tag" ]]; then
+#	if (($tag_idx > 0)); then
+#		let tag_idx--
+#		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+#		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+#		dia_mbox "Tag \`${arr_tags[tag_idx]}' has been closed."
+#		unset arr_tags[tag_idx]
+#	else
+#		dia_mbox "There are no tags open."
+#	fi
 elif [[ $str_choice = "Enter comment" ]]; then
 	str_choice="$(dia_ibox "Enter a comment")"
 	if [[ $str_choice ]]; then
