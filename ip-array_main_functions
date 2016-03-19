@@ -1216,14 +1216,18 @@ printf "%s\n" $(encodeaddr $(($decodedaddr & $netmask)))
 } # -------------------------------------------------------------------------
 # end of borrowed functions
 
-trap_err() {
+# ------------------------------------------------------------------------- #
+# ERROR HANDLING
+# ------------------------------------------------------------------------- #
+
+trap_err() { # error trap
 if ((${VERBOSE:-6} > 0)); then
 	pr_err "ERROR trap activated - exiting"
 fi
 exit_on_err_act $ER_FAIL
 } # -------------------------------------------------------------------------
 
-exit_on_err_act() {
+exit_on_err_act() { # exit on error actions
 if ((EXEC_COMMANDS)); then
 	if ((ipt_err_count > 0 || ips_err_count > 0)); then
 		ERRORS_MSG_ARRAY[${#ERRORS_MSG_ARRAY[@]}]="log -T 'Applied fail condition lockdown rules'"
@@ -1302,6 +1306,10 @@ if ((EXIT_ON_ERROR == 1)); then
 	exit_on_err_act $ER_FAIL
 fi
 } # -------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------- #
+# MISC
+# ------------------------------------------------------------------------- #
 
 check_kern_ver() { # check for necessary kernel version
 log -w "Checking for proper kernel version"
