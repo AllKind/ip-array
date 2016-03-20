@@ -202,7 +202,7 @@ command -v install &>/dev/null || {
 }
 
 # warn about ownership - if not root
-if ((UID != 0)); then
+if ((EUID != 0)); then
 	printf "Not running as root. Not changing ownership/groups.\n"
 	OWNSH=
 fi
