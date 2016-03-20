@@ -61,12 +61,22 @@ local -a arr_core_opt=( --debug --err-exit --base-dir --config-file --config-dir
 --syslog-verbose --no-scripts )
 
 # gather information about the command line
-if [[ ${words[1]} = @($(IFS='|' ;printf "%s\n" "${arr_par[*]}"))  ]]; then
-	str_act="${words[1]}"
+if [[ ${words[1]} = @($(IFS='|' ;printf "%s\n" "${arr_par[*]}")) ]]; then
+	str_act="${words[1]}" # this is the main parameter
 fi
 
 # here we go
 COMPREPLY=()
+
+# main parameter
+if ((cword == 1)); then
+	COMPREPLY=( $( compgen -W '${arr_par[@]}' -- "$cur" ) )
+	return 0
+elif ((cword > 1)); then
+	if [[ -z $str_act ]]; then
+		return 0 # if main parameter is missing, we don't continue
+	fi
+fi
 
 # catch variables and command substitution
 if [[ $cur == \$\(* ]]; then # command substitution
@@ -78,16 +88,6 @@ elif [[ $cur == \$\{* ]]; then # variables with a leading `${'
 elif [[ $cur == \$* ]]; then # variables with a leading `$'
     COMPREPLY=( $(compgen -v -P '$' ${cur#?} ) )
     return 0
-fi
-
-# main parameter
-if ((cword == 1)); then
-	COMPREPLY=( $( compgen -W '${arr_par[@]}' -- "$cur" ) )
-	return 0
-elif ((cword > 1)); then
-	if [[ -z $str_act ]]; then
-		return 0 # if main parameter is missing, we don't continue
-	fi
 fi
 
 # gather options depending on main parameter
