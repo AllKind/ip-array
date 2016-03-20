@@ -96,7 +96,7 @@ printf "%s\n" "$*"
 }
 
 create_dirs() { # create all directory components
-${NOACT}install $VERBOSE $OWNSH -d "$@"
+${NOACT}command install $VERBOSE $OWNSH -d "$@"
 }
 
 install_dir() { # install multiple source files to destination
@@ -107,7 +107,7 @@ case "$1" in
 		shift 2
 	;;
 esac
-${NOACT}install $VERBOSE $BACKUP $OWNSH $str_perm "$@"
+${NOACT}command install $VERBOSE $BACKUP $OWNSH $str_perm "$@"
 }
 
 install_file() { # install a single file
@@ -118,7 +118,7 @@ case "$1" in
 		shift 2
 	;;
 esac
-${NOACT}install $VERBOSE $BACKUP $OWNSH $str_perm -T "$@"
+${NOACT}command install $VERBOSE $BACKUP $OWNSH $str_perm -T "$@"
 }
 
 # ------------------------------------------------------------------------- #
@@ -254,9 +254,17 @@ else
 	install_file -m 0644 ip-array_bash_completion "$BASHCOMPDIR/$ME"
 fi
 
-# create versions file
 if ! [[ $NOACT ]]; then
+	# create versions file
+	printf "Creating version file: \`${SYSCONFDIR}/${ME}/${ME}_version'\n"
 	(set +C; "${BINDIR}/$ME" version > "${SYSCONFDIR}/${ME}/${ME}_version")
+
+	# create log file, to be re-used by uninstall.bash
+	printf "Creating \`./${ME}-install.log' - Will need this for uninstallation!\n"
+	(set +C; printf '#!/usr/bin/env bash\n\n' > ./${ME}-install.log)
+	for var in BASHCOMPDIR BINDIR DATAROOTDIR DEFAULTSDIR DOCDIR INITDIR LIBDIR MANDIR SYSCONFDIR; do
+		declare -p "$var" >> ./${ME}-install.log
+	done
 fi
 
 printf "Finished Install\n"
