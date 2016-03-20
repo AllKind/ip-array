@@ -35,7 +35,7 @@ Features
 	- Automatic 'jump tree' creation options.
 	- An interactive wizard based mode to create configuration files.
 	- Public functions available in rule files.
-	- ipset support.  Sets can be imported from plain,
+	- ipset support. Besides creation of sets, they can also be imported from plain,
 		or in ipset save XML format formatted files.
 	- Some autoconfig presets for DNS, FTP, SMTP, NTP, IPSEC, etc.
 	- Traffic shaping - creation of htb and sfq qdiscs, classes and filters.
