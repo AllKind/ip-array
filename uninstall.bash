@@ -110,7 +110,7 @@ done
 
 # check if the variable are defined
 for f in LIBDIR DATAROOTDIR DOCDIR DATAROOTDIR SYSCONFDIR \
-	BINDIR DEFAULTSDIR BASHCOMPDIR MANDIR
+	BINDIR DEFAULTSDIR BASHCOMPDIR MANDIR INITDIR
 do
 	if [[ -z ${!f} ]]; then
 		printf "Need variable \`%s'. Aborting.\n" "$f" >&2
