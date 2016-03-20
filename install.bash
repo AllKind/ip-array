@@ -45,9 +45,10 @@ set +f -o braceexpand
 umask 0027
 
 # variables
-PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin
+: ${PATH:=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin}
 ME=ip-array
 BACKUP=
+BASHCOMPDIR=
 GROUP=
 BINDIR=
 DATAROOTDIR=
@@ -71,20 +72,22 @@ usage() {
 printf "
 USAGE: ${0##*/} [[Option] Option-argument] [...]\n
 Options:
--?, -h, --help                   Show this usage instructions.
--b, --backup                     Create numbered backups (suffix=~).
--g, --group group_name           Set group ownership. Default: root
--n, --no-act                     Perform a dry-run.
--o, --owner owner_name           Set ownership. Default: root
--v, --verbose                    Verbose output.
---prefix /path                   Prefix directory. Default: /usr/local
---datarootdir /path              Default: PREFIX/share
---defaultsdir /path              Default: /etc/default
---docdir /path                   Default: DATAROOTDIR/doc
---initdir /path                  Default: /etc/init.d
---libdir /path                   Default: PREFIX/lib
---mandir /path                   Default: DATAROOTDIR/man
---sysconfdir /path               Default: PREFIX/etc
+-?, -h, --help                Show this usage instructions
+-b, --backup                  Create numbered backups (suffix=~)
+-g, --group group_name        Set group ownership. Default: root
+-n, --no-act                  Perform a dry-run
+-o, --owner owner_name        Set ownership. Default: root
+-v, --verbose                 Verbose output
+--prefix /path                Prefix directory. Default: /usr/local
+--datarootdir /path           Default: PREFIX/share
+--defaultsdir /path           Default: /etc/default
+--docdir /path                Default: DATAROOTDIR/doc
+--initdir /path               Default: /etc/init.d
+--libdir /path                Default: PREFIX/lib
+--mandir /path                Default: DATAROOTDIR/man
+--sysconfdir /path            Default: PREFIX/etc
+--bashcompdir /path           Retrieved with pkg-config, or as fallback:
+                              /etc/bash_completion.d, or ~/.bash_completion
 \n"
 }
 
@@ -141,6 +144,7 @@ while (($#)); do
 		-v|--verbose) VERBOSE="-v"
 			continue
 		;;
+		--bashcompdir) BASHCOMPDIR="$opt_arg" ;;
 		--bindir) BINDIR="$opt_arg" ;;
 		--datarootdir) DATAROOTDIR="$opt_arg" ;;
 		--defaultsdir) DEFAULTSDIR="$opt_arg" ;;
@@ -171,6 +175,21 @@ done
 : ${GROUP:=root}
 OWNSH="--group=$GROUP --owner=$OWNER"
 
+if [[ -z $BASHCOMPDIR ]]; then
+	if command -v pkg-config; then
+		while :; do
+			BASHCOMPDIR=$(command pkg-config --variable=completionsdir bash-completion) && break
+			BASHCOMPDIR=$(command pkg-config --variable=compatdir bash-completion) && break
+		done
+	else
+		while :; do
+			[[ -e /etc/bash_completion.d ]] && BASHCOMPDIR=/etc/bash_completion.d && break
+			BASHCOMPDIR='~' && break
+		done
+	fi
+
+fi
+
 # warning message on dry-run
 if [[ $NOACT ]]; then
 	printf "\nNO ACT MODE - NOT INSTALLING!\n\n"
@@ -199,6 +218,7 @@ create_dirs "${DATAROOTDIR}/${ME}/help.d/examples/config_like_v.0.05.74d/"{ruleb
 create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,sysctl.d,templates.d}
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d"
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
+create_dirs "${BASHCOMPDIR}"
 
 # copy files
 install_dir -m 0640 conf.d/*.conf "${SYSCONFDIR}/${ME}/stable/conf.d"
@@ -226,10 +246,17 @@ install_file -m 0640 ip-array_global_defs "${LIBDIR}/${ME}/ip-array_global_defs"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
 install_file -m 0755 "${ME}".init_pre_net_boot "${INITDIR}/${ME}.init_pre_net_boot"
+if [[ $BASHCOMPDIR = ~ ]]; then
+	if ! [[ $NOACT ]]; then
+		command cat ip-array_bash_completion >> ~/.bash_completion
+	fi
+else
+	install_file -m 0644 ip-array_bash_completion "$BASHCOMPDIR/$ME"
+fi
 
 # create versions file
 if ! [[ $NOACT ]]; then
-	"${BINDIR}/$ME" version > "${DEFAULTSDIR}/version"
+	(set +C; "${BINDIR}/$ME" version > "${SYSCONFDIR}/${ME}/${ME}_version")
 fi
 
 printf "Finished Install\n"
