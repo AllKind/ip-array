@@ -5,7 +5,7 @@ What is IP-Array?
 	IP-Array is a command-line program (you may also say `script') written for bash
 	(the bash shell www.gnu.org/software/bash).
 	It's purpose is to configure IPv4 firewalling and traffic shaping of a linux host.
-	To achieve this, IP-Array configures the linux kernels netfilter / traffic control
+	To achieve this, IP-Array modifies the linux kernels netfilter / traffic control
 	subsystems via the userspace tools iptables / ipset / tc.
 	It also allows to load and / or unload netfilter related kernel modules and
 	configure the kernel using the sysctl program.
@@ -34,13 +34,18 @@ Features
 	- Coloured output (can be disabled).
 	- Automatic 'jump tree' creation options.
 	- An interactive wizard based mode to create configuration files.
-	- Public functions.
-	- ipset support.
+	- Public functions available in rule files.
+	- ipset support.  Sets can be imported from plain,
+		or in ipset save XML format formatted files.
 	- Some autoconfig presets for DNS, FTP, SMTP, NTP, IPSEC, etc.
-	- Traffic shaping.
+	- Traffic shaping - creation of htb and sfq qdiscs, classes and filters.
 	- The ability to save the generated iptables / ipset, tc rules, modprobe,
-		or sysctl commands to a file.
+		or sysctl commands, selectively or all together, to a file.
 	- Error handling. Previous system states can be restored on error.
+	- An install and uninstall script.
+	- Rich set of command line options.
+	- Bash completion compspec is included.
+	- A reference manual, man pages and command line help.
 	
 Installation, Configuration, System Requirements, etc.
 	Please read the reference manual.
