@@ -153,13 +153,11 @@ fi
 # option requests
 if [[ $cur = -* ]]; then
 	if [[ $prev = --@(color|use-ipset|set-option|gen-format|restore-on-start|reload-time|syslog-verbose|verbose) ]]
-	then
-		return 0 # arg required
+	then return 0 # arg required
 	elif [[ $prev = @(-co|-ui|-o|-gf|-rs|-rt|-sc|-sv|-v) ]]; then
 		return 0 # arg required
 	elif [[ $prev = @(-b|--base-dir|-c|--config-file|-C|--config-dir|-d|--defaults-file|-e|--exe-dir|-l|--lib-dir|-r|--run-dir|-s|--save-file|-is|--save-ips-file|-sh|--shell) ]]
-	then
-		_filedir # still could be a file / dir name
+	then _filedir # still could be a file / dir name
 	else
 		# present options depending on main parameter
 		if ((${#arr_opt[@]})); then
@@ -200,8 +198,7 @@ elif [[ $cur = * ]]; then # anything else requested
 	elif [[ $prev = @(-v|--verbose) ]]; then
 		COMPREPLY=( $( compgen -W '0 1 2 3 4 5 6 7 8 9' -- "$cur" ) )
 	elif [[ $prev = @(-b|--base-dir|-c|--config-file|-C|--config-dir|-d|--defaults-file|-e|--exe-dir|-l|--lib-dir|-r|--run-dir|-s|--save-file|-is|--save-ips-file|-sh|--shell) ]]
-	then
-		_filedir # still could be a file / dir name
+	then _filedir # still could be a file / dir name
 	else
 		# present options depending on main parameter
 		if ((${#arr_opt[@]})); then
