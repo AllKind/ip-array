@@ -1293,7 +1293,7 @@ done
 # load default configuration parameters from file
 # -------------------------------------------------------------------------
 
-DEFAULTS_FILE="${cmdline_def_file:-${DEFAULTS_FILE:-/etc/${me}/defaults.conf}}"
+DEFAULTS_FILE="${cmdline_def_file:-${DEFAULTS_FILE:-/etc/${me}/${me}_defaults.conf}}"
 if [[ -r $DEFAULTS_FILE ]]; then 
 	verbose_msg "Loading defaults file: \`$DEFAULTS_FILE'."
 	if ((SYNTAX_CHECK)); then
