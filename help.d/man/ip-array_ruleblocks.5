@@ -83,7 +83,13 @@ The ruleblock name must begin with one of the following prefixes: RB_, RULEBLOCK
 .PP
 It\*(Aqs a good idea to write down the structure of the template you want to call the ruleblock with as a comment below the ruleblock opening tag\&. This way you will easily remember what each column has to contain\&.
 .PP
-Newline separates rules inside a ruleblock\&.
+Newline separates rules inside a ruleblock\&. So if your template defines i\&.e\&. a ruleblock structure like this:
+.PP
+table chain target proto src
+.PP
+then an entry in the ruleblock may look like this:
+.PP
+filter INPUT ACCEPT tcp 1\&.1\&.1\&.1
 .PP
 You can use your shell variables inside ruleblock rules\&.
 .PP

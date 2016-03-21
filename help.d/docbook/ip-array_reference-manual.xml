@@ -689,6 +689,8 @@
         possible to create a backup of the old files. The installer utilises the
           <command>install</command> program, for more information about it consult its man
         page.</para>
+      <para>The installer creates a log file about the installation. This will be used by the
+          <filename>uninstall.bash</filename> script, to uninstall IP-Array.</para>
       <para>After installation you need to configure variables in the header of the init script.
         Telling the path to the defaults file and to the IP-Array executable. Maybe you need to
         adjust some path and programs settings in the defaults file. Then you can start to configure
@@ -2728,7 +2730,11 @@
         <para>It's a good idea to write down the structure of the template you want to call the
           ruleblock with as a comment below the ruleblock opening tag. This way you will easily
           remember what each column has to contain.</para>
-        <para>Newline separates rules inside a ruleblock.</para>
+        <para>Newline separates rules inside a ruleblock. So if your template defines i.e. a
+          ruleblock structure like this:</para>
+        <para><code>table chain target proto src</code></para>
+        <para>then an entry in the ruleblock may look like this:</para>
+        <para><code>filter INPUT ACCEPT tcp 1.1.1.1</code></para>
         <para>You can use your shell variables inside ruleblock rules.</para>
         <para>XML style comments (&lt;!-- comment -->) are valid inside ruleblocks.</para>
         <para>If you want to leave a value in a column undefined use the character defined with
@@ -3285,7 +3291,7 @@ or
   <chapter xml:id="traffic_shaping">
     <title>Traffic shaping</title>
     <para>IP-Array has basic traffic shaping support built in. The creation of htb, and sfq qdiscs
-      as well as classes and filters is , with a limited set of options, supported.</para>
+      as well as tc classes and filters is, with a limited set of options, supported.</para>
     <para>When traffic shaping is enabled by setting the <varname>ENABLE_TC_SHAPING</varname>
       variable to `1', a number of predifined ruleblocks (<varname>TC_MANGLE_RULEBLOCKS</varname> -
       the iptables mangle table marking and <varname>TC_RULEBLOCKS</varname> - the queue discs,
