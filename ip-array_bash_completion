@@ -45,7 +45,7 @@ else
 fi
 
 local str_act=""
-local -i i
+local -i i x
 local -a arr_opt=()
 
 # main parameters
