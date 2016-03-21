@@ -177,7 +177,7 @@ done
 OWNSH="--group=$GROUP --owner=$OWNER"
 
 if [[ -z $BASHCOMPDIR ]]; then
-	if command -v pkg-config; then
+	if command -v pkg-config &>/dev/null; then
 		while :; do
 			BASHCOMPDIR=$(command pkg-config --variable=completionsdir bash-completion) && break
 			BASHCOMPDIR=$(command pkg-config --variable=compatdir bash-completion) && break
