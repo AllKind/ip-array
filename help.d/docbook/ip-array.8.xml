@@ -333,7 +333,7 @@
                 <listitem>
                     <para>-e, --exe-dir directory</para>
                     <para>Set the directory to place the main executable of IP-Array into (i.e.
-                        /usr/bin/ip-array).</para>
+                        /usr/sbin/ip-array).</para>
                 </listitem>
                 <listitem>
                     <para>-l, --lib-dir directory</para>
@@ -495,7 +495,7 @@
     <refsect1>
         <title>Files</title>
         <para>
-            <filename>/usr/bin/ip-array</filename>
+            <filename>/usr/sbin/ip-array</filename>
         </para>
     </refsect1>
     <refsect1>

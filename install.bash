@@ -83,6 +83,7 @@ Options:
 --defaultsdir /path           Default: SYSCONFDIR/ip-array
 --docdir /path                Default: DATAROOTDIR/doc
 --initdir /path               Default: /etc/init.d
+--bindir /path                Default: PREFIX/sbin
 --libdir /path                Default: PREFIX/lib
 --mandir /path                Default: DATAROOTDIR/man
 --sysconfdir /path            Default: PREFIX/etc
@@ -164,7 +165,7 @@ done
 : ${INITDIR:=/etc/init.d}
 : ${PREFIX:=/usr/local}
 : ${DATAROOTDIR:=${PREFIX}/share}
-: ${BINDIR:=${PREFIX}/bin}
+: ${BINDIR:=${PREFIX}/sbin}
 : ${LIBDIR:=${PREFIX}/lib}
 : ${SYSCONFDIR:=${PREFIX}/etc}
 : ${DEFAULTSDIR:=$SYSCONFDIR/$ME}
