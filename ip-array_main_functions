@@ -4038,6 +4038,7 @@ case "$1" in
 		set_rulesetfile || return
 		start_msg
 		load_pro_epilog_scripts 'prolog'
+		load_configs || return
 		module_handling || return
 		apply_rules || return
 		common_end
@@ -4047,6 +4048,7 @@ case "$1" in
 		set_rulesetfile || return
 		start_msg
 		load_pro_epilog_scripts 'prolog'
+		load_configs || return
 		set_sysctl || return
 		apply_rules || return
 		common_end
@@ -4117,6 +4119,7 @@ case "$1" in
 					pr_banner "End of defaults configuration dump"
 				;;
 				main) # show list of main config variables
+					load_configs || return
 					pr_banner "Starting dump of main configuration:"
 					for i in ${!CONFIG_ENTRY_ARRAY[@]}; do
 						dn2 declare -p "${CONFIG_ENTRY_ARRAY[i]%%+([[:space:]])*}" || continue
@@ -4125,6 +4128,7 @@ case "$1" in
 				;;
 				main:+([[:word:]])*(,+([[:word:]]))) # show list of selected (cmdline) main config variables
 					str_opt="${rvar#main:}"
+					load_configs || return
 					pr_banner "Starting dump of main configuration:"
 					for str_opt in ${str_opt//,/ }; do
 						for str_x in $(show_array_column CONFIG_ENTRY_ARRAY); do

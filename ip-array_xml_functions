@@ -1103,7 +1103,7 @@ for tag_idx in ${!ARR_TAGS[@]}; do
 				root_found=1
 			else
 				eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
-				arr_path[ridx++]="$tag_name"
+				eval arr_path[ridx++]="$tag_name" # use eval, as could be a shell variable (i.e. for interface ..conf.eth0.xyz)
 				str_path=$(IFS=. ; printf '%s' "${arr_path[*]}")
 				if ((attr_members > 0)); then
 					while read -r str_attr_name str_attr_val; do
@@ -1195,7 +1195,8 @@ while read -r; do let line_count+=1
 			[[ $DEBUG_INFO ]] && pr_str "Skipping comment line: '${line}' #${line_count}"
 			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
 			continue 2
-		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
+#		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag>
 			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"; tag_name="${tag_name//[[:blank:]]/}"
@@ -1214,7 +1215,7 @@ while read -r; do let line_count+=1
 			ARR_TAGS[tag_idx++]="open ${tag_name}"
 			ARR_TAGS[tag_idx++]="close ${tag_name}"
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
-		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
 		# NEW TAG IN LINE <tag attrib=val >
 			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"; tag_name="${tag_name%%+([[:blank:]])*}"
@@ -1233,11 +1234,11 @@ while read -r; do let line_count+=1
 			fi
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
 			let tag_idx+=1
-		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
 		# NEW TAG IN LINE <tag attrib=val
 			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'}"
-			attributes="${line##*'<'+([[:word:]])}"; attributes="${attributes%%?(/)'>'*}"
+			attributes="${line##*'<'@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))}"; attributes="${attributes%%?(/)'>'*}"
 			tag_name="${tag_name%"${attributes}"*}"
 			last_tag="${tag_name}" line="${line#*"${attributes}"}"
 			strip_blanks_var 'attributes'
@@ -1253,7 +1254,7 @@ while read -r; do let line_count+=1
 			fi
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'" 
 			let tag_idx+=1
-		elif [[ ${line} = *\</+([[:word:]])\>* ]]; then
+		elif [[ ${line} = *\</@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))\>* ]]; then
 			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'/}"; tag_name="${tag_name%%'>'*}"
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close tag \`${tag_name}', but there is no tag opened."; return 1; }
@@ -1261,9 +1262,12 @@ while read -r; do let line_count+=1
 				log -E "Attempting to close tag \`${tag_name}', but tag \`${ARR_TMP_TAGS[tmp_tag_idx-1]}' needs to be closed first."
 				return 1
 			}
-			tmp_content="${line%%'<'/+([[:word:]])'>'*}"
+			tmp_content="${line%%'<'/@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))'>'*}"
 			strip_blanks_var 'tmp_content'
-			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			if [[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]]; then # add remaining content
+				[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+				eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			fi
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
 			ARR_TAGS[tag_idx++]="close ${tag_name}"
 			cont_expect=0 attr_expect=0 comment_idx=0
@@ -1274,7 +1278,10 @@ while read -r; do let line_count+=1
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close a tag, but there is no tag opened."; return 1; }
 			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
 			strip_blanks_var 'tmp_content'
-			[[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]] && eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			if [[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]]; then # add remaining content
+				[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+				eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			fi
 			ARR_TAGS[tag_idx++]="close ${ARR_TMP_TAGS[tmp_tag_idx-1]}"
 			unset ARR_TMP_TAGS[--tmp_tag_idx]
 			cont_expect=0 attr_expect=0 comment_idx=0
