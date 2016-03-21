@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.1.1</productnumber>
+        <productnumber>1.2.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array_sysctl_rules</refentrytitle>
         <manvolnum>5</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.2.0</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.2.1</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array sysctl rules</refdescriptor>
@@ -83,9 +83,59 @@
 &lt;/net></programlisting>
         </para>
         <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >or even shorter as attribute if only this single setting is used:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4 ip_forward="1"/>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
             >You can mix both ways as you wish. To see all the available types of your local system,
             run either <command>sysctl -a</command> or <command>ip-array
             compat-check</command>.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+                ><emphasis role="bold">Shell variables</emphasis> are valid as tag names inside
+            sysctl rules. The main purpose of this feature is to allow generic configuration of
+            values that may change system depending. i.e. the interface names in
+                <code>net.ipv4.conf.$INTERFACE_NAME</code>. The <emphasis role="bold">variable must
+                not be quoted!</emphasis> You can either write them with or without the curly
+            braces: <code>&lt;$VARIABLE></code> or <code>&lt;${VARIABLE}></code>.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >Now if you define you interface name variables inside the i.e. alias.conf configuration
+            file, you can use them inside your sysctl rule files. And every time an interface
+            changes, all you need to do, is to modify the variable and re-parse the sysctl rule
+            files.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file you
+            write:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF>
+                &lt;accept_redirects> 0 &lt;/accept_redirects>
+            &lt;/$EXT_IF>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >or as attribute (in the short form):</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF accept_redirects="0"/>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+            listed.</para>
     </refsect1>
     <refsect1>
         <title>See also</title>

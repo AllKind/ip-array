@@ -38,7 +38,7 @@ Features
 	- ipset support. Besides creation of sets, they can also be imported from plain,
 		or in ipset save XML format formatted files.
 	- Some autoconfig presets for DNS, FTP, SMTP, NTP, IPSEC, etc.
-	- Traffic shaping - creation of htb and sfq qdiscs, classes and filters.
+	- Traffic shaping - creation of htb and sfq qdiscs, tc classes and filters.
 	- The ability to save the generated iptables / ipset, tc rules, modprobe,
 		or sysctl commands, selectively or all together, to a file.
 	- Error handling. Previous system states can be restored on error.

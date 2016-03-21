@@ -11,7 +11,7 @@
             ...]</p></div></div><div class="refsect1" lang="en"><a name="d0e67"></a><h2>Description</h2><p> ip-array is a command generator for netfilter (currently only iptables), tc, sysctl
             and kernel module configuration. </p><p> It is written in bash. Bash version 3.1 or higher is required. </p><p> Basic configuration is done via shell style configuration files. Rules are defined
             using a simple XML syntax. The XML configuration files get converted to bash scripts,
-            which are read at runtime. </p></div><div class="refsect1" lang="en"><a name="d0e76"></a><h2>Parameters</h2><p> If the first parameter is omitted, usage instructions are printed. Only one parameter
+            which are read at runtime. A bash completion compspec ships with the package.</p></div><div class="refsect1" lang="en"><a name="d0e76"></a><h2>Parameters</h2><p> If the first parameter is omitted, usage instructions are printed. Only one parameter
             is allowed - but required - for ip-array to take any action. </p><p>These parameters control the 'mode' IP-Array runs on.</p><div class="itemizedlist"><ul type="disc"><li><p>start</p><p>All network connections are forbidden (see lockdown mode below) until all
                     configuration has been read. Module probing (if configured) is done first. After
                     all commands are compiled, they are applied at once. An iptables rule listing is
@@ -114,7 +114,7 @@
         </p></div><div class="refsect1" lang="en"><a name="d0e557"></a><h2>Files</h2><p>
             <code class="filename">/usr/bin/ip-array</code>
         </p></div><div class="refsect1" lang="en"><a name="d0e565"></a><h2>See also</h2><p>
-            <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>,, <span class="citerefentry"><span class="refentrytitle">ip-array_sysctl_rules</span>(5)</span> <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
+            <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_sysctl_rules</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
         </p><p>
             <span class="citerefentry"><span class="refentrytitle">iptables</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-save</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-restore</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-htb</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-sfq</span>(8)</span>
         </p></div></div></body></html>

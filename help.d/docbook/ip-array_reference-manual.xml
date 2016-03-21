@@ -2,7 +2,7 @@
 <?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbookxi.rng" type="xml"?>
 <book xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude"
   xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
-  <info version="1.1"><title>IP-Array 1.2.0 Reference Manual</title><author>
+  <info version="1.1"><title>IP-Array 1.2.1 Reference Manual</title><author>
       <personname><firstname>Mart Frauenlob aka AllKind</firstname><surname/></personname>
       <affiliation>
         <orgname>AllKind</orgname>
@@ -20,7 +20,7 @@
     <section xml:id="about_doc">
       <title>About this document</title>
       <para>This document is the <emphasis role="bold">reference manual</emphasis> for <emphasis
-          role="bold">IP-Array version 1.2.0</emphasis>.</para>
+          role="bold">IP-Array version 1.2.1</emphasis>.</para>
       <para>It should provide all the information necessary to configure and use IP-Array.</para>
     </section>
     <section xml:id="about_ip-array">
@@ -334,8 +334,8 @@
           <listitem>
             <para>Saving restore rulesets / commands / system state.</para>
             <para>There are various ways available to save the generated rulesets and or commands
-              selectivly (iptables, ipset, tc, modprobe, sysctl) or all at once. The saved files may
-              be used to restore the configured system state.</para>
+              selectively (iptables, ipset, tc, modprobe, sysctl) or all at once. The saved files
+              may be used to restore the configured system state.</para>
           </listitem>
           <listitem>
             <para>Different levels of IP-Array's output verbosity to the screen and or syslog can be
@@ -361,6 +361,9 @@
           <listitem>
             <para>Automatic restoring of the previous ruleset on error when applying the new
               configuration.</para>
+          </listitem>
+          <listitem>
+            <para>Bash completion <emphasis role="underline">compspec</emphasis> is included.</para>
           </listitem>
         </orderedlist>
       </section>
@@ -738,7 +741,7 @@
                 <term><varname>DEFAULTS_FILE</varname></term>
                 <listitem>
                   <para>Mandatory: no - defaults to
-                    <filename>/etc/default/ip-array</filename>.</para>
+                      <filename>/etc/ip-array/ip-array_defaults.conf</filename>.</para>
                   <para>Allowed values: A valid path to the defaults file (i.e:
                       <filename>/etc/default/ip-array</filename>).</para>
                   <para>Purpose: The defaults file holds startup and globally used variables.</para>
@@ -800,7 +803,7 @@
           </para>
         </section>
         <section xml:id="conf_file_defaults">
-          <title>Defaults (defaults.conf)</title>
+          <title>Defaults (ip-array_defaults.conf)</title>
           <para>The defaults file contains startup and globally used variables.</para>
           <important>
             <para>The location of the defaults file is specified in the IP-Array <link
@@ -3230,9 +3233,48 @@ or
     &lt;/ipv4>
 &lt;/net></programlisting>
         </para>
+        <para>or even shorter as attribute if only this single setting is used:</para>
+        <para>
+          <programlisting>&lt;net>
+    &lt;ipv4 ip_forward="1"/>
+&lt;/net></programlisting>
+        </para>
         <para>You can mix both ways as you wish. To see all the available types of your local
           system, run either <command>sysctl -a</command> or <command>ip-array
             compat-check</command>.</para>
+        <para><emphasis role="bold">Shell variables</emphasis> are valid as tag names inside sysctl
+          rules. The main purpose of this feature is to allow generic configuration of values that
+          may change system depending. i.e. the interface names in
+            <code>net.ipv4.conf.$INTERFACE_NAME</code>. The <emphasis role="bold">variable must not
+            be quoted!</emphasis> You can either write them with or without the curly braces:
+            <code>&lt;$VARIABLE></code> or <code>&lt;${VARIABLE}></code>.</para>
+        <para>Now if you define you interface name variables inside the i.e. alias.conf
+          configuration file, you can use them inside your sysctl rule files. And every time an
+          interface changes, all you need to do, is to modify the variable and re-parse the sysctl
+          rule files.</para>
+        <para>Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file
+          you write:</para>
+        <para>
+          <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF>
+                &lt;accept_redirects> 0 &lt;/accept_redirects>
+            &lt;/$EXT_IF>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para>or as attribute (in the short form):</para>
+        <para>
+          <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF accept_redirects="0"/>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
         <para>XML style comments are valid inside sysctl rule files. Public functions etc. are
           not.</para>
         <para>In interactive mode, only the net.* (also suppressing ipv6.*) settings will be

@@ -23,7 +23,40 @@
     &lt;ipv4 ip_forward="1"&gt;
     &lt;/ipv4&gt;
 &lt;/net&gt;</pre><p>
+        </p><p>or even shorter as attribute if only this single setting is used:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4 ip_forward="1"/&gt;
+&lt;/net&gt;</pre><p>
         </p><p>You can mix both ways as you wish. To see all the available types of your local system,
             run either <span class="command"><strong>sysctl -a</strong></span> or <span class="command"><strong>ip-array
-            compat-check</strong></span>.</p></div><div class="refsect1" lang="en"><a name="d0e112"></a><h2>See also</h2><p>
+            compat-check</strong></span>.</p><p><span class="bold"><strong>Shell variables</strong></span> are valid as tag names inside
+            sysctl rules. The main purpose of this feature is to allow generic configuration of
+            values that may change system depending. i.e. the interface names in
+                <code class="code">net.ipv4.conf.$INTERFACE_NAME</code>. The <span class="bold"><strong>variable must
+                not be quoted!</strong></span> You can either write them with or without the curly
+            braces: <code class="code">&lt;$VARIABLE&gt;</code> or <code class="code">&lt;${VARIABLE}&gt;</code>.</p><p>Now if you define you interface name variables inside the i.e. alias.conf configuration
+            file, you can use them inside your sysctl rule files. And every time an interface
+            changes, all you need to do, is to modify the variable and re-parse the sysctl rule
+            files.</p><p>Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file you
+            write:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF&gt;
+                &lt;accept_redirects&gt; 0 &lt;/accept_redirects&gt;
+            &lt;/$EXT_IF&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or as attribute (in the short form):</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF accept_redirects="0"/&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</p><p>In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+            listed.</p></div><div class="refsect1" lang="en"><a name="d0e155"></a><h2>See also</h2><p>
             <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">sysctl</span>(8)</span></p></div></div></body></html>

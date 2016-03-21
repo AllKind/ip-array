@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.1.1</productnumber>
+        <productnumber>1.2.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array</refentrytitle>
         <manvolnum>8</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.2.0</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.2.1</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array</refdescriptor>
@@ -51,7 +51,7 @@
         <para> It is written in bash. Bash version 3.1 or higher is required. </para>
         <para> Basic configuration is done via shell style configuration files. Rules are defined
             using a simple XML syntax. The XML configuration files get converted to bash scripts,
-            which are read at runtime. </para>
+            which are read at runtime. A bash completion compspec ships with the package.</para>
     </refsect1>
     <refsect1>
         <title>Parameters</title>
@@ -513,10 +513,10 @@
             </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_rulefiles</refentrytitle>
                 <manvolnum>5</manvolnum>
-            </citerefentry>,, <citerefentry>
+            </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_sysctl_rules</refentrytitle>
                 <manvolnum>5</manvolnum>
-            </citerefentry> <citerefentry>
+            </citerefentry>, <citerefentry>
                 <refentrytitle>ip-array_templates</refentrytitle>
                 <manvolnum>5</manvolnum>
             </citerefentry>

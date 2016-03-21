@@ -15,20 +15,20 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.1.1</productnumber>
+        <productnumber>1.2.1</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array_defaults.conf</refentrytitle>
         <manvolnum>8</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.2.0</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.2.1</refmiscinfo>
     </refmeta>
     <refnamediv>
-        <refdescriptor>ip-array defaults.conf</refdescriptor>
-        <refname>ip-array defaults.conf</refname>
+        <refdescriptor>ip-array_defaults.conf</refdescriptor>
+        <refname>ip-array_defaults.conf</refname>
         <refpurpose>Configuration of ip-array default settings</refpurpose>
     </refnamediv>
     <refsynopsisdiv>
-        <synopsis>/etc/ip-array/defaults/defaults.conf</synopsis>
+        <synopsis>/etc/ip-array/ip-array_defaults.conf</synopsis>
     </refsynopsisdiv>
     <refsect1>
         <title>Description</title>
