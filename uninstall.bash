@@ -121,7 +121,7 @@ done
 # check for needed programs
 for f in rm rmdir; do
 	command -v $f &>/dev/null || {
-		printf "Unable to find the \`$f' program in \$PATH.\n"
+		printf "Unable to find the \`$f' program in \$PATH.\n" >&2
 		exit 1
 	}
 done
