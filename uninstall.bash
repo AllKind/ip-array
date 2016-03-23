@@ -109,7 +109,7 @@ done
 }
 
 # check if the variable are defined
-for f in LIBDIR DATAROOTDIR DOCDIR DATAROOTDIR SYSCONFDIR \
+for f in LIBDIR DATAROOTDIR DOCDIR SYSCONFDIR \
 	BINDIR DEFAULTSDIR BASHCOMPDIR MANDIR INITDIR
 do
 	if [[ -z ${!f} ]]; then
@@ -138,7 +138,7 @@ else
 fi
 
 # start deletion
-for f in LIBDIR DATAROOTDIR DOCDIR DATAROOTDIR SYSCONFDIR; do
+for f in LIBDIR DOCDIR DATAROOTDIR SYSCONFDIR; do
 	rem_dir "${!f}/$ME"
 done
 
