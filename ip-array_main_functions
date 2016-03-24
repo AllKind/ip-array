@@ -3852,7 +3852,6 @@ case "$1" in
 			fi
 		done
 		common_end
-		return 0
 	;;
 	LOCKDOWN)
 	# Lockdown mode.
