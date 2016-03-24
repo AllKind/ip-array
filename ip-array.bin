@@ -1711,7 +1711,7 @@ fi
 set_syslog_mode
 set_message_colors || bail_out $?
 precheck_config || bail_out $?
-[[ $MODE = @(INTERACTIVE|SHOW) ]] || fill_script_map
+[[ $MODE = SHOW ]] || fill_script_map
 check_kern_ver || bail_out $?
 
 # -------------------------------------------------------------------------
