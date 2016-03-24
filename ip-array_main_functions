@@ -2657,7 +2657,7 @@ check_prog "${TC}"
 set_tc_mode() { # if requested by startup parameter, enable traffic shaping
 if ((ENABLE_TC_SHAPING == 0)); then
 	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
-		log -W "Traffic shaping is disabled by configuration."
+		log -E "Traffic shaping is disabled by configuration."
 	fi
 else
 	check_tc || {
@@ -2665,6 +2665,11 @@ else
 		ENABLE_TC_SHAPING=0
 		raise_cfg_err_count
 	}
+	if ((ENABLE_MANGLE == 0)); then
+		log -E "mange table is disabled by configuration. Traffic Control commands will not be applied."
+		ENABLE_TC_SHAPING=0
+		raise_cfg_err_count
+	fi
 fi
 } # -------------------------------------------------------------------------
 
