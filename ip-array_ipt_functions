@@ -1384,6 +1384,7 @@ case "$str_mode" in
 		raise_cfg_err_count
 		return $ER_CONF
 esac
+log -w "Setting chain classification"
 JUMP_TREE[1]="$str_mode"
 case "$str_tables" in
 	none)
@@ -1393,13 +1394,21 @@ case "$str_tables" in
 		JUMP_TREE[2]=""
 	;;
 	""|all)
-		JUMP_TREE[2]="mangle nat filter"
-		((ENABLE_RAW)) && JUMP_TREE[2]+=" raw"
-		((ENABLE_RAWPOST)) && JUMP_TREE[2]+=" rawpost"
-		((ENABLE_SECURITY)) && JUMP_TREE[2]+=" security"
+		if [[ $MODE = SAVE-SHAPING-COMMANDS ]]; then
+			JUMP_TREE[2]="mangle"
+		else
+			JUMP_TREE[2]="mangle nat filter"
+			((ENABLE_RAW)) && JUMP_TREE[2]+=" raw"
+			((ENABLE_RAWPOST)) && JUMP_TREE[2]+=" rawpost"
+			((ENABLE_SECURITY)) && JUMP_TREE[2]+=" security"
+		fi
 	;;
 	*)
 		for str_tbl in $str_tables; do
+			if [[ $MODE = SAVE-SHAPING-COMMANDS && $str_tbl != mangle ]]; then
+				# val_table may fail, as we disabled all other tables for that mode
+				continue
+			fi
 			val_table "$str_tbl" || {
 				log -i "$str_tables" 'JUMP_TREE'
 				raise_cfg_err_count

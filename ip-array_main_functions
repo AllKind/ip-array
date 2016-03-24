@@ -4077,6 +4077,7 @@ case "$1" in
 	;;
 	SAVE-SHAPING-COMMANDS)
 	# iptables mangle table and tc commands are saved to file.
+		log -I "Disabling all but the mangle table."
 		ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
 		set_placeholder || return
 		set_global_log_params || return
