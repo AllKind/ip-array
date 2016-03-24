@@ -1715,14 +1715,14 @@ fi
 get_sysctl_val() { # retrieve a sysctl value
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i x
-local str_search="$1" sname n val
+local str_search="$1"
 if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local system
-	while read sname n val; do
-		if [[ $sname = $str_search ]]; then
-			printf "%s\n" "$val"
-			return 0
-		fi
-	done < <(dn2 run_sctl -a)
+	dn2 run_sctl -n "$str_search" || {
+		log -f "retrieving sysctl value for \`$str_search' from local system."
+		raise_gen_err_count
+		return $ER_FAIL
+	}
+	return 0
 else
 	for x in ${!SYSCTL_CMD_ARRAY[@]}; do
 		if [[ ${SYSCTL_CMD_ARRAY[x]%%=*} = $str_search ]]; then
