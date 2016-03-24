@@ -3759,7 +3759,7 @@ case "$1" in
 	;;
 	INTERACTIVE)
 		if ! [[ -t 1 ]]; then # check if output is a terminal
-			err_msg "Output is not a terminal. Interactive mode requires a terminal."
+			log -E "Output is not a terminal. Interactive mode requires a terminal."
 			return $ER_FAIL
 		fi
 		if ! [[ $DIALOG_PROG ]]; then # see if and what dialog prog we have
