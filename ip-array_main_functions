@@ -3628,8 +3628,8 @@ compatibility_check || return
 common_start() { # Common start procedure
 check_sys_files || return
 start_msg
-load_pro_epilog_scripts 'prolog'
 load_configs || return
+load_pro_epilog_scripts 'prolog'
 fill_proto_svc_arrays || return
 } # -------------------------------------------------------------------------
 
@@ -3664,8 +3664,8 @@ join_template_names || return
 
 common_stop() { # Common stop procedure
 start_msg
-load_pro_epilog_scripts 'prolog'
 load_configs || return
+load_pro_epilog_scripts 'prolog'
 handle_network_data || return
 } # -------------------------------------------------------------------------
 
@@ -3697,10 +3697,10 @@ case "$1" in
 	# SAVE-COMMANDS: modprobe, proc, iptables and tc commands are saved to a file
 	# START: lockdown mode (except (if configured) admin connection + locahost traffic)
 	#  until all rules are generated and applied at the end
-		set_placeholder || return
-		set_global_log_params || return
 		[[ $MODE = SAVE-COMMANDS ]] && set_rulesetfile
 		common_start || return
+		set_placeholder || return
+		set_global_log_params || return
 		if [[ $MODE = START ]] && ((EXEC_COMMANDS)); then
 			set_default_policies_immediate || return
 			flushdel_tables_immediate || return
@@ -3725,8 +3725,8 @@ case "$1" in
 	COMPAT_CHECK)
 	# just perform compatibility check
 		start_msg
-		load_pro_epilog_scripts 'prolog'
 		load_configs || return
+		load_pro_epilog_scripts 'prolog'
 		module_handling || return
 		compatibility_check || return
 		for rvar in raw rawpost security; do
@@ -3748,8 +3748,8 @@ case "$1" in
 	DIFF)
 	# run a diff on previously saved ruleset listings
 		start_msg
-		load_pro_epilog_scripts 'prolog'
 		load_configs || return
+		load_pro_epilog_scripts 'prolog'
 		check_raw_table
 		check_rawpost_table
 		check_security_table
@@ -3815,6 +3815,7 @@ case "$1" in
 			return $ER_FAIL
 		fi
 		start_msg
+		load_configs || return
 		load_pro_epilog_scripts 'prolog'
 		# retrieve and set window measures
 		if (( IACTIVE_WINDOW_HEIGHT == 0 )) && dn command -v tput; then
@@ -3889,9 +3890,9 @@ case "$1" in
 	# NAT is preserved.
 	# sysctl configuration is not touched
 	# Traffic shaping is removed
+		common_start || return
 		set_placeholder || return
 		set_global_log_params || return
-		common_start || return
 		minimal_run || return
 		set_tc_mode
 		set_chain_classification || return
@@ -3916,8 +3917,8 @@ case "$1" in
 	PARSE-XML)
 	# parse xml data files and compile to bash scripts
 		start_msg
-		load_pro_epilog_scripts 'prolog'
 		load_configs || return
+		load_pro_epilog_scripts 'prolog'
 		compatibility_check || return
 		if ((PARSE_TEMPLATES == 1)); then
 			if ((${#PARSE_TEMPLATES[@]} > 1)); then
@@ -3986,6 +3987,7 @@ case "$1" in
 		((EXEC_COMMANDS)) || \
 			log -W "\`RESTORE_ON_START' is enabled, dry-run mode is not valid with this setting and will be ignored"
 		EXEC_COMMANDS=1
+		load_configs || return
 		load_pro_epilog_scripts 'prolog'
 		rvar="${SAVE_DIR}/${KNOWN_GOOD_RULESET}"
 		if [[ -r $rvar ]]; then
@@ -4002,6 +4004,7 @@ case "$1" in
 	;;
 	RESTORE)
 		start_msg
+		load_configs || return
 		if [[ $cmdline_mod_file ]]; then
 			modules_restore "$cmdline_mod_file" || raise_gen_err_count
 		fi
@@ -4026,10 +4029,10 @@ case "$1" in
 	;;
 	SAVE-IPT-COMMANDS)
 	# iptables commands are saved to file.
-		set_placeholder || return
-		set_global_log_params || return
 		set_rulesetfile || return
 		common_start || return
+		set_placeholder || return
+		set_global_log_params || return
 		minimal_run || return
 		ipt_mode_run || return
 		all_chains_creation || return
@@ -4044,8 +4047,8 @@ case "$1" in
 	# modprobe commands are saved to file.
 		set_rulesetfile || return
 		start_msg
-		load_pro_epilog_scripts 'prolog'
 		load_configs || return
+		load_pro_epilog_scripts 'prolog'
 		module_handling || return
 		apply_rules || return
 		common_end
@@ -4054,19 +4057,18 @@ case "$1" in
 	# sysctl commands are saved to file.
 		set_rulesetfile || return
 		start_msg
-		load_pro_epilog_scripts 'prolog'
 		load_configs || return
+		load_pro_epilog_scripts 'prolog'
 		set_sysctl || return
 		apply_rules || return
 		common_end
 	;;
 	SAVE-TC-COMMANDS)
 	# tc commands are saved to file.
-		set_placeholder || return
-		set_global_log_params || return
 		set_rulesetfile || return
-		set_tc_mode
 		common_start || return
+		set_placeholder || return
+		set_tc_mode
 		handle_network_data || return
 		load_tc_ruleblocks || return	
 		join_ruleblock_names || return
@@ -4077,13 +4079,13 @@ case "$1" in
 	;;
 	SAVE-SHAPING-COMMANDS)
 	# iptables mangle table and tc commands are saved to file.
-		log -I "Disabling all but the mangle table."
-		ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
+		set_rulesetfile || return
+		common_start || return
 		set_placeholder || return
 		set_global_log_params || return
-		set_rulesetfile || return
+		log -I "Disabling all but the mangle table."
+		ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
 		set_tc_mode
-		common_start || return
 		set_chain_classification || return
 		tc_mode_run || return
 		load_tc_ruleblocks || return
@@ -4340,10 +4342,10 @@ case "$1" in
 	# Start traffic shaping only
 	# sysctl configuration is not touched
 	# mangle table is reloaded
+		common_start || return
 		set_placeholder || return
 		set_global_log_params || return
 		set_tc_mode
-		common_start || return
 		tc_mode_run || return
 		set_chain_classification || return
 		load_mangle_ruleblocks || return
