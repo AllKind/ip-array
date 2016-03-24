@@ -3804,6 +3804,10 @@ case "$1" in
 				return $ER_CONF
 			fi
 		fi
+		if [[ $DIALOG_PROG != *@(dialog|whiptail) ]]; then
+			log -f "retrieving type of dialog program. Was looking for \`*dialog' or \`*whiptail' in \`DIALOG_PROG' variable."
+			return $ER_FAIL
+		fi
 		start_msg
 		load_pro_epilog_scripts 'prolog'
 		if (( IACTIVE_WINDOW_HEIGHT == 0 )) && dn command -v tput; then
@@ -3814,10 +3818,6 @@ case "$1" in
 		fi
 		if (( IACTIVE_LIST_HEIGHT == 0 )) && dn command -v tput; then
 			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 12 ))
-		fi
-		if [[ $DIALOG_PROG != *@(dialog|whiptail) ]]; then
-			log -f "retrieving type of dialog program. Was looking for \`*dialog' or \`*whiptail' in \`DIALOG_PROG' variable."
-			return $ER_FAIL
 		fi
 		declare -i w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
 		str_opt=foobar # placeholder for first run
