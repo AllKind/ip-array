@@ -3758,6 +3758,7 @@ case "$1" in
 		common_end
 	;;
 	INTERACTIVE)
+	# interactive mode - dialog based wizard to create/edit config files
 		if ! [[ -t 1 ]]; then # check if output is a terminal
 			log -E "Output is not a terminal. Interactive mode requires a terminal."
 			return $ER_FAIL
@@ -3810,6 +3811,7 @@ case "$1" in
 		fi
 		start_msg
 		load_pro_epilog_scripts 'prolog'
+		# retrieve and set window measures
 		if (( IACTIVE_WINDOW_HEIGHT == 0 )) && dn command -v tput; then
 			IACTIVE_WINDOW_HEIGHT=$( tput lines )
 		fi
@@ -3820,6 +3822,7 @@ case "$1" in
 			IACTIVE_LIST_HEIGHT=$(( $( tput lines ) - 12 ))
 		fi
 		declare -i w_height=$IACTIVE_WINDOW_HEIGHT w_with=$IACTIVE_WINDOW_WITH l_height=$IACTIVE_LIST_HEIGHT
+		# present main menu
 		str_opt=foobar # placeholder for first run
 		while [[ $str_opt && $str_opt != +([[:blank:]]) ]]; do
 			local -a arr_title=( --title "$ME interactive mode" )
