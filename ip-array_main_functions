@@ -1708,7 +1708,6 @@ if dn run_sctl "${str%%=*}"; then
 else
 	log -E "sysctl option \`${str%%=*}' does not exist!"
 	raise_cfg_err_count
-	return 1
 fi
 } # -------------------------------------------------------------------------
 
@@ -1716,22 +1715,22 @@ get_sysctl_val() { # retrieve a sysctl value
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
 local -i x
 local str_search="$1"
-if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local system
-	dn2 run_sctl -n "$str_search" || {
-		log -f "retrieving sysctl value for \`$str_search' from local system."
-		raise_gen_err_count
-		return $ER_FAIL
-	}
-	return 0
-else
-	for x in ${!SYSCTL_CMD_ARRAY[@]}; do
-		if [[ ${SYSCTL_CMD_ARRAY[x]%%=*} = $str_search ]]; then
-			printf "%s\n" "${SYSCTL_CMD_ARRAY[x]#*=}"
-			return 0
-		fi
-	done
-fi
-return 1
+#if ((NO_SYSCTL)); then # if --no-sysctl is used, query values from the local system
+#	dn2 run_sctl -n "$str_search" || {
+#		log -f "retrieving sysctl value for \`$str_search' from local system."
+#		raise_gen_err_count
+#		return $ER_FAIL
+#	}
+#	return 0
+#else
+for x in ${!SYSCTL_CMD_ARRAY[@]}; do
+	if [[ ${SYSCTL_CMD_ARRAY[x]%%=*} = $str_search ]]; then
+		printf "%s\n" "${SYSCTL_CMD_ARRAY[x]#*=}"
+		return 0
+	fi
+done
+#fi
+#return 1
 } # -------------------------------------------------------------------------}
 
 restore_sysctl_state() { # try to restore initial (remembered) sysctl settings
@@ -2658,6 +2657,7 @@ set_tc_mode() { # if requested by startup parameter, enable traffic shaping
 if ((ENABLE_TC_SHAPING == 0)); then
 	if [[ $MODE = @(TC-START|TC-STOP|SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS) ]]; then
 		log -E "Traffic shaping is disabled by configuration."
+		raise_cfg_err_count
 	fi
 else
 	check_tc || {
@@ -2743,10 +2743,15 @@ done
 } # -------------------------------------------------------------------------
 
 set_sysctl() { # Set proc stuff
-((NO_SYSCTL == 1)) && return 0
-log -T "Setting sysctl configuration"
-calc_conntrack_max
-load_sysctl_rules || return
+#((NO_SYSCTL == 1)) && return 0
+if ((NO_SYSCTL)); then
+	log -N "Loading sysctl configuration, but will not apply it."
+	load_sysctl_rules || return
+else
+	log -T "Setting sysctl configuration"
+	calc_conntrack_max
+	load_sysctl_rules || return
+fi
 } # -------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------
@@ -3198,6 +3203,10 @@ local -i work_arr_sum i
 	log -u 'CMD_NAMES_ARRAY'
 	return 1
 }
+if [[ $MODE = @(SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]] || ((NO_SYSCTL)); then
+	# in these modes we query sysctl values, but we do not apply/save them
+	unset SYSCTL_CMD_ARRAY
+fi
 for str_arr_name in $(show_array_column CMD_NAMES_ARRAY); do # check if there are any commands in 'queue' at all
 	work_arr_sum=$((work_arr_sum + $(arr_members_sum $str_arr_name)))
 done
@@ -4035,6 +4044,8 @@ case "$1" in
 		set_global_log_params || return
 		minimal_run || return
 		ipt_mode_run || return
+		log -N "Loading sysctl configuration, but will not apply it."
+		load_sysctl_rules || return
 		all_chains_creation || return
 		load_all_ipt_rulefiles || return
 		create_jump_tree 'jumps' || return
@@ -4088,6 +4099,8 @@ case "$1" in
 		set_tc_mode
 		set_chain_classification || return
 		tc_mode_run || return
+		log -N "Loading sysctl configuration, but will not apply it."
+		load_sysctl_rules || return
 		load_tc_ruleblocks || return
 		load_tc_mangle_ruleblocks || return
 		join_ruleblock_names || return

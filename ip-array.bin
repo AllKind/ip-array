@@ -1532,7 +1532,7 @@ case "$MAIN_ARG" in
 		fi
 		MODE='PARSE-XML'
 	;;
-	prepare-restore-on-start) # prepare quick-start. save iptables, modprobe, proc, tc commands
+	prepare-restore-on-start) # prepare quick-start. save iptables, modprobe, sysctl, tc commands
 		RULESETFILE="${cmdline_save_file:-$KNOWN_GOOD_RULESET}"
 		MODE='PREPARE_QUICKSTART'
 	;;
@@ -1560,7 +1560,6 @@ case "$MAIN_ARG" in
 	save-iptables-commands) # save iptables commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
 		MODE='SAVE-IPT-COMMANDS' EXEC_COMMANDS=0
-		NO_SYSCTL=1 # as we query sysctl values and the cmd array will be empty
 	;;
 	save-tc-commands) # save tc commands to file
 		[[ $cmdline_save_file ]] && RULESETFILE="$cmdline_save_file"
