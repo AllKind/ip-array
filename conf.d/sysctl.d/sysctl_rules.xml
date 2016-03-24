@@ -40,7 +40,7 @@
 	</ipv4>
 	<netfilter>
 		<nf_conntrack_acct> 0 </nf_conntrack_acct>
-		<nf_conntrack_events> 1 </nf_conntrack_events>
+		<nf_conntrack_events> 0 </nf_conntrack_events>
 		<nf_conntrack_helper> 1 </nf_conntrack_helper>
 		<nf_conntrack_icmp_timeout> 30 </nf_conntrack_icmp_timeout>
 		<nf_conntrack_log_invalid> 0 </nf_conntrack_log_invalid>
