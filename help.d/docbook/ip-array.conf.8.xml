@@ -15,12 +15,12 @@
             <contrib>Thanks go to the open source community.</contrib>
         </author>
         <productname>ip-array</productname>
-        <productnumber>1.2.1</productnumber>
+        <productnumber>1.2.2</productnumber>
     </info>
     <refmeta>
         <refentrytitle>ip-array.conf</refentrytitle>
         <manvolnum>8</manvolnum>
-        <refmiscinfo class="manual">ip-array 1.2.1</refmiscinfo>
+        <refmiscinfo class="manual">ip-array 1.2.2</refmiscinfo>
     </refmeta>
     <refnamediv>
         <refdescriptor>ip-array.conf</refdescriptor>
