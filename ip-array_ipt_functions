@@ -1084,7 +1084,7 @@ run_nfacct() {
 
 test_nfacct() { # create / delete an nfacct test object
 [[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
-if ((NO_IPT_COMPAT_CHECK == 0)); then
+if ((NO_IPT_COMPAT_CHECK)); then
 	GOT_NFACCT=1
 	return 0
 fi
@@ -1270,11 +1270,10 @@ readonly FINAL_RULE_MAP
 } # -------------------------------------------------------------------------
 
 read_nfacct_obj_map() { # fill NFACCT_OBJ_MAP array and create nfacct objects
-if [[ $NFACCT_OBJ_MAP && $NFACCT_OBJ_MAP != +([[:space:]]) ]]; then
+if [[ -z $NFACCT_OBJ_MAP || $NFACCT_OBJ_MAP = +([[:space:]]) ]]; then
 	GOT_NFACCT=0
 	return 0
  fi
-((GOT_NFACCT)) || return 0
 local -i idx
 log -w "Loading NFACCT_OBJ_MAP"
 fill_array 'NFACCT_OBJ_MAP'
@@ -3947,7 +3946,7 @@ MSG_LIST_CLUSTER[RULE_LIST_IDX]="$str_msg"
 } # -------------------------------------------------------------------------
 
 _process_nfacct() { # fill the nfacct match rulelist and msglist arrays
-RULELIST_NFACCT[RULE_LIST_IDX]="-m nfacct --nfacct-name ${arg_list_nfacct[ARG_LIST_IDX]} "
+RULELIST_NFACCT[RULE_LIST_IDX]="-m nfacct --nfacct-name \"${arg_list_nfacct[ARG_LIST_IDX]}\" "
 MSG_LIST_NFACCT[RULE_LIST_IDX]="nfacct=${arg_list_nfacct[ARG_LIST_IDX]} "
 } # -------------------------------------------------------------------------
 

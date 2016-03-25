@@ -3303,7 +3303,7 @@ case "$MODE" in # act according to runtime mode
 						fi
 					fi
 					if ((${#NFACCT_CMD_ARRAY[@]})); then
-						run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
+#						run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
 						for i in ${!NFACCT_CMD_ARRAY[@]}; do
 							eval set -- "${NFACCT_CMD_ARRAY[i]}"
 							run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
@@ -3354,7 +3354,7 @@ case "$MODE" in # act according to runtime mode
 					fi
 				fi
 				if ((${#NFACCT_CMD_ARRAY[@]})); then
-					run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
+#					run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
 					for i in ${!NFACCT_CMD_ARRAY[@]}; do
 						eval set -- "${NFACCT_CMD_ARRAY[i]}"
 						run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
