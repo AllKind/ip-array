@@ -1609,7 +1609,10 @@ iface_chains() {
 local iface oif str_chn
 local -a ARR_CLIST
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in $1 table"
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 for iface in ${NET_IFLIST}; do
 	case "$1" in
 		filter|security)
@@ -1664,7 +1667,10 @@ local str_tbl="$1" iface oif str_jmsg str_chn str_tgt
 local -i i idx
 local -a arr_jcmd
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 for iface in ${NET_IFLIST}; do
 	case "${str_tbl}" in
 		filter|security)
@@ -1739,7 +1745,10 @@ create_netname_chains() { # create traffic classification chains by netname or n
 local str_tbl="$1" str_net str_onet str_clist str_cilist str_chn str_net_iface str_onet_iface
 local -i multi_bound
 log -I "Creating ${JUMP_TREE[1]} jump tree chains in ${str_tbl} table"
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks first - logic differs from local networks
 	multi_bound=0
 	str_net_iface=$(get_net_iface ${str_net})
@@ -1914,7 +1923,10 @@ local str_param str_chn str_tgt str_i str_p str_jmsg str_if_done_list
 local -i i idx ridx multi_bound
 local -a arr_stage1 arr_stage2 arr_stage3 arr_stage4 arr_stage5
 log -I "Creating ${JUMP_TREE[1]} jump tree in ${str_tbl} table"
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 for str_net in ${EXT_NETNAME_LIST}; do # first handle external networks
 	multi_bound=0
 	str_net_iface=$(get_net_iface $str_net) str_netaddr=$(get_net_addr $str_net)
@@ -8775,7 +8787,10 @@ local TEMPLATE_BUILTIN_GLOBAL_INVALID_CHAIN=(
 local -a RULEBLOCK_BUILTIN_GLOBAL_INVALID_CHAIN
 if ((LOG_INVALID && BLOCK_INVALID)); then
 	log -e "Creating global INVALID state chain: ${BIC_GLOBAL_INVALID_STATE}"
-	local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+	local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+		raise_cfg_err_count
+		return 0
+	}
 	create_chain filter "${BIC_GLOBAL_INVALID_STATE}"
 	if ((sysc_val == 1)); then
 		str_chainlist="INPUT OUTPUT FORWARD"
@@ -8797,7 +8812,10 @@ log_invalid_state() { # log packets in INVALID state
 	log -w "Not logging packets in INVALID state"
 	return 0
 }
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 local str_chain str_chainlist str_lpfix="${LOG_PREFIX}"
 local TEMPLATE_BUILTIN_LOG_INVALID_STATE=(
 "table=filter"
@@ -8834,7 +8852,10 @@ drop_invalid_state() { # drop packets in INVALID state
 	log -w "Not dropping packets in INVALID state"
 	return 0
 }
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 local str_chain str_chainlist
 local TEMPLATE_BUILTIN_DROP_INVALID_STATE=(
 "table=filter"
@@ -8933,7 +8954,10 @@ jump_tree_on
 log_drop_illegal_tcp() {
 ((ENABLE_FILTER)) || return 0
 local c str_cl="INPUT OUTPUT"
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 ((sysc_val)) && str_cl+=" FORWARD"
 log_illegal_tcp
 drop_illegal_tcp
@@ -8947,7 +8971,10 @@ fi
 
 anti_spoof() { # Anti-Spoofing rules in raw table
 ((ENABLE_RAW && RAW_TABLE_PRESENT)) || return 0
-local -i rp_val=$(get_sysctl_val net.ipv4.conf.all.rp_filter) || return
+local -i rp_val=$(get_sysctl_val net.ipv4.conf.all.rp_filter) || {
+	raise_cfg_err_count
+	return 0
+}
 if ((rp_val != 0)); then
 	log -E "\`net.ipv4.conf.all.rp_filter' is set to: \`$rp_val' - Anti-Spoofing rules will not be created."
 	raise_cfg_err_count
@@ -9929,7 +9956,10 @@ if ((${KERN_VER[0]} == 3 && ${KERN_VER[1]} >= 5)); then
 elif ((${KERN_VER[0]} == 4)); then
 	kern_ok=1
 fi
-local sysc_val=$(get_sysctl_val net.netfilter.nf_conntrack_helper) || return
+local sysc_val=$(get_sysctl_val net.netfilter.nf_conntrack_helper) || {
+	raise_cfg_err_count
+	return 0
+}
 if ((RAW_TABLE_PRESENT && ct_exist && kern_ok)); then
 	if ((sysc_val)); then
 		use_ct=1
@@ -10170,7 +10200,10 @@ for rvar in ${IPSEC_IFLIST}; do
 		RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="OUTPUT,INPUT $RULE_SEP $rvar $str_iface_ip $RULE_SEP 50"
 	done < <(get_if_ipv4_data "$rvar" -i)
 done
-local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || return
+local -i sysc_val=$(get_sysctl_val net.ipv4.ip_forward) || {
+	raise_cfg_err_count
+	return 0
+}
 for rvar in ${IPSEC_INTERFACES}; do
 	RULEBLOCK_BUILTIN_IPSEC_JUMPS[${#RULEBLOCK_BUILTIN_IPSEC_JUMPS[@]}]="INPUT,OUTPUT $rvar"
 	if ((sysc_val == 1)); then

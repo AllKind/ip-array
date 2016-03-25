@@ -1730,8 +1730,7 @@ for x in ${!SYSCTL_CMD_ARRAY[@]}; do
 	fi
 done
 #fi
-log -F "retrieving sysctl value for: \`$str_search'. Key not found."
-raise_gen_err_count
+log -F "retrieving sysctl value for: \`$str_search'. Key not found in sysctl rules. Maybe you need to add it?"
 return $ER_FAIL
 } # -------------------------------------------------------------------------}
 
