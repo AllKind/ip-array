@@ -3277,6 +3277,10 @@ case "$MODE" in # act according to runtime mode
 		fi
 		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 			if [[ $GEN_FORMAT = ipt ]]; then
+				if [[ $MODE = @(TC-START|TC-STOP) ]]; then
+					log -w "Disabling all but mangle table." # otherwise we empty the tables
+					ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
+				fi
 				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
 				USE_COUNTERS=0 # no way worked out to add counters
 				if ((USE_IPSET)); then
