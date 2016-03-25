@@ -1730,7 +1730,9 @@ for x in ${!SYSCTL_CMD_ARRAY[@]}; do
 	fi
 done
 #fi
-#return 1
+log -F "retrieving sysctl value for: \`$str_search'. Key not found."
+raise_gen_err_count
+return $ER_FAIL
 } # -------------------------------------------------------------------------}
 
 restore_sysctl_state() { # try to restore initial (remembered) sysctl settings
