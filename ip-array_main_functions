@@ -3302,6 +3302,13 @@ case "$MODE" in # act according to runtime mode
 						   cmd_err_count ips "$IPSET -R"
 						fi
 					fi
+					if ((${#NFACCT_CMD_ARRAY[@]})); then
+						run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
+						for i in ${!NFACCT_CMD_ARRAY[@]}; do
+							eval set -- "${NFACCT_CMD_ARRAY[i]}"
+							run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
+						done
+					fi
 					RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
 					if iptsave_rulesets "$RULESETFILE" rules; then
 						ipt_restore "${RULESETFILE##*/}" || {
@@ -3346,10 +3353,13 @@ case "$MODE" in # act according to runtime mode
 						fi
 					fi
 				fi
-				for i in ${!NFACCT_CMD_ARRAY[@]}; do
-					eval set -- "${NFACCT_CMD_ARRAY[i]}"
-					run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
-				done
+				if ((${#NFACCT_CMD_ARRAY[@]})); then
+					run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
+					for i in ${!NFACCT_CMD_ARRAY[@]}; do
+						eval set -- "${NFACCT_CMD_ARRAY[i]}"
+						run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
+					done
+				fi
 				for i in ${!IPT_CMD_ARRAY[@]}; do
 					eval set -- "${IPT_CMD_ARRAY[i]}"
 					"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
