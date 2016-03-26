@@ -1177,7 +1177,7 @@ printf "%s\n" ${temp}
 } # -------------------------------------------------------------------------
 
 encodeaddr() { # convert an integer to dot quad format
-local addr=$1 
+local addr=$1
 local x y=$(($addr & 255))
 for x in 1 2 3 ; do
 	addr=$(($addr >> 8))
@@ -3202,7 +3202,7 @@ local str_arr_name
 local -i work_arr_sum i
 ((${#CMD_NAMES_ARRAY[@]})) || { # use array names from command names array
 	log -u 'CMD_NAMES_ARRAY'
-	return 1
+	return $ER_NODEF
 }
 if [[ $MODE = @(SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]] || ((NO_SYSCTL)); then
 	# in these modes we query sysctl values, but we do not apply/save them
@@ -3215,249 +3215,249 @@ if ! ((work_arr_sum)); then
 	log -W "Command arrays are empty. No rules to apply"
 	return 0
 fi
-case "$MODE" in # act according to runtime mode
-	SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-SYSCTL-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS)
-		log -T "Saving generated script to: $RULESETFILE"
-		# for every command array listed in CMD_NAMES_ARRAY show rule count
-		for i in ${!CMD_NAMES_ARRAY[@]}; do
-			set -- ${CMD_NAMES_ARRAY[i]}
-			str_arr_name=$1
-			shift 2
-			work_arr_sum=$(arr_members_sum $str_arr_name)
-			((work_arr_sum)) || continue
-			log -n "Saving $work_arr_sum $*"
-		done
+# commands saving modes
+if [[ $MODE = @(SAVE-COMMANDS|SAVE-IPT-COMMANDS|SAVE-MODPROBE-COMMANDS|SAVE-SYSCTL-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-TC-COMMANDS) ]]
+then
+	log -T "Saving generated script to: $RULESETFILE"
+	# for every command array listed in CMD_NAMES_ARRAY show rule count
+	for i in ${!CMD_NAMES_ARRAY[@]}; do
+		set -- ${CMD_NAMES_ARRAY[i]}
+		str_arr_name=$1
+		shift 2
+		work_arr_sum=$(arr_members_sum $str_arr_name)
+		((work_arr_sum)) || continue
+		log -n "Saving $work_arr_sum $*"
+	done
+	if ((USE_IPSET)); then
+		ipset_merge_arrays
+	fi
+	if ! ((EXEC_COMMANDS)); then
+		mutex_on || return # as in these modes we didn't turn on mutex
+	fi
+	save_rulesets "$RULESETFILE" || return
+	if ! ((EXEC_COMMANDS)); then
+		cleanup_lock
+	fi
+	return 0
+fi
+if ((EXEC_COMMANDS == 0)); then
+	log -T "Would apply generated commands"
+else
+	log -T "Applying generated commands"
+fi
+# for every command array listed in CMD_NAMES_ARRAY show rule count
+for i in ${!CMD_NAMES_ARRAY[@]}; do
+	set -- ${CMD_NAMES_ARRAY[i]}
+	str_arr_name=$1
+	shift 2
+	work_arr_sum=$(arr_members_sum $str_arr_name)
+	((work_arr_sum)) || continue
+	if ((EXEC_COMMANDS == 0)); then
+		log -n "Would apply $work_arr_sum $*"
+	else
+		log -n "Applying $work_arr_sum $*"
+	fi
+done
+# merge iptables and ipset command arrays
+if ((USE_IPSET)) && [[ $MODE != @(OPEN|TC-START|TC-STOP) ]]; then
+	ipset_merge_arrays
+fi
+for str_arr_name in IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
+	IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY
+do
+	append_array IPT_CMD_ARRAY $str_arr_name
+done
+if [[ $DEBUG_INFO ]]; then
+	for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY NFACCT_CMD_ARRAY TC_CMD_ARRAY SYSCTL_CMD_ARRAY; do
+		dbg_arr $str_arr_name
+	done
+fi
+if ! ((EXEC_COMMANDS)); then # do not apply rules in dry-run mode
+	return 0
+fi
+if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
+	if [[ $GEN_FORMAT = ipt ]]; then
+		if [[ $MODE = @(TC-START|TC-STOP) ]]; then
+			log -w "Disabling all but mangle table." # otherwise we empty the tables
+			ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
+		fi
+		RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
+		USE_COUNTERS=0 # no way worked out to add counters
 		if ((USE_IPSET)); then
-			ipset_merge_arrays
-		fi
-		if ! ((EXEC_COMMANDS)); then
-			mutex_on || return
-		fi
-		save_rulesets "$RULESETFILE" || return
-		if ! ((EXEC_COMMANDS)); then
-			cleanup_lock
-		fi
-	;;
-	*)
-		if ((EXEC_COMMANDS == 0)); then
-			log -T "Would apply generated commands"
-		else
-			log -T "Applying generated commands"
-		fi
-		# for every command array listed in CMD_NAMES_ARRAY show rule count
-		for i in ${!CMD_NAMES_ARRAY[@]}; do
-			set -- ${CMD_NAMES_ARRAY[i]}
-			str_arr_name=$1
-			shift 2
-			work_arr_sum=$(arr_members_sum $str_arr_name)
-			((work_arr_sum)) || continue
-			if ((EXEC_COMMANDS == 0)); then
-				log -n "Would apply $work_arr_sum $*"
+			if iptsave_rulesets "$RULESETFILE" policy; then
+				ipt_restore "${RULESETFILE##*/}" || {
+					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+					cmd_err_count ipt 'restoring ruleset in iptables-save format'
+					return $ER_FAIL
+				}
 			else
-				log -n "Applying $work_arr_sum $*"
-			fi
-		done
-		# merge iptables and ipset command arrays
-		if ((USE_IPSET)) && [[ $MODE != @(OPEN|TC-START|TC-STOP) ]]; then
-			ipset_merge_arrays
-		fi
-		rvar="IPT_POL_ARRAY IPT_FLUSH_ARRAY IPT_CCHAIN_ARRAY IPT_RAW_CMD_ARRAY IPT_MANGLE_CMD_ARRAY \
-		IPT_NAT_CMD_ARRAY IPT_FILTER_CMD_ARRAY IPT_SECURITY_CMD_ARRAY IPT_RAWPOST_CMD_ARRAY"
-		for str_arr_name in $rvar; do
-			append_array IPT_CMD_ARRAY $str_arr_name
-		done
-		if [[ $DEBUG_INFO ]]; then
-			for str_arr_name in IPT_CMD_ARRAY IPSET_CMD_ARRAY NFACCT_CMD_ARRAY TC_CMD_ARRAY SYSCTL_CMD_ARRAY; do
-				dbg_arr $str_arr_name
-			done
-		fi
-		if ! ((EXEC_COMMANDS)); then # do not apply rules in dry-run mode
-			return 0
-		fi
-		if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
-			if [[ $GEN_FORMAT = ipt ]]; then
-				if [[ $MODE = @(TC-START|TC-STOP) ]]; then
-					log -w "Disabling all but mangle table." # otherwise we empty the tables
-					ENABLE_FILTER=0 ENABLE_NAT=0 ENABLE_RAW=0 ENABLE_SECURITY=0 ENABLE_RAWPOST=0
-				fi
-				RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
-				USE_COUNTERS=0 # no way worked out to add counters
-				if ((USE_IPSET)); then
-					if iptsave_rulesets "$RULESETFILE" policy; then
-						ipt_restore "${RULESETFILE##*/}" || {
-							[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-							cmd_err_count ipt 'restoring ruleset in iptables-save format'
-							return $ER_FAIL
-						}
-					else
-						[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-						cmd_err_count misc 'saving ruleset in iptables-save format'
-						return $ER_FAIL
-					fi
-					if ((${#IPSET_CMD_ARRAY[@]})); then
-						if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
-						   log -N "ipset commands were successfully applied"
-						else
-						   cmd_err_count ips "$IPSET -R"
-						fi
-					fi
-					if ((${#NFACCT_CMD_ARRAY[@]})); then
-#						run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
-						for i in ${!NFACCT_CMD_ARRAY[@]}; do
-							eval set -- "${NFACCT_CMD_ARRAY[i]}"
-							run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
-						done
-					fi
-					RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
-					if iptsave_rulesets "$RULESETFILE" rules; then
-						ipt_restore "${RULESETFILE##*/}" || {
-							[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-							cmd_err_count ipt 'restoring ruleset in iptables-save format'
-							return $ER_FAIL
-						}
-					else
-						[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-						cmd_err_count misc 'saving ruleset in iptables-save format'
-						return $ER_FAIL
-					fi
-				else
-					if iptsave_rulesets "$RULESETFILE"; then
-						ipt_restore "${RULESETFILE##*/}" || {
-							[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-							cmd_err_count ipt 'restoring ruleset in iptables-save format'
-							return $ER_FAIL
-						}
-					else
-						[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-						cmd_err_count misc 'saving ruleset in iptables-save format'
-						return $ER_FAIL
-					fi
-				fi
 				[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
-			elif [[ $GEN_FORMAT = cmd ]]; then
-				if ((USE_IPSET)); then
-					for i in ${!IPT_POL_ARRAY[@]}; do
-						eval set -- "${IPT_POL_ARRAY[i]}"
-						"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
-					done
-					for i in ${!IPT_FLUSH_ARRAY[@]}; do
-						eval set -- "${IPT_FLUSH_ARRAY[i]}"
-						"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
-					done
-					if ((${#IPSET_CMD_ARRAY[@]})); then
-						if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
-						   log -N "ipset commands were successfully applied"
-						else
-						   cmd_err_count ips "$IPSET -R"
-						fi
-					fi
+				cmd_err_count misc 'saving ruleset in iptables-save format'
+				return $ER_FAIL
+			fi
+			if ((${#IPSET_CMD_ARRAY[@]})); then
+				if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
+				   log -N "ipset commands were successfully applied"
+				else
+				   cmd_err_count ips "$IPSET -R"
 				fi
-				if ((${#NFACCT_CMD_ARRAY[@]})); then
+			fi
+			if ((${#NFACCT_CMD_ARRAY[@]})); then
+#						run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
+				for i in ${!NFACCT_CMD_ARRAY[@]}; do
+					eval set -- "${NFACCT_CMD_ARRAY[i]}"
+					run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
+				done
+			fi
+			RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
+			if iptsave_rulesets "$RULESETFILE" rules; then
+				ipt_restore "${RULESETFILE##*/}" || {
+					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+					cmd_err_count ipt 'restoring ruleset in iptables-save format'
+					return $ER_FAIL
+				}
+			else
+				[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+				cmd_err_count misc 'saving ruleset in iptables-save format'
+				return $ER_FAIL
+			fi
+		else
+			if iptsave_rulesets "$RULESETFILE"; then
+				ipt_restore "${RULESETFILE##*/}" || {
+					[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+					cmd_err_count ipt 'restoring ruleset in iptables-save format'
+					return $ER_FAIL
+				}
+			else
+				[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+				cmd_err_count misc 'saving ruleset in iptables-save format'
+				return $ER_FAIL
+			fi
+		fi
+		[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
+	elif [[ $GEN_FORMAT = cmd ]]; then
+		if ((USE_IPSET)); then
+			for i in ${!IPT_POL_ARRAY[@]}; do
+				eval set -- "${IPT_POL_ARRAY[i]}"
+				"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
+			done
+			for i in ${!IPT_FLUSH_ARRAY[@]}; do
+				eval set -- "${IPT_FLUSH_ARRAY[i]}"
+				"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
+			done
+			if ((${#IPSET_CMD_ARRAY[@]})); then
+				if $IPSET -R < <(printf "%s\n" "${IPSET_CMD_ARRAY[@]}"); then
+				   log -N "ipset commands were successfully applied"
+				else
+				   cmd_err_count ips "$IPSET -R"
+				fi
+			fi
+		fi
+		if ((${#NFACCT_CMD_ARRAY[@]})); then
 #					run_nfacct flush || cmd_err_count ipt "$NFACCT flush"
-					for i in ${!NFACCT_CMD_ARRAY[@]}; do
-						eval set -- "${NFACCT_CMD_ARRAY[i]}"
-						run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
-					done
-				fi
-				for i in ${!IPT_CMD_ARRAY[@]}; do
-					eval set -- "${IPT_CMD_ARRAY[i]}"
-					"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
-				done
-				if ((ipt_err_count == 0)); then
-					log -N "iptables rules were successfully applied."
-				fi
-			else
-				log -U $FUNCNAME; return 1
-			fi
-			if ((REMOVE_EMPTY_CHAINS == 1)); then # delete empty chains
-				log -I "Removing empty chains"
-				((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_empty_chains 'raw'
-				((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_empty_chains 'rawpost'
-				((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_empty_chains 'mangle'
-				((ENABLE_NAT == 1))&& delete_empty_chains 'nat'
-				((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_empty_chains 'security'
-				((ENABLE_FILTER == 1)) && delete_empty_chains
-			fi
-			if ((REMOVE_UNREF_CHAINS == 1)); then # delete unreferenced chains
-				log -I "Removing chains with 0 references"
-				((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'raw'
-				((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'rawpost'
-				((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_unreferenced_chains 'mangle'
-				((ENABLE_NAT == 1)) && delete_unreferenced_chains 'nat'
-				((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'security'
-				((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
-			fi
-			if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
-				if [[ $MAIN_ARG != @(lockdown|stop|'test') ]] && ((TEST_MODE == 0)); then
-					log -I "Saving rule listings for later difference checks"
-					((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
-					((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && save_for_diff 'rawpost'
-					((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
-					((ENABLE_NAT == 1)) && save_for_diff 'nat'
-					((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security'
-					((ENABLE_FILTER == 1)) && save_for_diff 
-				fi
-			fi
-		fi
-		if ((${#TC_CMD_ARRAY[@]})); then # traffic control commands
-			for i in ${!TC_CMD_ARRAY[@]}; do
-				eval set -- "${TC_CMD_ARRAY[i]}"
-				"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
+			for i in ${!NFACCT_CMD_ARRAY[@]}; do
+				eval set -- "${NFACCT_CMD_ARRAY[i]}"
+				run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
 			done
-			if ((tc_err_count == 0)); then
-				log -N "tc rules were successfully applied."
-			fi
 		fi
-		if ((${#SYSCTL_CMD_ARRAY[@]})); then # sysctl settings
-			[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
-			for i in ${!SYSCTL_CMD_ARRAY[@]}; do
-				SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
-			done
-			if run_sctl -q -p - < <(printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}"); then
-				log -N "sysctl rules were successfully applied."
-			else
-				cmd_err_count sysctl "$SYSCTL -q -p - SYSCTL_CMD_ARRAY[@]"
-			fi
+		for i in ${!IPT_CMD_ARRAY[@]}; do
+			eval set -- "${IPT_CMD_ARRAY[i]}"
+			"$IPT" "$@" &>/dev/null || cmd_err_count ipt "$IPT $*"
+		done
+		if ((ipt_err_count == 0)); then
+			log -N "iptables rules were successfully applied."
 		fi
-		# save the memorized module and/or sysctl settings to be restored if we are in test mode
-		if ((TEST_MODE)); then
-			if ((${#SYSCTL_STATE_ARRAY[@]})); then
-				log -w "Creating sysctl restore file: \`${SAVE_DIR}/$SYSCTL_RESTORE_FILE'."
-				create_file "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
-				for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
-					printf '"%s" -q -w %s\n' "$SYSCTL" "${SYSCTL_STATE_ARRAY[i]}" >> "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
-				done
-			fi
-			if ((${#MOD_STATE_ARRAY[@]})); then
-				log -w "Creating modules restore file: \`${SAVE_DIR}/$MODULE_RESTORE_FILE'."
-				create_file "${SAVE_DIR}/$MODULE_RESTORE_FILE"
-				local unload_arr=()
-				for idx in ${!MOD_STATE_ARRAY[@]}; do
-					set -- ${MOD_STATE_ARRAY[idx]}
-					local module_state="$1" module_name="$2"
-					shift 2
-					case "$module_state" in
-						load)
-							printf '"$MODPROBE" "%s" %s\n' "$module_name" "$*" >> "${SAVE_DIR}/$MODULE_RESTORE_FILE"
-						;;
-						loaded) : ;;
-						unload)
-							local unload_arr[${#unload_arr[@]}]="$module_name"
-						;;
-						*) log -o "$module_state" $FUNCNAME
-							return 1
-						;;
-					esac
-				done
-				if ((${#unload_arr[@]})); then
-					printf '"$MODPROBE" -r %s\n' \
-						"$(for ((idx=$(last_arr_member unload_arr); idx>=0; --idx));do printf '%s ' ${unload_arr[idx]};done)" \
-						>> "${SAVE_DIR}/$MODULE_RESTORE_FILE"
-				fi
-			fi
+	else
+		log -U $FUNCNAME; return 1
+	fi
+	if ((REMOVE_EMPTY_CHAINS == 1)); then # delete empty chains
+		log -I "Removing empty chains"
+		((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_empty_chains 'raw'
+		((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_empty_chains 'rawpost'
+		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_empty_chains 'mangle'
+		((ENABLE_NAT == 1))&& delete_empty_chains 'nat'
+		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_empty_chains 'security'
+		((ENABLE_FILTER == 1)) && delete_empty_chains
+	fi
+	if ((REMOVE_UNREF_CHAINS == 1)); then # delete unreferenced chains
+		log -I "Removing chains with 0 references"
+		((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'raw'
+		((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'rawpost'
+		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_unreferenced_chains 'mangle'
+		((ENABLE_NAT == 1)) && delete_unreferenced_chains 'nat'
+		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'security'
+		((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
+	fi
+	if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
+		if [[ $MAIN_ARG != @(lockdown|stop|'test') ]] && ((TEST_MODE == 0)); then
+			log -I "Saving rule listings for later difference checks"
+			((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
+			((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && save_for_diff 'rawpost'
+			((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
+			((ENABLE_NAT == 1)) && save_for_diff 'nat'
+			((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security'
+			((ENABLE_FILTER == 1)) && save_for_diff 
 		fi
-	;;
-esac
+	fi
+fi
+if ((${#TC_CMD_ARRAY[@]})); then # traffic control commands
+	for i in ${!TC_CMD_ARRAY[@]}; do
+		eval set -- "${TC_CMD_ARRAY[i]}"
+		"${TC}" "$@" &>/dev/null || cmd_err_count tc "${TC} $*"
+	done
+	if ((tc_err_count == 0)); then
+		log -N "tc rules were successfully applied."
+	fi
+fi
+if ((${#SYSCTL_CMD_ARRAY[@]})); then # sysctl settings
+	for i in ${!SYSCTL_CMD_ARRAY[@]}; do
+		SYSCTL_STATE_ARRAY[${#SYSCTL_STATE_ARRAY[@]}]="$SYSCTL -n ${SYSCTL_CMD_ARRAY[i]%%=*}"
+	done
+	if run_sctl -q -p - < <(printf "%s\n" "${SYSCTL_CMD_ARRAY[@]}"); then
+		log -N "sysctl rules were successfully applied."
+	else
+		cmd_err_count sysctl "$SYSCTL -q -p - SYSCTL_CMD_ARRAY[@]"
+	fi
+fi
+# save the memorized module and/or sysctl settings to be restored if we are in test mode
+if ((TEST_MODE)); then
+	if ((${#SYSCTL_STATE_ARRAY[@]})); then
+		[[ $DEBUG_INFO ]] && dbg_arr "SYSCTL_STATE_ARRAY" || :
+		log -w "Creating sysctl restore file: \`${SAVE_DIR}/$SYSCTL_RESTORE_FILE'."
+		create_file "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
+		for idx in ${!SYSCTL_STATE_ARRAY[@]}; do
+			printf '"%s" -q -w %s\n' "$SYSCTL" "${SYSCTL_STATE_ARRAY[i]}" >> "${SAVE_DIR}/$SYSCTL_RESTORE_FILE"
+		done
+	fi
+	if ((${#MOD_STATE_ARRAY[@]})); then
+		[[ $DEBUG_INFO ]] && dbg_arr "MOD_STATE_ARRAY" || :
+		log -w "Creating modules restore file: \`${SAVE_DIR}/$MODULE_RESTORE_FILE'."
+		create_file "${SAVE_DIR}/$MODULE_RESTORE_FILE"
+		local unload_arr=()
+		for idx in ${!MOD_STATE_ARRAY[@]}; do
+			set -- ${MOD_STATE_ARRAY[idx]}
+			local module_state="$1" module_name="$2"
+			shift 2
+			case "$module_state" in
+				load)
+					printf '"$MODPROBE" "%s" %s\n' "$module_name" "$*" >> "${SAVE_DIR}/$MODULE_RESTORE_FILE"
+				;;
+				loaded) : ;;
+				unload)
+					local unload_arr[${#unload_arr[@]}]="$module_name"
+				;;
+				*) log -o "$module_state" $FUNCNAME
+					return 1
+				;;
+			esac
+		done
+		if ((${#unload_arr[@]})); then
+			printf '"$MODPROBE" -r %s\n' \
+				"$(for ((idx=$(last_arr_member unload_arr); idx>=0; --idx));do printf '%s ' ${unload_arr[idx]};done)" \
+				>> "${SAVE_DIR}/$MODULE_RESTORE_FILE"
+		fi
+	fi
+fi
 } # -------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------- #

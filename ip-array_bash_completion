@@ -58,7 +58,7 @@ compat-check interactive show version help )
 # core options - can always be used
 local -a arr_core_opt=( --debug --err-exit --base-dir --config-file --config-dir 
 --defaults-file --exe-dir --lib-dir --run-dir --color --shell --verbose 
---syslog-verbose --no-scripts )
+--syslog-verbose --no-scripts --set-option )
 
 # gather information about the command line
 if [[ ${words[1]} = @($(IFS='|' ;printf "%s\n" "${arr_par[*]}")) ]]; then
@@ -94,34 +94,33 @@ fi
 if [[ $str_act = @(start|restart|test) ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --dry-run --no-autosave --no-compat-check --no-diff
 		--no-iface-check --no-modprobe --no-sysctl --parse-xml --parse-ruleblocks
-		--parse-rulefiles --parse-templates --use-ipset '--set-option' --gen-format
-		--reload-time )
+		--parse-rulefiles --parse-templates --use-ipset --gen-format --reload-time )
 	if [[ $str_act = start ]]; then
 		arr_opt[${#arr_opt[@]}]="--restore-on-start"
 	fi
-	if [[ $str_act = @(start|stop) ]]; then
+	if [[ $str_act = @(start|restart) ]]; then
 		arr_opt[${#arr_opt[@]}]="--test"
 	fi
 elif [[ $str_act = stop ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --dry-run --no-iface-check --no-modprobe
-		--no-sysctl --use-ipset '--set-option' --gen-format )
+		--no-sysctl --use-ipset --gen-format --test)
 elif [[ $str_act = @(open|tc-start|tc-stop) ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --dry-run --no-autosave --no-compat-check
 		--no-diff --no-iface-check --parse-xml --parse-ruleblocks --parse-rulefiles
-		--parse-templates --use-ipset --test '--set-option' --gen-format --reload-time )
+		--parse-templates --use-ipset --test --gen-format --reload-time )
 elif [[ $str_act = dry-run ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --no-modprobe
 		--no-sysctl --parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates
-		--use-ipset '--set-option' --gen-format )
+		--use-ipset --gen-format )
 elif [[ $str_act = lockdown ]]; then
-	arr_opt=( "${arr_core_opt[@]}" --dry-run --no-compat-check '--set-option')
+	arr_opt=( "${arr_core_opt[@]}" --dry-run --no-compat-check --test)
 elif [[ $str_act = @(save|restore) ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --ipt-counters --save-file --save-ips-file )
 elif [[ $str_act = compat-check ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-modprobe --no-sysctl )
 elif [[ $str_act = parse-xml ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check
-		--parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset '--set-option' )
+		--parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset )
 elif [[ $str_act = prepare-restore-on-start ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --parse-xml
 		--parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset
@@ -135,15 +134,15 @@ elif [[ $str_act = save-tc-commands ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --parse-xml
 		--parse-ruleblocks --save-file )
 elif [[ $str_act = @(save-iptables-commands|save-shaping-commands) ]]; then
-	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --parse-xml
-		--parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset '--set-option'
+	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --no-modprobe
+		--parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset
 		--gen-format --save-file --save-ips-file )
 elif [[ $str_act = save-commands ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --no-modprobe 
 		--no-sysctl --parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates 
-		--use-ipset '--set-option' --gen-format --save-file --save-ips-file )
+		--use-ipset --gen-format --save-file --save-ips-file )
 elif [[ $str_act = show ]]; then
-	arr_opt=( "${arr_core_opt[@]}" --show-config '--set-option' )
+	arr_opt=( "${arr_core_opt[@]}" --show-config )
 elif [[ $str_act = @(diff-last-activated|interactive) ]]; then
 	arr_opt=( "${arr_core_opt[@]}" )
 elif [[ $str_act = @(help|version) ]]; then
