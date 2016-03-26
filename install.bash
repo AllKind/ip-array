@@ -267,7 +267,7 @@ if ! [[ $NOACT ]]; then
 	printf "Creating \`./${ME}-install.log' - Will need this for uninstallation!\n"
 	(set +C; printf '#!/usr/bin/env bash\n\n' > ./${ME}-install.log)
 	printf "# install arguments: %s\n\n" "${arr_args[*]}" >> ./${ME}-install.log
-	for var in BASHCOMPDIR BINDIR DATAROOTDIR DEFAULTSDIR DOCDIR INITDIR LIBDIR MANDIR SYSCONFDIR; do
+	for var in PREFIX BASHCOMPDIR BINDIR DATAROOTDIR DEFAULTSDIR DOCDIR INITDIR LIBDIR MANDIR SYSCONFDIR; do
 		declare -p "$var" >> ./${ME}-install.log
 	done
 fi

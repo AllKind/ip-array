@@ -167,5 +167,9 @@ do
 	rem_empty_dir "${!f}"
 done
 
+if [[ $PREFIX ]]; then
+	rem_empty_dir "$PREFIX"
+fi
+
 printf "Finished uninstall\n"
 
