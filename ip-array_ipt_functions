@@ -2502,10 +2502,10 @@ else
 	return 1
 fi
 for idx in $(seq $(last_arr_member cmd_arr) -1 0); do
-	eval "${cmd_arr[idx]}" &>/dev/null || cmd_err_count ipt "${cmd_arr[idx]}"
+	eval "${cmd_arr[idx]}" &>/dev/null || log -F "running: ${cmd_arr[idx]}"
 done
 for idx in ${!cmd_arr_ref[@]}; do
-	eval "${cmd_arr_ref[idx]}" &>/dev/null || cmd_err_count ipt "${cmd_arr_ref[idx]}"
+	eval "${cmd_arr_ref[idx]}" &>/dev/null || log -F "running: ${cmd_arr_ref[idx]}"
 done
 return 0
 } # -------------------------------------------------------------------------
@@ -2522,10 +2522,10 @@ while read c str_chain rest; do
 		if [[ ${rest} = "(0 references)" ]]; then
 			log -e "removing table=${str_tbl} chain=${str_chain}"
 			dn run_ipt -t ${str_tbl} -F "${str_chain}" || {
-				cmd_err_count ipt "${IPT} -t ${str_tbl} -F ${str_chain}"
+				log -F "running: ${IPT} -t ${str_tbl} -F ${str_chain}"
 			}
 			dn run_ipt -t ${str_tbl} -X "${str_chain}" || {
-				cmd_err_count ipt "${IPT} -t ${str_tbl} -X ${str_chain}"
+				log -F "running: ${IPT} -t ${str_tbl} -X ${str_chain}"
 			}
 		fi
 	fi
