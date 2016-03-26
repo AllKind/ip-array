@@ -285,7 +285,7 @@ if ((${#TC_FILTER[@]})); then
 		tc_add_filter -d $dev -p $parent -o $proto -r $prio -h $handle -m $dom -i $classid || cfg_err $strERR
 	done
 else
-	log -v 'TC_FILTER' 
+	log -v 'TC_FILTER'
 fi
 } # -------------------------------------------------------------------------
 
@@ -391,7 +391,7 @@ process_ipt_ruleblock TEMPLATE_BUILTIN_MARK_FWD_BULK RULEBLOCK_BUILTIN_MARK_FWD_
 
 traffic_shaping_marks() { # TRAFFIC SHAPING MARKS
 case "$ENABLE_TC_SHAPING" in
-	"") 
+	"")
 		log -u 'ENABLE_TC_SHAPING'
 		ENABLE_TC_SHAPING=0
 		return 0
@@ -434,7 +434,7 @@ done
 remove_qdiscs() { # Remove existing QDISCs
 ((ENABLE_TC_SHAPING == 1)) || return 0
 log -S "Removing qdiscs"
-case "$MODE" in 
+case "$MODE" in
 	(SAVE-TC-COMMANDS|SAVE-SHAPING-COMMANDS|SAVE-COMMANDS) : ;;
 	(*) rm_qdisc "$NET_IFLIST"
 esac

@@ -5307,7 +5307,7 @@ for pos_idx in ${!tmp_pos_par_val_array[@]}; do
 			for str in hashmode clustermac total-nodes local-node; do
 				if [[ $tmp_opt_var_value != *${str}:* ]]; then
 					log -E "Option \`$str' is mandatory with the \`$tmp_opt_var' descriptor."
-					return 1	   
+					return 1
 				fi
 			done
 			set -- $(split_val : ' ' "$tmp_opt_var_value")
@@ -7224,7 +7224,7 @@ for target_idx in ${!arg_list_target[@]}; do
 						fi
 					fi
 				fi
-			
+
 				if [[ ${arg_list_nat_opt[ARG_LIST_IDX]} = *port:?* ]]; then # if a nat port is defined
 					check_var_no_sep_silent "${arg_list_proto[ARG_LIST_IDX]}" || {
 						log -E "Protocol not defined, port specifications with $str_target are only valid with tcp or udp."
@@ -10290,7 +10290,7 @@ for idx in ${!FINAL_RULE_MAP[@]}; do
 	case "${str_action}" in
 		log)
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="LOG ${str_chain} ${str_limit}:burst:${str_burst} ${str_loglevel} ${LOG_PREFIX}${str_pol}${str_chain}: ${str_log_options}"
-		
+
 		;;
 		drop|reject)
 			RULEBLOCK_BUILTIN_FINAL_RULE[${#RULEBLOCK_BUILTIN_FINAL_RULE[@]}]="$(string_toupper ${str_action}) ${str_chain}"

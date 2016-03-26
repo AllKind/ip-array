@@ -1900,7 +1900,7 @@ for net_idx in ${!NET_INTERFACES[@]}; do
 			net_found=1
 			[[ $DEBUG_INFO ]] && dbg_arr NETDATA_ARRAY_"$netname"
 			break
-		}	
+		}
 	done < <(get_if_ipv4_data "$nif")
 
 	if ((net_found == 0)); then
@@ -2344,7 +2344,7 @@ for cfg_idx in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry 
 			fi
 		;;
 		print) # config entry should only contain:
-				# Printable characters: `[:alnum:]', `[:punct:]', and space. 
+				# Printable characters: `[:alnum:]', `[:punct:]', and space.
 				# + newline and tab
 			if [[ $var_content != +([[:print:]$'\n'$'\t']) ]]; then
 				if ((conf_mandatory == 1)); then
@@ -3386,7 +3386,7 @@ if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && delete_unreferenced_chains 'mangle'
 		((ENABLE_NAT == 1)) && delete_unreferenced_chains 'nat'
 		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && delete_unreferenced_chains 'security'
-		((ENABLE_FILTER == 1)) && delete_unreferenced_chains 
+		((ENABLE_FILTER == 1)) && delete_unreferenced_chains
 	fi
 	if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
 		if [[ $MAIN_ARG != @(lockdown|stop|'test') ]] && ((TEST_MODE == 0)); then
@@ -3396,7 +3396,7 @@ if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 			((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
 			((ENABLE_NAT == 1)) && save_for_diff 'nat'
 			((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security'
-			((ENABLE_FILTER == 1)) && save_for_diff 
+			((ENABLE_FILTER == 1)) && save_for_diff
 		fi
 	fi
 fi
@@ -3783,7 +3783,7 @@ case "$1" in
 		((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && diff_ruleset 'mangle'
 		((ENABLE_NAT == 1)) && diff_ruleset 'nat'
 		((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && diff_ruleset 'security'
-		((ENABLE_FILTER == 1)) && diff_ruleset 
+		((ENABLE_FILTER == 1)) && diff_ruleset
 		common_end
 	;;
 	INTERACTIVE)
@@ -4096,7 +4096,7 @@ case "$1" in
 		set_placeholder || return
 		set_tc_mode
 		handle_network_data || return
-		load_tc_ruleblocks || return	
+		load_tc_ruleblocks || return
 		join_ruleblock_names || return
 		remove_qdiscs
 		enable_traffic_shaping

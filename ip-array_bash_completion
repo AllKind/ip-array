@@ -56,8 +56,8 @@ save-sysctl-commands save-tc-commands save-shaping-commands parse-xml
 compat-check interactive show version help )
 
 # core options - can always be used
-local -a arr_core_opt=( --debug --err-exit --base-dir --config-file --config-dir 
---defaults-file --exe-dir --lib-dir --run-dir --color --shell --verbose 
+local -a arr_core_opt=( --debug --err-exit --base-dir --config-file --config-dir
+--defaults-file --exe-dir --lib-dir --run-dir --color --shell --verbose
 --syslog-verbose --no-scripts --set-option )
 
 # gather information about the command line
@@ -138,8 +138,8 @@ elif [[ $str_act = @(save-iptables-commands|save-shaping-commands) ]]; then
 		--parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates --use-ipset
 		--gen-format --save-file --save-ips-file )
 elif [[ $str_act = save-commands ]]; then
-	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --no-modprobe 
-		--no-sysctl --parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates 
+	arr_opt=( "${arr_core_opt[@]}" --no-compat-check --no-iface-check --no-modprobe
+		--no-sysctl --parse-xml --parse-ruleblocks --parse-rulefiles --parse-templates
 		--use-ipset --gen-format --save-file --save-ips-file )
 elif [[ $str_act = show ]]; then
 	arr_opt=( "${arr_core_opt[@]}" --show-config )

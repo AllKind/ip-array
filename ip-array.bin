@@ -63,7 +63,7 @@ trap "echo ERROR trap activated - exiting; enable exit; exit 114" ERR
 trap "echo Received SIGHUP signal - exiting; enable exit; exit 0" HUP
 trap "echo Received SIGINT signal - exiting; enable exit; exit 0" INT
 trap "echo Received SIGQUIT signal - exiting; enable exit; exit 0" QUIT
-trap "echo Received SIGSTOP signal - exiting; enable exit; exit 0" STOP 
+trap "echo Received SIGSTOP signal - exiting; enable exit; exit 0" STOP
 trap "echo Received SIGTERM signal - exiting; enable exit; exit 0" TERM
 
 # -------------------------------------------------------------------------
@@ -1202,7 +1202,7 @@ while (($#)); do
 		;;
 		-b|--base-dir) cmdline_base_dir="$opt_arg" ;; # custom base directory
 		-c|--config-file) cmdline_conf_file="$opt_arg" ;; # custom main config file
-		-C|--config-dir) cmdline_conf_dir="$opt_arg" ;; # custom main config directory 
+		-C|--config-dir) cmdline_conf_dir="$opt_arg" ;; # custom main config directory
 		-d|--defaults-file) cmdline_def_file="$opt_arg" ;; # custom defaults config file
 		-e|--exe-dir) cmdline_bin_dir="$opt_arg" ;; # custom executable directory
 		-l|--lib-dir) cmdline_lib_dir="$opt_arg" ;; # custom library directory
@@ -1294,7 +1294,7 @@ done
 # -------------------------------------------------------------------------
 
 DEFAULTS_FILE="${cmdline_def_file:-${DEFAULTS_FILE:-/etc/${me}/${me}_defaults.conf}}"
-if [[ -r $DEFAULTS_FILE ]]; then 
+if [[ -r $DEFAULTS_FILE ]]; then
 	verbose_msg "Loading defaults file: \`$DEFAULTS_FILE'."
 	if ((SYNTAX_CHECK)); then
 		check_syntax "$DEFAULTS_FILE" || bail_out $ER_LOAD

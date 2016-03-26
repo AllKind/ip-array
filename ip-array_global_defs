@@ -199,8 +199,8 @@ declare -ar IPARRAY_MODULES=(
 "0 ecn filter -m ecn --ecn-ip-ect 0"
 "0 quota filter -m quota --quota 666"
 "0 tcpmss filter -p tcp --syn -m tcpmss --mss 1500"
-"0 rpfilter mangle -m rpfilter" 
-"0 osf filter -p tcp -m osf --genre Linux" 
+"0 rpfilter mangle -m rpfilter"
+"0 osf filter -p tcp -m osf --genre Linux"
 "0 devgroup filter -m devgroup --src-group ndg0" # TODO: find an existing devgroup & support ndgconfig
 "0 sctp filter -p sctp -m sctp --dport 80"
 "0 dccp filter -p dccp -m dccp --dport 80"
