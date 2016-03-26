@@ -142,11 +142,16 @@ for f in LIBDIR DOCDIR DATAROOTDIR SYSCONFDIR; do
 	rem_dir "${!f}/$ME"
 done
 
-for f in BINDIR DEFAULTSDIR BASHCOMPDIR; do
+for f in BINDIR DEFAULTSDIR; do
 	rem_file "${!f}/$ME"
 done
 rem_file "${INITDIR}/$ME"
 rem_file "${INITDIR}/${ME}.init_pre_net_boot"
+if [[ $BASHCOMPDIR = \~ ]]; then
+	printf "bashcompdir is \`~'.\n\tRemember to manually remove completion from: \`%s'.\n" "~/.bash_completion"
+else
+	rem_file "${BASHCOMPDIR}/$ME"
+fi
 
 for f in "${MANDIR}"/man5/${ME}*.5 "${MANDIR}"/man8/${ME}*.8; do
 	rem_file "$f"

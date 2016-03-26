@@ -248,6 +248,7 @@ install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
 install_file -m 0755 "${ME}".init_pre_net_boot "${INITDIR}/${ME}.init_pre_net_boot"
 if [[ $BASHCOMPDIR = ~ ]]; then
+	printf "bashcompdir is \`~', adding completion to \`%s'.\n\tRemember to manually remove it on uninstall, or re-install.\n" "~/.bash_completion"
 	if ! [[ $NOACT ]]; then
 		command cat ip-array_bash_completion >> ~/.bash_completion
 	fi
