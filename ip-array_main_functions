@@ -3204,7 +3204,7 @@ local -i work_arr_sum i
 	log -u 'CMD_NAMES_ARRAY'
 	return $ER_NODEF
 }
-if [[ $MODE = @(SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]] || ((NO_SYSCTL)); then
+if [[ $MODE = @(OPEN|TC-START|TC-STOP|SAVE-IPT-COMMANDS|SAVE-SHAPING-COMMANDS) ]] || ((NO_SYSCTL)); then
 	# in these modes we query sysctl values, but we do not apply/save them
 	unset SYSCTL_CMD_ARRAY
 fi
@@ -3919,6 +3919,8 @@ case "$1" in
 		set_global_log_params || return
 		minimal_run || return
 		set_tc_mode
+		log -N "Loading sysctl configuration, but will not apply it."
+		load_sysctl_rules || return
 		set_chain_classification || return
 		load_ipt_base_templates || return
 		load_ipt_nat_templates || return
@@ -4368,7 +4370,6 @@ case "$1" in
 		flushdel_tables || return
 		policy_all_en_disable 'ACCEPT' || return
 		apply_rules || return
-#		((EXEC_COMMANDS && USE_IPSET)) && { ipset_flush; ipset_destroy; }
 		((NO_MODPROBE == 0)) && ((${#MODULES_TO_LOAD[@]})) && load_modules 'unload'
 		common_end
 	;;
@@ -4381,6 +4382,8 @@ case "$1" in
 		set_global_log_params || return
 		set_tc_mode
 		tc_mode_run || return
+		log -N "Loading sysctl configuration, but will not apply it."
+		load_sysctl_rules || return
 		set_chain_classification || return
 		load_mangle_ruleblocks || return
 		load_tc_mangle_ruleblocks || return
@@ -4408,6 +4411,8 @@ case "$1" in
 		set_global_log_params || return
 		compatibility_check || return
 		set_tc_mode
+		log -N "Loading sysctl configuration, but will not apply it."
+		load_sysctl_rules || return
 		set_chain_classification || return
 		load_ipt_base_templates || return
 		load_ipt_mangle_templates || return
