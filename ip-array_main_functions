@@ -3761,7 +3761,7 @@ case "$1" in
 		if ((NO_SYSCTL == 0)); then
 			pr_banner "Dumping locally available sysctl settings:"
 			while read sname n val; do
-				if [[ $sname = net.* ]]; then
+				if [[ $sname = net.* && $sname != net.ipv6.* ]]; then
 					printf "%s = %s\n" "$sname" "$val"
 				fi
 			done < <(dn2 run_sctl -a)
