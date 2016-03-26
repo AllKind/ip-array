@@ -1324,7 +1324,7 @@ while read -r; do
 	if [[ $MODE = START ]] && ((EXEC_COMMANDS)); then
 		run_nfacct del "$x" || {
 			log -f "deleting nfacct object \`$x'"
-			cmd_err_count ipt
+			cmd_err_count ipt "deleting nfacct object \`$x'"
 
 		}
 	else
@@ -2555,8 +2555,7 @@ local str_dfile="${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" tmp_dfile="${SAVE_DIR}/tmp
 }
 run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"$tmp_dfile" || {
 	log -F "saving $str_tbl table ruleset to: \`${tmp_dfile}'"
-	cmd_err_count ipt "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >$tmp_dfile"
-	return 0
+	return $ER_FAIL
 }
 if dn "$DIFF" "$tmp_dfile" "$str_dfile"; then
 	printf "%s\n %s\n" "Active iptables ruleset of $str_tbl table is the same as the one saved to:" "\`${str_dfile}'"
