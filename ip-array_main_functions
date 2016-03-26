@@ -4020,9 +4020,15 @@ case "$1" in
 				log -N "Sucessfully restored ruleset from: $rvar."
 			else
 				log -F "restoring ruleset from: \`$rvar'."
-				# TODO: ipt isn't the actually correct err category
-				cmd_err_count 'ipt' "$SHELL -- $rvar"
+				log -T "Applying fail condition lockdown rules"
+				fail_lockdown
+				bail_out $ER_NOEX
 			fi
+		else
+			log -F "loading known-good ruleset from: \`$rvar'!"
+			log -T "Applying fail condition lockdown rules"
+			fail_lockdown
+			bail_out $ER_NOEX
 		fi
 		common_end
 	;;
