@@ -2541,8 +2541,8 @@ save_for_diff() { # save output of iptables -nL, to be compared to the currently
 local str_tbl="${1:-filter}"
 log -w "${PF}saving $str_tbl"
 run_ipt -t $str_tbl "$IPT_RULE_LIST_PARAM" >"${SAVE_DIR}/${DIFF_FILE}_${str_tbl}" || {
-	cmd_err_count ipt "$IPT -t $str_tbl $IPT_RULE_LIST_PARAM >${SAVE_DIR}/${DIFF_FILE}_${str_tbl}"
-	return 0
+	log -F "Saving iptables rule listing for $str_tbl table to: \`${SAVE_DIR}/${DIFF_FILE}_${str_tbl}'"
+	return $ER_FAIL
 }
 } # -------------------------------------------------------------------------
 

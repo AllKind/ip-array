@@ -3391,12 +3391,12 @@ if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 	if ((NO_DIFF_SAVE == 0)); then # save ruleset for later difference checks
 		if [[ $MAIN_ARG != @(lockdown|stop|'test') ]] && ((TEST_MODE == 0)); then
 			log -I "Saving rule listings for later difference checks"
-			((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw'
-			((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && save_for_diff 'rawpost'
-			((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle'
-			((ENABLE_NAT == 1)) && save_for_diff 'nat'
-			((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security'
-			((ENABLE_FILTER == 1)) && save_for_diff
+			((ENABLE_RAW == 1 && RAW_TABLE_PRESENT == 1)) && save_for_diff 'raw' || :
+			((ENABLE_RAWPOST == 1 && RAWPOST_TABLE_PRESENT == 1)) && save_for_diff 'rawpost' || :
+			((ENABLE_MANGLE == 1 || ENABLE_TC_SHAPING == 1)) && save_for_diff 'mangle' || :
+			((ENABLE_NAT == 1)) && save_for_diff 'nat' || :
+			((ENABLE_SECURITY == 1 && SECURITY_TABLE_PRESENT == 1)) && save_for_diff 'security' || :
+			((ENABLE_FILTER == 1)) && save_for_diff || :
 		fi
 	fi
 fi
