@@ -4612,6 +4612,7 @@ while (($#)); do
 done
 if [[ $str_p && $str_addr ]]; then
 	str_addr="${str_addr}:$str_p"
+	str_opts+="$str_addr "
 elif [[ $str_p ]]; then
 	str_opts+="--to-ports $str_p "
 elif [[ $str_addr ]]; then
