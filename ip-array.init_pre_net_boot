@@ -44,7 +44,7 @@ PARAMS=(
    	--no-diff
    	--no-iface-check
    	--no-modprobe
-   	--no-proc
+    --no-sysctl
    	--no-scripts
 )
 
