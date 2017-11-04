@@ -109,7 +109,7 @@ done
 }
 
 # check if the variable are defined
-for f in LIBDIR DATAROOTDIR DOCDIR SYSCONFDIR \
+for f in LIBDIR DATAROOTDIR DOCDIR SYSCONFDIR SYSTEMDDIR \
 	BINDIR DEFAULTSDIR BASHCOMPDIR MANDIR INITDIR
 do
 	if [[ -z ${!f} ]]; then
@@ -147,6 +147,9 @@ for f in BINDIR DEFAULTSDIR; do
 done
 rem_file "${INITDIR}/$ME"
 rem_file "${INITDIR}/${ME}.init_pre_net_boot"
+rem_file "${SYSTEMDDIR}/system/${ME}.service"
+rem_file "${SYSTEMDDIR}/network/${ME}.init_pre_net_boot.service"
+
 if [[ $BASHCOMPDIR = \~ ]]; then
 	printf "bashcompdir is \`~'.\n\tRemember to manually remove completion from: \`%s'.\n" "~/.bash_completion"
 else

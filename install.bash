@@ -62,6 +62,7 @@ OWNER=
 OWNSH=
 PREFIX=
 SYSCONFDIR=
+SYSTEMDDIR=
 VERBOSE=
 
 arr_args=( "$@" )
@@ -89,6 +90,7 @@ Options:
 --libdir /path                Default: PREFIX/lib
 --mandir /path                Default: DATAROOTDIR/man
 --sysconfdir /path            Default: PREFIX/etc
+--systemddir /path            Default: /etc/systemd
 --bashcompdir /path           Retrieved with pkg-config, or as fallback:
                               /etc/bash_completion.d, or ~/.bash_completion
 \n"
@@ -157,6 +159,7 @@ while (($#)); do
 		--mandir) MANDIR="$opt_arg" ;;
 		--prefix) PREFIX="$opt_arg" ;;
 		--sysconfdir) SYSCONFDIR="$opt_arg" ;;
+		--systemddir) SYSTEMDDIR="$opt_arg" ;;
 		*) usage
 			exit 3
 	esac
@@ -170,6 +173,7 @@ done
 : ${BINDIR:=${PREFIX}/sbin}
 : ${LIBDIR:=${PREFIX}/lib}
 : ${SYSCONFDIR:=${PREFIX}/etc}
+: ${SYSTEMDDIR:=/etc/systemd}
 : ${DEFAULTSDIR:=$SYSCONFDIR/$ME}
 : ${DOCDIR:=${DATAROOTDIR}/doc}
 : ${MANDIR:=${DATAROOTDIR}/man}
@@ -249,6 +253,9 @@ install_file -m 0640 ip-array_global_defs "${LIBDIR}/${ME}/ip-array_global_defs"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
 install_file -m 0755 "${ME}".init_pre_net_boot "${INITDIR}/${ME}.init_pre_net_boot"
+install_file -m 0755 "${ME}".service "${SYSTEMDDIR}/system/${ME}.service"
+install_file -m 0755 "${ME}".init_pre_net_boot.service "${SYSTEMDDIR}/network/${ME}.init_pre_net_boot.service"
+
 if [[ $BASHCOMPDIR = ~ ]]; then
 	printf "bashcompdir is \`~', adding completion to \`%s'.\n\tRemember to manually remove it on uninstall, or re-install.\n" "~/.bash_completion"
 	if ! [[ $NOACT ]]; then
@@ -267,7 +274,8 @@ if ! [[ $NOACT ]]; then
 	printf "Creating \`./${ME}-install.log' - Will need this for uninstallation!\n"
 	(set +C; printf '#!/usr/bin/env bash\n\n' > ./${ME}-install.log)
 	printf "# install arguments: %s\n\n" "${arr_args[*]}" >> ./${ME}-install.log
-	for var in PREFIX BASHCOMPDIR BINDIR DATAROOTDIR DEFAULTSDIR DOCDIR INITDIR LIBDIR MANDIR SYSCONFDIR; do
+	for var in PREFIX BASHCOMPDIR BINDIR DATAROOTDIR DEFAULTSDIR DOCDIR \
+			INITDIR LIBDIR MANDIR SYSCONFDIR SYSTEMDDIR; do
 		declare -p "$var" >> ./${ME}-install.log
 	done
 fi
