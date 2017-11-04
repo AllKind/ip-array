@@ -1422,19 +1422,19 @@ if [[ $DEBUG_INFO ]]; then dbg_arr JUMP_TREE; fi
 
 jump_tree_on() { # turn jump tree on, if it was initialized enabled
 if ((JUMP_TREE_INIT != 0)); then
-	log -e "Re-enabling jump tree"
+	log -w "Re-enabling jump tree"
 	JUMP_TREE[0]=1
 else
-	log -e "Jump tree was disabled at init time. Not enabling it now."
+	log -w "Jump tree was disabled at init time. Not enabling it now."
 fi
 } # -------------------------------------------------------------------------
 
 jump_tree_off() { # turn jump tree off, if it was initialized enabled
 if ((JUMP_TREE_INIT == 1)); then
-	log -e "Disabling jump tree"
+	log -w "Disabling jump tree"
 	JUMP_TREE[0]=0
 else
-	log -e "Jump tree was disabled at init time. Not disabling it now."
+	log -w "Jump tree was disabled at init time. Not disabling it now."
 fi
 } # -------------------------------------------------------------------------
 
