@@ -2384,7 +2384,7 @@ for c_idx in ${!MSG_COLOR_ARRAY[@]}; do
 		# check for known color values, and continue if matching ok
 		case "${user_col_cat_name}" in
 			(black|blue|cyan|green|magenta|red|yellow|white)
-				set_var "${col_cat_name}" "${!user_col_cat_name}"
+				set_var "${col_cat_name}" "${user_col_cat_name}"
 				log -w "${PF}${col_cat_name} is set to: \`${user_col_cat_name}'"
 				readonly "${col_cat_name}"
 				continue
