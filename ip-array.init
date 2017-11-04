@@ -34,6 +34,16 @@
 #
 # ------------------------------------------------------------------------- #
 
+### BEGIN INIT INFO
+# Provides:          ip-array
+# Required-Start:    mountkernfs $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     S
+# Default-Stop:      0 1 6
+# Short-Description: Firewall
+# Description:       Loads netfilter based firewall
+### END INIT INFO
+
 
 # -------------------------------------------------------------------------
 # CONFIGURATION AREA

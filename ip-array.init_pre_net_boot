@@ -34,6 +34,16 @@
 #
 # ------------------------------------------------------------------------- #
 
+### BEGIN INIT INFO
+# Provides:          ip-array.ini_pre_net_boot
+# Required-Start:    mountkernfs $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     S
+# Default-Stop:      0 1 6
+# Short-Description: Firewall - Pre NET
+# Description:       Loads netfilter based firewall - Pre network configuration
+### END INIT INFO
+
 
 EXE_NAME="/etc/init.d/ip-array"
 PARAMS=(
