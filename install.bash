@@ -270,6 +270,11 @@ else
 	fi
 fi
 
+if [[ $SYSTEMDDIR != upstart ]]; then
+	printf "Reloading systemd.\n"
+	command systemctl daemon-reload || printf "Failed reloading systemd configuration.\n" >&2
+fi
+
 # create versions file
 printf "Creating version file: \`${SYSCONFDIR}/${ME}/${ME}_version'\n"
 if ! [[ $NOACT ]]; then
