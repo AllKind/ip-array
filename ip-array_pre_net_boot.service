@@ -13,7 +13,6 @@ Before=shutdown.target
 
 [Service]
 Type=oneshot
-RemainAfterExit=yes
 ExecStart=/etc/init.d/ip-array_pre_net_boot start
 ExecStop=/etc/init.d/ip-array_pre_net_boot stop
 
