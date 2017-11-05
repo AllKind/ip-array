@@ -148,8 +148,6 @@ for f in BINDIR DEFAULTSDIR; do
 done
 rem_file "${INITDIR}/$ME"
 rem_file "${INITDIR}/${ME}_pre_net_boot"
-[[ $SYSTEMDDIR = upstart ]] || rem_file "${SYSTEMDDIR}/system/${ME}.service"
-[[ $SYSTEMDDIR = upstart ]] || rem_file "${SYSTEMDDIR}/network/${ME}_pre_net_boot.service"
 
 if [[ $BASHCOMPDIR = \~ ]]; then
 	printf "bashcompdir is \`~'.\n\tRemember to manually remove completion from: \`%s'.\n" "~/.bash_completion"
@@ -171,10 +169,16 @@ do
 	rem_empty_dir "${!f}"
 done
 
+if [[ $SYSTEMDDIR != upstart ]]; then
+	rem_file "${SYSTEMDDIR}/system/${ME}.service"
+	rem_file "${SYSTEMDDIR}/network/${ME}_pre_net_boot.service"
+	rem_empty_dir "$SYSTEMDDIR"/network
+	rem_empty_dir "$SYSTEMDDIR"/system
+	rem_empty_dir "$SYSTEMDDIR"
+fi
+
 if [[ $PREFIX ]]; then
 	rem_empty_dir "$PREFIX"
 fi
-[[ $SYSTEMDDIR = upstart ]] || rem_empty_dir "$SYSTEMDDIR"
-
 printf "Finished uninstall\n"
 
