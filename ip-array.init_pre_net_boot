@@ -35,7 +35,7 @@
 # ------------------------------------------------------------------------- #
 
 ### BEGIN INIT INFO
-# Provides:          ip-array.ini_pre_net_boot
+# Provides:          ip-array_pre_net_boot
 # Required-Start:    mountkernfs $remote_fs
 # Required-Stop:     $remote_fs
 # Default-Start:     S
