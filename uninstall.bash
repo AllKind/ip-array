@@ -109,7 +109,7 @@ done
 }
 
 # check if the variable are defined
-for f in LIBDIR DATAROOTDIR DOCDIR SYSCONFDIR SYSTEMDDIR \
+for f in LIBDIR DATAROOTDIR DOCDIR SYSCONFDIR \
 	BINDIR DEFAULTSDIR BASHCOMPDIR MANDIR INITDIR
 do
 	if [[ -z ${!f} ]]; then
@@ -117,6 +117,7 @@ do
 		exit 1
 	fi
 done
+[[ $SYSTEMDDIR ]] || SYSTEMDDIR="upstart"
 
 # check for needed programs
 for f in rm rmdir; do
@@ -146,9 +147,9 @@ for f in BINDIR DEFAULTSDIR; do
 	rem_file "${!f}/$ME"
 done
 rem_file "${INITDIR}/$ME"
-rem_file "${INITDIR}/${ME}.init_pre_net_boot"
-rem_file "${SYSTEMDDIR}/system/${ME}.service"
-rem_file "${SYSTEMDDIR}/network/${ME}.init_pre_net_boot.service"
+rem_file "${INITDIR}/${ME}_pre_net_boot"
+[[ $SYSTEMDDIR = upstart ]] || rem_file "${SYSTEMDDIR}/system/${ME}.service"
+[[ $SYSTEMDDIR = upstart ]] || rem_file "${SYSTEMDDIR}/network/${ME}_pre_net_boot.service"
 
 if [[ $BASHCOMPDIR = \~ ]]; then
 	printf "bashcompdir is \`~'.\n\tRemember to manually remove completion from: \`%s'.\n" "~/.bash_completion"
@@ -173,6 +174,7 @@ done
 if [[ $PREFIX ]]; then
 	rem_empty_dir "$PREFIX"
 fi
+[[ $SYSTEMDDIR = upstart ]] || rem_empty_dir "$SYSTEMDDIR"
 
 printf "Finished uninstall\n"
 

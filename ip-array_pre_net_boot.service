@@ -14,8 +14,8 @@ Before=shutdown.target
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/etc/init.d/ip-array.init_pre_net_boot start
-ExecStop=/etc/init.d/ip-array.init_pre_net_boot stop
+ExecStart=/etc/init.d/ip-array_pre_net_boot start
+ExecStop=/etc/init.d/ip-array_pre_net_boot stop
 
 [Install]
 WantedBy=multi-user.target
