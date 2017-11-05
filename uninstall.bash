@@ -176,7 +176,9 @@ if [[ $SYSTEMDDIR != upstart ]]; then
 	rem_empty_dir "$SYSTEMDDIR"/system
 	rem_empty_dir "$SYSTEMDDIR"
 	printf "Reloading systemd.\n"
-	command systemctl daemon-reload || printf "Failed reloading systemd configuration.\n" >&2
+	if ! [[ $NOACT ]]; then
+		command systemctl daemon-reload || printf "Failed reloading systemd configuration.\n" >&2
+	fi
 fi
 
 if [[ $PREFIX ]]; then
