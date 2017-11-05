@@ -15,7 +15,7 @@ Before=shutdown.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=/etc/init.d/ip-array start
-ExecStop=/etc/init.d/ip-array start
+ExecStop=/etc/init.d/ip-array stop
 ExecReload=/etc/init.d/ip-array restart
 
 [Install]
