@@ -1,0 +1,1 @@
+Restrict or open OUTPUT chain | Format: 0 / 1 / IFBOUND / IPBOUND

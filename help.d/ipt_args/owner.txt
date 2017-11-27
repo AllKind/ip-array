@@ -1,0 +1,14 @@
+owner: owner match specification.
+
+    Synopsis: option[:opt_arg][:...]
+        options:
+            [!]uid username|value[-value]
+            [!]gid groupname|value[-value]
+            [!]socket
+            value := user ID (UID|GID)
+
+    Examples:
+        owner=uid:7
+        owner=uid:7-9:gid:6
+        owner=!uid:root:!socket
+

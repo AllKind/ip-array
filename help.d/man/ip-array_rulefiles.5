@@ -1,0 +1,562 @@
+'\" t
+.\"     Title: ip-array_rulefiles
+.\"    Author: Mart Frauenlob aka AllKind <AllKind@fastest.cc>
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 03/24/2016
+.\"    Manual: ip-array 1.2.2
+.\"    Source: ip-array 1.2.2
+.\"  Language: English
+.\"
+.TH "IP\-ARRAY_RULEFILES" "5" "03/24/2016" "ip-array 1.2.2" "ip\-array 1\&.2\&.2"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ip-array_rulefiles \- Configure ip\-array rule files
+.SH "SYNOPSIS"
+.sp
+.nf
+/etc/ip\-array/{stable|test}/conf\&.d/rules\&.d/\fIfile\fR
+.fi
+.SH "DESCRIPTION"
+.PP
+Rule files are written in a simple and
+\fIrelaxed\fR
+XML style\&. There are different rule tags available, as well as public functions\&. For each iptables table (if configured to be used) there must be at least one rule file defined\&.
+.SH "SYNTAX"
+.PP
+A rule definition file must contain the root tag including the describing name attribule and the syntax version:
+.PP
+<ip_array_root name="iptables_rules" syntax_version="1\&.1">
+.PP
+The
+\fBname\fR
+attribute tells us it is an iptables rule definition\&.
+.PP
+The
+\fBsyntax_version\fR
+attribute defines the syntax version\&. 1\&.0 and 1\&.1 are available by now\&. The ipset tags were introduced with version 1\&.1\&.
+.PP
+The XML syntax can be used in a
+\fIrelaxed\fR
+way (not XML compatible)\&. Tags can be closed by a simple `/>\*(Aq\&. Attributes can have their value enclosed inside single quotes, or not quoted at all\&.
+.SH "TAGS"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<rule> or the short form <r>
+.sp
+A
+\fBsingle rule\fR
+entry\&. All iptables arguments can be used inside a rule tag\&. The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they do not need be enclosed inside quotes (relaxed XML), unless the value contains a whitespace\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+.sp
+Examples:
+.sp
+<rule> table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" </rule>
+.sp
+<rule table="filter" chain="INPUT" src="1\&.1\&.1\&.1" target="DROP" />
+.sp
+<r> table=filter chain=INPUT target=LOG log_prefix="my log message" />
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<combined_rule> or the short form <cr>
+.sp
+\(aa\fBCombined rules\fR
+allow to create reverse traffic rules like with templates and ruleblocks with the reverse_mode=reverse option, but in a dynamic way\&.
+.sp
+It has these attributes available:
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reverse_mode \- which can be like within templates set to either `reverse\*(Aq or `mirror\*(Aq\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reverse_condition \- like within templates defines a condition that must evaluate to true for the reverse rules to be created\&. The variable name and its value must be separated by a colon `:\*(Aq\&. i\&.e\&. foo:bar
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+msg \- like with template_msg, it allows to define a message to be displayed, if
+\fIVERBOSE\fR
+is greater or equal 3\&.
+.RE
+.sp
+The iptables arguments must be used inside the <optlist> tag (see next item in the list)\&. The arguments in the second option list do not need the equal siqn and the right hand side value\&. The values of the first option list will be used in order from left to right and will be applied to the options (iptables arguments) of the second option list\&. Only if a value needs to be left out the special keyword `\fBempty\fR\*(Aq can be used\&. Either as option name (i\&.e\&. option list one has `odev=eth0\*(Aq as iptables argument, you will use just `empty\*(Aq in the second option list), or as value (i\&.e\&. idev=empty)\&.
+.sp
+All global iptables arguments, that are opended inside a combined rule will be applied to all following rules created with the <optlist> tag\&. They will not be applied to rules outside of the combined rule\&.
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Inside combined rules the iptables arguments target and chain may be set to a comma separated list (maximum 2 chains can be defined)\&.
+.sp .5v
+.RE
+.sp
+Example:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table> filter
+    <combined_rule reverse_mode="reverse" reverse_condition="x:y">
+        <chain> INPUT,OUTPUT
+            <target> LOG,ACCEPT
+                <optlist> proto=tcp sport=99 </optlist>
+                <optlist> proto dport </optlist>
+            </target>
+            <target> DROP
+                <opts idev="$lan_if" proto="udp" sport="66" />
+                <opts> odev proto empty />
+            </target>
+        </chain>
+    </combined_rule>
+</table>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<optlist> or the allowed variations: <opt>, <opts>, <option>, <options>
+.sp
+This tag is only valid within a combined_rule tag\&. All iptables arguments can be used inside this tag\&. The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+They can be used as attributes of the tag, or as content inside the tag\&. In the first form they do not need be enclosed inside quotes\&. Values with whitespace must be enclosed within double or single quotes\&. In both cases the left hand side (left of the `=\*(Aq) is the iptables argument and the right hand side is its value\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<template_rule> or the short form <tr>
+.sp
+This tag defines one or more ruleblocks to be called with their corresponding templates\&. This is named a
+\fBtemplate rule\fR\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<template_rule> template\-name ruleblock\-name [ template\-invocation\-command \&.\&.\&. ] </template_rule>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+or:
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<template_rule template="template\-name" ruleblock="ruleblock\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the first form multible entries may be separated by newline\&. Also one or more command(s) can be run at invocation of the ruleblock\&.
+.sp
+Template rules will not inherit the global arguments (see below)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<pub_func> or the short form <f>
+.sp
+This tag defines one or more public functions to be called\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<pub_func name="function\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+or
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<pub_func> function\-name [ option \&.\&.\&. ] </pub_func>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the second form multible entries must be separated by newline\&. Also it allows to pass parameters to the call of the function\&.
+.sp
+The value part of the name attribute must be enclosed within quotes\&.
+.sp
+Examples:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<pub_func>
+    log \-S "Adding DROP rules"
+    drop_dhcp
+    drop_netbios
+</pub_func>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<f name="lan_ftp" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<ipsets> or the short forms: <s>, <set>, <ipset>
+.sp
+This tag allows to define ipset sets\&. It is not valid inside any other but the root tag\&. Only attributes are allowed, no content\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<ipsets name="set\-name" [ type="set\-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option\-name" ] >
+    [ <elements> content </elements> ]
+</ipsets>
+or
+<ipsets import_xml="file\-name" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For the first form the attributes
+\fIname\fR
+and
+\fItype\fR
+are mandatory when creating a set\&. If only elements are to be added using the <elements> tag, only the name of the set is required\&. All header options that require a value must be expressed using the form:
+option\-name=value\&. All other header options must be put into the
+\fIoptions\fR
+attribute\&.
+.sp
+For the second for a file can be imported\&. This file must be in the format as used with ipset \-output xml\&.
+.sp
+Examples:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" />
+
+<ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules\&.d/import_ipsets\&.xml" />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+<elements> or the short forms: <e>, <elem>, <element>
+.sp
+This tags allows to add elements to an ipset set\&. It is of course only valid inside an <ipsets> tag (see above)\&.
+.sp
+The syntax is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<elements [ import_plain="file\-name" ] >
+    [ content ]
+    [ \&.\&.\&. ]
+</elements>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The optional import_plain attribute is available inside this tag\&. It allows to import elements from a file\&. The file must contain one element per line\&. Shell style comments (#) are allowed\&.
+.sp
+The syntax for content and inside the file is as with ipset without writing ipset add set\-name \&.\&.\&. When using the comment option and the comment contains spaces, it must be enclosed inside double quotes\&.
+.sp
+Examples:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" >
+    <elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules\&.d/foo\-elements\&.txt" >
+        10\&.0\&.0\&.1 packets 3 comment "My sophisticated comment"
+        10\&.0\&.0\&.2
+    </elements>
+</set>
+
+<set name="foo">
+    <elements>
+        10\&.0\&.0\&.1 packets 3 comment "My sophisticated comment"
+        10\&.0\&.0\&.2
+    </elements>
+</set>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+All other iptables arguments\&. We\*(Aqll call them
+\fBglobal arguments\fR\&.
+.sp
+The list of valid arguments can be retrieved by running:
+\fBip\-array show \-sc ipt_args[,\&.\&.\&.]\fR\&.
+.sp
+These can be used to apply their value to all other rules following (grouping)\&. Or to build rules by their own\&. In the second case, the closing of a tag will cause the creation of a rule\&. Except they are terminated by a
+\fI<rule>\fR
+or a
+\fI<combined_rule>\fR, in which case their closing will not cause additional rules to be created, unless a new tag is opened (and then closed afterwards to create a rule), which will start a new counter like before\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBImportant\fR
+.ps -1
+.br
+They will not be applied to template rules!
+.sp .5v
+.RE
+In example:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table name="filter">
+    <chain name="INPUT">
+        <rule> rule1 </rule>
+        <rule> rule2 </rule>
+    </chain>
+</table>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Or in the
+\fIrelaxed\fR
+way:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table> filter <chain name=INPUT>
+    <rule> rule1 />
+    <rule> rule2 />
+/> />
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Another example using only global arguments:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+<table> filter
+    <chain> INPUT
+        <target> ACCEPT
+            <state> NEW,ESTABLISHED
+                 <src> 1\&.1\&.1\&.1 </src>
+                 <dst> 2\&.2\&.2\&.2 </dst>
+            </state> </target>
+        <target> DROP </target>
+    </chain>
+</table>
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBip-array\fR(8),
+\fBip-array.conf\fR(8),
+\fBip-array_defaults.conf\fR(8),
+\fBip-array_ruleblocks\fR(5),,
+\fBip-array_sysctl_rules\fR(5)
+\fBip-array_templates\fR(5)
+.SH "AUTHOR"
+.PP
+\fBMart Frauenlob aka AllKind\fR <\&AllKind@fastest\&.cc\&>
+.RS 4
+Some guy infront of a screen\&.
+.RE
+.RS 4
+Thanks go to the open source community\&.
+.RE

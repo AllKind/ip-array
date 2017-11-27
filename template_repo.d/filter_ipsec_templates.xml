@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+
+<!-- IPSEC - FILTER TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="TEMPLATE_ALLOW_VPN_INPUT">
+		<!-- 
+		Purpose: Stateful INPUT ACCEPT rules in ipsec chain
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC INPUT allow rules </template_msg>
+		<load_template>
+			BT_FILTER_ACCEPT
+			BT_IDEV_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_ALLOW_VPN_OUTPUT">
+		<!-- 
+		Purpose: Stateful OUTPUT ACCEPT rules in ipsec chain
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC OUTPUT allow rules </template_msg>
+		<load_template>
+			BT_FILTER_ACCEPT
+			BT_ODEV_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_ALLOW_VPN_FWD">
+		<!-- 
+		Purpose: Stateful FORWARD ACCEPT rules in ipsec chain
+		Template options:
+		+ filter table
+		+ ACCEPT target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC FORWARD allow rules </template_msg>
+		<load_template>
+			BT_FILTER_ACCEPT
+			BT_IDEV_ODEV
+			BT_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_BLOCK_VPN_INPUT">
+		<!-- 
+		Purpose: Stateful INPUT DROP rules in ipsec chain
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC INPUT block rules </template_msg>
+		<load_template>
+			BT_FILTER_DROP
+			BT_IDEV_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_BLOCK_VPN_OUTPUT">
+		<!-- 
+		Purpose: Stateful OUTPUT DROP rules in ipsec chain
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		8: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC OUTPUT block rules </template_msg>
+		<load_template>
+			BT_FILTER_DROP
+			BT_ODEV_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_BLOCK_VPN_FWD">
+		<!-- 
+		Purpose: Stateful FORWARD DROP rules in ipsec chain
+		Template options:
+		+ filter table
+		+ DROP target
+		+ chain set to ${ipsec_chain}
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		9: limit limit
+		-->
+		<chain> ${ipsec_chain} </chain>
+		<template_msg> ${ADDMSG} custom IPSEC FORWARD block rules </template_msg>
+		<load_template>
+			BT_FILTER_DROP
+			BT_IDEV_ODEV
+			BT_SRC_DST_ADDR
+			BT_PROTO_STATE_LIMIT
+		</load_template>
+	</template>
+
+</ip_array_root>
+

@@ -1,0 +1,14 @@
+
+Name: enable_ipsec
+
+Description:
+	Collect IPSEC related traffic into the automatically created ipsec-chain.
+	- Requires `ENABLE_IPSEC'  and `VPN_MAP' variables to be configured.
+	Process IPSEC rules. - Requires `IPSEC_RULES' variable to be configured.
+	Allow all traffic between branches. - Requires `ALLOW_ALL_BRANCH' variable to be configured.
+
+Usage:
+	enable_ipsec
+
+Example:
+	enable_ipsec

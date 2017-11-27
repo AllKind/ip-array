@@ -1,0 +1,21 @@
+time: time match specification.
+
+    Synopsis: option_opt-arg[_...]
+        Unless for other iptables arguments the separator character is an
+        underscore (`_').
+        options:
+        datestart    YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+        datestop     YYYY[-MM[-DD[Thh[:mm[:ss]]]]]
+        timestart    hh:mm[:ss]
+        timestop     hh:mm[:ss]
+        monthdays    [!]day[,day...] (1-31)
+        weekdays     [!]day[,day...]
+            (1-7 or Mo|Mon|Tu|Tue|Wed|We|Thu|Th|Sat|Sa|Sun|Su)
+        contiguous
+        kerneltz
+
+    Examples:
+        time=datestart_2014-01-01T00:00:01_datestop_2014-01-31T23:59:59
+        time=!monthdays_1,2,3
+        time=!weekdays_Mo,Tue
+

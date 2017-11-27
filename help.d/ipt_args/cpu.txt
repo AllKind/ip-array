@@ -1,0 +1,7 @@
+cpu: cpu match specification.
+    Equivalent to `-m cpu --cpu'.
+
+    Examples:
+        cpu=0
+        cpu=!0
+

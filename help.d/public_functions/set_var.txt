@@ -1,0 +1,12 @@
+
+Name: set_var
+
+Description:
+	Set a variable to value.
+
+Usage:
+	set_var name value
+
+Example:
+	set_var foo bar
+	Equivalent to `foo=bar' in your shell.

@@ -1,0 +1,2 @@
+KNOWN RETURN TRAFFIC (STATE)
+chain | state: [E,R,ER] default: ER | [top,bottom] default: top

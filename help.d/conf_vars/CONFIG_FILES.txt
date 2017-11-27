@@ -1,0 +1,3 @@
+List of configuration files to load.
+This is the only variable that must be in this file. All other can be
+outsourced to different files, as long as their names are put here.

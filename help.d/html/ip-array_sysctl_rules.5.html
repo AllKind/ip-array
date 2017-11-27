@@ -1,0 +1,62 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>ip-array_sysctl_rules</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array sysctl rules &#8212; Configure ip-array sysctl rule files</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/{stable|test}/conf.d/sysctl.d/<em class="replaceable"><code>file</code></em></pre></div><div class="refsect1" lang="en"><a name="d0e44"></a><h2>Description</h2><p>Inside the sysctl rule files the system settings are stored. They are written in
+            simple XML. By parsing them IP-Array composes command line arguments for the
+                <span class="command"><strong>sysctl</strong></span> program.</p></div><div class="refsect1" lang="en"><a name="d0e52"></a><h2>Syntax</h2><p>A rule definition file must contain the root tag including the describing name
+            attribule and the syntax version:</p><p><code class="code">&lt;ip_array_root name="sysctl_rules" syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an sysctl rule
+            definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
+            version. 1.0 is available by now.</p><p>The XML syntax can be used in a <span class="italic">relaxed</span> way (not XML
+            compatible). Tags can be closed by a simple `/&gt;'. Attributes can have their value
+            enclosed inside single quotes, or not quoted at all.</p><p>XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</p></div><div class="refsect1" lang="en"><a name="d0e77"></a><h2>XML tags</h2><p>The XML tags used in sysctl rule files are an exact representation of the names used
+            with the <span class="command"><strong>sysctl</strong></span> program. Each of the names used by the
+                <span class="command"><strong>sysctl</strong></span> program, which are separated by a dots, will be the name
+            of the XML tag, or the attribute if it is the actual setting. Example:</p><p><code class="code">net.ipv4.ip_forward=1</code> from sysctl will be described in XML like
+            this:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;ip_forward&gt; 1 &lt;/ip_forward&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or as attribute:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4 ip_forward="1"&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or even shorter as attribute if only this single setting is used:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4 ip_forward="1"/&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>You can mix both ways as you wish. To see all the available types of your local system,
+            run either <span class="command"><strong>sysctl -a</strong></span> or <span class="command"><strong>ip-array
+            compat-check</strong></span>.</p><p><span class="bold"><strong>Shell variables</strong></span> are valid as tag names inside
+            sysctl rules. The main purpose of this feature is to allow generic configuration of
+            values that may change system depending. i.e. the interface names in
+                <code class="code">net.ipv4.conf.$INTERFACE_NAME</code>. The <span class="bold"><strong>variable must
+                not be quoted!</strong></span> You can either write them with or without the curly
+            braces: <code class="code">&lt;$VARIABLE&gt;</code> or <code class="code">&lt;${VARIABLE}&gt;</code>.</p><p>Now if you define you interface name variables inside the i.e. alias.conf configuration
+            file, you can use them inside your sysctl rule files. And every time an interface
+            changes, all you need to do, is to modify the variable and re-parse the sysctl rule
+            files.</p><p>Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file you
+            write:</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF&gt;
+                &lt;accept_redirects&gt; 0 &lt;/accept_redirects&gt;
+            &lt;/$EXT_IF&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or as attribute (in the short form):</p><p>
+            </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF accept_redirects="0"/&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</p><p>In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+            listed.</p></div><div class="refsect1" lang="en"><a name="d0e155"></a><h2>See also</h2><p>
+            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">sysctl</span>(8)</span></p></div></div></body></html>

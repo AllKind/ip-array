@@ -1,0 +1,11 @@
+
+Name: drop_netbios
+
+Description:
+	Drop NetBios broadcast on certain interfaces or networks.
+	
+Usage:
+	drop_netbios { interface | network-name } [...]
+	
+Example:
+	drop_netbios eth0 PUBLIC

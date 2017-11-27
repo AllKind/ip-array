@@ -1,0 +1,13 @@
+
+Name: ipset_create
+
+Description:
+	Add an ipset set.
+
+Usage:
+	ipset_create set-name type rest-of-options-string
+	For old ipset versions prior to v6, the `--' can be ommited.
+
+Examples:
+	ipset_create foo ipmap network 10.0.0.0/16
+	ipset_create foo hash:ip timeout 10000

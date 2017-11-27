@@ -1,0 +1,14 @@
+
+Name: anti_spoof
+
+Description:
+	Creation of anti spoofing rules. Only valid in the `raw' table.
+	Requires external and local networks to be defined.
+	Only needed if sysctl setting `rp_filter' is disabled.
+
+Usage:
+	anti_spoof
+
+Example:
+	anti_spoof
+

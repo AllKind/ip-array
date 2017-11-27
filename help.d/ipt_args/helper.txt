@@ -1,0 +1,6 @@
+helper: Name of the netfilter conntrack helper.
+
+    Examples:
+        helper=ftp
+        helper=ftp-2121
+

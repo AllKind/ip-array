@@ -1,0 +1,1380 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2017 Mart Frauenlob aka AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                     IP-ARRAY INTERACTIVE FUNCTIONS
+#
+# ------------------------------------------------------------------------- #
+
+rdia() { # run dialog program
+"$DIALOG_PROG" "${arr_title[@]:-"$ME interactive mode"}" "$@" 2>&1 > /dev/tty
+} # -------------------------------------------------------------------------
+
+dia_ibox() { # input box
+rdia --inputbox "$1" $w_height $w_with "$2"
+} # -------------------------------------------------------------------------
+
+dia_mbox() { # msg box
+rdia --msgbox "$1" $w_height $w_with
+}
+
+dia_yn() { # yesno
+rdia --yesno "$1" $w_height $w_with
+} # -------------------------------------------------------------------------
+
+dia_menu() { # menu
+if [[ $1 = --noitem ]]; then
+	local str_cmd="--noitem"
+	shift
+else
+	local str_cmd=""
+fi
+local str="$1"
+shift
+rdia $str_cmd --menu "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
+
+dia_clist() { # checklist
+if [[ $1 = --noitem ]]; then
+	local str_cmd="--noitem"
+	shift
+else
+	local str_cmd=""
+fi
+local str="$1"
+shift
+rdia $str_cmd --separate-output --checklist "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
+
+dia_rlist() { # radiolist
+if [[ $1 = --noitem ]]; then
+	local str_cmd="--noitem"
+	shift
+else
+	local str_cmd=""
+fi
+local str="$1"
+shift
+rdia $str_cmd --radiolist "$str" $w_height $w_with $l_height "$@"
+} # -------------------------------------------------------------------------
+
+ia_needopt() {
+dia_mbox "The option is mandatory. Quitting and returning to main screen."
+} # -------------------------------------------------------------------------
+
+build_wt_dummy_list() { # dialog and whiptail behave differently
+while (($#)); do
+	printf "%s item\n" "$1" # add dummy item entry
+	shift
+done
+} # -------------------------------------------------------------------------
+
+_add_rb_line() { # sub function of iactive_ruleblock_builder() - add a line to a ruleblock
+local idx=0
+arr_line=()
+if ! ((${#arr_templ[@]})); then
+	dia_mbox "Template \`$t_name' is not defined!\nMaybe you need to enable the table in the main config?\nOr you may run parse-xml first?"
+	return 1
+fi
+for i in ${!arr_templ[*]}; do
+	arr_line[idx]=$( dia_ibox "Enter a value for ${arr_templ[i]%%=*} ${arr_templ[i]#*=}" )
+	(($? == 0)) || return 1
+	if [[ ${arr_line[idx]} = *[[:blank:]]* ]]; then
+		arr_line[idx]="\\\"${arr_line[idx]}\\\"" # :"
+	fi
+	let idx++
+done
+} # -------------------------------------------------------------------------
+
+_edit_rb_line() { # sub function of iactive_ruleblock_builder() - edit an existing ruleblock line
+if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_rb_tmp[@]} == 1)); then
+	dia_mbox "Found only one line. Selecting it."
+	arr_line=( "${arr_rb_tmp[0]//\"/\\\\\"}" )
+elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_rb_tmp[@]} == 2)); then
+	dia_mbox "Found only one line. Selecting it."
+	arr_line=( "${arr_rb_tmp[0]//\"/\\\\\"}" )
+else
+	arr_line=( $(dia_rlist --noitem "Choose a line to edit" "${arr_rb_tmp[@]//\"/\\\\\"}") )
+	(($? == 0)) || return 1
+fi
+local -i lnum=$(( ${arr_line[0]%%:*} - 1 )) # real position in array
+local -a arr_line_new=()
+eval set -- "${arr_rb[lnum]}"
+for ((i=0 , x=1; i < $#; i++ , x++)); do # edit existing ruleblock line
+	arr_line_new[i]=$(dia_ibox "Enter a value for ${arr_tmp[i]#*=}.\nOld value: \`${!x}'" "${!x}")
+	(($? == 0)) || return 1
+	if [[ ${arr_line_new[i]} = *[[:blank:]]* ]]; then
+		arr_line_new[i]="\\\"${arr_line_new[i]}\\\"" # :"
+	fi
+done
+arr_rb_tmp[lnum + lnum]="$(($lnum + 1)): ${arr_line_new[@]}"
+arr_rb[lnum]="${arr_line_new[@]}"
+} # -------------------------------------------------------------------------
+
+_add_conf_var() { # sub function of iactive_config_builder() - add config variable
+x=0
+arr_tmp=( $(printf "%s\n" "${arr_names[@]}"|run_sort) )
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
+fi
+v_name=$(dia_menu --noitem "Choose a variable" "${arr_tmp[@]}")
+if (($? == 0)) && [[ $v_name ]]; then
+	for i in ${!arr_names[@]}; do
+		if [[ ${arr_names[i]} = $v_name ]]; then
+			set -- ${arr_conf[i]}
+			v_type=$2 # declare name of config entry and its type
+			break
+		fi
+	done
+	x=0 arr_content=()
+	if [[ $v_type = @(array|var) ]]; then
+		v_msg=""
+	elif [[ $v_type = bool ]]; then
+		v_msg=" (boolean)"
+	elif [[ $v_type = int ]]; then
+		v_msg=" (integer)"
+	fi
+	if [[ -s ${HELP_DIR}/conf_vars/${v_name}.txt ]]; then
+		v_help="\nHelp for ${v_name}:\n$("$CAT" "${HELP_DIR}/conf_vars/${v_name}.txt")\n"
+	else
+		v_help=""
+	fi
+	if [[ $v_type = array ]]; then
+		while (($? == 0)); do
+			arr_content[x++]=$(dia_ibox \
+				"Enter (more) content for variable $v_name.\nCancel to quit.${v_help}") || {
+				unset arr_content[x-1]
+				break
+			}
+		done
+		if ((${#arr_content[*]})); then
+			if [[ $v_help ]]; then
+				"$CAT" "${HELP_DIR}/conf_vars/${v_name}.txt" >> "$c_file"
+			fi
+			printf '%s=\"\n' "$v_name" >> "$c_file"
+			printf "%s\n" "${arr_content[@]}" >> "$c_file"
+			printf '\"\n\n' >> "$c_file"
+			unset arr_names[i]
+		fi
+	else
+		arr_content[0]=$(dia_ibox \
+			"Enter content for variable ${v_name}${v_msg}${v_help}")
+		if (($? == 0)) && [[ ${arr_content[0]} ]]; then
+			if [[ $v_help ]]; then
+				"$CAT" "${HELP_DIR}/conf_vars/${v_name}.txt" >> "$c_file"
+			fi
+			printf '%s=\"%s\"\n\n' "$v_name" "${arr_content[0]}" >> "$c_file"
+			unset arr_names[i]
+		fi
+	fi
+fi
+dia_yn "Do you want to add another variable?"
+} # -------------------------------------------------------------------------
+
+_remove_dupe_templ_entry() { # sub function of iactive_template_builer - remove dupes from the list
+for y in ${!arr_tmp[@]}; do
+	[[ ${arr_tmp[y]} = m_set ]] && continue # set match is allowed multiple times
+	if [[ ${arr_tmp[y]} = $1 ]]; then
+		unset arr_tmp[y]
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			unset arr_tmp[y+1]
+		fi
+	fi
+done
+} # -------------------------------------------------------------------------
+
+_add_single_rule_entries () { # sub function of _ia_add_rules() - Collect entries for <rule> or <optlist>
+arr_single_rule=()
+x=0 arr_tmp=( "${x_args[@]}" )
+while (($? == 0)); do
+	str_lhs=$(dia_menu --noitem "Choose an iptables argument." "${arr_tmp[@]}")
+	if (($? == 0)); then
+		for i in ${!arr_tmp[*]}; do # remove dupes from the list
+			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
+				unset arr_tmp[i]
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					unset arr_tmp[i+1]
+				fi
+				break
+			fi
+		done
+		str_rhs="$( dia_ibox "Enter a value for $str_lhs")"
+		if (($? == 0)) && [[ $str_rhs ]]; then
+			arr_single_rule[x++]="$str_lhs=\"$str_rhs\""  #"
+			dia_yn "Do you want to add another iptables argument?"
+		else
+			return 1
+		fi
+	else
+		return 1
+	fi
+done
+} # -------------------------------------------------------------------------
+
+_add_set_element() {
+local str_elem
+local -a arr_set_element=()
+x=0
+str_elem="$(dia_ibox "Enter the element")"
+if (($? == 0)) && [[ $str_elem ]]; then
+	arr_set_element[x++]="$str_elem"
+else
+	return
+fi
+arr_tmp=( comment bytes packets timeout skbmark skbprio skbqueue nomatch )
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
+fi
+while (($? == 0)); do
+	((${#arr_tmp[@]})) || break
+	str_lhs=$(dia_menu --noitem "Choose an element option.\nCancel for none." "${arr_tmp[@]}")
+	if (($? == 0)); then
+		for i in ${!arr_tmp[*]}; do # remove dupes from the list
+			if [[ ${arr_tmp[i]} = $str_lhs ]]; then
+				unset arr_tmp[i]
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					unset arr_tmp[i+1]
+				fi
+				break
+			fi
+		done
+		if [[ $str_lhs != nomatch ]]; then
+			str_rhs="$(dia_ibox "Enter a value for $str_lhs")"
+			if (($? == 0)) && [[ $str_rhs ]]; then
+				arr_set_element[x++]="$str_lhs"
+				if [[ $str_rhs = *+([[:blank:]])* ]]; then
+					arr_set_element[x++]="\"$str_rhs\"" #"
+				else
+					arr_set_element[x++]="$str_rhs"
+				fi
+			fi
+		else
+			arr_set_element[x++]="$str_lhs"
+		fi
+	else
+		false
+	fi
+done
+if ((${#arr_set_element[*]})); then
+	arr_content[content_idx++]="${str_indent}        <element> ${arr_set_element[*]} </element>"
+fi
+} # -------------------------------------------------------------------------
+
+_ia_add_rules() { # sub function of iactive_rule_builder() - add different rule types
+local str_lhs str_rhs str str_opt str_tmp str_set str_type str_header
+local -a arr_single_rule arr_attr arr_header arr_types arr_tmp
+local -i i x
+local str_rule=$(dia_menu "Select the type of rule action" \
+	"Iptables tag" "iptables argument tag" \
+	"Rule" "Single iptables rule" \
+	"Grouped" "Combined tags iptables rule" \
+	"Template" "Template based iptables rule" \
+	"Function" "Public function" \
+	"Set" "Create an ipset set / add elements" \
+	"Close" "Close last opened tag" \
+	"Enter comment" "Add a comment" \
+	"View" "View the created rules"
+	)
+
+if [[ $str_rule = Template ]]; then
+	if ((${#arr_templ[*]} == 0)); then
+		if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+			while read -t $GLOBAL_READ_TIMEOUT; do
+				if [[ $REPLY != @(BT|BASE_TEMPLATE)_* ]]; then # don't show base templates
+					arr_templ[i++]="$REPLY"
+				fi
+			done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort )
+			if [[ $DIALOG_PROG = *whiptail ]]; then
+				arr_templ=( $(build_wt_dummy_list "${arr_templ[@]}") )
+			fi
+		else
+			dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+			return 0
+		fi
+	fi
+	if ((${#arr_rb[*]} == 0)); then
+		if [[ -r ${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES ]]; then
+			if [[ $DIALOG_PROG = *dialog ]]; then
+				arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+			elif [[ $DIALOG_PROG = *whiptail ]]; then
+				arr_rb=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort ) ) )
+			fi
+		else
+			dia_mbox "Cannot find \`${RULEBLOCK_DIR}/__parsed_RULEBLOCK_NAMES'. Ruleblocks must first be parsed (parse-xml -pb)."
+			return 0
+		fi
+	fi
+	arr_content[content_idx++]="${str_indent}    <template_rule>"
+	while (($? == 0)); do
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_templ[@]} == 1)); then
+			dia_mbox "Only one template has been found: \`${arr_templ[0]}'. Selecting it."
+			t_name="${arr_templ[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_templ[@]} == 2)); then
+			dia_mbox "Only one template has been found: \`${arr_templ[0]}'. Selecting it."
+			t_name="${arr_templ[0]}"
+		else
+			t_name=$(dia_menu --noitem "Choose a template" "${arr_templ[@]}" ) || {
+				unset arr_content[--content_idx]
+				return 0
+			}
+		fi
+		# choose one ruleblock
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_rb[@]} == 1)); then
+			dia_mbox "Only one ruleblock has been found: \`${arr_rb[0]}'. Selecting it."
+			r_name="${arr_rb[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_rb[@]} == 2)); then
+			dia_mbox "Only one ruleblock has been found: \`${arr_rb[0]}'. Selecting it."
+			r_name="${arr_rb[0]}"
+		else
+			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_rb[@]}" ) || {
+				unset arr_content[--content_idx]
+				return 0
+			}
+		fi
+		str_tmp=$( dia_ibox "Enter a template invocation command.\nLeave it empty, or CANCEL for none.")
+		if [[ $t_name && $r_name ]]; then
+			arr_content[content_idx++]="${str_indent}        $t_name $r_name $str_tmp"
+		else
+			dia_mbox "Template or ruleblock definition is missing."
+		fi
+		dia_yn "Do you want to add another template_rule line?"
+	done
+	arr_content[content_idx++]="${str_indent}    </template_rule>"
+elif [[ $str_rule = "Iptables tag" ]]; then
+	arr_tmp=( "${x_args[@]}" )
+	while (($? == 0)); do
+		str_tmp=$(dia_menu --noitem "Choose an iptables argument." "${arr_tmp[@]}")
+		if (($? == 0)); then
+			for i in ${!arr_tmp[*]}; do # remove dupes from the list
+				if [[ ${arr_tmp[i]} = $str_tmp ]]; then
+					unset arr_tmp[i]
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						unset arr_tmp[i+1]
+					fi
+					break
+				fi
+			done
+			arr_tags[tag_idx++]="$str_tmp"
+			str_indent+="    "
+			str_tmp="${str_indent}<$str_tmp>"
+			str_tmp+=" $(dia_ibox "Enter a value for $str_tmp")"
+			if (($? == 0)); then
+				arr_content[content_idx++]="$str_tmp"
+				dia_yn "Do you want to add another iptables argument?"
+			else
+				false
+			fi
+		else
+			false
+		fi
+	done
+elif [[ $str_rule = Rule ]]; then
+	arr_tmp=( "${x_args[@]}" )
+	_add_single_rule_entries
+	if ((${#arr_single_rule[*]})); then
+		arr_content[content_idx++]="${str_indent}    <rule> ${arr_single_rule[*]} </rule>"
+	else
+		false
+	fi
+elif [[ $str_rule = Grouped ]]; then
+	i=0
+	str_indent+="    "
+	arr_tmp=(msg "Log message" reverse_mode "Define reverse mode" reverse_condition "Condition to be true for activation of reverse mode")
+	while (($? == 0)); do
+		if ((${#arr_tmp[*]})); then
+			str_lhs=$(dia_menu "Choose a combined rule attribute.\nCancel for none." "${arr_tmp[@]}")
+			if (($? == 0)); then
+				for x in ${!arr_tmp[*]}; do
+					if [[ $str_lhs = ${arr_tmp[x]} ]]; then
+						unset arr_tmp[x]
+						if [[ $DIALOG_PROG = *whiptail ]]; then
+							unset arr_tmp[x+1]
+						fi
+						break
+					fi
+				done
+				str_rhs="$(dia_ibox "Enter a value for $str_lhs")"
+				if (($? == 0)) && [[ $str_rhs ]]; then
+					arr_attr[i++]="${str_lhs}=\"${str_rhs}\"" #"
+				else
+					false
+				fi
+			else
+				false
+			fi
+		else
+			false
+		fi
+	done
+	if ((${#arr_attr[*]})); then
+		arr_content[content_idx++]="${str_indent}<combined_rule ${arr_attr[*]}>"
+	else
+		arr_content[content_idx++]="${str_indent}<combined_rule>"
+	fi
+	while (($? == 0)); do
+		_add_single_rule_entries
+		if ((${#arr_single_rule[*]})); then
+			arr_content[content_idx++]="${str_indent}    <optlist> ${arr_single_rule[*]} </optlist>"
+			dia_yn "Do you want to add another option list?"
+		else
+			false
+		fi
+	done
+	arr_content[content_idx++]="${str_indent}</combined_rule>"
+	str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+elif [[ $str_rule = Function ]]; then
+	if ((${#arr_pubfunc[*]} == 0)); then x=0
+		for i in ${!PUBLIC_FUNCTION_LIST[@]}; do
+			set -- ${PUBLIC_FUNCTION_LIST[i]}
+			arr_pubfunc[x++]="$1"
+			shift
+			arr_pubfunc[x++]="$*"
+		done
+	fi
+	arr_tmp=()
+	arr_tmp[0]=$(dia_menu "Choose a public function." "${arr_pubfunc[@]}")
+	if (($? == 0)); then
+		arr_tmp[1]=$(dia_ibox "Enter parameters for the function \`${arr_tmp[0]}'. Empty value or CANCEL for none.")
+		arr_content[content_idx++]="${str_indent}    <pub_func> ${arr_tmp[*]} </pub_func>"
+	fi
+elif [[ $str_rule = Set ]]; then
+	local str_set="" str_type=""
+	str_rule="$(dia_menu "Select the type of ipset action" \
+		"Create set" "Create a set and optionally add elements" \
+		"Add elements" "Add elements to a set" \
+		"Import set" "Import set(s) from an ipset xml saved file" \
+		"Import elements" "Import elements from file")"
+	if [[ $str_rule = "Create set" ]]; then
+		str_set="$(dia_ibox "Enter the set name")"
+		if [[ $str_set ]]; then
+			local -i i=0 x
+			local arr_types=()
+			while read -r; do
+				[[ $REPLY = "Supported set types:"* ]] && ((!i)) && i=1 && continue
+				((i)) || continue
+				if [[ $REPLY = *:* ]]; then
+					set -- $REPLY
+					if ! lsearch "$1" "${arr_types[@]}"; then
+						arr_types[${#arr_types[@]}]="$1"
+					fi
+				fi
+			done < <( ( run_ipset help ) 2>/dev/null )
+			if ((${#arr_types[@]})); then
+				arr_types=( $(printf "%s\n" "${arr_types[@]}"|run_sort) )
+				if [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_types=( $(build_wt_dummy_list "${arr_types[@]}") )
+				fi
+				str_type=$(dia_menu --noitem "Choose a set type" "${arr_types[@]}") || return
+			else
+				dia_mbox "Unable to retrieve set types!"
+				return $ER_FAIL
+			fi
+		fi
+		if [[ $str_type ]]; then
+			dia_yn "Do you want to set header options?"
+			if (($? == 0)); then
+				arr_tmp=() str_tmp="" str_opt=""
+				str_header="counters comment skbinfo timeout"
+				if [[ $str_type = bitmap:* ]]; then
+					str_header+=" range"
+					if [[ $str_type = bitmap:ip ]]; then
+						str_header+=" netmask"
+					fi
+				elif [[ $str_type = hash:* ]]; then
+					str_header+=" forceadd hashsize maxelem"
+					if [[ $str_type != hash:mac ]]; then
+						str_header+=" family"
+					fi
+					if [[ $str_type = hash:ip ]]; then
+						str_header+=" netmask"
+					fi
+					if [[ $str_type = hash:ip,mark ]]; then
+						str_header+=" markmask"
+					fi
+				elif [[ $str_type = list:* ]]; then
+					str_header+=" size"
+				else
+					str_header="family forceadd hashsize markmask maxelem netmask range size counters comment skbinfo timeout"
+				fi
+				while (($? == 0)); do arr_header=() x=0
+					if [[ $str_lhs ]]; then
+						str_header="${str_header/$str_lhs/}"
+					fi
+					arr_header=( $str_header )
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						arr_header=( $(build_wt_dummy_list "${arr_header[@]}") )
+					fi
+					str_lhs=$(dia_menu --noitem "Choose a header option" ${arr_header[*]}) || break
+					if [[ $str_lhs = @(hashsize|markmask|maxelem|netmask|range|size|timeout) ]]; then
+						str_rhs="$( dia_ibox "Enter a value for option $str_lhs")"
+						if (($? == 0)); then
+							arr_tmp[${#arr_tmp[@]}]="${str_lhs}=\"${str_rhs}\"" #"
+						fi
+					elif [[ $str_lhs = family ]]; then
+						if [[ $DIALOG_PROG = *dialog ]]; then
+							str_rhs=$(dia_menu --noitem "Select the family type" inet inet6)
+						elif [[ $DIALOG_PROG = *whiptail ]]; then
+							str_rhs=$(dia_menu --noitem "Select the family type" inet "" inet6 "")
+						fi
+						if (($? == 0)); then
+							arr_tmp[${#arr_tmp[@]}]="${str_lhs}=\"${str_rhs}\"" #"
+						fi
+					else
+						str_opt+=" $str_lhs"
+					fi
+					dia_yn "Do you want to set another header option?"
+				done
+				if [[ $str_opt ]]; then
+					arr_tmp[${#arr_tmp[@]}]="options=\"${str_opt# }\"" #"
+				fi
+			fi
+			if ((${#arr_tmp[@]})); then
+				arr_content[content_idx++]="${str_indent}    <ipset name=\"$str_set\" type=\"$str_type\" ${arr_tmp[*]}>" #"
+			else
+				arr_content[content_idx++]="${str_indent}    <ipset name=\"$str_set\" type=\"$str_type\">" #"
+			fi
+			dia_yn "Do you want to add an element?"
+			if (($? == 0)); then
+				while (($? == 0)); do
+					_add_set_element
+					dia_yn "Do you want to add another element?"
+				done
+			fi
+			arr_content[content_idx++]="${str_indent}    </ipset>"
+		fi
+	elif [[ $str_rule = "Import set" ]]; then
+		str_tmp="$(dia_ibox "Enter the file name")"
+		if [[ $str_tmp ]]; then
+			arr_content[content_idx++]="${str_indent}<ipset import_xml=\"$str_tmp\"/>" #"
+		fi
+	elif [[ $str_rule = "Import elements" ]]; then
+		str_set="$(dia_ibox "Enter the set name")"
+		if [[ $str_set ]]; then
+			str_tmp="$(dia_ibox "Enter the file name")"
+		fi
+		if [[ $str_tmp ]]; then
+			arr_content[content_idx++]="${str_indent}<ipset name=\"$str_set\" import_plain=\"$str_tmp\"/>" #"
+		fi
+	elif [[ $str_rule = "Add elements" ]]; then
+		str_set="$(dia_ibox "Enter the set name")"
+		if [[ $str_set ]]; then
+			arr_content[content_idx++]="${str_indent}    <ipset name=\"$str_set\">" #"
+			while (($? == 0)); do
+				_add_set_element
+				dia_yn "Do you want to add another element?"
+			done
+			arr_content[content_idx++]="${str_indent}    </ipset>"
+		fi
+	fi
+elif [[ $str_rule = Close ]]; then
+	if (($tag_idx > 0)); then
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		dia_mbox "Tag \`${arr_tags[tag_idx]}' has been closed."
+		unset arr_tags[tag_idx]
+	else
+		dia_mbox "There are no tags open."
+	fi
+elif [[ $str_rule = "Enter comment" ]]; then
+	str_tmp="$(dia_ibox "Enter a comment")"
+	if [[ $str_tmp ]]; then
+		arr_content[content_idx++]="${str_indent}    <!-- $str_tmp -->"
+	fi
+elif [[ $str_rule = View ]]; then
+	printf "\n"
+	printf "%s\n" "${arr_content[@]}"
+	printf "\n"
+	read -p " Press \`ENTER' to continue"
+fi
+
+dia_yn "Do you want to continue working on this rule file?\n\
+If you CANCEL, all open tags will be closed and the file will be written."
+if (($? != 0)); then
+	for i in ${!arr_tags[*]}; do
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		unset arr_tags[tag_idx]
+	done
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+iactive_rule_builder () { # interactive rule file builder
+local -i i x
+local -i template_rule=0 combined_rule=0 single_rule=0 ipt_tag=0
+local -i tag_idx=0 content_idx=0
+local -a arr_tags arr_tmp arr_templ arr_rb arr_content arr_pubfunc
+local t_name r_name str_tmp
+local str_indent
+arr_title=( --title "$ME rule file builder" )
+local r_file="${SAVE_DIR}/${me}-rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
+i=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+done
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	x_args=( $(build_wt_dummy_list "${x_args[@]}") )
+fi
+
+while (($? == 0)); do
+	_ia_add_rules
+done
+if (($? <= 1)); then
+	if ((${#arr_content[@]})); then
+		mutex_on || bail_out $ER_FAIL
+		until (set -C; create_file "$r_file") &>/dev/null; do
+			r_file="$(dia_ibox "File \`$r_file' already exists.\nEnter a new file name (without the prefixing path).")"
+			(($?)) && return 1
+			r_file="$SAVE_DIR/${r_file}"
+		done
+		printf '<?xml version="1.0"?>\n\n' > "$r_file"
+		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$r_file"
+		printf "%s\n" "${arr_content[@]}" >> "$r_file"
+		printf '</ip_array_root>\n' >> "$r_file"
+		cleanup_lock
+		if [[ -s "$r_file" ]]; then
+			dia_yn "The resulting file has been saved to: $r_file\nDo you want to view the created rule file?"
+			if (($? == 0)); then
+				printf "%s:\n" "$r_file"
+				printf "\n" # we use cat as --textbox does not handle indention nicely
+				"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+			fi
+		else
+			run_rm "$r_file"
+		fi
+	else
+		dia_mbox "No rules have been collected."
+	fi
+fi
+dia_yn "Do you want to create another rule file?"
+} # -------------------------------------------------------------------------
+
+iactive_config_builder() { # interactive config file builder
+((${#CONFIG_ENTRY_ARRAY[@]})) || {
+	log -E "\`CONFIG_ENTRY_ARRAY' is undefined."
+	return $ER_NODEF
+}
+local -i i x
+local v_name v_type v_msg v_help
+local -a arr_content arr_names arr_conf arr_tmp
+arr_title=( --title "$ME configuration file builder" )
+local c_file="${SAVE_DIR}/${me}-conf_$(run_date +%F_%T)_rnd${RANDOM}.conf"
+i=0
+for x in ${!CONFIG_ENTRY_ARRAY[@]}; do # use values from the config entry array
+	set -- ${CONFIG_ENTRY_ARRAY[x]}
+	arr_names[i]="$1"
+	arr_conf[i]="$1 $4 $3"
+	let i++
+done
+mutex_on || bail_out $ER_FAIL
+until (set -C; create_file "$c_file") &>/dev/null; do
+	c_file="$(dia_ibox "File \`$c_file' already exists.\nEnter a new file name (without the prefixing path).")"
+	(($?)) && return 1
+	c_file="$SAVE_DIR/${c_file}"
+done
+while (($? == 0)); do
+	_add_conf_var
+done
+cleanup_lock
+if [[ -s "$c_file" ]]; then
+	dia_yn "The resulting configuration file has been saved to: $c_file\nDo you want to view the created configuration file?"
+	if (($? == 0)); then
+		printf "%s:\n" "$c_file"
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	fi
+else
+	run_rm "$c_file"
+fi
+} # -------------------------------------------------------------------------
+
+_ia_add_sysctl() {
+local str_choice str_tmp oIFS
+local -i i new_index args
+local -a arr_tmp
+#str_choice=$(dia_menu "Select an option." \
+#	"Add tag" "Add a sysctl tag" \
+#	"Close tag" "Close last opened tag" \
+#	"Enter comment" "Add a comment" \
+#	"View" "View the created rules")
+str_choice=$(dia_menu "Select an option." \
+	"Add tag" "Add a sysctl tag" \
+	"Enter comment" "Add a comment" \
+	"View" "View the created rules")
+if [[ $str_choice = "Add tag" ]]; then
+	while (($? == 0)); do
+		str_choice=$(dia_menu --noitem "Choose a sysctl setting.\n\
+XML code will be automatically generated.\n\
+CANCEL to return to the main window." "${arr_sysctl[@]}")
+		if (($? == 0)); then
+			for i in ${!arr_sysctl[*]}; do # remove dupes from the list
+				if [[ ${arr_sysctl[i]} = $str_choice ]]; then
+					unset arr_sysctl[i]
+					if [[ $DIALOG_PROG = *whiptail ]]; then
+						unset arr_sysctl[i+1]
+					fi
+					break
+				fi
+			done
+			oIFS="$IFS"
+			IFS='.'
+			set -- $str_choice
+			IFS="$oIFS"
+			new_index=0 args=$#
+			if ((${#arr_tags[@]})); then # we have tags open
+				for ((i=0; i<$((args - 1)); i++)); do # see if the new setting has same path
+					if [[ ${arr_tags[i]} = $1 ]]; then
+						new_index=$(($i + 1))
+						shift
+					else
+						new_index=$i
+						break
+					fi
+				done
+				# close tags if needed
+				for ((i=$((tag_idx - 1)); i>=new_index; i--)); do let tag_idx--
+					arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+					str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+					unset arr_tags[i]
+				done
+			fi
+			# open (new) tags
+			for str_tmp; do
+				str_indent+="    "
+				arr_tags[tag_idx++]="$str_tmp"
+				arr_content[content_idx++]="${str_indent}<$str_tmp>"
+			done
+			# leave only last name of path = key name
+			if (($# > 1)); then
+				shift $(($# - 1))
+			fi
+			str_tmp="$(dia_ibox "Enter a value for: \`$1'")"
+			if (($? == 0)); then
+				arr_content[content_idx-1]+=" $str_tmp </$1>"
+				str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+				unset arr_tags[--tag_idx]
+			else
+				for ((i=$((tag_idx - 1)); i>=new_index; i--)); do
+					unset arr_content[--content_idx]
+					unset arr_tags[--tag_idx]
+					str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+				done
+				break
+			fi
+		else
+			break
+		fi
+	done
+#elif [[ $str_choice = "Close tag" ]]; then
+#	if (($tag_idx > 0)); then
+#		let tag_idx--
+#		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+#		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+#		dia_mbox "Tag \`${arr_tags[tag_idx]}' has been closed."
+#		unset arr_tags[tag_idx]
+#	else
+#		dia_mbox "There are no tags open."
+#	fi
+elif [[ $str_choice = "Enter comment" ]]; then
+	str_choice="$(dia_ibox "Enter a comment")"
+	if [[ $str_choice ]]; then
+		arr_content[content_idx++]="${str_indent}    <!-- $str_choice -->"
+	fi
+elif [[ $str_choice = "View" ]]; then
+	printf "\n"
+	printf "%s\n" "${arr_content[@]}"
+	printf "\n"
+	read -p " Press \`ENTER' to continue"
+fi
+dia_yn "Do you want to continue working on this sysctl rule file?\n\
+If you CANCEL, all open tags will be closed and the file will be written."
+if (($? != 0)); then
+	for i in ${!arr_tags[*]}; do
+		let tag_idx--
+		arr_content[content_idx++]="${str_indent}</${arr_tags[tag_idx]}>"
+		str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+		unset arr_tags[tag_idx]
+	done
+	return 1
+fi
+} # -------------------------------------------------------------------------
+
+iactive_sysctl_builder() { # interactive sysctl rule file builder
+local str_indent
+local -i tag_idx=0 content_idx=0
+local -a arr_tags arr_content arr_sysctl=()
+local c_file="${SAVE_DIR}/${me}-sysctl_rules_$(run_date +%F_%T)_rnd${RANDOM}.xml"
+arr_title=( --title "$ME sysctl rule file builder" )
+
+while read -r -t $GLOBAL_READ_TIMEOUT; do # retrieve sysctl keys
+	if [[ $REPLY = net.* && $REPLY != net.ipv6.* ]]; then
+		if [[ -e /proc/sys/${REPLY//.//} ]]; then
+			[[ -w /proc/sys/${REPLY//.//} ]] && arr_sysctl[${#arr_sysctl[@]}]="${REPLY#net.}"
+		else
+			arr_sysctl[${#arr_sysctl[@]}]="${REPLY#net.}"
+		fi
+	fi
+done < <(dn2 run_sctl -N -a)
+if ((${#arr_sysctl[@]} == 0)); then
+	dia_mbox "Could not retrieve any sysctl data!"
+	return $ER_FAIL
+fi
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	arr_sysctl=( $(build_wt_dummy_list "${arr_sysctl[@]}") )
+fi
+
+while (($? == 0)); do
+	_ia_add_sysctl
+done
+if (($? <= 1)); then
+	if ((${#arr_content[@]})); then
+		mutex_on || bail_out $ER_FAIL
+		until (set -C; create_file "$c_file") &>/dev/null; do
+			c_file="$(dia_ibox "File \`$c_file' already exists.\nEnter a new file name (without the prefixing path).")"
+			(($?)) && return 1
+			c_file="$SAVE_DIR/${c_file}"
+		done
+		printf '<?xml version="1.0"?>\n\n' > "$c_file"
+		printf '<ip_array_root name="iptables_rules" syntax_version="1.1">\n' >> "$c_file"
+		printf '<net>\n' >> "$c_file"
+		printf "%s\n" "${arr_content[@]}" >> "$c_file"
+		printf '</net>\n' >> "$c_file"
+		printf '</ip_array_root>\n' >> "$c_file"
+		cleanup_lock
+	else
+		dia_mbox "No rules have been collected."
+	fi
+fi
+if [[ -s "$c_file" ]]; then
+	dia_yn "The resulting sysctl rule file has been saved to: $c_file\nDo you want to view the created file?"
+	if (($? == 0)); then
+		printf "%s:\n" "$c_file"
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$c_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	fi
+else
+	run_rm "$c_file"
+fi
+dia_yn "Do you want to create another sysctl rule file?"
+} # -------------------------------------------------------------------------
+
+iactive_ruleblock_builder() { # interactive ruleblock builder
+arr_title=( --title "$ME ruleblock builder" )
+local str_act str_tmp t_name r_name r_file
+local -i i x idx
+local -a arr_tmp arr_templ arr_rb arr_inf arr_rb_tmp arr_line
+
+if [[ $DIALOG_PROG = *dialog ]]; then
+	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "Edit an existing ruleblock")
+elif [[ $DIALOG_PROG = *whiptail ]]; then
+	str_act=$(dia_menu --noitem "Select the desired option" "Create a new ruleblock" "" "Edit an existing ruleblock" "")
+fi
+(($?)) && return 1
+if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then i=0
+	while read -t $GLOBAL_READ_TIMEOUT; do
+		if [[ $REPLY != @(BT|BASE_TEMPLATE)_* ]]; then # don't show base templates
+			arr_tmp[i++]="$REPLY"
+		fi
+	done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort )
+	if ((${#arr_tmp[@]} == 1)); then
+		dia_mbox "Got only one template: \`${arr_tmp[0]}'. Selecting it."
+		t_name="${arr_tmp[0]}"
+	else
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			arr_tmp=( $(build_wt_dummy_list "${arr_tmp[@]}") )
+		fi
+		t_name=$(dia_menu --noitem "Choose a template" "${arr_tmp[@]}")
+		(($? == 0)) || return 1
+	fi
+	[[ $t_name ]] || return 1
+else
+	dia_mbox "Templates must first be parsed (parse-xml -pt)"
+	return 1
+fi
+str_tmp=""
+load_all_templates || return
+$($copy_array "$t_name" arr_templ) || return 1
+for i in ${!arr_templ[*]}; do
+	if [[ ${arr_templ[i]} != option_list_* ]]; then
+		arr_inf[${#arr_inf[*]}]="${arr_templ[i]}"
+		unset arr_templ[i]
+	elif [[ ${arr_templ[i]} = option_list_0* ]]; then
+		str_tmp+="${arr_templ[i]#option_list_0*=} "
+	fi
+done
+if [[ $str_tmp ]]; then
+	arr_inf[${#arr_inf[*]}]="Ruleblock structure:"
+	arr_inf[${#arr_inf[*]}]="$str_tmp"
+fi
+if [[ $str_act = "Create a new ruleblock" ]]; then
+	r_name=$(dia_ibox "Enter a name for the ruleblock (prefix with RB_ or RULEBLOCK_)" RB_)
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	x=0
+	while (($? == 0)); do
+		dia_yn "Add a line to the ruleblock?" && _add_rb_line && arr_rb[x++]="${arr_line[*]}"
+	done
+elif [[ $str_act = "Edit an existing ruleblock" ]]; then
+	load_all_ruleblocks || return
+	# put list of all ruleblocks into an array
+	if [[ $DIALOG_PROG = *dialog ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort) ) )
+	elif [[ $DIALOG_PROG = *whiptail ]]; then
+		arr_tmp=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${RULEBLOCK_DIR}"/__parsed_RULEBLOCK_NAMES|run_sort) ) )
+	fi
+	# choose one ruleblock
+	if ((${#arr_tmp[@]})); then
+		if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_tmp[@]} == 1)); then
+			dia_mbox "Got only one ruleblock: \`${arr_tmp[0]}'. Selecting it."
+			r_name="${arr_tmp[0]}"
+		elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_tmp[@]} == 2)); then
+			dia_mbox "Got only one ruleblock: \`${arr_tmp[0]}'. Selecting it."
+			r_name="${arr_tmp[0]}"
+		else
+			r_name=$(dia_menu --noitem "Choose a ruleblock" "${arr_tmp[@]}")
+		fi
+	else
+		dia_mbox "No ruleblocks have been found!"
+		return 0
+	fi
+	(($? == 0)) || return 1
+	[[ $r_name ]] || return 1
+	$($copy_array "$r_name" arr_rb) || return 1
+	x=1 idx=0
+	if ! ((${#arr_rb[*]})); then
+		dia_mbox "Ruleblock \`$r_name' is empty or not defined."
+		return $ER_NODEF
+	fi
+	for i in ${!arr_rb[*]}; do # add line numbers
+		arr_rb_tmp[idx++]="$x: ${arr_rb[i]}"
+		if [[ $DIALOG_PROG = *whiptail ]]; then
+			arr_rb_tmp[idx++]="item"
+		fi
+		let x++
+	done
+	x=0 arr_tmp=()
+	for i in ${!arr_templ[*]}; do # arr_templ has holes, we need a continous list
+		if [[ ${arr_templ[i]} = option_list_0* ]]; then
+			arr_tmp[x++]="${arr_templ[i]}"
+		fi
+	done
+	while (($? == 0)); do # edit line
+		_edit_rb_line && dia_yn "Do you want to edit another rule?"
+	done
+fi
+r_file="$SAVE_DIR/${r_name}.xml"
+if ((${#arr_rb[*]})); then
+	mutex_on || bail_out $ER_FAIL
+	until (set -C; create_file "$r_file") &>/dev/null; do
+		r_file="$(dia_ibox "File \`$r_file' already exists.\nEnter a new file name (without the prefixing path).")"
+		(($?)) && return 1
+		r_file="$SAVE_DIR/${r_file}"
+	done
+	printf '<ruleblock name="%s">\n' "$r_name" > "$r_file"
+	if ((${#arr_inf[*]})); then
+		printf '\t<!--\n\tTemplate name: %s\n\tTemplate options:\n' "$t_name" >> "$r_file"
+		printf "\t%s\n" "${arr_inf[@]}" >> "$r_file"
+		printf '\t%s\n' '-->' >> "$r_file"
+	fi
+	printf "%s\n" "${arr_rb[@]}" >> "$r_file"
+	printf '</ruleblock>\n' >> "$r_file"
+	cleanup_lock
+	dia_yn "The resulting ruleblock has been saved to: ${r_file}\nDo you want to view the created ruleblock?"
+	if (($? == 0)); then
+		if [[ -s "$r_file" ]]; then
+			printf "%s:\n" "$r_file"
+			printf "\n" # we use cat as --textbox does not handle indention nicely
+			"$CAT" "$r_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+		else
+			run_rm "$r_file"
+		fi
+	fi
+	dia_yn "Do you want to create/edit another ruleblock?"
+else
+	dia_mbox "No ruleblock data has been collected."
+fi
+
+} # -------------------------------------------------------------------------
+
+iactive_template_builder() { # interactive template builder
+local t_name t_file str_tmp str_x
+arr_title=( --title "$ME template builder" )
+local -i i x y
+local -a x_args xopts arr_o0 arr_o1 arr_alw0 arr_alw1 arr_templ arr_ltempl arr_tmp
+local -a arr_opts=(
+table "Table name" off
+chain "Chain name" off
+target "Target name" off
+template_msg "Template message" off
+load_template "Load another template" off
+always_use_0 "List of fixed options" off
+always_use_1 "Reverse list of fixed options" off
+option_list_0 "List of options" off
+option_list_1 "Reverse option list" off
+mandatory_vars "Mandatory variables" off
+state_match_arg  "Conntrack states" off
+reverse_mode "Bidirectonal traffic" off
+reverse_condition "Condition for reverse mode" off
+)
+
+i=0
+for x in ${!ARG_NAMES_LIST[*]}; do
+	x_args[i++]="${ARG_NAMES_LIST[x]}"
+done
+if [[ $DIALOG_PROG = *whiptail ]]; then
+	x_args=( $(build_wt_dummy_list "${x_args[@]}") )
+fi
+
+local -a xopts=()
+t_name=$(dia_ibox \
+	"Enter a name for the template (prefix with T_, BT_, GT_, TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_)" T_)
+
+(($? != 0)) && return 1
+
+if [[ -z $t_name ]]; then
+	dia_mbox "template name must not be empty"
+	return 1
+fi
+if [[ $t_name != @(T|BT|GT|BASE_TEMPLATE|GLOBAL_TEMPLATE|TEMPLATE)_+([[:word:]]) ]]; then
+	dia_mbox "\`$t_name' is not a valid template name"
+	return 1
+fi
+t_file="$SAVE_DIR/${t_name}.xml"
+
+xopts=( $(dia_clist "Select the options for the template $t_name.\nMultiple choice." "${arr_opts[@]}") )
+
+if ! ((${#xopts[*]})); then
+	dia_mbox "No options have been selected."
+	return $ER_NODEF
+fi
+for ((x=0; x<=${#xopts[*]}; x++)); do
+	case "${xopts[x]}" in
+		table)
+			if [[ $DIALOG_PROG = *dialog ]]; then
+				xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+					"Choose the table name" filter mangle nat raw security rawpost)"
+			elif [[ $DIALOG_PROG = *whiptail ]]; then
+				xopts[x]="${xopts[x]}=$(dia_menu --noitem \
+					"Choose the table name" filter "" mangle "" nat "" raw "" security "" rawpost "")"
+			fi
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		chain)
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (max. 2 separated by space)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		target)
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter the ${xopts[x]} name(s) (separated by space)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		load_template)
+			if [[ -r ${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES ]]; then
+				if [[ $DIALOG_PROG = *dialog ]]; then
+					arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+				elif [[ $DIALOG_PROG = *whiptail ]]; then
+					arr_templ=( $( while read -t $GLOBAL_READ_TIMEOUT; do printf "%s off\n" "$REPLY"; done < <( "$CAT" "${TEMPLATE_DIR}"/__parsed_TEMPLATE_NAMES|run_sort ) ) )
+				fi
+			else
+				dia_mbox "Cannot find \`${TEMPLATE_DIR}/__parsed_TEMPLATE_NAMES'. Templates must first be parsed (parse-xml -pt)."
+				return 1
+			fi
+			if ! ((${#arr_templ[@]})); then
+				dia_mbox "No template names have been collected!"
+				return 1
+			fi
+			if [[ $DIALOG_PROG = *dialog ]] && ((${#arr_templ[@]} == 1)); then
+				dia_mbox "Only one template has been found: \`${arr_templ[0]}'. Selecting it."
+				arr_ltempl=( ${arr_templ[0]} )
+			elif [[ $DIALOG_PROG = *whiptail ]] && ((${#arr_templ[@]} == 2)); then
+				dia_mbox "Only one template has been found: \`${arr_templ[0]}'. Selecting it."
+				arr_ltempl=( ${arr_templ[0]} )
+			else
+				arr_ltempl=()
+				while (($? == 0)); do
+					for i in ${!arr_ltempl[@]}; do
+						for y in ${!arr_templ[@]}; do
+							[[ ${arr_templ[y]} = off ]] && continue
+							if [[ ${arr_ltempl[i]} = ${arr_templ[y]} ]]; then
+								unset arr_templ[y] # remove dupe entry from previous selection
+								if [[ $DIALOG_PROG = *whiptail ]]; then
+									unset arr_templ[y+1] # remove dupe dummy entry from previous selection
+								fi
+								break
+							fi
+						done
+					done
+					arr_ltempl[${#arr_ltempl[@]}]=$(dia_menu --noitem "Choose one or more template(s) to load.\nCANCEL to quit." "${arr_templ[@]}" )
+					if (($?)); then
+						unset arr_ltempl[${#arr_ltempl[@]}-1]
+						break
+					fi
+				done
+			fi
+		;;
+		state_match_arg)
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter one or two comma separated list(s) of conntrack state names.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		template_msg)
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a template loading message.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		mandatory_vars)
+			xopts[x]="${xopts[x]}=$(dia_ibox "Enter a comma separated list of required variable names.")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		reverse_mode)
+			xopts[x]="${xopts[x]}=$(dia_rlist "Select a reverse mode." \
+				reverse "Reverse data from the first option list (bidirectional traffic)" on mirror "Mirror the first option list" off)"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		reverse_condition)
+			xopts[x]="${xopts[x]}=$(dia_ibox \
+				"Enter a condition that evaluates to true for reverse mode to be used (LHS separated by colon \`:' from RHS.)")"
+			if (($?)); then
+				ia_needopt
+				return 1
+			fi
+		;;
+		option_list_0)
+			i=0 arr_tmp=( "${x_args[@]}" )
+			while (($? == 0)); do
+				arr_o0[i++]=$(dia_menu --noitem \
+					"Choose number $(( ${#arr_o0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
+				if (($? == 0)); then
+					_remove_dupe_templ_entry "${arr_o0[i-1]}"
+				else # if we cancel while selection from list, otherwise we get an empty value into the variable
+					unset arr_o0[--i]
+				fi
+				dia_yn "Do you want to add another option to ${xopts[x]}?"
+			done
+			if ((${#arr_o0[@]})); then
+				dia_yn "Do you want to define default values for one or more of these options?"
+				if (($? == 0)); then
+					for i in ${!arr_o0[*]}; do
+						str_x="$(dia_ibox "Enter a default value for \`${arr_o0[i]}'. Empty value or CANCEL for none.")"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_o0[i]="${arr_o0[i]}=\"$str_x\"" #"
+						fi
+					done
+				fi
+			else
+				dia_mbox "No ${xopts[x]} options have been collected!"
+				return 1
+			fi
+		;;
+		option_list_1)
+			if ! ((${#arr_o0[*]})); then
+				dia_mbox "option_list_0 options have not been set."
+				return 1
+			fi
+			i=0 arr_tmp=( "${x_args[@]}" )
+			while (($? == 0)); do
+				arr_o1[i++]=$(dia_menu --noitem \
+					"Choose number $(( ${#arr_o1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_o0[*]}\nNeed ${#arr_o0[*]} from option_list_0, got: ${#arr_o1[*]}." \
+					"${arr_tmp[@]}")
+				if (($? == 0)); then
+					_remove_dupe_templ_entry "${arr_o1[i-1]}"
+				else
+					ia_needopt
+					return 1
+				fi
+				(( ${#arr_o1[*]} < ${#arr_o0[*]} )) # reverse list must not be greater than first
+			done
+			if ((${#arr_o0[*]} == ${#arr_o1[*]})); then
+				dia_yn "Do you want to define default values for one or more of these options?"
+				if (($? == 0)); then
+					for i in ${!arr_o1[*]}; do
+						str_x="$(dia_ibox \
+							"Enter a default value for \`${arr_o1[i]}'. Empty value or CANCEL for none.")"
+						if (($? == 0)) && [[ $str_x ]]; then
+							arr_o1[i]="${arr_o1[i]}=\"$str_x\"" #"
+						fi
+					done
+				fi
+			else
+				dia_mbox "${xopts[x]} options count does not match option_list_0 sum!"
+				return 1
+			fi
+		;;
+		always_use_0)
+			i=0 arr_tmp=( "${x_args[@]}" )
+			while (($? == 0)); do
+				arr_alw0[i++]=$(dia_menu --noitem \
+					"Choose number $(( ${#arr_alw0[*]} + 1 )) of the ${xopts[x]} options names." "${arr_tmp[@]}")
+				if (($? == 0)); then
+					_remove_dupe_templ_entry "${arr_alw0[i-1]}"
+				else # if we cancel while selection from list, otherwise we get an empty value into the variable
+					unset arr_alw0[--i]
+				fi
+				dia_yn "Do you want to add another option to ${xopts[x]}?"
+			done
+			if ((${#arr_alw0[@]})); then
+				for i in ${!arr_alw0[*]}; do
+					str_x="$(dia_ibox \
+						"Enter a default value for \`${arr_alw0[i]}'.")"
+					if (($? == 0)) && [[ $str_x ]]; then
+						arr_alw0[i]="${arr_alw0[i]}=\"$str_x\"" #"
+					else
+						ia_needopt
+						return 1
+					fi
+				done
+			else
+				dia_mbox "No ${xopts[x]} options have been collected!"
+				return 1
+			fi
+		;;
+		always_use_1)
+			if ! ((${#arr_alw0[*]})); then
+				dia_mbox "always_use_0 options have not been set."
+				return 1
+			fi
+			i=0 arr_tmp=( "${x_args[@]}" )
+			while (($? == 0)); do
+				arr_alw1[i++]=$(dia_menu --noitem \
+					"Choose number $(( ${#arr_alw1[*]} + 1 )) of the ${xopts[x]} options names.\nThese were the values of the first option list:\n ${arr_alw0[*]}\nNeed ${#arr_alw0[*]} from always_use_0, got: ${#arr_alw1[*]}" \
+					"${arr_tmp[@]}")
+				if (($? == 0)); then
+					_remove_dupe_templ_entry "${arr_alw1[i-1]}"
+				else
+					ia_needopt
+					return 1
+				fi
+				(( ${#arr_alw1[*]} < ${#arr_alw0[*]} )) # reverse list must not be greater than first
+			done
+			if ((${#arr_alw0[*]} == ${#arr_alw1[*]})); then
+				for i in ${!arr_alw1[*]}; do
+					str_x="$(dia_ibox \
+						"Enter a default value for \`${arr_alw1[i]}'.")"
+					if (($? == 0)) && [[ $str_x ]]; then
+						arr_alw1[i]="${arr_alw1[i]}=\"$str_x\"" #"
+					else
+						ia_needopt
+						return 1
+					fi
+				done
+			else
+				dia_mbox "${xopts[x]} options count does not match always_use_0 sum!"
+				return 1
+			fi
+		;;
+	esac
+	if (($? != 0)); then return 1; fi
+done
+(($? != 0)) && return 1
+if ((${#xopts[*]} == 0)); then
+	dia_mbox "No options have been collected."
+	return 1
+fi
+mutex_on || bail_out $ER_FAIL
+until (set -C; create_file "$t_file") &>/dev/null; do
+	t_file="$(dia_ibox "File \`$t_file' already exists.\nEnter a new file name (without the prefixing path)." T_)"
+	(($?)) && return 1
+	t_file="$SAVE_DIR/${t_file}"
+done
+printf '<template name="%s">\n' "$t_name" > "$t_file"
+for x in ${!xopts[*]}; do
+	case "${xopts[x]}" in
+		table*|chain*|target*|state_match_arg*|template_msg*|mandatory_vars*|reverse_mode*|reverse_condition*)
+			printf '\t<%s> %s </%s>\n' "${xopts[x]%%=*}" "${xopts[x]#*=}" "${xopts[x]%%=*}"  >> "$t_file"
+		;;
+		load_template)
+			(( ${#arr_ltempl[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_ltempl[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]%%=*}" >> "$t_file"
+		;;
+		always_use_0)
+			(( ${#arr_alw0[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_alw0[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
+		always_use_1)
+			(( ${#arr_alw1[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_alw1[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
+		option_list_0)
+			(( ${#arr_o0[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_o0[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
+		option_list_1)
+			(( ${#arr_o1[*]} )) || continue
+			printf '\t<%s>\n' "${xopts[x]}" >> "$t_file"
+			printf '\t\t%s\n' "${arr_o1[@]}" >> "$t_file"
+			printf '\t</%s>\n' "${xopts[x]}" >> "$t_file"
+		;;
+	esac
+done
+printf '</template>\n' >> "$t_file"
+cleanup_lock
+dia_yn "The resulting template has been saved to: $t_file\nDo you want to view the created template?"
+if (($? == 0)); then
+	if [[ -r "$t_file" ]]; then
+		printf "%s:\n" "$t_file"
+		printf "\n" # we use cat as --textbox does not handle indention nicely
+		"$CAT" "$t_file" && printf "\n" && read -p " Press \`ENTER' to continue"
+	else
+		dia_mbox "Unknown error reading \`$t_file'."
+		return $ER_FAIL
+	fi
+fi
+dia_yn "Do you want to create another template?"
+} # -------------------------------------------------------------------------
+

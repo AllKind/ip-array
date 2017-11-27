@@ -1,0 +1,17 @@
+clusterip: CLUSTERIP target specification.
+    Requires a destination address and an interface specification.
+
+    Synopsis: option[:opt_arg][:...]
+
+        options:
+        new
+        hashmode     sourceip|sourceip-sourceport|sourceip-sourceport-destport
+        clustermac   01-00-5E-XX-XX-XX (not case sensitive)
+        total-nodes  value
+        local-node   value
+        hash-init    [hex]value
+
+    Examples:
+        clusterip=new:hashmode:sourceip:clustermac:01-00-5E-00-00-10:total-nodes:2:local-node:1:hash-init:0xdeadbeef
+        clusterip=hashmode:sourceip-sourceport:clustermac::01-00-5E-00-00-11:total-nodes:2:local-node:1
+

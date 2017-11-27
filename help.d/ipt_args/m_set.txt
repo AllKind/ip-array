@@ -1,0 +1,20 @@
+m_set: set match specification.
+    This argument can be used two times to match on more than one set.
+
+    Synopsis: [!]setname:(dst|src)[,...]:option:[opt_arg:][...]
+        options:
+            nomatch
+            counters
+            subcounters
+            bytes:[!|+|-]value
+            packets:[!|+|-]value
+        + := greater then (--bytes|packets-gt)
+        - := lower then (--bytes|packets-lt)
+
+    Examples:
+        m_set=SET-A:dst
+        m_set=!SET-A:dst,src
+        m_set=SET-A:src:counters:bytes:+1024
+        m_set=SET-A:dst,src:packets:16:bytes:-100
+        m_set=SET-A:dst:bytes:!123
+

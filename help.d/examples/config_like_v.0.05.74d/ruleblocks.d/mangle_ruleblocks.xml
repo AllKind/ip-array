@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+
+<!-- MANGLE TABLE RULEBLOCKS -->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="RB_SET_TCPMSS">
+	<!-- 
+	Purpose: use of TCPMSS target - set TCP maximum segment size
+	Template options:
+	+ mangle table
+	+ TCPMSS target
+	Resulting ruleblock structure:
+	1: chain (OUTPUT / FORWARD)
+	2: output device
+	3: tcpmss (pmtu|value)
+	Mandatory options: chain, tcpmss
+	-->
+</ruleblock>
+
+<ruleblock name="RB_SET_TTL">
+	<!--
+	Purpose: Manipulate TTL on certain subnets
+	'ttl-value' - set TTL to value
+	'-ttl-value' - decrease TTL by value
+	'+ttl-value' - increase TTL by value
+	Ruleblock structure:
+	1: [-|+]ttl value
+	2: input device
+	3: output device
+	4: source address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	9: state
+	Mandatory options: set_ttl, output device
+	-->
+</ruleblock>
+
+<ruleblock name="RB_SET_TOS">
+	<!-- 
+	Purpose: Stateful FORWARD set TOS (Type Of Service)
+	Template options:
+	+ mangle table
+	+ TOS target
+	+ FORWARD chain
+	Resulting ruleblock structure:
+	1: tos value
+	2: input device
+	3: output device
+	4: source address
+	5: destination address
+	6: protocol
+	7: source port
+	8: destination port
+	9: state
+	Mandatory options: set_tos
+	-->
+</ruleblock>
+
+</ip_array_root>
+

@@ -1,0 +1,22 @@
+m_rateest: rateest match specification.
+
+    Synopsis: option:[opt_arg][:...]
+        options:
+        name     name
+        name1    name
+        name2    name
+        bps      value
+        bps1     value
+        bps2     value
+        pps      value
+        pps1     value
+        pps2     value
+        delta
+        [!]eq
+        [!]gt
+        [!]lt
+
+    Examples:
+        m_rateest=name:foo:delta:eq:bps:1Mbit
+        m_rateest=name1:foo1:name2:foo2:delta:gt:pps1:1Mbit:pps2:1.5Mbit
+

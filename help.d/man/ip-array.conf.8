@@ -1,0 +1,1121 @@
+'\" t
+.\"     Title: ip-array.conf
+.\"    Author: Mart Frauenlob aka AllKind <AllKind@fastest.cc>
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 03/24/2016
+.\"    Manual: ip-array 1.2.2
+.\"    Source: ip-array 1.2.2
+.\"  Language: English
+.\"
+.TH "IP\-ARRAY\&.CONF" "8" "03/24/2016" "ip-array 1.2.2" "ip\-array 1\&.2\&.2"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ip-array.conf \- Configure the main configuration file of ip\-array (default: ip\-array\&.conf)
+.SH "SYNOPSIS"
+.sp
+.nf
+/etc/ip\-array/{stable|test}/conf\&.d/ip\-array\&.conf
+.fi
+.SH "DESCRIPTION"
+.PP
+This file is the main configuration file of ip\-array\&. It holds all the variables needed to find the other configuration files and many settings about the host and what to configure\&.
+.SH "VARIABLES"
+.PP
+.PP
+\fICONFIG_FILES\fR
+.RS 4
+Names of the configuration files which will be loaded in order of appearence\&. i\&.e\&. CONFIG_FILES="aliases\&.conf global\&.conf"\&.
+.sp
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTip\fR
+.ps -1
+.br
+This is the only variable that needs to be inside the main configuration file\&. All others can be placed into different files of your choice and should be listed in the above variable, in order to be sourced from there\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fIBASE_TEMPLATES\fR
+.RS 4
+Names of the basic XML template files\&.
+.RE
+.PP
+\fIENABLE_FILTER\fR
+.RS 4
+Enable or disable loading of the iptables filter table configuration\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_FILTER_TEMPLATES\fR
+.RS 4
+Names of the iptables filter table XML templates files\&.
+.RE
+.PP
+\fIFILTER_RULEBLOCKS\fR
+.RS 4
+Names of the iptables filter table ruleblocks files\&.
+.RE
+.PP
+\fIFILTER_RULES\fR
+.RS 4
+Names of the iptables filter table rule files\&.
+.RE
+.PP
+\fIENABLE_MANGLE\fR
+.RS 4
+Enable or disable loading of the iptables mangle table configuration\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_MANGLE_TEMPLATES\fR
+.RS 4
+Names of the iptables mangle table XML templates files\&.
+.RE
+.PP
+\fIMANGLE_RULEBLOCKS\fR
+.RS 4
+Names of the iptables mangle table ruleblocks files\&.
+.RE
+.PP
+\fIMANGLE_RULES\fR
+.RS 4
+Names of the iptables mangle table rule files\&.
+.RE
+.PP
+\fIENABLE_NAT\fR
+.RS 4
+Enable or disable loading of the iptables nat table configuration\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_NAT_TEMPLATES\fR
+.RS 4
+Names of the iptables nat table XML templates files\&.
+.RE
+.PP
+\fINAT_RULEBLOCKS\fR
+.RS 4
+Names of the iptables nat table ruleblocks files\&.
+.RE
+.PP
+\fINAT_RULES\fR
+.RS 4
+Names of the iptables nat table rule files\&.
+.RE
+.PP
+\fIENABLE_RAW\fR
+.RS 4
+Enable or disable loading of the iptables raw table configuration\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_RAW_TEMPLATES\fR
+.RS 4
+Names of the iptables raw table XML templates files\&.
+.RE
+.PP
+\fIRAW_RULEBLOCKS\fR
+.RS 4
+Names of the iptables raw table ruleblocks files\&.
+.RE
+.PP
+\fIRAW_RULES\fR
+.RS 4
+Names of the iptables raw table rule files\&.
+.RE
+.PP
+\fIENABLE_RAWPOST\fR
+.RS 4
+Enable or disable loading of the iptables rawpost table configuration\&. Only works if xtables\-addons are installed\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_RAWPOST_TEMPLATES\fR
+.RS 4
+Names of the iptables rawpost table XML templates files\&. Only works if xtables\-addons are installed\&.
+.RE
+.PP
+\fIRAWPOST_RULEBLOCKS\fR
+.RS 4
+Names of the iptables rawpost table ruleblocks files\&. Only works if xtables\-addons are installed\&.
+.RE
+.PP
+\fIRAWPOST_RULES\fR
+.RS 4
+Names of the iptables rawpost table rule files\&. Only works if xtables\-addons are installed\&.
+.RE
+.PP
+\fIENABLE_SECURITY\fR
+.RS 4
+Enable or disable loading of the iptables security table configuration\&. Valid values are `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIIPT_SECURITY_TEMPLATES\fR
+.RS 4
+Names of the iptables security table XML templates files\&.
+.RE
+.PP
+\fISECURITY_RULEBLOCKS\fR
+.RS 4
+Names of the iptables security table ruleblocks files\&.
+.RE
+.PP
+\fISECURITY_RULES\fR
+.RS 4
+Names of the iptables security table rule files\&.
+.RE
+.PP
+\fIIPSET_RULES\fR
+.RS 4
+Names of the ipset rule files\&.
+.RE
+.PP
+\fIMODULE_DIR\fR
+.RS 4
+Patch to the kernels module directory\&. Defaults to /lib/modules/$(uname \-r)\&.
+.RE
+.PP
+\fIMODULES_TO_LOAD\fR
+.RS 4
+Select the kernel modules to load\&. Entries are separated by newline\&.
+.sp
+Format:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+module\-name [parameters [\&.\&.\&.]]
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fIMODS_TO_RM\fR
+.RS 4
+Select the kernel modules to remove\&.
+.RE
+.PP
+\fILOOPBACK_IF\fR
+.RS 4
+Allowed values: A valid interface name\&. Defaults to `lo\*(Aq if unset\&.
+.sp
+Purpose: Name of the loopback interface\&.
+.RE
+.PP
+\fINET_INTERFACES\fR
+.RS 4
+This variable must be configured with at least one interface\&. Any network interface but `lo\*(Aq (localhost) may be put here\&.
+.sp
+If you use a VPN software that creates an interface (named i\&.e\&. ipsec) you need to put it in as a separate entry\&. Otherwise use the available types:
+.sp
+ext | local | ipsec
+.sp
+ext = an external interface, local = a local interface, ipsec = an ipsec interface
+.sp
+Example:
+.PP
+.B Table\ \&1.\ \&Configure networking interfaces
+.sp -1n
+.TS
+allbox tab(:);
+lB lB lB lB.
+T{
+Inteface name
+T}:T{
+Interface alias
+T}:T{
+Type[:ipsec]
+T}:T{
+Network name
+T}
+.T&
+l l l l
+l l l l
+l l l l
+l l l l
+l l l l
+l l l l.
+T{
+eth0
+T}:T{
+eth0
+T}:T{
+ext:ipsec
+T}:T{
+INET_CON_X
+T}
+T{
+eth1
+T}:T{
+eth1
+T}:T{
+ext
+T}:T{
+INET_CON_Y
+T}
+T{
+eth2
+T}:T{
+eth2
+T}:T{
+local
+T}:T{
+PRODUCTION
+T}
+T{
+eth2
+T}:T{
+eth2:0
+T}:T{
+local
+T}:T{
+DEVELOPMENT
+T}
+T{
+eth3
+T}:T{
+eth3
+T}:T{
+local
+T}:T{
+DMZ
+T}
+T{
+ipsec0
+T}:T{
+ipsec0
+T}:T{
+ipsec
+T}:T{
+VPN_REMOTE_OFFICE
+T}
+.TE
+.sp
+.RE
+.PP
+\fISCRIPT_MAP\fR
+.RS 4
+The purpose of this variable is to configure which scripts will run at what startup mode\&.
+.sp
+The format is (newline separates entries):
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+startup\-parameter\-name[,\&.\&.\&.] { prolog | epilog } script\-name { prolog | epilog } script\-name
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Example:
+.sp
+start,restart prolog my_start_prolog\-script epilog my_start_epilog\-script
+.RE
+.PP
+\fIPOLICY_MAP\fR
+.RS 4
+The purpose of this variable is to configure the policy for buitin iptables chains\&.
+.sp
+The format is (newline separates entries):
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+table chain policy
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Example:
+.sp
+filter INPUT DROP
+.sp
+filter OUTPUT ACCEPT
+.RE
+.PP
+\fIALLOW_LOOPBACK\fR
+.RS 4
+Allow communication to and from the loopback interface\&. Valid values: `0\*(Aq or `1\*(Aq\&.
+.RE
+.PP
+\fIADMIN_CONNECTION\fR
+.RS 4
+Define an administrative connection, which will be allowed under certain conditions\&. The conditions are:
+.sp
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+If the enviroment variable $SSH_CONNECTION is not available, otherwise those values will always be used\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+When IP\-Array enters lockdown mode in start mode\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+In restore mode, if ipset is used\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+In lockdown mode\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+On a fail condition (an error occured while applying a ruleset)\&.
+.RE
+.sp
+The format is:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+admin_source\-IP local_destination\-IP local_destination\-port
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fICHAIN_MAP\fR
+.RS 4
+The purpose of this variable is to create custom iptables chains\&.
+.sp
+The format is (newline separates entries):
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+table chain\-name [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Example:
+.sp
+filter chain1 chain2
+.sp
+mangle mchain1 mchain2
+.RE
+.PP
+\fIJUMP_TREE\fR
+.RS 4
+The purpose of this variable is to create an automated jump tree of iptables chains\&.
+.sp
+The format is:
+.sp
+
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{ none | interface | netname | netname+interface } { table\-name [\&.\&.\&.] | all }
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+`none\*(Aq disables jump tree creation (undefined variable does the same)\&.
+.sp
+`interface\*(Aq means to create a jump tree categorised by interfaces\&.
+.sp
+`netname\*(Aq means to create a jump tree categorised by networks\&.
+.sp
+`netname+interface\*(Aq means to create a jump tree categorised by interfaces and their networks\&.
+.sp
+`table\*(Aq defines in which table the jump tree will be created\&. A value of `all\*(Aq will cause creation in all tables\&.
+.sp
+Examples:
+.sp
+JUMP_TREE="interface filter mangle"
+.sp
+JUMP_TREE="netname all"
+.RE
+.PP
+\fIJUMP_TREE_CHAINS_CREATE_ALL\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Enable or disable automatic creation of all jump tree chains\&.
+.RE
+.PP
+\fIREMOVE_EMPTY_CHAINS\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Remove empty chains after applying the ruleset\&.
+.RE
+.PP
+\fIREMOVE_UNREF_CHAINS\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Remove unreferenced chains after applying the ruleset\&.
+.RE
+.PP
+\fIKNOWN_TRAFFIC_MAP\fR
+.RS 4
+This allows to define which and where the rules are created, which deal with the return traffic identified by the connection tracker\&. The format is (newline separates entries):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+chain [ state ] [ top | bottom ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+state can be either E, R or ER (ESTABLESHED, RELATED or ESTABLISHED and RELATED)\&. top or bottom define wheter the rule should be placed on top or bottom of the rule stack\&.
+.RE
+.PP
+\fIREVERSE_INPUT_RULES_REQUIRED\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+In a ruleblock which uses a template definition that uses the reverse (return) mode to generate bidirectional rules, define if those are needed (i\&.e\&.
+\fIKNOWN_TRAFFIC_MAP\fR
+is not used)\&. This applies to traffic entering the INPUT chain\&.
+.RE
+.PP
+\fIREVERSE_FORWARD_RULES_REQUIRED\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+In a ruleblock which uses a template definition that uses the reverse (return) mode to generate bidirectional rules, define if those are needed (i\&.e\&.
+\fIKNOWN_TRAFFIC_MAP\fR
+is not used)\&. This applies to traffic entering the FORWARD chain\&.
+.RE
+.PP
+\fIFINAL_RULE_MAP\fR
+.RS 4
+Define a terminating rule for custom or builtin chains\&. Format:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+chain action [ limit ] [ burst ] [ log\-level ] [ log\-options ]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+chain = the name of the chain\&. action = Can be one of: log, drop, reject, logdrop, logreject\&. See the help of the iptables arguments for the other entries (\fBip\-array show \-sc ipt_args:limit,log\-level,log\-options\fR)\&. The default value for limit is defined with GLOBAL_LOGLIMIT and the burst value uses the default of GLOBAL_BURSTLIMIT\&.
+.RE
+.PP
+\fILOG_INVALID\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Log packets in invalid state\&. The logging options are defined with the global log options\&.
+.RE
+.PP
+\fIBLOCK_INVALID\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Drop packets in invalid state\&.
+.RE
+.PP
+\fILOG_ILLEGAL\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Log illegal TCP packets\&. The logging options are defined with the global log options\&.
+.RE
+.PP
+\fIBLOCK_ILLEGAL\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Drop illegal TCP packets\&.
+.RE
+.PP
+\fILAN_FTP\fR
+.RS 4
+Select LAN interface from where FTP traffic is permitted\&. Format (whitespace separates entries):
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+lan\-interface|netname[:external\-interface|netname][:active|passive|all|none] [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+i\&.e\&.
+eth1:eth0:active
+or
+eth2
+or
+LAN::passive
+.RE
+.PP
+\fILAN_NS\fR
+.RS 4
+Allow DNS (udp and tcp) traffic from nameservers inside one or more local networks to ISP nameservers\&. Needs the
+\fILAN_NS\fR
+and
+\fIISP_NS\fR
+variables to be defined\&. Purpose: Define name servers (DNS) that are part of a local area network\&.
+.PP
+.B Table\ \&2.\ \&Local (LAN) name servers
+.sp -1n
+.TS
+allbox tab(:);
+lB lB lB.
+T{
+Network name
+T}:T{
+Name server IP address
+T}:T{
+[Name server MAC address]
+T}
+.T&
+l l l
+l l l.
+T{
+DMZ
+T}:T{
+10\&.11\&.11\&.11
+T}:T{
+AA:BB:CC:DD:EE:FF
+T}
+T{
+DMZ
+T}:T{
+10\&.11\&.11\&.12
+T}:T{
+\ \&
+T}
+.TE
+.sp
+.RE
+.PP
+\fIISP_NS\fR
+.RS 4
+Allow DNS (udp and tcp) traffic from nameservers inside one or more local networks to ISP nameservers\&. Needs the
+\fILAN_NS\fR
+and
+\fIISP_NS\fR
+variables to be defined\&. Purpose: Define the Internet service provider name servers (DNS), for each local area network\&.
+.PP
+.B Table\ \&3.\ \&ISP name servers
+.sp -1n
+.TS
+allbox tab(:);
+lB lB lB.
+T{
+Network name
+T}:T{
+ISP name server IP address[,\&.\&.\&.]
+T}:T{
+[External network interface]
+T}
+.T&
+l l l
+l l l.
+T{
+PRODUCTION
+T}:T{
+123\&.12\&.12\&.22,123\&.12\&.12\&.23
+T}:T{
+eth1
+T}
+T{
+DEVELOPMENT
+T}:T{
+124\&.13\&.13\&.23,124\&.13\&.13\&.24
+T}:T{
+\ \&
+T}
+.TE
+.sp
+.RE
+.PP
+\fIISP_SMTP\fR
+.RS 4
+Allow SMTP traffic from inside one or more local networks to SMTP mailservers\&. Needs the
+\fBlan_isp_smtp\fR
+public function to be called in the rule file\&.
+.PP
+.B Table\ \&4.\ \&ISP SMTP servers
+.sp -1n
+.TS
+allbox tab(:);
+lB lB lB.
+T{
+Network name
+T}:T{
+ISP mail server IP address[,\&.\&.\&.]
+T}:T{
+[External network name]
+T}
+.T&
+l l l
+l l l
+l l l.
+T{
+PRODUCTION
+T}:T{
+123\&.12\&.12\&.90,123\&.12\&.12\&.91
+T}:T{
+INET_CON_ISP_X
+T}
+T{
+DEVELOPMENT
+T}:T{
+125\&.25\&.25\&.5,125\&.25\&.25\&.6
+T}:T{
+INET_CON_ISP_Y
+T}
+T{
+DMZ
+T}:T{
+126\&.26\&.26\&.6,128\&.28\&.28\&.8
+T}:T{
+\ \&
+T}
+.TE
+.sp
+.RE
+.PP
+\fIRESTRICT_OUTPUT\fR
+.RS 4
+Valid values: `0\*(Aq, `1, \(aaIFBOUND\*(Aq or `IPBOUND\*(Aq\&.
+.sp
+If the policy for the OUTPUT chain is set to DROP, additional allow rules may be applied\&. A value of `1\*(Aq will allow other configurations like allow rules for local name or time servers\&. A value of \(aaIFBOUND\*(Aq will create OUTPUT allow rules per interface i\&.e\&.
+\-A OUTPUT \-o eth0 \-j ACCEPT\&. While setting it to `IPBOUND\*(Aq will cause creation of one allow rule per IP address configure on each interface\&.
+.RE
+.PP
+\fIREST_OUT_DNS_ALLOW\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+If
+\fIRESTRICT_OUTPUT\fR
+is set to `1\*(Aq and the policy of the OUTPUT chain is DROP, then rules will be created to allow localhost to nameservers traffic \&.
+.RE
+.PP
+\fILOCAL_NS\fR
+.RS 4
+Purpose: Define name servers (DNS) of the local system (most likely those configured in
+/etc/resolv\&.conf\&.
+.sp
+If set to `auto\*(Aq, then IP\-Array will try to read the nameservers from
+/etc/resolv\&.conf\&. Otherwise the following formatting is used:
+.PP
+.B Table\ \&5.\ \&Local name servers (resolv.conf)
+.sp -1n
+.TS
+allbox tab(:);
+lB lB.
+T{
+Name server IP address
+T}:T{
+[External network name]
+T}
+.T&
+l l
+l l.
+T{
+123\&.12\&.12\&.22,123\&.12\&.12\&.23
+T}:T{
+INET_CON_ISP_X
+T}
+T{
+124\&.13\&.13\&.23,124\&.13\&.13\&.24
+T}:T{
+\ \&
+T}
+.TE
+.sp
+.RE
+.PP
+\fIREST_OUT_NTP_ALLOW\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+If
+\fIRESTRICT_OUTPUT\fR
+is set to `1\*(Aq and the policy of the OUTPUT chain is DROP, then rules will be created to allow localhost to time servers traffic \&.
+.RE
+.PP
+\fITIME_SERVERS\fR
+.RS 4
+Purpose: Define time service request (NTP) of the local system\&.
+.sp
+If set to `auto\*(Aq, then IP\-Array will try to read the ntp servers from
+/etc/ntp\&.conf\&. Note that host names are not supported! Otherwise the following formatting is used:
+.PP
+.B Table\ \&6.\ \&Local NTP servers
+.sp -1n
+.TS
+allbox tab(:);
+lB lB.
+T{
+NTP server IP address[,\&.\&.\&.]
+T}:T{
+[External network name]
+T}
+.T&
+l l
+l l.
+T{
+11\&.12\&.13\&.14,12\&.13\&.14\&.15
+T}:T{
+INET_CON_ISP_X
+T}
+T{
+99\&.99\&.99\&.9,99\&.99\&.99\&.10
+T}:T{
+\ \&
+T}
+.TE
+.sp
+.RE
+.PP
+\fIREST_OUT_LAN_ALLOW\fR
+.RS 4
+Valid values "lan\-interface [\&.\&.\&.]"
+.sp
+If
+\fIRESTRICT_OUTPUT\fR
+is set to `1\*(Aq and the policy of the OUTPUT chain is DROP, then rules will be created to allow traffic to the subnets configured \&.
+.RE
+.PP
+\fIREST_ALLOW_RELATED\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+If
+\fIRESTRICT_OUTPUT\fR
+is set to `IFBOUND\*(Aq or \(aaIPBOUND\*(Aq and the policy of the OUTPUT chain is DROP, setting this variable to `0\*(Aq will allow only traffic in ESTABLISHED state, while setting it to `1\*(Aq will allow traffic in ESTABLISHED and RELATED state\&.
+.RE
+.PP
+\fIDROP_DHCP\fR
+.RS 4
+Drop DHCP broadcasts to certain interfaces\&. Allowed values are interface\-names\&.
+.RE
+.PP
+\fIDROP_UPNP\fR
+.RS 4
+Drop UPNP broadcasts to certain interfaces\&. Allowed values are interface\-names\&.
+.RE
+.PP
+\fILOG_PREFIX\fR
+.RS 4
+A prefix for iptables log entries\&..if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBTip\fR
+.ps -1
+.br
+Use a short value, log entries have a limited lenght\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fIGLOBAL_LOGLIMIT\fR
+.RS 4
+An iptables logging limit parameter that will be used globally, wherever it\*(Aqs not specified / requested differently\&. Defaults to 1/s (1 per second)\&.
+.RE
+.PP
+\fIGLOBAL_BURSTLIMIT\fR
+.RS 4
+An iptables logging limit\-burst parameter that will be used globally, wherever it\*(Aqs not specified / requested differently\&. Defaults to `3\*(Aq\&.
+.RE
+.PP
+\fIGLOBAL_LOGLEVL\fR
+.RS 4
+Valid values are: alert, crit, debug, emerg, err, info, notice and warning\&. Defaults to `info\*(Aq\&.
+.sp
+An iptables logging loglevel parameter that will be used globally, wherever it\*(Aqs not specified / requested differently\&.
+.RE
+.PP
+\fIENABLE_IPSEC\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Enable or disable the IPSEC rules\&.
+.RE
+.PP
+\fIALLOW_ALL_BRANCH\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Allow all traffic between all VPN branches\&.
+.RE
+.PP
+\fILOCAL_BRANCH\fR
+.RS 4
+Allowed values: Characters of class [:word:] (alphanumeric and the `_\*(Aq (underline) character)\&.
+.sp
+Purpose: Set name of the local VPN branch\&.
+.RE
+.PP
+\fIIPSEC_RULES\fR
+.RS 4
+The IPSEC rule files\&.
+.RE
+.PP
+\fIVPN_MAP\fR
+.RS 4
+This variable holds the vpn branch data\&.
+.sp
+The VPN_MAP variable is structured as follows (example data provided):
+.PP
+.B Table\ \&7.\ \&VPN_MAP structure
+.sp -1n
+.TS
+allbox tab(:);
+lB lB lB lB.
+T{
+Branch name
+T}:T{
+External IP address
+T}:T{
+LAN address/mask
+T}:T{
+LAN interface IP address
+T}
+.T&
+l l l l
+l l l l
+l l l l.
+T{
+local_branch
+T}:T{
+188\&.88\&.88\&.8
+T}:T{
+192\&.168\&.1\&.0/24
+T}:T{
+192\&.168\&.1\&.1
+T}
+T{
+remote_branch_01
+T}:T{
+177\&.77\&.77\&.7
+T}:T{
+10\&.1\&.1\&.0/24
+T}:T{
+10\&.1\&.1\&.1
+T}
+T{
+remote_branch_02
+T}:T{
+166\&.66\&.66\&.6
+T}:T{
+172\&.16\&.1\&.0/24
+T}:T{
+172\&.16\&.1\&.1
+T}
+.TE
+.sp
+.RE
+.PP
+\fIENABLE_TC_SHAPING\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Enable or disable traffic shaping rules\&.
+.RE
+.PP
+\fITC_MARK_RULES\fR
+.RS 4
+Files holding the iptables MARK and CLASSIFY rules for the traffic shaping\&.
+.RE
+.PP
+\fIOUTPUT_BULK\fR
+.RS 4
+Formatting:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+output\-interface:mark [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Put the matching packets into the output bulk queue disc\&.
+.RE
+.PP
+\fIFORWARD_BULK\fR
+.RS 4
+Formatting:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+input\-interface,output\-interface:mark [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Put the matching packets into the forward bulk queue disc\&.
+.RE
+.PP
+\fIPRIORITIZE_SYN\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Prioritize TCP SYN packets in traffic shaping\&.
+.RE
+.PP
+\fIEXIT_ON_ERROR\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+If enabled, IP\-Array will exit on all error conditions (configuration, comand apply errors, etc\&.)\&. Otherwise it will continue and will only exit on hard errors\&.
+.RE
+.PP
+\fIRULE_PLACEHOLDER\fR
+.RS 4
+Valid values: `_\*(Aq (underscore), `\-\*(Aq (dash), `\&.\*(Aq (dot), `,\*(Aq (comma)\&. Defaults to `_\*(Aq (underscore)\&.
+.sp
+If a rule entry in a ruleblock will not be set, use this character as placeholder\&.
+.RE
+.PP
+\fIUSE_M_CONNTRACK\fR
+.RS 4
+Valid values: `0\*(Aq or `1\*(Aq\&.
+.sp
+Always use the iptables match extension conntrack in favour of the state match\&.
+.RE
+.PP
+\fINFACCT_OBJ_MAP\fR
+.RS 4
+Netfilter accounting objects (nfacct)
+.sp
+Format:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+nfacct\-name [\&.\&.\&.]
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fISYSCTL_RULES\fR
+.RS 4
+Names of the files holding the sysctl rules\&.
+.RE
+.PP
+\fISYSCTL_CONNTRACK_MAX\fR
+.RS 4
+Maximum number of connection to track (conntrack)\&. This can also be set in your sysctl rules, but this variable is here to allow automatic calculation\&.
+.sp
+Formatting:
+.sp
+value (integer) | (x|X)factor (factor = integer)
+.sp
+Using (x|X)factor, the conntrack max value will be automatically calculated and then multiplied with factor (i\&.e\&. x2 \- double the auto value)\&.
+.RE
+.SH "SEE ALSO"
+.PP
+
+\fBip-array\fR(8),
+\fBip-array_defaults.conf\fR(8),
+\fBip-array_ruleblocks\fR(5),
+\fBip-array_rulefiles\fR(5),
+\fBip-array_sysctl_rules\fR(5),
+\fBip-array_templates\fR(5)
+.SH "AUTHOR"
+.PP
+\fBMart Frauenlob aka AllKind\fR <\&AllKind@fastest\&.cc\&>
+.RS 4
+Some guy infront of a screen\&.
+.RE
+.RS 4
+Thanks go to the open source community\&.
+.RE

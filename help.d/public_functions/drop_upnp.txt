@@ -1,0 +1,12 @@
+
+Name: drop_upnp
+
+Description:
+	Drop UPNP (Universal Plug & Play) broadcast on certain interfaces.
+	Configuration variable `DROP_UPNP' must be configured.
+	
+Usage:
+	drop_upnp
+	
+Example:
+	drop_upnp

@@ -1,0 +1,2 @@
+VPN MAP
+Format: name | external IP | LAN range | LAN iface IP

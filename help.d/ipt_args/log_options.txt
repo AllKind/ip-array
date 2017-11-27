@@ -1,0 +1,7 @@
+log_options: Logging options for the LOG target.
+
+    Synopsis: log_tcp_seq | log_tcp_opt | log_ip_opt | log_uid
+
+    Example:
+        log_options=log_tcp_opt
+

@@ -1,0 +1,2 @@
+LAN nameservers
+Format: subnet-name | nameserver-IP | [ nameserver-MAC-addr ]

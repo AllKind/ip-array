@@ -1,0 +1,12 @@
+
+Name: mark_fwd_bulk
+
+Description:
+	Mark (set iptables marks) forwarding traffic to be pushed into the bulk qdisc.
+	Requires the `ENABLE_TC_SHAPING', `TC_MARK_RULES' and `FORWARD_BULK' variables to be configured.
+
+Usage:
+	mark_fwd_bulk
+	
+Example:
+	mark_fwd_bulk

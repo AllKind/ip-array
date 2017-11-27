@@ -1,0 +1,1365 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2017 Mart Frauenlob aka AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                        IP-ARRAY XML FUNCTIONS
+#
+# ------------------------------------------------------------------------- #
+
+
+_verify_attributes() {
+for i in ${attr_indicies}; do
+	eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+	str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+	for i in ${!ARR_TAG_REF[@]}; do
+		if [[ ${ARR_TAG_REF[i]%%[[:blank:]]*} = ${tag_name} ]]; then
+			lsearch "${str_attr_name}" ${ARR_TAG_REF[i]#*[[:blank:]]} || {
+				log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+				return 1
+			}
+			break
+		fi
+	done
+done
+} # -------------------------------------------------------------------------
+
+#xtract_assignment() {
+#local str_w str_v
+#IFS='=' read -r str_w str_v < <(printf "%s\n" "$@")
+#printf "'%s' '%s'\n" "${str_w}" "${str_v}"
+#}
+
+_get_attribute_data() {
+for i in ${attr_indicies}; do
+#	eval 'set -- '$(xtract_assignment "$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")")
+#	printf "%s %s\n" "$1" "$2" # str_attr_name="$1" str_attr_val="$2"
+	str_attr="$(subst_var "ARR_ATTR_NO_${tag_idx}[${i}]")"
+	printf "%s %s\n" "${str_attr%%=*}" "${str_attr#*=}"
+done
+} # -------------------------------------------------------------------------
+
+#_get_attribute_data() {
+#for i in ${attr_indicies}; do
+#	eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+#	printf "%s %s\n" "${str_attr%%=*}" "${str_attr#*=}"
+#done
+#}
+# -------------------------------------------------------------------------
+
+xml_interpreter_templates() {
+local -i tag_max_depth=3 tag_depth=0 root_found=0 template_open=0 IDX=0
+local -i i tag_idx opt_idx m_count attr_members cont_members
+local str_root_tag="ip_array_root" str_root_attr="iptables_templates"
+local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val template_name str_attributes attr_indicies str_cont tmp_content str_type
+local -a RESULT_ARR
+local -a ARR_TAG_REF=(
+"template name msg table chain target reverse_condition reverse_mode"
+"mandatory_vars"
+"table name"
+"target name"
+"chain name"
+"always_use_0 ${ARG_NAMES_LIST[@]}"
+"always_use_1 ${ARG_NAMES_LIST[@]}"
+"option_list_0 ${ARG_NAMES_LIST[@]}"
+"option_list_1 ${ARG_NAMES_LIST[@]}"
+"load_template name"
+"state_match_arg"
+"template_msg name"
+"reverse_mode name"
+"reverse_condition name"
+)
+log -e "Done with xml parsing, interpreting data"
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "${str_act}" in
+		open)
+			[[ $DEBUG_INFO ]] && {
+				pr_str "opening tag: \`${tag_name}'"
+				for str_cont in ARR_COMMENT_NO ARR_ATTR_NO ARR_CONT_NO; do
+					dbg_arr ${str_cont}_${tag_idx}
+				done
+			}
+#			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+#				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+#			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				[[ ${tag_name} = ${str_root_tag} ]] || {
+					log -E "Root tag needed"
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							if ! lsearch "${str_syntax_version}" "${TEMPLATE_SYNTAX_VERSION_ARRAY[@]}"; then
+								log -E "Incompatible template syntax version \`${str_syntax_version}'."
+								return 1
+							fi
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1
+			else
+				((++tag_depth <= tag_max_depth)) || { log -E "Max depth is ${tag_max_depth}"; return 1; }
+				if [[ ${tag_name} != template ]] && ((template_open == 0)); then
+					log -E "\`${tag_name}' needs an open template."
+					return 1
+				fi
+				case "${tag_name}" in
+					template)
+						template_open=1 m_count=0 template_name=""
+						_verify_attributes || return 1
+						while read -r str_attr_name str_attr_val; do
+							if [[ ${str_attr_name} = name ]]; then
+								template_name="${str_attr_val}"
+								break
+							fi
+						done < <(_get_attribute_data)
+						[[ ${template_name} ]] || { log -E "No template name provided."; return 1; }
+						lsearch "${template_name}" "${TEMPLATE_NAMES_ARRAY[@]}" && {
+							log -E "Duplicate template name \`${template_name}'."
+							return 1
+						}
+						log -w "${PF}reading template: $template_name"
+						TEMPLATE_NAMES_ARRAY[${#TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
+						TEMP_TEMPLATE_NAMES_ARRAY[${#TEMP_TEMPLATE_NAMES_ARRAY[@]}]="${template_name}"
+						RESULT_ARR[IDX++]="${template_name}=("
+						_verify_attributes || return 1
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+							case "${str_attr_name}" in
+								target|chain)
+									opt_idx=0
+									for tmp_content in ${str_attr_val//,/ }; do
+										RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}[$((opt_idx++))]=\\\"${tmp_content}\\\"\""
+# " # just coz syntax highlight messes up
+									done
+								;;
+								table|reverse_mode|reverse_condition|msg)
+									RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}=\\\"${str_attr_val}\\\"\""
+								;;
+							esac
+						done
+					;;
+					table|reverse_mode|reverse_condition|msg|template_msg)
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						if ((attr_members > 0)); then
+							_verify_attributes || return 1
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+								RESULT_ARR[IDX++]="[$((m_count++))]=\"${str_attr_name}=\\\"${str_attr_val}\\\"\""
+# "
+							done
+						fi
+						if ((cont_members > 0)); then
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+							RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}=\\\"${str_cont}\\\"\""
+# "
+						fi
+					;;
+					target|chain|load_template|always_use_0|always_use_1|option_list_0|option_list_1|state_match_arg|mandatory_vars)
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						if ((attr_members > 0)); then
+							opt_idx=0
+							_verify_attributes || return 1
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+								case "${tag_name}" in
+									always_use_0|always_use_1|option_list_0|option_list_1)
+										if [[ ${str_attr_val} ]]; then
+											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=${str_attr_val}\""
+# "
+										else
+											RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}\""
+# "
+										fi
+									;;
+									*) RESULT_ARR[IDX++]="[${m_count}]=\"${tag_name}[${opt_idx}]=${str_attr_name}=\\\"${str_attr_val}\\\"\""
+								esac
+								let m_count++ opt_idx++
+							done
+						fi
+						if ((cont_members > 0)); then
+							opt_idx=0
+							for i in $(arr_indicies "ARR_CONT_NO_${tag_idx}"); do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								eval 'set -- '"${str_cont}"
+								for tmp_content in "$@"; do
+									RESULT_ARR[IDX++]="[$((m_count++))]=\"${tag_name}[$((opt_idx++))]=${tmp_content}\""
+# "
+								done
+							done
+						fi
+					;;
+					*) log -E "Invalid tag name \`${tag_name}'."
+						return 1
+				esac
+			fi
+		;;
+		close)
+			[[ $DEBUG_INFO ]] && pr_str "closing tag: \`${tag_name}'"
+			if [[ ${tag_name} = template ]]; then
+				template_open=0
+				RESULT_ARR[IDX++]=")"
+			fi
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			fi
+#			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+#				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+#			done
+		;;
+	esac
+done
+# print collected array assignments
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No templates found."
+	return 0
+fi
+}
+# -------------------------------------------------------------------------
+
+xml_interpreter_ruleblocks() {
+local -i tag_max_depth=2 tag_depth=0 root_found=0 IDX=0 tag_idx i rcount
+local str_root_tag="ip_array_root" str_root_attr="ruleblocks" str_valid_tags="ruleblock" str_valid_attr="name"
+local str_act tag_name str_attr str_syntax_version str_attr_name str_attr_val attr_indicies str_type
+local -a RESULT_ARR
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "${str_act}" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="# ${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				[[ ${tag_name} = ${str_root_tag} ]] || {
+					log -E "Root tag needed"
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							if ! lsearch "${str_syntax_version}" "${RULEBLOCK_SYNTAX_VERSION_ARRAY[@]}"; then
+								log -E "Incompatible ruleblock syntax version \`${str_syntax_version}'."
+								return 1
+							fi
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1
+			else
+				[[ ${tag_name} = ${str_valid_tags} ]] || {
+					log -E "Tag not valid for \`${str_root_tag}'."
+					return 1
+				}
+				((++tag_depth <= tag_max_depth)) || {
+					log -E "Max depth is ${tag_max_depth}."
+					return 1
+				}
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						"${str_valid_attr}")
+							ruleblock_name="${str_attr_val}"
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${ruleblock_name} ]] || { log -E "No ruleblock name provided."; return 1; }
+				[[ $DEBUG_INFO ]] && pr_str "Ruleblock: '${ruleblock_name}' opened"
+				for i in ${!RULEBLOCK_NAMES_ARRAY[@]}; do # check for duplicate ruleblock names
+					if [[ ${RULEBLOCK_NAMES_ARRAY[i]} = ${ruleblock_name} ]]; then
+						log -E "Duplicate ruleblock name \`${ruleblock_name}'."
+						return 1
+					fi
+				done
+				RULEBLOCK_NAMES_ARRAY[${#RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
+				TEMP_RULEBLOCK_NAMES_ARRAY[${#TEMP_RULEBLOCK_NAMES_ARRAY[@]}]="${ruleblock_name}"
+				RESULT_ARR[IDX++]="${ruleblock_name}=("
+				rcount=0
+				for i in $(arr_indicies "ARR_CONT_NO_${tag_idx}"); do
+					eval 'RESULT_ARR[IDX++]=['$((rcount++))']="\"${ARR_CONT_NO_'${tag_idx}'['${i}']}\""'
+					[[ $DEBUG_INFO ]] && eval 'printf "%s\n" "Adding rule: ${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+				done
+				RESULT_ARR[IDX++]=")"
+			fi
+		;;
+		close)
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			fi
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="# ${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			if [[ ${tag_name} == ruleblock ]]; then
+				[[ $DEBUG_INFO ]] && pr_str "Ruleblock '${ruleblock_name}' closed"
+			fi
+		;;
+	esac
+done
+# print collected array assignments
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No ruleblocks found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_interpreter_rules() {
+local -i root_found=0 tag_depth=0 IDX=0
+local str_root_tag="ip_array_root" str_root_attr="iptables_rules"
+local str_act tag_name str_attr str_attr_name str_attr_val attr_indicies str_cont tmp_content cont_indicies str_app_opts str_type str_set str_file
+local template_name ruleblock_name reverse_mode reverse_condition
+local -i tag_idx opt_idx attr_members cont_members opt_list_count opt_count global_opts crule_opts templ_idx rblock_idx c_rule q_rule t_rule pf_rule g_rule set_rule elem_rule
+local -a RESULT_ARR ARR_GLOBAL_OPTS ARR_TMP_GLOB_TEMPLATE ARR_GLOB_TMP_RULEBLOCK ARR_CRULE_OPTS arr_set_opts
+
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "${str_act}" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			cont_indicies=$(arr_indicies "ARR_CONT_NO_${tag_idx}")
+			if ((root_found == 0)); then
+				if [[ $tag_name != $str_root_tag ]]; then
+					log -E "Root tag \`${str_root_tag}' needed."
+					return 1
+				fi
+				while read -r str_attr_name str_attr_val; do
+					case "${str_attr_name}" in
+						syntax_version)
+							str_syntax_version="${str_attr_val}"
+							[[ ${str_syntax_version} = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							lsearch "${str_syntax_version}" "${RULEFILE_SYNTAX_VERSION_ARRAY[@]}" || {
+								log -E "Incompatible rule file syntax version \`${str_syntax_version}'."
+								return 1
+							}
+						;;
+						name)
+							str_type="${str_attr_val}"
+							[[ ${str_type} = ${str_root_attr} ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ ${str_syntax_version} ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ ${str_type} ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1 tag_depth=1 global_opts=0 opt_list_count=0
+			else
+				let ++tag_depth
+				case "${tag_name}" in
+					s|set|ipset|ipsets)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((global_opts == 0)) || { log -E "Tag \`${tag_name}' is not valid within a global iptables tag."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((cont_members > 0)) && {
+							log -E "Only attributes are allowed in tag \`${tag_name}'."
+							return 1
+						}
+						((attr_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						set_rule=1 str_set="" str_stype="" str_file="" arr_set_opts=()
+						while read -r str_attr_name str_attr_val; do
+							case "$str_attr_name" in
+								import_xml)
+									str_file="$str_attr_val"
+									if ! [[ -r $str_file ]]; then
+										log -x "$str_file"
+										return 1
+									fi
+								;;
+								name)
+									 str_set="$str_attr_val"
+								;;
+								type)
+									 str_stype="$str_attr_val"
+								;;
+								timeout|maxelem|hashsize|family|netmask|range|size)
+									arr_set_opts[${#arr_set_opts[@]}]="$str_attr_name $str_attr_val"
+								;;
+								opt|opts|options)
+									arr_set_opts[${#arr_set_opts[@]}]="$str_attr_val"
+								;;
+								*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+									return 1
+							esac
+						done < <(_get_attribute_data)
+						if [[ $str_file ]]; then
+							( xml_parser 'ipsets' < "$str_file" ) || return 1
+						else
+							if [[ -z $str_set ]]; then
+								log -E "\`name' attribute is needed in an ipset tag."
+								return 1
+							elif [[ -z $str_stype ]]; then
+								if ! check_set_exist "$str_set"; then # assume we want to add elements
+									log -e "\`type' attribute is empty for set \`$str_set'. Assumuning adding of elements."
+								fi
+							else
+								RESULT_ARR[IDX++]="ipset_create $str_set $str_stype ${arr_set_opts[*]}"
+							fi
+						fi
+					;;
+					e|elem|element|elements)
+						((set_rule == 1)) || { log -E "Tag \`${tag_name}' is only valid within an ipset tag."; return 1; }
+						((elem_rule == 0)) || { log -E "Only one \`${tag_name}' tag is valid within an ipset tag."; return 1; }
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						elem_rule=1
+						str_regex='.*comment[[:blank:]]+([\"])(.*)([\"]).*' # to match comments
+						if ((attr_members > 0)); then
+							while read -r str_attr_name str_attr_val; do
+								case "$str_attr_name" in
+									import_plain) # import elements from file - newline separated entries
+										if ! [[ -r $str_attr_val ]]; then
+											log -E "File to import set elements from does not exist: \`$str_attr_val'."
+											return 1
+										fi
+										while read -r -t $GLOBAL_READ_TIMEOUT; do
+											REPLY="${REPLY%%#*}" # remove comments [#]
+											[[ $REPLY && $REPLY != +([[:blank:]]) ]] || continue
+											if [[ $REPLY =~ $str_regex ]]; then
+												# catch comments and escape the string containing spaces
+												RESULT_ARR[IDX++]="ipset_add $str_set ${REPLY/"${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"/$(printf '%q\n' \""${BASH_REMATCH[2]}\"")}"
+											else
+												RESULT_ARR[IDX++]="ipset_add $str_set $REPLY"
+											fi
+										done < "$str_attr_val"
+									;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+							done < <(_get_attribute_data)
+						fi
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+							if [[ $str_cont =~ $str_regex ]]; then
+								# catch comments and escape the string containing spaces
+								RESULT_ARR[IDX++]="ipset_add $str_set ${str_cont/"${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"/$(printf '%q\n' \""${BASH_REMATCH[2]}\"")}"
+							else
+								RESULT_ARR[IDX++]="ipset_add $str_set $str_cont"
+							fi
+						done
+					;;
+					f|pub_func)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						pf_rule=1
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								lsearch "${str_cont%%+([[:blank:]])*}" $(show_array_column PUBLIC_FUNCTION_LIST) || {
+									log -E "Unkown public function name \`${str_cont%%+([[:blank:]])*}'."
+									return 1
+								}
+							RESULT_ARR[IDX++]="$(re_normalize str_cont)"
+						done
+						if ((attr_members > 0)); then
+							while read -r str_attr_name str_attr_val; do
+								case "${str_attr_name}" in
+									name)
+										lsearch "${str_attr_val}" $(show_array_column PUBLIC_FUNCTION_LIST) || {
+											log -E "Unkown public function name \`${str_attr_val}'."
+											return 1
+										}
+										 RESULT_ARR[IDX++]="${str_attr_val}"
+									;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+							done < <(_get_attribute_data)
+						fi
+					;;
+					r|rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						q_rule=1
+						local str_app_opts=""
+						for i in ${!ARR_GLOBAL_OPTS[@]}; do
+							str_attr_name="${ARR_GLOBAL_OPTS[i]%%=*}" str_attr_val="${ARR_GLOBAL_OPTS[i]#*=}"
+							str_app_opts+="${str_attr_name}=\"${str_attr_val}\" "
+						done
+						if ((cont_members > 0)); then
+							tmp_content=""
+							for i in ${cont_indicies}; do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								eval 'set -- '"$(re_normalize str_cont)"
+								str_cont=""
+								for str_attr in "$@"; do
+									str_cont+="${str_attr%%=*}=\"${str_attr#*=}\" "
+								done
+								tmp_content+="$(re_normalize str_cont)"
+							done
+							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${tmp_content%[[:blank:]]}"
+						fi
+						if ((attr_members > 0)); then
+							str_cont=""
+							for i in ${attr_indicies}; do
+								eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+								str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+								str_cont+="${str_attr_name}=\"$(re_normalize str_attr_val)\" "
+							done
+							RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}${str_cont%[[:blank:]]}"
+						fi
+					;;
+					tr|template_rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((c_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a combined_rule."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						t_rule=1
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+							template_name="${str_cont%%[[:blank:]]*}"
+							((${#ARR_GLOBAL_OPTS[@]} == 0)) || {
+								log -W "Global options \`${ARR_GLOBAL_OPTS[@]}' will not be applied to the template \`${template_name}'."
+							}
+							RESULT_ARR[IDX++]="process_ipt_ruleblock ${str_cont}"
+						done
+						if ((attr_members > 0)); then
+							template_name="" ruleblock_name=""
+							while read -r str_attr_name str_attr_val; do
+								case "${str_attr_name}" in
+									template) template_name="${str_attr_val}" ;;
+									ruleblock) ruleblock_name="${str_attr_val}" ;;
+									*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+										return 1
+								esac
+							done < <(_get_attribute_data)
+							[[ ${template_name} || ${ruleblock_name} ]] || {
+								log -E "The \`${tag_name}' tag requires \`template_name' and \`ruleblock_name' attributes."
+								return 1
+							}
+							((${#ARR_GLOBAL_OPTS[@]} == 0)) || {
+								log -W "Global options \`${ARR_GLOBAL_OPTS[@]}' will not be applied to the template \`${template_name}'."
+							}
+							RESULT_ARR[IDX++]="process_ipt_ruleblock ${template_name} ${ruleblock_name}"
+						fi
+					;;
+					cr|combined_rule)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((cont_members > 0)) && { log -E "Only attributes are allowed in tag \'${tag_name}'."; return 1; }
+						templ_idx=0 rblock_idx=0 opt_idx=0 c_rule=1 opt_list_count=0 opt_count=0 crule_opts=0 max_optlist=""
+						reverse_mode="" reverse_condition=""
+						ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+							case "${str_attr_name}" in
+								msg) RESULT_ARR[IDX++]="log -I \"${str_attr_val}\"" ;;
+								reverse_mode) reverse_mode="${str_attr_val}" max_optlist=1 ;;
+								reverse_condition) reverse_condition="${str_attr_val}" ;;
+								*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+									return 1
+							esac
+						done
+					;;
+					opt|opts|option|options|optlist)
+						((pf_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a public funtion."; return 1; }
+						((q_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a rule."; return 1; }
+						((t_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within a template_rule."; return 1; }
+						((c_rule == 1)) || { log -E "Tag \`${tag_name}' is only valid within a \`combined_rule'."; return 1; }
+						((set_rule == 0)) || { log -E "Tag \`${tag_name}' is not valid within an ipset tag."; return 1; }
+						((opt_count == 0)) || { log -E "There is already an open option list."; return 1; }
+						((attr_members > 0 && cont_members > 0)) && {
+							log -E "Either attribute or content is allowed in tag \`${tag_name}', not both."
+							return 1
+						}
+						((attr_members == 0 && cont_members == 0)) && { log -E "Empty tag \`${tag_name}'."; return 1; }
+						opt_idx=0
+						if [[ ${reverse_mode} ]]; then
+							((opt_list_count <= max_optlist)) || opt_list_count=0
+							if ((opt_list_count == 0)); then
+								templ_idx=0 rblock_idx=0
+								ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_mode=${reverse_mode}\""
+								[[ ${reverse_condition} ]] && ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"reverse_condition=\\\"${reverse_condition}\\\"\""
+	# "
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
+							fi
+							for i in ${!ARR_GLOBAL_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
+	# "
+							done
+							for i in ${!ARR_CRULE_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
+	# "
+							done
+							for i in ${cont_indicies}; do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								eval 'set -- '"$(re_normalize str_cont)"
+								for str_attr in "$@"; do
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									if ! ((opt_list_count == 1)) && [[ $str_attr_name = empty ]]; then
+										_validate_ipt_option_name "$str_attr_name" || return 1
+									fi
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
+	# "
+									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+								done
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+	# "
+							done
+							if ((attr_members > 0)); then
+								for i in ${attr_indicies}; do
+									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									if ! ((opt_list_count == 1)) && [[ $str_attr_name = empty ]]; then
+										_validate_ipt_option_name "$str_attr_name" || return 1
+									fi
+									((opt_list_count == 1)) && [[ ${str_attr_val} = empty ]] && str_attr_name="${str_attr_val}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name}\""
+									((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+	# "
+								done
+								((opt_list_count == 0)) && ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+	# "
+							fi
+							if ((opt_list_count == max_optlist)); then
+								for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
+									RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
+								done
+								RESULT_ARR[IDX++]=")"
+								for i in ${!ARR_GLOB_TMP_RULEBLOCK[@]}; do
+									RESULT_ARR[IDX++]="${ARR_GLOB_TMP_RULEBLOCK[i]}"
+								done
+								RESULT_ARR[IDX++]=")"
+								RESULT_ARR[IDX++]="process_ipt_ruleblock 'TEMPLATE_TEMP_C_RULE' 'RULEBLOCK_TEMP_C_RULE'"
+							fi
+						else
+							templ_idx=0 rblock_idx=0 opt_list_count=0
+							ARR_TMP_GLOB_TEMPLATE=() ARR_GLOB_TMP_RULEBLOCK=()
+							ARR_TMP_GLOB_TEMPLATE[templ_idx++]="TEMPLATE_TEMP_C_RULE=("
+							ARR_GLOB_TMP_RULEBLOCK[rblock_idx++]="RULEBLOCK_TEMP_C_RULE=("
+							for i in ${!ARR_GLOBAL_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_GLOBAL_OPTS[i]%%=*}\""
+	# "
+								if [[ ${ARR_GLOBAL_OPTS[i]#*=} = *[[:blank:]]* ]]; then
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_GLOBAL_OPTS[i]#*=}' "
+								else
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_GLOBAL_OPTS[i]#*=} "
+								fi
+							done
+							for i in ${!ARR_CRULE_OPTS[@]}; do
+								ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${ARR_CRULE_OPTS[i]%%=*}\""
+	# "
+								if [[ ${ARR_CRULE_OPTS[i]#*=} = *[[:blank:]]* ]]; then
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${ARR_CRULE_OPTS[i]#*=}' "
+								else
+									ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${ARR_CRULE_OPTS[i]#*=} "
+								fi
+							done
+							for i in ${cont_indicies}; do
+								eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+								eval 'set -- '"$(re_normalize str_cont)"
+								for str in "$@"; do
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str%%=*}\""
+	# "
+									if [[ ${str#*=} = *[[:blank:]]* ]]; then
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="'${str#*=}' "
+									else
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str#*=} "
+									fi
+								done
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+	# "
+							done
+							if ((attr_members > 0)); then
+								for i in ${attr_indicies}; do
+									eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+									str_attr_name="${str_attr%%=*}" str_attr_val="${str_attr#*=}"
+									ARR_TMP_GLOB_TEMPLATE[templ_idx++]="\"option_list_${opt_list_count}[$((opt_idx++))]=${str_attr_name%%=*}\""
+	# "
+									if [[ ${str_attr_val} = *[[:blank:]]* ]]; then
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="\\\"${str_attr_val}\\\" "
+	# "
+									else
+										ARR_GLOB_TMP_RULEBLOCK[rblock_idx]+="${str_attr_val} "
+									fi
+								done
+								ARR_GLOB_TMP_RULEBLOCK[rblock_idx]="\"${ARR_GLOB_TMP_RULEBLOCK[rblock_idx]%[[:blank:]]}\""
+	# "
+							fi
+							for i in ${!ARR_TMP_GLOB_TEMPLATE[@]}; do
+								RESULT_ARR[IDX++]="${ARR_TMP_GLOB_TEMPLATE[i]}"
+							done
+							RESULT_ARR[IDX++]=")"
+							for i in ${!ARR_GLOB_TMP_RULEBLOCK[@]}; do
+								RESULT_ARR[IDX++]="${ARR_GLOB_TMP_RULEBLOCK[i]}"
+							done
+							RESULT_ARR[IDX++]=")"
+							RESULT_ARR[IDX++]="process_ipt_ruleblock 'TEMPLATE_TEMP_C_RULE' 'RULEBLOCK_TEMP_C_RULE'"
+						fi
+						let ++opt_count ++opt_list_count
+					;;
+					*)
+						# global iptables options (to apply to others, or build rules by their own (on close))
+						((opt_count == 0)) || { log -E "There is an open option list."; return 1; }
+						_validate_ipt_option_name "${tag_name}" || return 1
+						if ((${#attr_indicies} > 1 && ${#cont_indicies} > 1)); then
+							log -E "Attribute and content in tag #$((tag_idx+1)): \`$tag_name'. Only one of them is valid."
+							return 1
+						elif ((${#attr_indicies} > 1)); then
+							log -E "Too many attributes in tag #$((tag_idx+1)): \`$tag_name'. \
+								There is only one attribute allowed in a global iptables argument tag. \
+								The attribute name will ALWAYS BE REPLACED BY THE NAME OF THE TAG!!!"
+							return 1
+						elif ((${#cont_indicies} > 1)); then
+							log -E "Content string out of bounds in tag #$((tag_idx+1)): \`$tag_name'. \
+								There is only one content string allowed in a global iptables argument tag."
+							return 1
+						fi
+						for i in ${cont_indicies}; do
+							eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'['${i}']}"'
+							if ((c_rule == 0)); then
+								ARR_GLOBAL_OPTS[global_opts]="${tag_name}=${str_cont}"
+							else
+								ARR_CRULE_OPTS[crule_opts]="${tag_name}=${str_cont}"
+							fi
+						done
+						for i in ${attr_indicies}; do
+							eval 'str_attr="${ARR_ATTR_NO_'${tag_idx}'['${i}']}"'
+							str_attr_val="${str_attr#*=}"
+							if ((c_rule == 0)); then
+								ARR_GLOBAL_OPTS[global_opts]="${tag_name}=${str_attr_val}"
+							else
+								ARR_CRULE_OPTS[crule_opts]="${tag_name}=${str_attr_val}"
+							fi
+						done
+						if ((c_rule == 0)); then
+							let ++global_opts
+							g_rule=0 # not a global iptables arguments only rule
+						else
+							let ++crule_opts
+						fi
+					;;
+				esac
+			fi
+		;;
+		close)
+			if ((--tag_depth == 0)); then
+				root_found=0
+				str_type="" str_syntax_version=""
+			else
+				case "${tag_name}" in
+					f|pub_func) pf_rule=0 ;;
+					s|set|ipset) set_rule=0 ;;
+					e|elem|element|elements) elem_rule=0 ;;
+					r|rule)
+						q_rule=0
+						if ((${#ARR_GLOBAL_OPTS[@]})); then g_rule=1; fi # remember we used the global iptables args
+					;;
+					tr|template_rule) t_rule=0 ;;
+					opt|opts|option|options|optlist) let --opt_count ;;
+					cr|combined_rule)
+						if [[ ${reverse_mode} ]]; then
+							(( $(( $((opt_list_count / 2)) * 2)) == opt_list_count)) || {
+								log -E "\`reverse_mode' requires 2 option lists."
+								return 1
+							}
+						fi
+						reverse_mode="" reverse_condition=""
+						c_rule=0
+					;;
+					*)
+						if ((c_rule == 0)); then
+							if ((q_rule == 0 && t_rule == 0)); then # not a combined, template or quick rule - must be a global iptables args rule
+								if ((g_rule == 0)); then # has not been done before
+									str_app_opts=""
+									for i in ${!ARR_GLOBAL_OPTS[@]}; do
+										str_attr_name="${ARR_GLOBAL_OPTS[i]%%=*}" str_attr_val="${ARR_GLOBAL_OPTS[i]#*=}"
+										str_app_opts+="${str_attr_name}=\"${str_attr_val}\" "
+									done
+									RESULT_ARR[IDX++]="process_ipt_quickrule ${str_app_opts}"
+									g_rule=1 # remember that we already processed that one
+								fi
+							fi
+							unset ARR_GLOBAL_OPTS[--global_opts]
+						else
+							unset ARR_CRULE_OPTS[--crule_opts]
+						fi
+				esac
+			fi
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No rules found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_interpreter_ipsets() {
+local -i tag_idx ipset_root_found=0 in_header=0 IDX=0
+local attr_indicies str_act tag_name str_set str_type
+local -a arr_header arr_element RESULT_ARR
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "$str_act" in
+		open)
+			if ((ipset_root_found == 0)) && [[ $tag_name != ipsets ]]; then
+				log -E "Root tag \`ipsets' needed."
+				return 1
+			fi
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+			case "$tag_name" in
+				ipsets) ipset_root_found=1
+				;;
+				ipset) str_set="" str_type="" str_options="" arr_header=()
+					while read -r str_attr_name str_attr_val; do
+						case "$str_attr_name" in
+							name) str_set="$str_attr_val" ;;
+							*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+								return 1
+						esac
+					done < <(_get_attribute_data)
+				;;
+				type)
+					if [[ -z $str_set ]]; then
+						log -E "Need \`ipset' tag opened before defining \`$tag_name'."
+						return 1
+					fi
+					str_type="$str_cont"
+				;;
+				header)
+					if [[ -z $str_type ]]; then
+						log -E "Need \`type' tag before defining \`$tag_name'."
+						return 1
+					fi
+					in_header=1
+				;;
+				family|hashsize|maxelem|range|netmask)
+					if ! ((in_header)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' tag."
+						return 1
+					fi
+					arr_header[${#arr_header[@]}]="$tag_name $str_cont"
+				;;
+				counters|skbinfo|forceadd)
+					if ! ((in_header)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' tag."
+						return 1
+					fi
+					str_options+=" $tag_name"
+				;;
+				memsize|references|revision)
+					: # ignoring those
+				;;
+				timeout)
+					if ! ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' or \`member' tag."
+						return 1
+					fi
+					if ((in_header)); then
+						arr_header[${#arr_header[@]}]="$tag_name $str_cont"
+					elif ((in_member)); then
+						arr_element[${#arr_element[@]}]="$tag_name $str_cont"
+					fi
+				;;
+				member)
+					if ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside an \`ipset' tag."
+						return 1
+					fi
+					in_member=1 arr_element=() str_comment=""
+				;;
+				elem)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
+					arr_element[${#arr_element[@]}]="$str_cont"
+				;;
+				comment)
+					if ! ((in_header || in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`header' or \`member' tag."
+						return 1
+					fi
+					if ((in_header)); then
+						str_options+=" $tag_name"
+					elif ((in_member)); then
+						str_comment="$tag_name \\\"$str_cont\\\""
+					fi
+
+				;;
+				bytes|packets|skbmark|skbprio|skbqueue)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
+					arr_element[${#arr_element[@]}]="$tag_name $str_cont"
+				;;
+				nomatch)
+					if ! ((in_member)); then
+						log -E "Tag \`$tag_name' is only valid inside a \`member' tag."
+						return 1
+					fi
+					arr_element[${#arr_element[@]}]="$tag_name"
+				;;
+			esac
+		;;
+		close)
+			case "$tag_name" in
+				ipsets) ipset_root_found=0
+				;;
+				header)
+					RESULT_ARR[IDX++]="ipset_create $str_set $str_type ${arr_header[*]} $str_options"
+					in_header=0
+				;;
+				member)
+					in_member=0
+					RESULT_ARR[IDX++]="ipset_add $str_set ${arr_element[*]} $str_comment"
+				;;
+			esac
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No ipsets found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_interpreter_sysctl() {
+local -i tag_idx attr_members IDX=0 ridx=0
+local attr_indicies str_cont str_act tag_name str_type str_syntax_version str_path
+local str_root_tag="ip_array_root" str_root_attr="sysctl_rules"
+local -a RESULT_ARR arr_path
+
+for tag_idx in ${!ARR_TAGS[@]}; do
+	set -- ${ARR_TAGS[tag_idx]}
+	str_act="$1" tag_name="$2"
+	case "$str_act" in
+		open)
+			for i in $(arr_indicies "ARR_COMMENT_NO_${tag_idx}"); do
+				eval 'RESULT_ARR[IDX++]="#${ARR_COMMENT_NO_'${tag_idx}'[i]}"'
+			done
+			attr_members=$(arr_members_sum "ARR_ATTR_NO_${tag_idx}")
+			attr_indicies=$(arr_indicies "ARR_ATTR_NO_${tag_idx}")
+			cont_members=$(arr_members_sum "ARR_CONT_NO_${tag_idx}")
+			if ((cont_members > 1)); then
+				log -E "Invalid content in tag: \`$tag_name'. sysctl rules do not allow multi line content."
+				return 1
+			fi
+			if ((root_found == 0)); then
+				if [[ $tag_name != $str_root_tag ]]; then
+					log -E "Root tag \`${str_root_tag}' needed."
+					return 1
+				fi
+				while read -r str_attr_name str_attr_val; do
+					case "$str_attr_name" in
+						syntax_version)
+							str_syntax_version="$str_attr_val"
+							[[ $str_syntax_version = +([[:digit:]]).+([[:digit:]]) ]] || {
+								log -E "Invalid format for \`syntax_version'."
+								return 1
+							}
+							lsearch "$str_syntax_version" "${SYSCTL_SYNTAX_VERSION_ARRAY[@]}" || {
+								log -E "Incompatible sysctl rule file syntax version \`${str_syntax_version}'."
+								return 1
+							}
+						;;
+						name)
+							str_type="$str_attr_val"
+							[[ $str_type = $str_root_attr ]] || {
+								log -E "Expected root attribute \`${str_root_attr}'."
+								return 1
+							}
+						;;
+						*) log -E "Attribute \`${str_attr_name}' is not valid within the \`${tag_name}' tag."
+							return 1
+					esac
+				done < <(_get_attribute_data)
+				[[ $str_syntax_version ]] || { log -E "Syntax version attribute is required."; return 1; }
+				[[ $str_type ]] || { log -E "Root \`name' attribute is required."; return 1; }
+				root_found=1
+			else
+				eval 'str_cont="${ARR_CONT_NO_'${tag_idx}'[*]}"'
+				eval arr_path[ridx++]="$tag_name" # use eval, as could be a shell variable (i.e. for interface ..conf.eth0.xyz)
+				str_path=$(IFS=. ; printf '%s' "${arr_path[*]}")
+				if ((attr_members > 0)); then
+					while read -r str_attr_name str_attr_val; do
+						if dn "$SYSCTL" "${str_path}.$str_attr_name"; then
+							RESULT_ARR[IDX++]="add_sysctl ${str_path}.$str_attr_name=$str_attr_val"
+						else
+							log -E "sysctl option \`${str_path}.$str_attr_name' does not exist!"
+							return 1
+						fi
+					done < <(_get_attribute_data)
+				fi
+				if [[ $str_cont ]]; then
+					if dn "$SYSCTL" "${str_path}"; then
+						RESULT_ARR[IDX++]="add_sysctl ${str_path}=$str_cont"
+					else
+						log -E "sysctl option \`${str_path}' does not exist!"
+						return 1
+					fi
+				fi
+			fi
+		;;
+		close)
+			if [[ $tag_name = $str_root_tag ]]; then
+				((root_found)) && root_found=0
+			fi
+			if ((ridx)); then unset arr_path[--ridx]; fi
+		;;
+	esac
+done
+if ((${#RESULT_ARR[@]})); then
+	printf "%s\n" "${RESULT_ARR[@]}" >&7
+else
+	log -W "No sysctl rules have been found."
+	return 0
+fi
+} # -------------------------------------------------------------------------
+
+xml_parser() {
+[[ $1 ]] || { reqparm $FUNCNAME 1; return 1; }
+local str_interpreter="$1"
+local line tag_name attributes last_tag tmp_content str_attr str_attr_name str_attr_val
+local -i tag_idx=0 tmp_tag_idx=0 comment_mode=0 comment_idx=0 attr_idx=0 cont_idx=0 cont_expect=0 attr_expect=0 line_count=0 x
+local -a ARR_TAGS ARR_TMP_TAGS
+while read -r; do let line_count+=1
+	line="$REPLY"
+	local -a "ARR_COMMENT_NO_${tag_idx}"
+	[[ $DEBUG_INFO ]] && pr_str "Reading new line #${line_count}: '${line}'"
+	# skip empty, xml meta and comment lines
+	[[ ${line} = @(*([[:blank:]])<[?]*[?]>*) ]] && line="${line#*'>'}"
+	while [[ ${line} && ${line} != +([[:blank:]]) ]]; do # re-iterate until line is blank
+		[[ $DEBUG_INFO ]] && pr_str "NEW LOOP RUN - line: '${line}'"
+		if [[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
+		# comment on its own <!--*-->
+			line="${line#*'<!--'}"; line="${line%'-->'*}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				[[ $DEBUG_INFO ]] && pr_str "Found comment: '${line}'"
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			continue 2
+		elif [[ ${line} && ${line} = @(*([[:blank:]])<\!--*-->!([[:blank:]])) ]]; then
+		# comment before additional data <!--*-->
+			line="${line#*'<!--'}"
+			tmp_content="${line%%'-->'*}" line="${line#*'-->'}"
+			[[ $tmp_content && $tmp_content != +([[:blank:]]) ]] && {
+				[[ $DEBUG_INFO ]] && pr_str "Found comment: '${tmp_content}'"
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+			}
+		elif [[ ${line} = @(*([[:blank:]])\<\!--*) ]]; then # multiline comment starts
+			[[ $DEBUG_INFO ]] && pr_str "Comment starts with: '${line}'"
+			line="${line#*'<!--'}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			let comment_mode+=1
+			continue 2
+		elif [[ ${line} = *'-->'* ]] && ((comment_mode > 0)); then # multiline comment ends
+			[[ $DEBUG_INFO ]] && pr_str "Comment ends with: '${line}'"
+			tmp_content="${line%'-->'*}"
+			[[ ${tmp_content} && ${tmp_content} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+			}
+			line="${line#*'-->'}"
+			let comment_mode-=1
+			[[ $DEBUG_INFO ]] && ((comment_mode == 0)) && pr_str "Leaving comment mode with: '${line}' #${line_count}"
+		elif [[ ${line} = *([[:blank:]])'-->'* ]] && ((comment_mode < 1)); then
+			log -E "Attempting to close a comment on line #${line_count}, but there is no comment to close."
+			return 1
+		elif ((comment_mode > 0)); then
+			[[ $DEBUG_INFO ]] && pr_str "Skipping comment line: '${line}' #${line_count}"
+			eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			continue 2
+#		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])\>* ]]; then
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))*([[:blank:]])\>* ]]; then
+		# NEW TAG IN LINE <tag>
+			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%'>'*}"; tag_name="${tag_name//[[:blank:]]/}"
+			last_tag="${tag_name}" line="${line#*<*>}"
+			cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
+			local -a "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx++]="open ${tag_name}" ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = *([[:blank:]])\<+([[:word:]])*([[:blank:]])/\>* ]]; then
+		# NEW TAG IN LINE and immidiate closing <tag/>
+			[[ $DEBUG_INFO ]] && pr_str "Tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%'/>'*}"; tag_name="${tag_name//[[:blank:]]/}"
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag: '${tag_name}' on line #${line_count}: '${line}'"
+			line="${line#*<*/>}"
+			cont_idx=0 cont_expect=0 attr_expect=0 comment_idx=0
+			ARR_TAGS[tag_idx++]="open ${tag_name}"
+			ARR_TAGS[tag_idx++]="close ${tag_name}"
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))+(+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\'))*([[:blank:]])\>* ]]; then
+		# NEW TAG IN LINE <tag attrib=val >
+			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"; tag_name="${tag_name%%+([[:blank:]])*}"
+			attributes="${line#*'<'"${tag_name}"}"; attributes="${attributes%%'>'*}"
+			last_tag="${tag_name}" line="${line#*<*>}"
+			strip_blanks_var 'attributes'
+			attr_idx=0 cont_idx=0 cont_expect=1 attr_expect=0 comment_idx=0
+			local -a "ARR_ATTR_NO_${tag_idx}" "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx]="open ${tag_name}"
+			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			if [[ ${attributes} && ${attributes} != +([[:blank:]]) ]]; then
+				eval 'set -- '"$(re_normalize attributes)"
+				for str_attr in "$@"; do
+					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+				done
+			fi
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'"
+			let tag_idx+=1
+		elif [[ ${line} = *([[:blank:]])\<@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))+([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
+		# NEW TAG IN LINE <tag attrib=val
+			[[ $DEBUG_INFO ]] && pr_str "Tag with attributes found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'}"
+			attributes="${line##*'<'@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))}"; attributes="${attributes%%?(/)'>'*}"
+			tag_name="${tag_name%"${attributes}"*}"
+			last_tag="${tag_name}" line="${line#*"${attributes}"}"
+			strip_blanks_var 'attributes'
+			attr_idx=0 cont_idx=0 cont_expect=1 attr_expect=1 comment_idx=0
+			local -a "ARR_ATTR_NO_${tag_idx}" "ARR_CONT_NO_${tag_idx}"
+			ARR_TAGS[tag_idx]="open ${tag_name}"
+			ARR_TMP_TAGS[tmp_tag_idx++]="${tag_name}"
+			if [[ ${attributes} && ${attributes} != +([[:space:]]) ]]; then
+				eval 'set -- '"$(re_normalize attributes)"
+				for str_attr in "$@"; do
+					eval 'ARR_ATTR_NO_'${tag_idx}'[attr_idx++]="'"$(re_normalize str_attr)"'"'
+				done
+			fi
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'"
+			let tag_idx+=1
+		elif [[ ${line} = *\</@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))\>* ]]; then
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
+			tag_name="${line#*'<'/}"; tag_name="${tag_name%%'>'*}"
+			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close tag \`${tag_name}', but there is no tag opened."; return 1; }
+			[[ ${tag_name} = ${ARR_TMP_TAGS[tmp_tag_idx-1]} ]] || {
+				log -E "Attempting to close tag \`${tag_name}', but tag \`${ARR_TMP_TAGS[tmp_tag_idx-1]}' needs to be closed first."
+				return 1
+			}
+			tmp_content="${line%%'<'/@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))'>'*}"
+			strip_blanks_var 'tmp_content'
+			if [[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]]; then # add remaining content
+				[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+				eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			fi
+			unset ARR_TMP_TAGS[--tmp_tag_idx]
+			ARR_TAGS[tag_idx++]="close ${tag_name}"
+			cont_expect=0 attr_expect=0 comment_idx=0
+			line="${line#*'<'/*'>'}"
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${tag_name}'" "Remaining line: '${line}'"
+		elif [[ ${line} = */\>* ]]; then
+			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
+			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close a tag, but there is no tag opened."; return 1; }
+			tmp_content="${line%%/'>'*}" line="${line#*/'>'}"
+			strip_blanks_var 'tmp_content'
+			if [[ ${tmp_content} && ${tmp_content} != +([[:space:]]) ]]; then # add remaining content
+				[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+				eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'$(re_normalize2 tmp_content)'"'
+			fi
+			ARR_TAGS[tag_idx++]="close ${ARR_TMP_TAGS[tmp_tag_idx-1]}"
+			unset ARR_TMP_TAGS[--tmp_tag_idx]
+			cont_expect=0 attr_expect=0 comment_idx=0
+			[[ $DEBUG_INFO ]] && printf "%s\n%s\n" "Tag name: '${last_tag}'" "Remaining line: '${line}'"
+		elif [[ ${line} = @(*([[:blank:]])<\!--*-->*([[:blank:]])) ]]; then
+			line="${line#*'<!--'}"; line="${line%'-->'*}"
+			[[ ${line} && ${line} != +([[:blank:]]) ]] && {
+				eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${line//[\"\`\']/}"'"'
+			}
+			line=""
+		else # either expected attributes, or expected content, or an unmatched line
+			if ((${#ARR_TAGS[@]})); then
+				if [[ ${line} && ${line} != +([[:space:]]) ]]; then
+					if ((attr_expect == 1)); then
+						if [[ ${line} = *([[:blank:]])+([[:word:]])=?(\"|\')*?(\"|\')* ]]; then
+							str_attr="${line%%[[:blank:]]*}"
+							eval 'ARR_ATTR_NO_'$((tag_idx-1))'[attr_idx++]="'$(re_normalize str_attr)'"'
+							line="${line#"${str_attr}"}"
+							continue
+						elif [[ ${line} = *([[:blank:]])\>* ]]; then
+							line="${line#*'>'}"
+							attr_expect=0
+							continue
+						else
+							log -E "Unmatched line #${line_count} - expecting attribute, or closing \`>': '${line}'"
+							return 1
+						fi
+					fi
+					if [[ ${line} = *([[:blank:]])+(\<|\>)* ]]; then
+						log -E "Unexpected metachar \`<' or \`>' on line #${line_count}: '${line}'"
+						return 1
+					fi
+					if ((cont_expect == 1)); then
+						if [[ $line = *\<\!--*--\>*([[:blank:]]) ]]; then
+							tmp_content="${line#*'<!--'}"; tmp_content="${tmp_content%'-->'*}"
+							[[ $tmp_content && $tmp_content != +([[:blank:]]) ]] && {
+								eval 'ARR_COMMENT_NO_'$((tag_idx > 0 ? tag_idx - 1 : tag_idx))'[comment_idx++]="'"${tmp_content//[\"\`\']/}"'"'
+							}
+							line="${line%%<\!--*}"
+						fi
+						tmp_content="${line%%<+([[:word:]])*([[:blank:]])>*}"
+						line="${line#*"${tmp_content}"}"
+						if [[ $tmp_content && $tmp_content != +([[:blank:]]) ]]; then
+							strip_blanks_var 'tmp_content'
+							[[ $DEBUG_INFO ]] && pr_str  "Adding content for tag ${tag_name}: '${tmp_content}'"
+							eval 'ARR_CONT_NO_'$((tag_idx-1))'[cont_idx++]="'"$(re_normalize2 tmp_content)"'"'
+						fi
+					else
+						log -E "Unmatched line #${line_count} - no content expected: '${line}'"
+						return 1
+					fi
+				fi
+				if [[ -z ${line} || ${line} = +([[:blank:]]) ]]; then continue 2; fi
+			else
+				log -E "Unmatched line #${line_count}: '${line}'"
+				return 1
+			fi
+		fi
+	done
+done
+[[ $DEBUG_INFO ]] &&  {
+	for ((x=0; x<tag_idx; ++x)); do
+		printf "ARR_TAGS[$x]:\t '%s'\n" "${ARR_TAGS[x]}"
+		eval 'for i in ${!ARR_ATTR_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_ATTR_NO_'${x}'[$i]: '\\\"'${ARR_ATTR_NO_'${x}'[i]}'\\\"'"; done'
+		eval 'for i in ${!ARR_CONT_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_CONT_NO_'${x}'[$i]: '\\\"'${ARR_CONT_NO_'${x}'[i]}'\\\"'"; done'
+		eval 'for i in ${!ARR_COMMENT_NO_'${x}'[@]}; do printf "\t%s\n" "ARR_COMMENT_NO_'${x}'[$i]: '\\\"'${ARR_COMMENT_NO_'${x}'[i]}'\\\"'"; done'
+	done
+}
+if ((${#ARR_TMP_TAGS[@]})); then
+	log -E "${#ARR_TMP_TAGS[@]} tags have been left open: ${ARR_TMP_TAGS[*]}"
+	return 1
+fi
+case "${str_interpreter}" in
+	rules) xml_interpreter_rules || return ;;
+	ruleblocks) xml_interpreter_ruleblocks || return ;;
+	templates) xml_interpreter_templates || return ;;
+	ipsets) xml_interpreter_ipsets || return ;;
+	sysctl) xml_interpreter_sysctl || return ;;
+esac
+} # -------------------------------------------------------------------------
+

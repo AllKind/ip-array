@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<!-- BASE RAW TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="BT_RAW_PREROUTING">
+		<table> raw </table>
+		<chain> PREROUTING </chain>
+	</template>
+
+	<template name="BT_RAW_OUTPUT">
+		<table> raw </table>
+		<chain> OUTPUT </chain>
+	</template>
+
+	<template name="BT_RAW_DROP_PREROUTING">
+		<target> DROP </target>
+		<load_template> BT_RAW_PREROUTING </load_template>
+	</template>
+
+	<template name="BT_RAW_NOTRACK_PREROUTING">
+		<target> NOTRACK </target>
+		<load_template> BT_RAW_PREROUTING </load_template>
+	</template>
+
+	<template name="BT_RAW_NOTRACK_OUTPUT">
+		<target> NOTRACK </target>
+		<load_template> BT_RAW_OUTPUT </load_template>
+	</template>
+
+	<template name="BT_RAWDNAT_OUTPUT">
+		<target> RAWDNAT </target>
+		<load_template> BT_RAW_OUTPUT </load_template>
+	</template>
+
+	<template name="BT_RAWDNAT_PREROUTING">
+		<target> RAWDNAT </target>
+		<load_template> BT_RAW_PREROUTING </load_template>
+	</template>
+
+</ip_array_root>
+

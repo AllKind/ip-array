@@ -1,0 +1,12 @@
+
+Name: add_rule
+
+Description:
+	Add an iptables rule to the command queue (array).
+	Can also be used as 'inline' command.
+
+Usage:
+	add_rule table chain rest-of-rule-string
+
+Example:
+	add_rule filter INPUT -s 10.0.0.1 -j DROP

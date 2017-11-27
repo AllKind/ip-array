@@ -1,0 +1,265 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>ip-array_defaults.conf</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array_defaults.conf &#8212; Configuration of ip-array default settings</p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><pre class="synopsis">/etc/ip-array/ip-array_defaults.conf</pre></div><div class="refsect1" lang="en"><a name="d0e42"></a><h2>Description</h2><p> The purpose of this file is, to configure basic (default) settings of
+                <span class="command"><strong>ip-array</strong></span>. Those will be used for the <span class="italic">
+                stable</span>, as well as for the <span class="italic">test</span>
+            configuration. It uses bash shell syntax. Many of the configuration variables can also
+            be set by command line. </p></div><div class="refsect1" lang="en"><a name="d0e56"></a><h2>Variables</h2><p>
+            </p><div class="variablelist"><dl><dt><span class="term">
+                        <code class="varname">ENABLE_COLORS</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `0' if unset.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Enable or disable IP-Array coloured output.</p></dd><dt><span class="term">
+                        <code class="varname">ENABLE_SYSLOG</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `0' if unset.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Enable or disable logging of IP-Array's output to syslog
+                            using the <span class="command"><strong>logger</strong></span> utility.</p></dd><dt><span class="term">
+                        <code class="varname">LOG_FACILITY</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `local0' if unset.</p><p>Allowed values: <span class="simplelist">auth, authpriv (for security information
+                                    of a sensitive
+                                    nature), cron, daemon, ftp, kern, lpr, mail, news, security
+                                    (deprecated synonym for
+                                    auth), syslog, user, uucp, local0
+                                    to local7 inclusive</span>.</p><p>Purpose: Configure IP-Array's syslog logging facility.</p></dd><dt><span class="term">
+                        <code class="varname">VERBOSE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `6' if unset.</p><p>Allowed values: `0' to `8'.</p><p>Purpose: Control level of IP-Array's output verbosity.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>With a non zero environment variable
+                                    `<code class="varname">DEBUG_INFO</code>', additional processing
+                                (debugging) information is printed.</p></div><div class="orderedlist"><ol start="0" type="1"><li><p> No messages are shown. Exit status indicates success or
+                                    failure.</p></li><li><p>Shows start and end message and errors.</p></li><li><p>Main title and warning messages are also shown.</p></li><li><p>Sub title messages are shown in addition.</p></li><li><p>Info title, config and rule file loading messages, are shown
+                                    additionally.</p></li><li><p>Also show notice messages.</p></li><li><p>Verbose output.</p></li><li><p>Also show IP-Array internals.</p></li><li><p>Debug mode (set -x).</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>With a non zero environment variable
+                                            `<code class="varname">DEBUG_INFO</code>', a debugging
+                                            `<code class="varname">PS4</code>' is set.</p></div></li><li><p>More verbose debug mode (set -vx).</p></li></ol></div></dd><dt><span class="term">
+                        <code class="varname">SYSLOG_VERBOSE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `1' if unset.</p><p>Allowed values: `0' to `6'.</p><p>Purpose: Control verbosity level of IP-Array's syslog
+                                logging.</p><div class="orderedlist"><ol start="0" type="1"><li><p> Errror messages are shown.</p></li><li><p>Main title and warning messages are shown.</p></li><li><p>Subtitle messages are shown in addition.</p></li><li><p>Info title, config and rule file loading messages, are
+                                        shown additionally.</p></li><li><p>Also show notice messages.</p></li><li><p>Verbose output.</p></li><li><p>Also show IP-Array internals.</p></li></ol></div></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_MAIN_TITLE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `magenta' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for title messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_SUBTITLE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `blue' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for sub title messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_INFO_TITLE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `cyan' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for info title messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_ERROR</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `red' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for error messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_WARNING</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `yellow' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for warning messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_NOTICE</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `white' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for notice messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_CONFIG_LOAD</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `green' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for configuration file loading messages.</p></dd><dt><span class="term">
+                        <code class="varname">COLOR_MSG_RULE_LOAD</code>
+                    </span></dt><dd><p>Mandatory: no. Defaults to `yellow' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for rule file loading messages.</p></dd><dt><span class="term">
+                        <code class="varname">AUTO_GET_PROGS</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `1'.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Configure if IP-Array should try to automatically find the
+                            mandatory programs (must be in <code class="varname">$PATH</code>) . If disabled
+                            (set to `0'), the program names varaibles (below) <span class="bold"><strong>must</strong></span> be configured manually.</p></dd><dt><span class="term">
+                        <code class="varname">AT</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>at</strong></span> executable
+                            file (i.e: <code class="filename">/usr/bin/at</code>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">CAT</code></span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>cat</strong></span> executable
+                            file (i.e: <code class="filename">/bin/cat</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">DATE</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>date</strong></span> executable
+                            file (i.e: <code class="filename">/bin/date</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">DIALOG</code>
+                    </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <span class="command"><strong>dialog</strong></span> or
+                                <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>dialog</strong></span>
+                            executable file (i.e: <code class="filename">/usr/bin/dialog</code>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">DIFF</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>diff</strong></span> executable
+                            file (i.e: <code class="filename">/usr/bin/diff</code>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">FIND</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>find</strong></span> executable
+                            file (i.e: <code class="filename">/usr/bin/find</code>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">GREP</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>grep</strong></span> executable
+                            file (i.e: <code class="filename">/bin/grep</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">IP</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>ip</strong></span> executable
+                            file (i.e: <code class="filename">/sbin/ip</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">IPSET</code>
+                    </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>ipset</strong></span>
+                            executable file (i.e: <code class="filename">/sbin/ipset</code>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">IPT</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>iptables</strong></span>
+                            executable file (i.e: <code class="filename">/sbin/iptables</code>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">LOGGER</code>
+                    </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>logger</strong></span>
+                            executable file (i.e: <code class="filename">/usr/bin/logger</code>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">LSMOD</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>lsmod</strong></span>
+                            executable file (i.e: <code class="filename">/sbin/lsmod</code>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">MODPROBE</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>modprobe</strong></span>
+                            executable file (i.e: <code class="filename">/sbin/modprobe</code>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">NFACCT</code>
+                    </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>nfacct</strong></span>
+                            executable file (i.e: <code class="filename">/usr/sbin/nfacct</code>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">RM</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>rm</strong></span> executable
+                            file (i.e: <code class="filename">/bin/rm</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">IPT_SAVE</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>iptables-save</strong></span>
+                            executable file (i.e: <code class="filename">/sbin/iptables-save</code>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</p><p>This variable is only used by the IP-Array init script. It is not
+                            globally available.</p></dd><dt><span class="term">
+                        <code class="varname">IPT_RESTORE</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the
+                                <span class="command"><strong>iptables-restore</strong></span> executable file (i.e:
+                                <code class="filename">/sbin/iptables-restore</code>), or the just the name
+                            of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</p><p>This variable is only used by the IP-Array init script. It is not
+                            globally available.</p></dd><dt><span class="term">
+                        <code class="varname">SORT</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>sort</strong></span> executable
+                            file (i.e: <code class="filename">/usr/bin/sort</code>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">TC</code>
+                    </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>tc</strong></span> executable
+                            file (i.e: <code class="filename">/sbin/tc</code>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</p></dd><dt><span class="term">
+                        <code class="varname">UNAME</code>
+                    </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>uname</strong></span>
+                            executable file (i.e: <code class="filename">/bin/uname</code>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">WHIPTAIL</code>
+                    </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <span class="command"><strong>dialog</strong></span> or
+                                <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>whiptail</strong></span>
+                            executable file (i.e: <code class="filename">/usr/bin/whiptail</code>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</p></dd><dt><span class="term">
+                        <code class="varname">BASE_DIR</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/etc/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                            <code class="filename">/etc/ip-array</code>).</p><p>IP-Array base directory.</p></dd><dt><span class="term">
+                        <code class="varname">CONFIG</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">ip-array.conf</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">ip-array.conf</code>).</p><p>Name of the main configuration file.</p></dd><dt><span class="term">
+                        <code class="varname">CONF_DIR</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">conf.d</code>.</p><p>Allowed values: A valid directory name (i.e.:
+                                <code class="filename">conf.d</code>).</p><p>Configuration directory must be below
+                            <code class="varname">BASE_DIR</code>.</p></dd><dt><span class="term">
+                        <code class="varname">LIB_DIR</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                            <code class="filename">/usr/lib/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                                <code class="filename">/usr/lib/ip-array</code>).</p><p>Library directory used for the IP-Array function files.</p></dd><dt><span class="term">
+                        <code class="varname">LOCK_DIR</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/var/run</code>.</p><p>Allowed values: A valid path (i.e.:
+                            <code class="filename">/var/run</code>).</p><p>Directory to put the IP-Array PID file into.</p></dd><dt><span class="term">
+                        <code class="varname">SHARE_DIR</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                            <code class="filename">/usr/share/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                                <code class="filename">/usr/share/ip-array</code>).</p><p>Data directory.</p></dd><dt><span class="term">
+                        <code class="varname">SAVE_FILE</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                            <code class="filename">iptables_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">iptables_ruleset.save</code>).</p><p>File to save the ruleset into. Applies to all the save*
+                            parameters.</p></dd><dt><span class="term">
+                        <code class="varname">IPSET_SAVE_FILE</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                            <code class="filename">ipset_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">ipset_ruleset.save</code>).</p><p>File to put the ipset save output into, when executing IP-Array with
+                            the 'save' startup parameter. Or to load, when restoring with the
+                            'restore' parameter.</p></dd><dt><span class="term">
+                        <code class="varname">RULESETFILE</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                                <code class="filename">ip-array_commands.bash</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">ip-array_commands.bash</code>).</p><p>File where the generated commands will be saved, if executing IP-Array
+                            with one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping
+                            ]-commands' parameters. The target directory will be
+                                <span class="command"><strong>$BASE_DIR/save.d</strong></span>.</p></dd><dt><span class="term">
+                        <code class="varname">DIFF_FILE</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                                <code class="filename">iptables_ruleset_saved_for_diff</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">iptables_ruleset_saved_for_diff</code>).</p><p>File to save the iptables rule listing (iptables -S, or if not
+                            available on old systems -nL) into, after applying the rules. The target
+                            directory will be <span class="command"><strong>$BASE_DIR/save.d</strong></span>.</p><p>This file will be used to check for a difference to the currently
+                            active ruleset, when using the 'diff-last-activated' startup
+                            parameter.</p></dd><dt><span class="term">
+                        <code class="varname">SERVICES</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/etc/services</code>.</p><p>Allowed values: A valid path to the services file (most likely:
+                                <code class="filename">/etc/services</code>).</p><p>Purpose: Configure the location of the services file (containing
+                            service definitions).</p></dd><dt><span class="term">
+                        <code class="varname">PROTOCOLS</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                            <code class="filename">/etc/protocols</code>.</p><p>Allowed values: A valid path to the services file (most likely:
+                                <code class="filename">/etc/protocols</code>).</p><p>Purpose: Configure the location of the protocols file (containing
+                            protocol definitions).</p></dd><dt><span class="term">
+                        <code class="varname">KNOWN_GOOD_RULESET</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to
+                                <code class="filename">KNOWN_GOOD_RULESET.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                                <code class="filename">KNOWN_GOOD_RULESET.save</code>).</p><p>File to save the currently active 'known good' ruleset. This file will
+                            be used to restore the ruleset on 'start', if
+                                <code class="varname">RESTORE_ON_START</code> is enabled.</p></dd><dt><span class="term">
+                        <code class="varname">RESTORE_ON_START</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' to disable `1' to enable.</p><p>Loads the ruleset saved into <code class="varname">$KNOWN_GOOG_RULESET</code>,
+                            if IP-Array is loaded with the `start' parameter (faster startup also
+                            called quick start).</p></dd><dt><span class="term">
+                        <code class="varname">RELOAD_TIME</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to 7.</p><p>Allowed values: Any value greater than 1.</p><p>Time period until the previously saved ruleset will be restored, when
+                            using the 'test' startup parameter.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>If <span class="command"><strong>iptables-save</strong></span> or
+                                        <span class="command"><strong>iptables-restore</strong></span> fails for some reason,
+                                    the 'test' parameter will not work, thus this setting will not
+                                    produce the desired effect.</p></div></dd><dt><span class="term">
+                        <code class="varname">GEN_FORMAT</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `cmd'.</p><p>Allowed values: `cmd': generated commands will be save as list of
+                            commands. &acute;ipt': generated commands will be used in iptables-save format
+                            (faster loading time).</p></dd><dt><span class="term">
+                        <code class="varname">IPTSAVE_FAILS</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' or `1'.</p><p>Enable this if saving or restoring with
+                                <span class="command"><strong>iptables-save</strong></span> or
+                                <span class="command"><strong>iptables-restore</strong></span> fails for some reason.</p><p>
+                            </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Any startup mode, that utilizes
+                                        <span class="command"><strong>iptables-save</strong></span> or
+                                        <span class="command"><strong>iptables-restore</strong></span> will not work in that
+                                    case.</p></div><p>
+                        </p></dd><dt><span class="term">
+                        <code class="varname">USE_IPSET</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' or `1'.</p><p>Enable or disable the usage of ipset.</p></dd><dt><span class="term">
+                        <code class="varname">MAX_SETS</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `256'.</p><p>Allowed values: The value compiled into your kernel.</p><p>The maximal amount of ipset sets to create.</p></dd><dt><span class="term">
+                        <code class="varname">SYNTAX_CHECK</code>
+                    </span></dt><dd><p>Mandatory: no - defaults to `1'.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Perform a bash grammar check before sourcing or executing
+                            files. The bash grammar check is done using `<code class="code">bash -n file</code>'.
+                            Thus the syntax check is very basic and may not catch all errors (as
+                            described in `<code class="code">man bash</code>').</p></dd><dt><span class="term"><code class="varname">DIALOG_PROG</code></span></dt><dd><p>Mandatory: no - defaults to `$DIALOG'.</p><p>Allowed values: empty (make sure one of the variables
+                                <code class="varname">DIALOG</code>, or <code class="varname">WHIPTAIL</code> is
+                            defined, or automatic detection of programs - if enabled - can find
+                            them). `dialog' or `whiptail'. The full path to one of them.</p><p>Purpose: The interactive mode requires a dialog program. Either
+                                <span class="command"><strong>dialog</strong></span> (version 1.2+) or
+                                <span class="command"><strong>whiptail</strong></span> are supported.</p></dd></dl></div><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e1277"></a><h2>See also</h2><p>
+            <span class="citerefentry"><span class="refentrytitle">ip-array</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_sysctl_rules</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
+        </p></div></div></body></html>

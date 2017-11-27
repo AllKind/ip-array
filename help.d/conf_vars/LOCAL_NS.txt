@@ -1,0 +1,4 @@
+Local nameservers (on the firewall itself)
+used to allow dns traffic if OUTPUT chain is restricted 'RESTRICT_OUTPUT=1'
+Format: auto (read from /etc/resolv.conf) or:
+nameserver ip-address[,...] | [ external-net-name ]

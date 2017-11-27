@@ -1,0 +1,17 @@
+ipvs: ipvs match specification.
+
+    Synopsis: option[:opt_arg]
+        options:
+        [!]ipvs
+        addr    [!]address[/mask]
+        dir     [!]ORIGINAL|REPLY
+        method  [!]GATE|IPIP|MASQ
+        port    [!]port (number or name)
+        portctl [!]port (number or name)
+        proto   [!]protocol (number or name)
+
+    Examples:
+        ipvs=!ipvs
+        ipvs=ipvs:proto:!tcp:dir:REPLY
+        ipvs=ipvs:proto:udp:port:dns
+

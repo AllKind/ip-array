@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<!-- MANGLE TABLE RULES -->
+
+<ip_array_root name="iptables_rules" syntax_version="0.1">
+
+	<template_rule>
+
+		<!-- manipulate TCPMSS -->
+		TEMPLATE_MANGLE_SET_TCPMSS RB_SET_TCPMSS
+
+		<!-- manipulate TTL -->
+		TEMPLATE_MANGLE_SET_TTL_FORWARD RB_SET_TTL
+
+		<!-- manipulate TOS -->
+		TEMPLATE_MANGLE_STATEFUL_SET_TOS_FORWARD RB_SET_TOS 
+
+	</template_rule>
+
+</ip_array_root>

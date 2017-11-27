@@ -1,0 +1,18 @@
+sport: Name(s) of the source port(s)
+    Equivalent to --sport|--source-port.
+    Also to be used with the `dccp' and `sctp' matches.
+    Multiple ports can be entered by separating the names with a comma (,).
+    In that case negation is not valid.  Except the multiport match
+    is available, which will invert the whole match.
+    If the multiport match is available a maximum of 15 ports can be enterd.
+    If multiple ports were entered and `dport' contains the same value,
+    the multiport match with the `--ports' option will be used.
+    If icmp is used as protocol, the value of sport will be
+    interpreted as icmp_type.
+
+    Examples:
+        sport=22
+        sport=ftp,ssh,1234
+        sport=!23
+        sport=!31337,12345
+

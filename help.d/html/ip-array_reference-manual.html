@@ -1,0 +1,922 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>IP-Array 1.2.2 Reference Manual</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="d0e2"></a>IP-Array 1.2.2 Reference Manual</h1></div><div><div class="author"><h3 class="author"><span class="firstname">Mart Frauenlob aka AllKind</span> <span class="surname"></span></h3><div class="affiliation"><span class="orgname">AllKind<br></span></div></div></div><div><p class="copyright">Copyright &copy; 2016 AllKind </p></div><div><div class="legalnotice"><a name="d0e16"></a><p>GPL v.2+</p></div></div><div><p class="pubdate">2016</p></div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="chapter"><a href="#intro">1. Introduction</a></span></dt><dd><dl><dt><span class="section"><a href="#about_doc">About this document</a></span></dt><dt><span class="section"><a href="#about_ip-array">About IP-Array</a></span></dt><dd><dl><dt><span class="section"><a href="#whatis_ip-array">What is IP-Array?</a></span></dt><dt><span class="section"><a href="#requirements">Requirements</a></span></dt><dt><span class="section"><a href="#goals">Goals</a></span></dt><dt><span class="section"><a href="#features">Features</a></span></dt><dt><span class="section"><a href="#download_info">Where to find IP-Array?</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#gen_info">2. General Information</a></span></dt><dd><dl><dt><span class="section"><a href="#name_conv">Naming conventions</a></span></dt><dt><span class="section"><a href="#prog_logic">Program logic</a></span></dt><dd><dl><dt><span class="section"><a href="#start_behav">Starting behaviour</a></span></dt><dt><span class="section"><a href="#error_handling">Error handling</a></span></dt><dt><span class="section"><a href="#config_validation">Configuration validation</a></span></dt><dt><span class="section"><a href="#configfile_parsing">XML configuration file parsing</a></span></dt><dt><span class="section"><a href="#jump_tree">iptables jump tree</a></span></dt><dt><span class="section"><a href="#routing">Routing</a></span></dt></dl></dd><dt><span class="section"><a href="#dir_struct">Directory structure</a></span></dt></dl></dd><dt><span class="chapter"><a href="#install">3. Installation</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e819">Installer</a></span></dt><dt><span class="section"><a href="#d0e840">Upgrade</a></span></dt></dl></dd><dt><span class="chapter"><a href="#configure">4. Configuration</a></span></dt><dd><dl><dt><span class="section"><a href="#config_files">Configuration files</a></span></dt><dd><dl><dt><span class="section"><a href="#config_files_bash">Bash configuration files</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_templates_howto">Templates</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e3417">Syntax</a></span></dt><dt><span class="section"><a href="#d0e3449">Template XML tags</a></span></dt><dt><span class="section"><a href="#d0e3585">Template usage guidelines</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_ruleblocks_howto">Ruleblocks</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e3603">Syntax</a></span></dt><dt><span class="section"><a href="#d0e3635">Ruleblocks usage guidelines</a></span></dt><dt><span class="section"><a href="#inline_funcs">inline functions</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_rule_files_howto">Rule files</a></span></dt><dd><dl><dt><span class="section"><a href="#rule_syntax">Syntax</a></span></dt><dt><span class="section"><a href="#rule_xml_tags">Rule file XML tags</a></span></dt><dt><span class="section"><a href="#pub_funcs">Public functions</a></span></dt><dt><span class="section"><a href="#ipset_usage">ipset usage</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_sysctl_rule_files_howto">sysctl rule files</a></span></dt><dd><dl><dt><span class="section"><a href="#sysctl_rule_syntax">Syntax</a></span></dt><dt><span class="section"><a href="#sysctl_rule_xml_tags">sysctl rule file XML tags</a></span></dt></dl></dd></dl></dd><dt><span class="chapter"><a href="#traffic_shaping">5. Traffic shaping</a></span></dt><dt><span class="chapter"><a href="#usage">6. Usage</a></span></dt><dd><dl><dt><span class="section"><a href="#startup_params">Startup parameters and options</a></span></dt><dd><dl><dt><span class="section"><a href="#usage_params">Parameters</a></span></dt><dt><span class="section"><a href="#usage_options">Options</a></span></dt></dl></dd><dt><span class="section"><a href="#init_script">init script</a></span></dt><dt><span class="section"><a href="#exit_codes">Exit codes</a></span></dt><dt><span class="section"><a href="#startup_usage_examples">Usage examples</a></span></dt></dl></dd><dt><span class="chapter"><a href="#appendix">7. Appendix</a></span></dt><dd><dl><dt><span class="section"><a href="#troubleshooting">Troubleshooting</a></span></dt><dt><span class="section"><a href="#support_info">Support</a></span></dt><dt><span class="section"><a href="#bug_report">Bug report</a></span></dt><dt><span class="section"><a href="#co-develop">Co-Development</a></span></dt></dl></dd></dl></div><div class="list-of-tables"><p><b>List of Tables</b></p><dl><dt>2.1. <a href="#d0e541">Example of Template and Ruleblock relationship</a></dt><dt>4.1. <a href="#d0e2530">Configure networking interfaces</a></dt><dt>4.2. <a href="#d0e2882">Local (LAN) name servers</a></dt><dt>4.3. <a href="#d0e2927">ISP name servers</a></dt><dt>4.4. <a href="#d0e2969">ISP SMTP servers</a></dt><dt>4.5. <a href="#d0e3047">Local name servers (resolv.conf)</a></dt><dt>4.6. <a href="#d0e3096">Local NTP servers</a></dt><dt>4.7. <a href="#d0e3235">VPN_MAP structure</a></dt></dl></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="intro"></a>Chapter&nbsp;1.&nbsp;Introduction</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#about_doc">About this document</a></span></dt><dt><span class="section"><a href="#about_ip-array">About IP-Array</a></span></dt><dd><dl><dt><span class="section"><a href="#whatis_ip-array">What is IP-Array?</a></span></dt><dt><span class="section"><a href="#requirements">Requirements</a></span></dt><dt><span class="section"><a href="#goals">Goals</a></span></dt><dt><span class="section"><a href="#features">Features</a></span></dt><dt><span class="section"><a href="#download_info">Where to find IP-Array?</a></span></dt></dl></dd></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="about_doc"></a>About this document</h2></div></div></div><p>This document is the <span class="bold"><strong>reference manual</strong></span> for <span class="bold"><strong>IP-Array version 1.2.2</strong></span>.</p><p>It should provide all the information necessary to configure and use IP-Array.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="about_ip-array"></a>About IP-Array</h2></div></div></div><p>This section gives an overview about what IP-Array is, the requirements, features, goals
+        and online availability.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="whatis_ip-array"></a>What is IP-Array?</h3></div></div></div><p>IP-Array is a command-line program (you may also say `script') written for <span class="bold"><strong>bash</strong></span> (the bash shell <a class="link" href="http://www.gnu.org/software/bash" target="_top">www.gnu.org/software/bash</a>).</p><p>It's purpose is to configure <span class="bold"><strong>IPv4</strong></span>
+          <span class="bold"><strong>firewalling</strong></span> and <span class="bold"><strong>traffic
+            shaping</strong></span> of a linux host.</p><p>To achieve this, IP-Array <span class="bold"><strong>configures</strong></span> the linux
+          kernels <span class="bold"><strong>netfilter / traffic control</strong></span> subsystems via the
+          userspace tools<span class="bold"><strong> iptables / ipset / tc</strong></span>.</p><p>It also allows to <span class="bold"><strong>load and / or unload</strong></span> netfilter
+          related <span class="bold"><strong>kernel</strong></span>
+          <span class="bold"><strong>modules</strong></span> and <span class="bold"><strong>configure</strong></span>
+          the kernel via the <span class="bold"><strong>sysctl program</strong></span>.</p><p><span class="bold"><strong>Intended Audience:</strong></span> Advanced End Users, System
+          Administrators.</p><p><span class="bold"><strong>Field of application:</strong></span> From a single host system to a
+          multi-homed router or gateway.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="requirements"></a>Requirements</h3></div></div></div><p>This list describes, what is necessary to use IP-Array:</p><p>
+          </p><div class="itemizedlist"><ul type="disc"><li><p>Bash version 3.1 or higher.</p></li><li><p>Linux kernel 2.4 or higher.</p></li><li><p>Netfilter support enabled in the kernel.</p></li><li><p>Traffic control support enabled in the kernel (optional). In order to enable
+                traffic shaping.</p></li><li><p>Some coreutils: cat, date, grep, mkdir, rm, sort, uname.</p></li><li><p>The <span class="command"><strong>iptables</strong></span> program.</p></li><li><p>The <span class="command"><strong>ipset</strong></span> program (optional) . Version 4.x to 6.27 are
+                supported.</p></li><li><p>The <span class="command"><strong>iproute2</strong></span> program (ip).</p></li><li><p>The <span class="command"><strong>lsmod</strong></span> and <span class="command"><strong>modprobe</strong></span> programs are
+                required if IP-Array is configured to load and/or unload modules.</p></li><li><p>The <span class="command"><strong>tc</strong></span> program (optional). To enable traffic shaping.</p></li><li><p>The <span class="command"><strong>sysctl</strong></span> program. For system settings.</p></li><li><p>The <span class="command"><strong>logger</strong></span> utility (optional). To write messages to
+                syslog.</p></li><li><p>The <span class="command"><strong>at</strong></span> utility.</p></li><li><p>The <span class="command"><strong>bc</strong></span> (bash calculator) utility.</p></li><li><p>The <span class="command"><strong>dialog</strong></span> or <span class="command"><strong>whiptail</strong></span> program. To create
+                the dialogs in the interactive mode.</p></li><li><p>Decent understanding of the netfilter concept. Tables, chains (and their order
+                of traversal). State match (conntrack) functionality.</p></li><li><p>Decent understanding of the traffic control concept (optional). Qdiscs (htb,
+                sfq), classes, filters and how they work together.</p></li><li><p>Decent understanding of the `sysctl' networking (netfilter) options
+                (optional)</p></li></ul></div><p>
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="goals"></a>Goals</h3></div></div></div><div class="orderedlist"><ol type="1"><li><p>Provide a configuration interface to iptables, ipset, tc and sysctl.</p></li><li><p>Allowing flexible configuration from simple to complex setups.</p></li><li><p>Keep effective rule writing effort low, by just entering the desired values, or
+              allow grouping of options.</p></li><li><p>Stay as close as possible with the concept and naming of iptables / tc.</p></li><li><p>Although (by now) it's not the main goal of IP-Array, provide some preset options
+              for automatic configuration.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="features"></a>Features</h3></div></div></div><div class="orderedlist"><ol type="1"><li><p>Avaliable iptables targets:</p><div class="itemizedlist"><ul type="disc"><li><p>Supported in this version:</p><p>AUDIT, CHECKSUM, CLASSIFY, CLUSTERIP, CONNMARK, CONNSECMARK, CT, DNAT, DSCP,
+                    ECN, HMARK, IDLETIMER, LED, LOG, MARK, MASQUERADE, NETMAP, NFLOG, NFQUEUE,
+                    QUEUE, RATEEST, RAWDNAT, RAWSNAT, REDIRECT, REJECT, SECMARK, SET, SNAT, TCPMSS,
+                    TCPOPTSTRIP, TEE, TOS, TPROXY, TTL, ULOG</p></li><li><p>The list of available targets can be retrieved by executing
+                      <span class="command"><strong>ip-array show -sc targets</strong></span>.</p></li><li><p>IP-Array supports <span class="bold"><strong>any target</strong></span> that has
+                      <span class="bold"><strong>no options</strong></span>.</p></li><li><p><span class="bold"><strong>No Target</strong></span>. It is possible to create rules
+                    without a target set, by specifying the target with the special string:
+                      `<span class="bold"><strong>empty</strong></span>'.</p></li></ul></div></li><li><p>Available iptables match extensions:</p><div class="itemizedlist"><ul type="disc"><li><p>Supported in this version:</p><p>addrtype, ah, bpf, cluster, comment, connbytes, connlimit, connmark,
+                    conntrack, cpu, dccp, devgroup, dscp, ecn, esp, hashlimit, helper, iprange,
+                    ipvs, length, limit, mac, mark, multiport, nfacct, osf, owner, physdev, pkttype,
+                    policy, quota, rateest, realm, recent, rpfilter, sctp, set, socket, state,
+                    statistic, string, tcpmss, time, tos, ttl, u32</p></li><li><p>The list of available options can be retrieved by executing
+                      <span class="command"><strong>ip-array show -sc matches</strong></span>.</p></li></ul></div></li><li><p>Supported tables: filter, mangle, nat, raw, rawpost (xtables-addons),
+              security.</p></li><li><p>Template based rule structure definition (quite a huge list of predefined
+              templates is provided out of the box) to build ruleblocks (stacks of rules, which just
+              contain values).</p></li><li><p>Definition of sysctl settings, templates, ruleblocks, iptables rules and ipset
+              sets is done in a simple XML dialect.</p></li><li><p>Options in rules can be grouped to save writing effort.</p></li><li><p>An interactive mode, which is wizard based and allows to create (and edit in case
+              of ruleblocks) configuration files.</p></li><li><p>ipset integration. Older ipset versions (4.x, 5.x) are supported. Compatible with
+              ipset v. 6 to 6.27+.</p></li><li><p>Chain creation (by adding them in the <code class="varname">CHAIN_MAP</code>
+              variable).</p></li><li><p>Different modes of automatic `jump tree' creation in all tables.</p></li><li><p>Allow an admin connection.</p></li><li><p>Create stateful return traffic rules (ESTABLISHED, RELATED).</p></li><li><p>Create final (terminating) rules. A chain termination option for builtin and
+              IP-Array created chains, which allows to choose between different 'final rule'
+              modes.</p></li><li><p>Automatic configuration (rule generation) options for:</p><div class="itemizedlist"><ul type="disc"><li><p>Policy</p><p>Set the iptables builtin chains policy.</p></li><li><p>DNS</p><div class="orderedlist"><ol type="a"><li><p>Allow local host DNS lookups to specific name servers.</p></li><li><p>Allow forwarded DNS lookups from specific LAN name servers to ISP name
+                          servers.</p></li></ol></div></li><li><p>SMTP</p><p>Allow SMTP traffic from specific LAN(s) to ISP mail servers.</p></li><li><p>NTP</p><p>Allow time server queries from local host to specific NTP servers.</p></li><li><p>FTP</p><p>Allow forwarded (optional active/passive) FTP traffic from specific
+                    LAN(s).</p></li><li><p>OUTPUT allow rules generation (bound to interfaces or primary IP addresses)
+                    if the policy is DROP.</p></li><li><p>IPSEC (VPN)</p><p>Put all ipsec related traffic into the ipsec chain. Allow only packets from
+                    / to the configured VPN branches.</p><p>An option is available to allow all traffic between the VPN branches.</p></li><li><p>Anti spoofing.</p></li></ul></div></li><li><p>Automated iptables logging options:</p><div class="itemizedlist"><ul type="disc"><li><p>Globally log invalid TCP packets</p></li><li><p>Globally log packets in INVALID state</p></li><li><p>Log options (prefix, level, etc.) for the above listed.</p></li></ul></div></li><li><p>Automated iptables dropping options:</p><div class="itemizedlist"><ul type="disc"><li><p>Globally drop invalid TCP packets</p></li><li><p>Globally drop packets in INVALID state</p></li><li><p>Reject AUTH (tcp port 113) on certain interfaces</p></li><li><p>Drop NETBIOS broadcasts on certain interfaces</p></li><li><p>Drop DHCP broadcasts on certain interfaces</p></li><li><p>Drop UPNP broadcasts on certain interfaces</p></li></ul></div></li><li><p>Traffic shaping capabilities:</p><div class="itemizedlist"><ul type="disc"><li><p>Marking of packets in mangle table</p></li><li><p>Creation of htb and sfq qdiscs</p></li><li><p>Creation of tc classes and filters</p></li><li><p>Bulk OUTPUT and FORWARD qdiscs</p></li><li><p>Prioritizing of TCP SYN packets</p></li></ul></div></li><li><p>Prolog and epilog scripts</p><p>Prolog and epilog scripts can be configured selectively for any startup
+              mode.</p></li><li><p>Loading and unloading of kernel modules (with optional parameters).</p></li><li><p>Saving restore rulesets / commands / system state.</p><p>There are various ways available to save the generated rulesets and or commands
+              selectively (iptables, ipset, tc, modprobe, sysctl) or all at once. The saved files
+              may be used to restore the configured system state.</p></li><li><p>Different levels of IP-Array's output verbosity to the screen and or syslog can be
+              set.</p></li><li><p>Screen output can be colourized. Colours for different message categories can be
+              defined by the user.</p></li><li><p>Public functions</p><p>IP-Array allows the usage of `public functions' in rule files. They may be used to
+              log messages (giving the opportunity to totally customize IP-Array's log output), or
+              call automatic rule creation functions.</p></li><li><p>Different startup behaviour according to command line parameter. Including
+              multiple options to save and / or restore generated rulesets or commands.</p></li><li><p>A `test' mode to test new configurations.</p></li><li><p>Automatic restoring of the previous ruleset on error when applying the new
+              configuration.</p></li><li><p>Bash completion <span class="underline">compspec</span> is included.</p></li></ol></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="download_info"></a>Where to find IP-Array?</h3></div><div><h4 class="subtitle">Home page and download information</h4></div></div></div><p>IP-Array is currently hosted at <a class="link" href="http://sf.net" target="_top">sourceforge</a>.</p><p>The home page is reachable via: <a class="link" href="http://www.sf.net/projects/ip-array" target="_top">http://www.sf.net/projects/ip-array</a> or <a class="link" href="http://ip-array.sf.net/" target="_top">http://ip-array.sf.net/</a>.</p><p>IP-Array files are available for download at: <a class="link" href="http://sourceforge.net/project/showfiles.php?group_id=146101" target="_top">sf.net</a>.</p><p>There is a mirror on github: <a class="link" href="https://github.com/AllKind/ip-array" target="_top">https://github.com/AllKind/ip-array</a>.</p></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="gen_info"></a>Chapter&nbsp;2.&nbsp;General Information</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#name_conv">Naming conventions</a></span></dt><dt><span class="section"><a href="#prog_logic">Program logic</a></span></dt><dd><dl><dt><span class="section"><a href="#start_behav">Starting behaviour</a></span></dt><dt><span class="section"><a href="#error_handling">Error handling</a></span></dt><dt><span class="section"><a href="#config_validation">Configuration validation</a></span></dt><dt><span class="section"><a href="#configfile_parsing">XML configuration file parsing</a></span></dt><dt><span class="section"><a href="#jump_tree">iptables jump tree</a></span></dt><dt><span class="section"><a href="#routing">Routing</a></span></dt></dl></dd><dt><span class="section"><a href="#dir_struct">Directory structure</a></span></dt></dl></div><p>This Chapter provides information about the structure, functionality and program logic of
+      IP-Array.</p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="name_conv"></a>Naming conventions</h2></div></div></div><div class="itemizedlist"><ul type="disc"><li><p><a name="name_def_rule"></a>rule</p><p>A rule is either:</p><div class="orderedlist"><ol type="1"><li><p>An entity in an iptables or tc <a class="link" href="#name_def_ruleblock">ruleblock</a>. Defined by the user or program logic. Which will be read by
+                IP-Array, in order to create one or more iptables or tc commands.</p></li><li><p>An entity added by the `add_rule' function. Where the `add_rule' function may be
+                used as `<a class="link" href="#pub_funcs" title="Public functions">public function</a>' or `<a class="link" href="#inline_funcs" title="inline functions">inline function</a>'. In order to create an iptables
+                command.</p></li><li><p>An entity in a XML iptables rule or combined rule.</p></li><li><p>An entity in a XML ipset rule.</p></li><li><p>An entity in a XML sysctl rule.</p></li></ol></div></li><li><p><a name="name_def_ruleblock"></a>ruleblock</p><p>A ruleblock is a group (stack) of <a class="link" href="#name_def_rule">iptables
+              rules</a>, containing only the values of each option, to be read in order of
+            occurence.</p><p>The structure of the ruleblock is defined in a <a class="link" href="#name_def_template">template</a>.</p></li><li><p><a name="name_def_template"></a>template</p><p>A template describes the structure of a <a class="link" href="#name_def_ruleblock">ruleblock</a>.</p><p>Each <a class="link" href="#name_def_rule">rule</a> entry in a ruleblock is interpreted
+            column-wise. How the values in each column are interpreted, is defined in the template
+            called with the ruleblock.</p><p>The following example will show how a rule in a ruleblock, structured according to
+            the definitions in a template, may look:</p><div class="table"><a name="d0e541"></a><p class="title"><b>Table&nbsp;2.1.&nbsp;Example of Template and Ruleblock relationship</b></p><div class="table-contents"><table summary="Example of Template and Ruleblock relationship" border="1"><colgroup><col><col><col><col><col></colgroup><tbody><tr><td align="left"><span class="bold"><strong>Template definition:</strong></span></td><td align="left">jump_target</td><td align="left">ipt_chain</td><td align="left">input_device</td><td align="left">source_address</td></tr><tr><td align="left"><span class="bold"><strong>According ruleblock rule:</strong></span></td><td align="left">DROP</td><td align="left">INPUT</td><td align="left">eth0</td><td align="left">10.0.0.10</td></tr></tbody></table></div></div><br class="table-break"></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="prog_logic"></a>Program logic</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="start_behav"></a>Starting behaviour</h3></div></div></div><p>If IP-Array is run with the `<span class="bold"><strong>start</strong></span>' parameter, a
+            <span class="underline">lockdown</span> mode is enforced until the configuration
+          is read and all iptables, ipset, tc and sysctl rules have been generated. During this
+          lockdown mode only localhost and the administrator connection are allowed. After all rules
+          are collected, they are applied at once. If the config variable
+            <code class="varname">RESTORE_ON_START</code> is set to `1' and the previously saved ruleset is
+          available, those will be sourced and thus activated immediatly.</p><p>In any other mode, that actually runs commands to configure the system, IP-Array will
+          not touch the currently active iptables, tc rules or sysctl configuration until all rules
+          and / or commands have been generated.</p><p>After all rules / commands are collected, they are applied at once. This should keep
+          the time, the system is in an unconfigured or partly configured state, to a minimum.
+          Allowing to catch configuration errors, before changing the systems state.</p><p>The behaviour for kernel modules is different. Module probing (if configured at all)
+          is done every time IP-Array loads. To avoid reloading modules on an already running
+          system, modules will only be loaded if they are not loaded already. If running in a mode
+          that does not apply commands like i.e. `dry-run', then module probing is not actually
+          perfomed, but done with `<span class="command"><strong>modprobe -n</strong></span>'. Alternativly the module probing
+          can be disabled by using the `-nm' startup option.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="error_handling"></a>Error handling</h3></div></div></div><p>In the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main configuration file</a> a variable
+          named <code class="varname">EXIT_ON_ERROR</code> exists to control IP-Arrays behaviour on errors. If
+          it set to `1', the program will exit on any configuration and command apply error it can
+          detect. In case the system state has already been changed by, either loading / unloading
+          modules, or changing sysctl settings, IP-Array will try to revert those changes. If
+          iptables commands have already been applied, a lockdown mode will be enforced first,
+          before attempting a restore. All policies will be set to DROP and all chains get emptied.
+          Depending on the configuration, only the current administrative connection (if present
+          taken from the bash environment variable <code class="varname">SSH_CONNECTION</code>, or if not, if
+          configured from the configuration variable <code class="varname">ADMIN_CONNECTION</code>) and
+          localhost traffic (configuration variable <code class="varname">ALLOW_LOOPBACK</code>) may be
+          allowed. If <code class="varname">EXIT_ON_ERROR</code> is set to `0', IP-Array only sends error
+          messages and keeps on going.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="autosave"></a>Autosave / restore</h4></div></div></div><p>If IP-Array is started with one of the following parameters: open, restart, or
+            tc-start it will automatically save the current iptables ruleset using
+              <span class="command"><strong>iptables-save</strong></span> to a temporary file. In case an error occurs while
+            processing the configuration, this ruleset will be restored. This behaviour can be
+            turned off, by using the startup option <span class="bold"><strong>-na |
+              --no-autosave</strong></span>. If the configuration variable
+              <code class="varname">IPTSAVE_FAILS</code> is set to `1' automatic saving / restoring will also
+            not take place.</p><p>
+            </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>The restore procedure may even occur after an error condition lockdown (as
+                described above) was inforced. This is done as something could go wrong with the
+                restore process. Better have a lockded down system than one with an unkown and most
+                likely messed up state.</p></div><p>
+          </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="config_validation"></a>Configuration validation</h3></div></div></div><p>Every configuration variable, as well as every rule set by the user, will be validated
+          for sane entries. For example IP addresses, port and protocol specifications, etc. are
+          checked for valid values. If a bad value is detected, according messages will be displayed
+          and the rule entry will be ignored. IP-Array may also quit further processing, if it is
+          configured to exit on errors.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="configfile_parsing"></a>XML configuration file parsing</h3></div></div></div><p>As IP-Array starts, it looks if it can find previously already compiled bash scripts
+          for templates, rules and ruleblocks. If those are found, they will be read and no XML file
+          parsing will be done. Otherwise the XML configuration files will be parsed, interpreted
+          and the according bash scripts will be compiled. There are <a class="link" href="#startup_params" title="Startup parameters and options">startup parameters</a> available to force XML parsing globaly, or selectively for
+          templates, rules and ruleblocks.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="jump_tree"></a>iptables jump tree</h3></div></div></div><p>A jump tree is a set of chains and jump instructions starting from the builtin
+          iptables chains, in order to quickly sort out traffic and to find a terminating rule as
+          soon as possible. The desired jump tree behaviour can be configured using the
+            <code class="varname">JUMP_TREE</code> variable in the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main
+            configuration file</a>.</p><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="iface_chains"></a>Per interface classified jump tree</h4></div></div></div><p>IP-Array may create chains between every network interface configured in
+              <code class="varname">NET_INTERFACES</code>. Means if you define two interfaces i.e: eth0 and
+            eth1, IP-Array will create two chains named: 'eth0_to_eth1' and 'eth1_to_eth0'. And so
+            on for every additional interface. This can be done for all tables according to the
+            configuration. In example for the filter table the FORWARD chain then is filled with
+            jump entries, seeding out the cross-interface traffic to the appropriate chain. Means
+            every packet entering the FORWARD chain will end up in one of those chains created by
+            IP-Array. This should minimize the amount of rules to pass before reaching the matching
+            rule. IP-Array always uses those cross-interface chains when it applies rules in the
+            FORWARD chain. In case of a rule without an interface definition, or an interface
+            wildcard i.e: 'eth+', or an inverted interface value i.e: '!eth0' is used, the target
+            chain will be FORWARD, instead of the cross-interface chains. Rules with chain values
+            not matching builtin chains will not be touched.</p><p>Just like with the cross-interface chains, INPUT and OUTPUT packets are also
+            classified by interface. For each network interface configured, INPUT and OUTPUT chains
+            will be created. For example if one interface named 'eth0' is present, the chains
+            'INPUT_eth0', 'OUTPUT_eth0' and the according jump entries will be created
+            automatically.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="network_chains"></a>Per network jump tree</h4></div></div></div><p>The jump tree creation is also available for networks defined in
+              <code class="varname">NET_INTERFACES</code>. For every network IP-Array will create the
+            according INPUT, OUTPUT, PREROUTING (just named PRE), POSTROUTING (just named POST)
+            (depending on the active table) chains prefixed with `NETWORK-NAME_'. The FORWARD chains
+            will be named NETWORK-NAME_FWD_IN and NETWORK-NAME_FWD_OUT. IP-Array will try to place
+            rules into those chains by selecting on source address, destination address, input
+            device and output device. Rules with chain values not matching builtin chains will not
+            be touched.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="nw_iface_chains"></a>Combined network and interface jump tree</h4></div></div></div><p>There also is a combined method of the both above mentioned. First select upon
+            interface and then jump into network chains attached to those interfaces.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="routing"></a>Routing</h3></div></div></div><p>IP-Array does <span class="bold"><strong>not</strong></span> touch your routing tables at
+          all!</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="dir_struct"></a>Directory structure</h2></div></div></div><p>This is the description of the dicretory structure IP-Array uses, some of them can be
+        altered by editing variables in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a>
+        configuration file:</p><div class="variablelist"><dl><dt><span class="term">BASE_DIR</span></dt><dd><p>Base directory for IP-Array.</p><p>Default location of the saving directory and `stable' and `test' (RUNMODE)
+              directory.</p><p>i.e. <code class="filename">`/usr/local/etc/ip-array/'</code></p></dd><dt><span class="term">BIN_DIR</span></dt><dd><p>Directory to put the main IP-Array executable into.</p><p>i.e. <code class="filename">`/usr/local/bin/ip-array/'</code></p></dd><dt><span class="term">LIB_DIR</span></dt><dd><p>Directory to put the IP-Array function files into.</p><p>i.e. <code class="filename">`/usr/local/lib/ip-array/'</code></p></dd><dt><span class="term">HELP_DIR</span></dt><dd><p>Directory containing help files.</p><p><code class="code">HELP_DIR="${BASE_DIR}/help.d"</code></p></dd><dt><span class="term">CONFIG_DIR</span></dt><dd><p>Directory containing configuration files and sub-directories.</p><p><code class="code">CONFIG_DIR="${BASE_DIR}/${RUNMODE}/conf.d"</code></p></dd><dt><span class="term">RULE_DIR</span></dt><dd><p>Directory to put the rule files into.</p><p><code class="code">RULE_DIR="${CONFIG_DIR}/rules.d"</code></p></dd><dt><span class="term">SYSCTL_DIR</span></dt><dd><p>Directory to put the sysctl rule files into.</p><p><code class="code">SYSCTL_DIR="${CONFIG_DIR}/sysctl.d"</code></p></dd><dt><span class="term">RULEBLOCK_DIR</span></dt><dd><p>Directory to put the ruleblock configuration files into.</p><p><code class="code">RULEBLOCK_DIR="${CONFIG_DIR}/ruleblocks.d"</code></p></dd><dt><span class="term">TEMPLATE_DIR</span></dt><dd><p>Directory to put the template configuration files into.</p><p><code class="code">TEMPLATE_DIR="${CONFIG_DIR}/templates.d"</code></p></dd><dt><span class="term">SAVE_DIR</span></dt><dd><p>Directory used to save commands, scripts or rulesets.</p><p><code class="code">SAVE_DIR="${BASE_DIR}/save.d"</code></p></dd><dt><span class="term">SCRIPT_DIR</span></dt><dd><p>Directory for the prolog / epilog scripts.</p><p><code class="code">SCRIPT_DIR="${BASE_DIR}/${RUNMODE}/scripts.d"</code></p></dd><dt><span class="term">TEMPLATE_REPOSITORY</span></dt><dd><p>Directory where all the templates that come with IP-Array are stored . By default
+              it is <code class="filename">/usr/share/ip-array/template_repo.d</code>.</p></dd></dl></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="install"></a>Chapter&nbsp;3.&nbsp;Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#d0e819">Installer</a></span></dt><dt><span class="section"><a href="#d0e840">Upgrade</a></span></dt></dl></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e819"></a>Installer</h2></div></div></div><p>An installation program comes with IP-Array. It is called
+          <code class="filename">install.bash</code> and allows to install all necessary files at once. Also
+        the destination directories can be given as well as the file ownership can be set. It's also
+        possible to create a backup of the old files. The installer utilises the
+          <span class="command"><strong>install</strong></span> program, for more information about it consult its man
+        page.</p><p>The installer creates a log file about the installation. This will be used by the
+          <code class="filename">uninstall.bash</code> script, to uninstall IP-Array.</p><p>After installation you need to configure variables in the header of the init script.
+        Telling the path to the defaults file and to the IP-Array executable. Maybe you need to
+        adjust some path and programs settings in the defaults file. Then you can start to configure
+        the main configuration file. There the NET_<code class="varname">INTERFACES</code> variable must be
+        configured, before IP-Array is ready to run.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e840"></a>Upgrade</h2></div></div></div><p>
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>There is <span class="bold"><strong>no upgrade path</strong></span> from older ip-array
+            versions (0.05.xx) available, but in the <code class="filename">examples</code> directory there
+            is a set of rule and ruleblock files, which mimics the old configuration almost
+            completely.</p></div><p>
+      </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Always create a backup before installing a new version! Configuration files will be
+          overwritten with the default ones!</p></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="configure"></a>Chapter&nbsp;4.&nbsp;Configuration</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#config_files">Configuration files</a></span></dt><dd><dl><dt><span class="section"><a href="#config_files_bash">Bash configuration files</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_templates_howto">Templates</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e3417">Syntax</a></span></dt><dt><span class="section"><a href="#d0e3449">Template XML tags</a></span></dt><dt><span class="section"><a href="#d0e3585">Template usage guidelines</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_ruleblocks_howto">Ruleblocks</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e3603">Syntax</a></span></dt><dt><span class="section"><a href="#d0e3635">Ruleblocks usage guidelines</a></span></dt><dt><span class="section"><a href="#inline_funcs">inline functions</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_rule_files_howto">Rule files</a></span></dt><dd><dl><dt><span class="section"><a href="#rule_syntax">Syntax</a></span></dt><dt><span class="section"><a href="#rule_xml_tags">Rule file XML tags</a></span></dt><dt><span class="section"><a href="#pub_funcs">Public functions</a></span></dt><dt><span class="section"><a href="#ipset_usage">ipset usage</a></span></dt></dl></dd><dt><span class="section"><a href="#conf_xml_sysctl_rule_files_howto">sysctl rule files</a></span></dt><dd><dl><dt><span class="section"><a href="#sysctl_rule_syntax">Syntax</a></span></dt><dt><span class="section"><a href="#sysctl_rule_xml_tags">sysctl rule file XML tags</a></span></dt></dl></dd></dl></div><p>This chapter provides information about how to configure IP-Array.</p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="config_files"></a>Configuration files</h2></div></div></div><p>IP-Array comes with two different kinds of configuration files. Some are written in
+        shell, namely bash, syntax, while others are written in a simple XML dialect. The templates,
+        ruleblocks and rule files are in XML language. All others are written in bash.</p><p>
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>All the configuration files are expected to be in the <code class="varname">CONFIG_DIR</code>
+            directory, or one of it's sub directories, of the current runmode. If IP-Array is run
+            with the 'test' startup parameter the location will be:
+              <code class="filename">$BASE_DIR/test/conf.d</code>. In any other startup mode it will be:
+              <code class="filename">$BASE_DIR/stable/conf.d</code>.</p></div><p>
+      </p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="config_files_bash"></a>Bash configuration files</h3></div><div><h4 class="subtitle">Description of the bash (shell) configuration files</h4></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="conf_init_script"></a>init script</h4></div></div></div><p>There is a <span class="italic">configuration area</span> in the IP-Array
+            init script. The following variables can be configured there:</p><p>
+            </p><div class="variablelist"><dl><dt><span class="term"><code class="varname">DEFAULTS_FILE</code></span></dt><dd><p>Mandatory: no - defaults to
+                      <code class="filename">/etc/ip-array/ip-array_defaults.conf</code>.</p><p>Allowed values: A valid path to the defaults file (i.e:
+                      <code class="filename">/etc/default/ip-array</code>).</p><p>Purpose: The defaults file holds startup and globally used variables.</p></dd><dt><span class="term"><code class="varname">BIN_DIR</code></span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/usr/bin</code>.</p><p>Allowed values: A valid path to the directory holding the executable file
+                    (i.e: <code class="filename">/usr/bin</code>).</p></dd><dt><span class="term"><code class="varname">EXE_NAME</code></span></dt><dd><p>Mandatory: no - defaults to <code class="filename">ip-array</code>.</p><p>Allowed values: The name of the executable file (i.e:
+                      <code class="filename">ip-array</code>).</p></dd><dt><span class="term"><code class="varname">DEFAULT_OPTIONS</code></span></dt><dd><p>Mandatory: no</p><p>Allowed values: startup parameters of IP-Array.</p><p>Purpose: These parameters will be used in any starting mode of
+                    IP-Array.</p></dd><dt><span class="term"><code class="varname">DEFAULT_START_OPTIONS</code></span></dt><dd><p>Mandatory: no</p><p>Allowed values: startup parameters of IP-Array.</p><p>Purpose: These parameters will be used in the `<span class="bold"><strong>start</strong></span>' starting mode of IP-Array.</p></dd><dt><span class="term"><code class="varname">DEFAULT_STOP_OPTIONS</code></span></dt><dd><p>Mandatory: no</p><p>Allowed values: startup parameters of IP-Array.</p><p>Purpose: These parameters will be used in the `<span class="bold"><strong>stop</strong></span>' starting mode of IP-Array.</p></dd><dt><span class="term"><code class="varname">MY_SHELL</code></span></dt><dd><p>Mandatory: no - defaults to the value defined with the variable
+                      <code class="varname">$BASH</code> (default: <code class="filename">/bin/bash</code>).</p><p>Allowed values: A valid path to the shell to run IP-ARRAY with (i.e:
+                      <code class="filename">/bin/bash</code>).</p></dd></dl></div><p>
+          </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="conf_file_defaults"></a>Defaults (ip-array_defaults.conf)</h4></div></div></div><p>The defaults file contains startup and globally used variables.</p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>The location of the defaults file is specified in the IP-Array <a class="link" href="#conf_init_script" title="init script">init script</a>.</p><p>The `<span class="command"><strong>DEFAULTS_FILE</strong></span>' variable must be pointing to the defaults
+              file.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h5 class="title"><a name="d0e1020"></a>IP-Array message (logging) output settings</h5></div></div></div><div class="variablelist"><dl><dt><span class="term">
+                  <code class="varname">ENABLE_COLORS</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `0' if unset.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Enable or disable IP-Array coloured output.</p></dd><dt><span class="term">
+                  <code class="varname">ENABLE_SYSLOG</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `0' if unset.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Enable or disable logging of IP-Array's output to syslog using the
+                      <span class="command"><strong>logger</strong></span> utility.</p></dd><dt><span class="term">
+                  <code class="varname">LOG_FACILITY</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `local0' if unset.</p><p>Allowed values: <span class="simplelist">auth, authpriv (for security information of a
+                        sensitive
+                        nature), cron, daemon, ftp, kern, lpr, mail, news, security
+                        (deprecated synonym for
+                        auth), syslog, user, uucp, local0
+                        to local7 inclusive</span>.</p><p>Purpose: Configure IP-Array's syslog logging facility.</p></dd><dt><span class="term">
+                  <code class="varname">VERBOSE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `6' if unset.</p><p>Allowed values: `0' to `8'.</p><p>Purpose: Control level of IP-Array's output verbosity.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>With a non zero environment variable `<code class="varname">DEBUG_INFO</code>',
+                      additional processing (debugging) information is printed.</p></div><div class="orderedlist"><ol start="0" type="1"><li><p> No messages are shown. Exit status indicates success or failure.</p></li><li><p>Shows start and end message and errors.</p></li><li><p>Main title and warning messages are also shown.</p></li><li><p>Sub title messages are shown in addition.</p></li><li><p>Info title, config and rule file loading messages, are shown
+                        additionally.</p></li><li><p>Also show notice messages.</p></li><li><p>Verbose output.</p></li><li><p>Also show IP-Array internals.</p></li><li><p>Debug mode (set -x).</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>With a non zero environment variable `<code class="varname">DEBUG_INFO</code>',
+                          a debugging `<code class="varname">PS4</code>' is set.</p></div></li><li><p>More verbose debug mode (set -vx).</p></li></ol></div></dd><dt><span class="term">
+                  <code class="varname">SYSLOG_VERBOSE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `1' if unset.</p><p>Allowed values: `0' to `6'.</p><p>Purpose: Control verbosity level of IP-Array's syslog logging.</p><div class="orderedlist"><ol start="0" type="1"><li><p> Errror messages are shown.</p></li><li><p>Main title and warning messages are shown.</p></li><li><p>Subtitle messages are shown in addition.</p></li><li><p>Info title, config and rule file loading messages, are shown
+                          additionally.</p></li><li><p>Also show notice messages.</p></li><li><p>Verbose output.</p></li><li><p>Also show IP-Array internals.</p></li></ol></div></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_MAIN_TITLE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `magenta' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for title messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_SUBTITLE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `blue' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for sub title messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_INFO_TITLE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `cyan' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for info title messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_ERROR</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `red' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for error messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_WARNING</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `yellow' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for warning messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_NOTICE</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `white' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for notice messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_CONFIG_LOAD</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `green' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for configuration file loading messages.</p></dd><dt><span class="term">
+                  <code class="varname">COLOR_MSG_RULE_LOAD</code>
+                </span></dt><dd><p>Mandatory: no. Defaults to `yellow' if unset.</p><p>Allowed values: <span class="simplelist">black, blue, cyan, green, magenta, red, white, yellow</span>.</p><p>Purpose: Set color for rule file loading messages.</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h5 class="title"><a name="d0e1438"></a>Programs mandatory to run IP-Array</h5></div></div></div><div class="variablelist"><dl><dt><span class="term">
+                  <code class="varname">AUTO_GET_PROGS</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `1'.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Configure if IP-Array should try to automatically find the
+                    mandatory programs (must be in <code class="varname">$PATH</code>) . If disabled (set to
+                    `0'), the program names varaibles (below) <span class="bold"><strong>must</strong></span>
+                    be configured manually.</p></dd><dt><span class="term">
+                  <code class="varname">AT</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>at</strong></span> executable file
+                    (i.e: <code class="filename">/usr/bin/at</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">CAT</code></span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>cat</strong></span> executable file
+                    (i.e: <code class="filename">/bin/cat</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">DATE</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>date</strong></span> executable file
+                    (i.e: <code class="filename">/bin/date</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">DIALOG</code>
+                </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required, which
+                    can be either <span class="command"><strong>dialog</strong></span> or <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>dialog</strong></span> executable
+                    file (i.e: <code class="filename">/usr/bin/dialog</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">DIFF</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>diff</strong></span> executable file
+                    (i.e: <code class="filename">/usr/bin/diff</code>), or the just the name of the program,
+                    if it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">FIND</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>find</strong></span> executable file
+                    (i.e: <code class="filename">/usr/bin/find</code>), or the just the name of the program,
+                    if it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">GREP</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>grep</strong></span> executable file
+                    (i.e: <code class="filename">/bin/grep</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">IP</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>ip</strong></span> executable file
+                    (i.e: <code class="filename">/sbin/ip</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">IPSET</code>
+                </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>ipset</strong></span> executable file
+                    (i.e: <code class="filename">/sbin/ipset</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">IPT</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>iptables</strong></span> executable
+                    file (i.e: <code class="filename">/sbin/iptables</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">LOGGER</code>
+                </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>logger</strong></span> executable
+                    file (i.e: <code class="filename">/usr/bin/logger</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">LSMOD</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>lsmod</strong></span> executable file
+                    (i.e: <code class="filename">/sbin/lsmod</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">MODPROBE</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>modprobe</strong></span> executable
+                    file (i.e: <code class="filename">/sbin/modprobe</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">NFACCT</code>
+                </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>nfacct</strong></span> executable
+                    file (i.e: <code class="filename">/usr/sbin/nfacct</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">RM</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>rm</strong></span> executable file
+                    (i.e: <code class="filename">/bin/rm</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">IPT_SAVE</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>iptables-save</strong></span>
+                    executable file (i.e: <code class="filename">/sbin/iptables-save</code>), or the just the
+                    name of the program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p><p>This variable is only used by the IP-Array init script. It is not globally
+                    available.</p></dd><dt><span class="term">
+                  <code class="varname">IPT_RESTORE</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>iptables-restore</strong></span>
+                    executable file (i.e: <code class="filename">/sbin/iptables-restore</code>), or the just
+                    the name of the program, if it's found in $PATH and you do not want to use
+                    absolute paths.</p><p>This variable is only used by the IP-Array init script. It is not globally
+                    available.</p></dd><dt><span class="term">
+                  <code class="varname">SORT</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>sort</strong></span> executable file
+                    (i.e: <code class="filename">/usr/bin/sort</code>), or the just the name of the program,
+                    if it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">SYSCTL</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>sysctl</strong></span> executable
+                    file (i.e: <code class="filename">/sbin/sysctl</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd><dt><span class="term">
+                  <code class="varname">TC</code>
+                </span></dt><dd><p>Mandatory: no</p><p>Allowed values: A valid path to the <span class="command"><strong>tc</strong></span> executable file
+                    (i.e: <code class="filename">/sbin/tc</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">UNAME</code>
+                </span></dt><dd><p>Mandatory: yes</p><p>Allowed values: A valid path to the <span class="command"><strong>uname</strong></span> executable file
+                    (i.e: <code class="filename">/bin/uname</code>), or the just the name of the program, if
+                    it's found in $PATH and you do not want to use absolute paths.</p></dd><dt><span class="term">
+                  <code class="varname">WHIPTAIL</code>
+                </span></dt><dd><p>Mandatory: no (only in interactive mode a dialog program is required, which
+                    can be either <span class="command"><strong>dialog</strong></span> or <span class="command"><strong>whiptail</strong></span>)</p><p>Allowed values: A valid path to the <span class="command"><strong>whiptail</strong></span> executable
+                    file (i.e: <code class="filename">/usr/bin/whiptail</code>), or the just the name of the
+                    program, if it's found in $PATH and you do not want to use absolute
+                    paths.</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h5 class="title"><a name="d0e1850"></a>Files and directories</h5></div></div></div><div class="variablelist"><dl><dt><span class="term">
+                  <code class="varname">BASE_DIR</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/etc/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                    <code class="filename">/etc/ip-array</code>).</p><p>IP-Array base directory.</p></dd><dt><span class="term">
+                  <code class="varname">CONFIG</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">ip-array.conf</code>.</p><p>Allowed values: A valid filename (i.e.:
+                    <code class="filename">ip-array.conf</code>).</p><p>Name of the main configuration file.</p></dd><dt><span class="term">
+                  <code class="varname">CONF_DIR</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">conf.d</code>.</p><p>Allowed values: A valid directory name (i.e.:
+                    <code class="filename">conf.d</code>).</p><p>Configuration directory must be below <code class="varname">BASE_DIR</code>.</p></dd><dt><span class="term">
+                  <code class="varname">LIB_DIR</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/usr/lib/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                    <code class="filename">/usr/lib/ip-array</code>).</p><p>Library directory used for the IP-Array function files.</p></dd><dt><span class="term">
+                  <code class="varname">LOCK_DIR</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/var/run</code>.</p><p>Allowed values: A valid path (i.e.: <code class="filename">/var/run</code>).</p><p>Directory to put the IP-Array PID file into.</p></dd><dt><span class="term">
+                  <code class="varname">SHARE_DIR</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/usr/share/ip-array</code>.</p><p>Allowed values: A valid path (i.e.:
+                    <code class="filename">/usr/share/ip-array</code>).</p><p>Data directory.</p></dd><dt><span class="term">
+                  <code class="varname">SAVE_FILE</code>
+                </span></dt><dd><p>Mandatory: no - defaults to
+                    <code class="filename">iptables_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                      <code class="filename">iptables_ruleset.save</code>).</p><p>File to save the ruleset into. Applies to all the save* parameters.</p></dd><dt><span class="term">
+                  <code class="varname">IPSET_SAVE_FILE</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">ipset_ruleset.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                      <code class="filename">ipset_ruleset.save</code>).</p><p>File to put the ipset save output into, when executing IP-Array with the
+                    'save' startup parameter. Or to load, when restoring with the 'restore'
+                    parameter.</p></dd><dt><span class="term">
+                  <code class="varname">RULESETFILE</code>
+                </span></dt><dd><p>Mandatory: no - defaults to
+                    <code class="filename">ip-array_commands.bash</code>.</p><p>Allowed values: A valid filename (i.e.:
+                      <code class="filename">ip-array_commands.bash</code>).</p><p>File where the generated commands will be saved, if executing IP-Array with
+                    one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping ]-commands'
+                    parameters. The target directory will be
+                    <span class="command"><strong>$BASE_DIR/save.d</strong></span>.</p></dd><dt><span class="term">
+                  <code class="varname">DIFF_FILE</code>
+                </span></dt><dd><p>Mandatory: no - defaults to
+                      <code class="filename">iptables_ruleset_saved_for_diff</code>.</p><p>Allowed values: A valid filename (i.e.:
+                      <code class="filename">iptables_ruleset_saved_for_diff</code>).</p><p>File to save the iptables rule listing (iptables -S, or if not available on
+                    old systems -nL) into, after applying the rules. The target directory will be
+                      <span class="command"><strong>$BASE_DIR/save.d</strong></span>.</p><p>This file will be used to check for a difference to the currently active
+                    ruleset, when using the 'diff-last-activated' startup parameter.</p></dd><dt><span class="term">
+                  <code class="varname">SERVICES</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/etc/services</code>.</p><p>Allowed values: A valid path to the services file (most likely:
+                      <code class="filename">/etc/services</code>).</p><p>Purpose: Configure the location of the services file (containing service
+                    definitions).</p></dd><dt><span class="term">
+                  <code class="varname">PROTOCOLS</code>
+                </span></dt><dd><p>Mandatory: no - defaults to <code class="filename">/etc/protocols</code>.</p><p>Allowed values: A valid path to the services file (most likely:
+                      <code class="filename">/etc/protocols</code>).</p><p>Purpose: Configure the location of the protocols file (containing protocol
+                    definitions).</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h5 class="title"><a name="d0e2093"></a>Quick start settings</h5></div></div></div><p>Files to load, if <code class="varname">RESTORE_ON_START</code> is `1'.</p><div class="variablelist"><dl><dt><span class="term">
+                  <code class="varname">KNOWN_GOOD_RULESET</code>
+                </span></dt><dd><p>Mandatory: no - defaults to
+                    <code class="filename">KNOWN_GOOD_RULESET.save</code>.</p><p>Allowed values: A valid filename (i.e.:
+                      <code class="filename">KNOWN_GOOD_RULESET.save</code>).</p><p>File to save the currently active 'known good' ruleset. This file will be
+                    used to restore the ruleset on 'start', if <code class="varname">RESTORE_ON_START</code>
+                    is enabled.</p></dd><dt><span class="term">
+                  <code class="varname">RESTORE_ON_START</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' to disable `1' to enable.</p><p>Loads the ruleset saved into <code class="varname">$KNOWN_GOOG_RULESET</code>, if
+                    IP-Array is loaded with the `start' parameter (faster startup also called quick
+                    start).</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h5 class="title"><a name="d0e2140"></a>Basic configuration variables</h5></div></div></div><div class="variablelist"><dl><dt><span class="term">
+                  <code class="varname">RELOAD_TIME</code>
+                </span></dt><dd><p>Mandatory: no - defaults to 7.</p><p>Allowed values: Any value greater than 1.</p><p>Time period until the previously saved ruleset will be restored, when using
+                    the 'test' startup parameter, or the -t | --test option.</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>If <span class="command"><strong>iptables-save</strong></span> or
+                          <span class="command"><strong>iptables-restore</strong></span> fails for some reason, the 'test'
+                        parameter will not work, thus this setting will not produce the desired
+                        effect.</p></div></dd><dt><span class="term">
+                  <code class="varname">GEN_FORMAT</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `cmd'.</p><p>Allowed values: `cmd': generated commands will be save as list of commands.
+                    &acute;ipt': generated commands will be used in iptables-save format (faster loading
+                    time).</p></dd><dt><span class="term">
+                  <code class="varname">IPTSAVE_FAILS</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' or `1'.</p><p>Enable this if saving or restoring with <span class="command"><strong>iptables-save</strong></span> or
+                      <span class="command"><strong>iptables-restore</strong></span> fails for some reason.</p><p>
+                    </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Any startup mode, that utilizes <span class="command"><strong>iptables-save</strong></span> or
+                          <span class="command"><strong>iptables-restore</strong></span> will not work in that case.</p></div><p>
+                  </p></dd><dt><span class="term">
+                  <code class="varname">USE_IPSET</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `0'.</p><p>Allowed values: `0' or `1'.</p><p>Enable or disable the usage of ipset.</p></dd><dt><span class="term">
+                  <code class="varname">MAX_SETS</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `256'.</p><p>Allowed values: The value compiled into your kernel.</p><p>The maximal amount of ipset sets to create.</p></dd><dt><span class="term">
+                  <code class="varname">SYNTAX_CHECK</code>
+                </span></dt><dd><p>Mandatory: no - defaults to `1'.</p><p>Allowed values: `0' or `1'.</p><p>Purpose: Perform a bash grammar check before sourcing or executing files.
+                    The bash grammar check is done using `<code class="code">bash -n file</code>'. Thus the
+                    syntax check is very basic and may not catch all errors (as described in
+                      `<code class="code">man bash</code>').</p></dd><dt><span class="term"><code class="varname">DIALOG_PROG</code></span></dt><dd><p>Mandatory: no - defaults to `$DIALOG'.</p><p>Allowed values: empty (make sure one of the variables
+                      <code class="varname">DIALOG</code>, or <code class="varname">WHIPTAIL</code> is defined, or
+                    automatic detection of programs - if enabled - can find them). `dialog' or
+                    `whiptail'. The full path to one of them.</p><p>Purpose: The interactive mode requires a dialog program. Either
+                      <span class="command"><strong>dialog</strong></span> (version 1.2+) or <span class="command"><strong>whiptail</strong></span> are
+                    supported.</p></dd></dl></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="conf_file_main_conf"></a>Main configuration file (ip-array.conf)</h4></div></div></div><p>This file is the main IP-Array configuration file.</p><p>
+            </p><div class="variablelist"><dl><dt><span class="term"><code class="varname">CONFIG_FILES</code></span></dt><dd><p>Names of the configuration files which will be loaded in order of
+                    appearence. i.e. CONFIG_FILES="aliases.conf global.conf".</p><p>
+                    </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>This is the only variable that needs to be inside the main configuration
+                        file. All others can be placed into different files of your choice and
+                        should be listed in the above variable, in order to be sourced from
+                        there.</p></div><p>
+                  </p></dd><dt><span class="term"><code class="varname">BASE_TEMPLATES</code></span></dt><dd><p>Names of the basic XML template files.</p></dd><dt><span class="term"><code class="varname">ENABLE_FILTER</code></span></dt><dd><p>Enable or disable loading of the iptables filter table configuration. Valid
+                    values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_FILTER_TEMPLATES</code></span></dt><dd><p>Names of the iptables filter table XML templates files.</p></dd><dt><span class="term"><code class="varname">FILTER_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables filter table ruleblocks files.</p></dd><dt><span class="term"><code class="varname">FILTER_RULES</code></span></dt><dd><p>Names of the iptables filter table rule files.</p></dd><dt><span class="term"><code class="varname">ENABLE_MANGLE</code></span></dt><dd><p>Enable or disable loading of the iptables mangle table configuration. Valid
+                    values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_MANGLE_TEMPLATES</code></span></dt><dd><p>Names of the iptables mangle table XML templates files.</p></dd><dt><span class="term"><code class="varname">MANGLE_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables mangle table ruleblocks files.</p></dd><dt><span class="term"><code class="varname">MANGLE_RULES</code></span></dt><dd><p>Names of the iptables mangle table rule files.</p></dd><dt><span class="term"><code class="varname">ENABLE_NAT</code></span></dt><dd><p>Enable or disable loading of the iptables nat table configuration. Valid
+                    values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_NAT_TEMPLATES</code></span></dt><dd><p>Names of the iptables nat table XML templates files.</p></dd><dt><span class="term"><code class="varname">NAT_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables nat table ruleblocks files.</p></dd><dt><span class="term"><code class="varname">NAT_RULES</code></span></dt><dd><p>Names of the iptables nat table rule files.</p></dd><dt><span class="term"><code class="varname">ENABLE_RAW</code></span></dt><dd><p>Enable or disable loading of the iptables raw table configuration. Valid
+                    values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_RAW_TEMPLATES</code></span></dt><dd><p>Names of the iptables raw table XML templates files.</p></dd><dt><span class="term"><code class="varname">RAW_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables raw table ruleblocks files.</p></dd><dt><span class="term"><code class="varname">RAW_RULES</code></span></dt><dd><p>Names of the iptables raw table rule files.</p></dd><dt><span class="term"><code class="varname">ENABLE_RAWPOST</code></span></dt><dd><p>Enable or disable loading of the iptables rawpost table configuration. Only
+                    works if xtables-addons are installed. Valid values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_RAWPOST_TEMPLATES</code></span></dt><dd><p>Names of the iptables rawpost table XML templates files. Only works if
+                    xtables-addons are installed.</p></dd><dt><span class="term"><code class="varname">RAWPOST_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables rawpost table ruleblocks files. Only works if
+                    xtables-addons are installed.</p></dd><dt><span class="term"><code class="varname">RAWPOST_RULES</code></span></dt><dd><p>Names of the iptables rawpost table rule files. Only works if xtables-addons
+                    are installed.</p></dd><dt><span class="term"><code class="varname">ENABLE_SECURITY</code></span></dt><dd><p>Enable or disable loading of the iptables security table configuration.
+                    Valid values are `0' or `1'.</p></dd><dt><span class="term"><code class="varname">IPT_SECURITY_TEMPLATES</code></span></dt><dd><p>Names of the iptables security table XML templates files.</p></dd><dt><span class="term"><code class="varname">SECURITY_RULEBLOCKS</code></span></dt><dd><p>Names of the iptables security table ruleblocks files.</p></dd><dt><span class="term"><code class="varname">SECURITY_RULES</code></span></dt><dd><p>Names of the iptables security table rule files.</p></dd><dt><span class="term"><code class="varname">IPSET_RULES</code></span></dt><dd><p>Names of the ipset rule files. These ipset rules are table independent.
+                  </p></dd><dt><span class="term"><code class="varname">MODULE_DIR</code></span></dt><dd><p>Patch to the kernels module directory. Defaults to /lib/modules/$(uname
+                    -r).</p></dd><dt><span class="term"><code class="varname">MODULES_TO_LOAD</code></span></dt><dd><p>Select the kernel modules to load. Entries are separated by newline.</p><p>Format: </p><pre class="synopsis">module-name [parameters [...]]</pre></dd><dt><span class="term"><code class="varname">MODS_TO_RM</code></span></dt><dd><p>Select the kernel modules to remove.</p></dd><dt><span class="term"><code class="varname">LOOPBACK_IF</code></span></dt><dd><p>Allowed values: A valid interface name. Defaults to `lo' if unset.</p><p>Purpose: Name of the loopback interface.</p></dd><dt><span class="term"><code class="varname">NET_INTERFACES</code></span></dt><dd><p>This variable must be configured with at least one interface. Any network
+                    interface but `lo' (localhost) may be put here.</p><p>If you use a VPN software that creates an interface (named i.e. ipsec) you
+                    need to put it in as a separate entry. Otherwise use the available types:</p><p>ext | local | ipsec</p><p>ext = an external interface, local = a local interface, ipsec = an ipsec
+                    interface</p><p>Example:</p><p>
+                    </p><div class="table"><a name="d0e2530"></a><p class="title"><b>Table&nbsp;4.1.&nbsp;Configure networking interfaces</b></p><div class="table-contents"><table summary="Configure networking interfaces" border="1"><colgroup><col align="left"><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Inteface name</th><th align="left">Interface alias</th><th align="left">Type[:ipsec]</th><th align="left">Network name</th></tr></thead><tbody><tr><td align="left">eth0</td><td align="left">eth0</td><td align="left">ext:ipsec</td><td align="left">INET_CON_X</td></tr><tr><td align="left">eth1</td><td align="left">eth1</td><td align="left">ext</td><td align="left">INET_CON_Y</td></tr><tr><td align="left">eth2</td><td align="left">eth2</td><td align="left">local</td><td align="left">PRODUCTION</td></tr><tr><td align="left">eth2</td><td align="left">eth2:0</td><td align="left">local</td><td align="left">DEVELOPMENT</td></tr><tr><td align="left">eth3</td><td align="left">eth3</td><td align="left">local</td><td align="left">DMZ</td></tr><tr><td align="left">ipsec0</td><td align="left">ipsec0</td><td align="left">ipsec</td><td align="left">VPN_REMOTE_OFFICE</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">SCRIPT_MAP</code></span></dt><dd><p>The purpose of this variable is to configure which scripts will run at what
+                    startup mode.</p><p>The format is (newline separates entries):</p><p>
+                    </p><pre class="synopsis">startup-parameter-name[,...] { prolog | epilog } script-name { prolog | epilog } script-name</pre><p>
+                  </p><p>Example:</p><p><code class="code">start,restart prolog my_start_prolog-script epilog
+                      my_start_epilog-script</code></p></dd><dt><span class="term"><code class="varname">POLICY_MAP</code></span></dt><dd><p>The purpose of this variable is to configure the policy for buitin iptables
+                    chains.</p><p>The format is (newline separates entries):</p><p>
+                    </p><pre class="synopsis">table chain policy</pre><p>
+                  </p><p>Example:</p><p><code class="code">filter INPUT DROP</code></p><p><code class="code">filter OUTPUT ACCEPT</code></p></dd><dt><span class="term"><code class="varname">ALLOW_LOOPBACK</code></span></dt><dd><p>Allow communication to and from the loopback interface. Valid values: `0' or
+                    `1'.</p></dd><dt><span class="term"><code class="varname">ADMIN_CONNECTION</code></span></dt><dd><p>Define an administrative connection, which will be allowed under certain
+                    conditions. The conditions are:</p><p>
+                    </p><div class="itemizedlist"><ul type="disc"><li><p>If the enviroment variable $SSH_CONNECTION is not available, otherwise
+                          those values will always be used.</p></li><li><p>When IP-Array enters lockdown mode in start mode.</p></li><li><p>In restore mode, if ipset is used.</p></li><li><p>In lockdown mode.</p></li><li><p>On a fail condition (an error occured while applying a
+                          ruleset).</p></li></ul></div><p>
+                  </p><p>The format is:
+                    </p><pre class="synopsis">admin_source-IP local_destination-IP local_destination-port</pre></dd><dt><span class="term"><code class="varname">CHAIN_MAP</code></span></dt><dd><p>The purpose of this variable is to create custom iptables chains.</p><p>The format is (newline separates entries):</p><p>
+                    </p><pre class="synopsis">table chain-name [...]</pre><p>
+                  </p><p>Example:</p><p><code class="code">filter chain1 chain2</code></p><p><code class="code">mangle mchain1 mchain2</code></p></dd><dt><span class="term"><code class="varname">JUMP_TREE</code></span></dt><dd><p>The purpose of this variable is to create an automated jump tree of iptables
+                    chains.</p><p>The format is:</p><p>
+                    </p><pre class="synopsis">{ none | interface | netname | netname+interface } { table-name [...] | all }</pre><p>
+                  </p><p>`none' disables jump tree creation (undefined variable does the
+                    same).</p><p>`interface' means to create a jump tree categorised by interfaces.</p><p>`netname' means to create a jump tree categorised by networks.</p><p>`netname+interface' means to create a jump tree categorised by interfaces
+                    and their networks.</p><p>`table' defines in which table the jump tree will be created. A value of
+                    `all' will cause creation in all tables.</p><p>Examples:</p><p><code class="code">JUMP_TREE="interface filter mangle"</code></p><p><code class="code">JUMP_TREE="netname all"</code></p></dd><dt><span class="term"><code class="varname">JUMP_TREE_CHAINS_CREATE_ALL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Enable or disable automatic creation of all jump tree chains.</p></dd><dt><span class="term"><code class="varname">REMOVE_EMPTY_CHAINS</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Remove empty chains after applying the ruleset.</p></dd><dt><span class="term"><code class="varname">REMOVE_UNREF_CHAINS</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Remove unreferenced chains after applying the ruleset.</p></dd><dt><span class="term"><code class="varname">KNOWN_TRAFFIC_MAP</code></span></dt><dd><p>This allows to define which and where the rules are created, which deal with
+                    the return traffic identified by the connection tracker. The format is (newline
+                    separates entries): </p><pre class="synopsis">chain [ state ] [ top | bottom ]</pre><p>state can be either E, R or ER (ESTABLESHED, RELATED or ESTABLISHED and
+                    RELATED). top or bottom define wheter the rule should be placed on top or bottom
+                    of the rule stack.</p></dd><dt><span class="term"><code class="varname">REVERSE_INPUT_RULES_REQUIRED</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>In a ruleblock which uses a template definition that uses the reverse
+                    (return) mode to generate bidirectional rules, define if those are needed (i.e.
+                      <code class="varname">KNOWN_TRAFFIC_MAP</code> is not used). This applies to traffic
+                    entering the INPUT chain.</p></dd><dt><span class="term"><code class="varname">REVERSE_FORWARD_RULES_REQUIRED</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>In a ruleblock which uses a template definition that uses the reverse
+                    (return) mode to generate bidirectional rules, define if those are needed (i.e.
+                      <code class="varname">KNOWN_TRAFFIC_MAP</code> is not used). This applies to traffic
+                    entering the FORWARD chain.</p></dd><dt><span class="term"><code class="varname">FINAL_RULE_MAP</code></span></dt><dd><p>Define a terminating rule for custom or builtin chains. Format:
+                    </p><pre class="synopsis">chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</pre><p>chain = the name of the chain. action = Can be one of: log, drop, reject,
+                    logdrop, logreject. See the help of the iptables arguments for the other entries
+                      (<span class="command"><strong>ip-array show -sc ipt_args:limit,log-level,log-options</strong></span>).
+                    The default value for limit is defined with GLOBAL_LOGLIMIT and the burst value
+                    uses the default of GLOBAL_BURSTLIMIT.</p></dd><dt><span class="term"><code class="varname">LOG_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log packets in invalid state. The logging options are defined with the
+                    global log options.</p></dd><dt><span class="term"><code class="varname">BLOCK_INVALID</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop packets in invalid state.</p></dd><dt><span class="term"><code class="varname">LOG_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Log illegal TCP packets. The logging options are defined with the global log
+                    options.</p></dd><dt><span class="term"><code class="varname">BLOCK_ILLEGAL</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Drop illegal TCP packets.</p></dd><dt><span class="term"><code class="varname">LAN_FTP</code></span></dt><dd><p>Select LAN interface from where FTP traffic is permitted. Format (whitespace
+                    separates entries):
+                    </p><pre class="synopsis">lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]</pre><p>i.e. <code class="code">eth1:eth0:active</code> or <code class="code">eth2</code> or
+                      <code class="code">LAN::passive</code></p></dd><dt><span class="term"><code class="varname">LAN_NS</code></span></dt><dd><p>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
+                    networks to ISP nameservers. Needs the <code class="varname">LAN_NS</code> and
+                      <code class="varname">ISP_NS</code> variables to be defined. Purpose: Define name
+                    servers (DNS) that are part of a local area network.</p><p>
+                    </p><div class="table"><a name="d0e2882"></a><p class="title"><b>Table&nbsp;4.2.&nbsp;Local (LAN) name servers</b></p><div class="table-contents"><table summary="Local (LAN) name servers" border="1"><colgroup><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Network name</th><th align="left">Name server IP address</th><th align="left">[Name server MAC address]</th></tr></thead><tbody><tr><td align="left">DMZ</td><td align="left">10.11.11.11</td><td align="left">AA:BB:CC:DD:EE:FF</td></tr><tr><td align="left">DMZ</td><td align="left">10.11.11.12</td><td align="left">&nbsp;</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">ISP_NS</code></span></dt><dd><p>Allow DNS (udp and tcp) traffic from nameservers inside one or more local
+                    networks to ISP nameservers. Needs the <code class="varname">LAN_NS</code> and
+                      <code class="varname">ISP_NS</code> variables to be defined. Purpose: Define the
+                    Internet service provider name servers (DNS), for each local area
+                    network.</p><p>
+                    </p><div class="table"><a name="d0e2927"></a><p class="title"><b>Table&nbsp;4.3.&nbsp;ISP name servers</b></p><div class="table-contents"><table summary="ISP name servers" border="1"><colgroup><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Network name</th><th align="left">ISP name server IP address[,...]</th><th align="left">[External network interface]</th></tr></thead><tbody><tr><td align="left">PRODUCTION</td><td align="left">123.12.12.22,123.12.12.23</td><td align="left">eth1</td></tr><tr><td align="left">DEVELOPMENT</td><td align="left">124.13.13.23,124.13.13.24</td><td align="left">&nbsp;</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">ISP_SMTP</code></span></dt><dd><p>Allow SMTP traffic from inside one or more local networks to SMTP
+                    mailservers. Needs the <span class="command"><strong>lan_isp_smtp</strong></span> public function to be
+                    called in the rule file.</p><p>
+                    </p><div class="table"><a name="d0e2969"></a><p class="title"><b>Table&nbsp;4.4.&nbsp;ISP SMTP servers</b></p><div class="table-contents"><table summary="ISP SMTP servers" border="1"><colgroup><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Network name</th><th align="left">ISP mail server IP address[,...]</th><th align="left">[External network name]</th></tr></thead><tbody><tr><td align="left">PRODUCTION</td><td align="left">123.12.12.90,123.12.12.91</td><td align="left">INET_CON_ISP_X</td></tr><tr><td align="left">DEVELOPMENT</td><td align="left">125.25.25.5,125.25.25.6</td><td align="left">INET_CON_ISP_Y</td></tr><tr><td align="left">DMZ</td><td align="left">126.26.26.6,128.28.28.8</td><td align="left">&nbsp;</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">RESTRICT_OUTPUT</code></span></dt><dd><p>Valid values: `0', `1, &acute;IFBOUND' or `IPBOUND'.</p><p>If the policy for the OUTPUT chain is set to DROP, additional allow rules
+                    may be applied. A value of `1' will allow other configurations like allow rules
+                    for local name or time servers. A value of &acute;IFBOUND' will create OUTPUT allow
+                    rules per interface i.e. <code class="code">-A OUTPUT -o eth0 -j ACCEPT</code>. While setting
+                    it to `IPBOUND' will cause creation of one allow rule per IP address configure
+                    on each interface.</p></dd><dt><span class="term"><code class="varname">REST_OUT_DNS_ALLOW</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>If <code class="varname">RESTRICT_OUTPUT</code> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow localhost to
+                    nameservers traffic .</p></dd><dt><span class="term"><code class="varname">LOCAL_NS</code></span></dt><dd><p>Purpose: Define name servers (DNS) of the local system (most likely those
+                    configured in <code class="filename">/etc/resolv.conf</code>.</p><p>If set to `auto', then IP-Array will try to read the nameservers from
+                      <code class="filename">/etc/resolv.conf</code>. Otherwise the following formatting is
+                    used:</p><p>
+                    </p><div class="table"><a name="d0e3047"></a><p class="title"><b>Table&nbsp;4.5.&nbsp;Local name servers (resolv.conf)</b></p><div class="table-contents"><table summary="Local name servers (resolv.conf)" border="1"><colgroup><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Name server IP address</th><th align="left">[External network name]</th></tr></thead><tbody><tr><td align="left">123.12.12.22,123.12.12.23</td><td align="left">INET_CON_ISP_X</td></tr><tr><td align="left">124.13.13.23,124.13.13.24</td><td align="left">&nbsp;</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">REST_OUT_NTP_ALLOW</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>If <code class="varname">RESTRICT_OUTPUT</code> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow localhost to time
+                    servers traffic .</p></dd><dt><span class="term"><code class="varname">TIME_SERVERS</code></span></dt><dd><p>Purpose: Define time service request (NTP) of the local system.</p><p>If set to `auto', then IP-Array will try to read the ntp servers from
+                      <code class="filename">/etc/ntp.conf</code>. Note that host names are not supported!
+                    Otherwise the following formatting is used:</p><p>
+                    </p><div class="table"><a name="d0e3096"></a><p class="title"><b>Table&nbsp;4.6.&nbsp;Local NTP servers</b></p><div class="table-contents"><table summary="Local NTP servers" border="1"><colgroup><col align="left"><col align="left"></colgroup><thead><tr><th align="left">NTP server IP address[,...]</th><th align="left">[External network name]</th></tr></thead><tbody><tr><td align="left">11.12.13.14,12.13.14.15</td><td align="left">INET_CON_ISP_X</td></tr><tr><td align="left">99.99.99.9,99.99.99.10</td><td align="left">&nbsp;</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">REST_OUT_LAN_ALLOW</code></span></dt><dd><p>Valid values "lan-interface [...]"</p><p>If <code class="varname">RESTRICT_OUTPUT</code> is set to `1' and the policy of the
+                    OUTPUT chain is DROP, then rules will be created to allow traffic to the subnets
+                    configured .</p></dd><dt><span class="term"><code class="varname">REST_ALLOW_RELATED</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>If <code class="varname">RESTRICT_OUTPUT</code> is set to `IFBOUND' or &acute;IPBOUND' and
+                    the policy of the OUTPUT chain is DROP, setting this variable to `0' will allow
+                    only traffic in ESTABLISHED state, while setting it to `1' will allow traffic in
+                    ESTABLISHED and RELATED state.</p></dd><dt><span class="term"><code class="varname">DROP_DHCP</code></span></dt><dd><p>Drop DHCP broadcasts to certain interfaces. Allowed values are
+                    interface-names.</p></dd><dt><span class="term"><code class="varname">DROP_UPNP</code></span></dt><dd><p>Drop UPNP broadcasts to certain interfaces. Allowed values are
+                    interface-names.</p></dd><dt><span class="term"><code class="varname">LOG_PREFIX</code></span></dt><dd><p>A prefix for iptables log entries.</p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Tip</h3><p>Use a short value, log entries have a limited lenght.</p></div></dd><dt><span class="term"><code class="varname">GLOBAL_LOGLIMIT</code></span></dt><dd><p>An iptables logging limit parameter that will be used globally, wherever
+                    it's not specified / requested differently. Defaults to 1/s (1 per
+                    second).</p></dd><dt><span class="term"><code class="varname">GLOBAL_BURSTLIMIT</code></span></dt><dd><p>An iptables logging limit-burst parameter that will be used globally,
+                    wherever it's not specified / requested differently. Defaults to `3'.</p></dd><dt><span class="term"><code class="varname">GLOBAL_LOGLEVL</code></span></dt><dd><p>Valid values are: alert, crit, debug, emerg, err, info, notice and warning.
+                    Defaults to `info'.</p><p>An iptables logging loglevel parameter that will be used globally, wherever
+                    it's not specified / requested differently.</p></dd><dt><span class="term"><code class="varname">ENABLE_IPSEC</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Enable or disable the IPSEC rules.</p></dd><dt><span class="term"><code class="varname">ALLOW_ALL_BRANCH</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Allow all traffic between all VPN branches.</p></dd><dt><span class="term"><code class="varname">LOCAL_BRANCH</code></span></dt><dd><p>Allowed values: Characters of class [:word:] (alphanumeric and the `_'
+                    (underline) character). </p><p>Purpose: Set name of the local VPN branch.</p></dd><dt><span class="term"><code class="varname">IPSEC_RULES</code></span></dt><dd><p>The IPSEC rule files.</p></dd><dt><span class="term"><code class="varname">VPN_MAP</code></span></dt><dd><p>This variable holds the vpn branch data.</p><p>The VPN_MAP variable is structured as follows (example data
+                    provided):</p><p>
+                    </p><div class="table"><a name="d0e3235"></a><p class="title"><b>Table&nbsp;4.7.&nbsp;VPN_MAP structure</b></p><div class="table-contents"><table summary="VPN_MAP structure" border="1"><colgroup><col align="left"><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th align="left">Branch name</th><th align="left">External IP address</th><th align="left">LAN address/mask</th><th align="left">LAN interface IP address</th></tr></thead><tbody><tr><td align="left">local_branch</td><td align="left">188.88.88.8</td><td align="left">192.168.1.0/24</td><td align="left">192.168.1.1</td></tr><tr><td align="left">remote_branch_01</td><td align="left">177.77.77.7</td><td align="left">10.1.1.0/24</td><td align="left">10.1.1.1</td></tr><tr><td align="left">remote_branch_02</td><td align="left">166.66.66.6</td><td align="left">172.16.1.0/24</td><td align="left">172.16.1.1</td></tr></tbody></table></div></div><p><br class="table-break">
+                  </p></dd><dt><span class="term"><code class="varname">ENABLE_TC_SHAPING</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Enable or disable traffic shaping rules.</p></dd><dt><span class="term"><code class="varname">TC_MARK_RULES</code></span></dt><dd><p>Files holding the iptables MARK and CLASSIFY rules for the traffic shaping.
+                  </p></dd><dt><span class="term"><code class="varname">OUTPUT_BULK</code></span></dt><dd><p>Formatting: </p><pre class="synopsis">output-interface:mark [...]</pre><p>Put the matching packets into the output bulk queue disc.</p></dd><dt><span class="term"><code class="varname">FORWARD_BULK</code></span></dt><dd><p>Formatting:
+                    </p><pre class="synopsis">input-interface,output-interface:mark [...]</pre><p>Put the matching packets into the forward bulk queue disc.</p></dd><dt><span class="term"><code class="varname">PRIORITIZE_SYN</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Prioritize TCP SYN packets in traffic shaping.</p></dd><dt><span class="term"><code class="varname">EXIT_ON_ERROR</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>If enabled, IP-Array will exit on all error conditions (configuration,
+                    comand apply errors, etc.). Otherwise it will continue and will only exit on
+                    hard errors.</p></dd><dt><span class="term"><code class="varname">RULE_PLACEHOLDER</code></span></dt><dd><p>Valid values: `_' (underscore), `-' (dash), `.' (dot), `,' (comma). Defaults
+                    to `_' (underscore).</p><p>If a rule entry in a ruleblock will not be set, use this character as
+                    placeholder.</p></dd><dt><span class="term"><code class="varname">USE_M_CONNTRACK</code></span></dt><dd><p>Valid values: `0' or `1'.</p><p>Always use the iptables match extension conntrack in favour of the state
+                    match.</p></dd><dt><span class="term"><code class="varname">NFACCT_OBJ_MAP</code></span></dt><dd><p>Netfilter accounting objects (nfacct)</p><p>Format: </p><pre class="synopsis">nfacct-name [...]</pre></dd><dt><span class="term"><code class="varname">SYSCTL_RULES</code></span></dt><dd><p>Names of the files holding the sysctl rules.</p></dd><dt><span class="term"><code class="varname">SYSCTL_CONNTRACK_MAX</code></span></dt><dd><p>Maximum number of connection to track (conntrack). This can also be set in
+                    your sysctl rules, but this variable is here to allow automatic
+                    calculation.</p><p>Formatting:</p><p>value (integer) | (x|X)factor (factor = integer)</p><p>Using (x|X)factor, the conntrack max value will be automatically calculated
+                    and then multiplied with factor (i.e. x2 - double the auto value).</p></dd></dl></div><p>
+          </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="conf_file_global_conf"></a>Global settings - configuration file (global.conf)</h4></div></div></div><p>This file is supposed to hold global variable definitions (i.e. ports, network
+            classes), which do not apply to the current working system only, but are of generic use,
+            to be utilized on any or more than one host.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="conf_file_alias_conf"></a>Custom variables/namings (alias.conf)</h4></div></div></div><p>This file is supposed to hold custom (user defined) variables. It is optional, but
+            its use is recommended.</p><p>Most likely the user will put definitions for interface names, hosts, etc. Those can
+            be used in rules, ruleblocks and templates.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h4 class="title"><a name="internal_defs"></a>Internal variables (ip-array_global_defs)</h4></div></div></div><p>This file holds variables only used internaly. But they still may be altered to
+            change some of the IP-Array behaviour. This is only for advanced usage. Please stick to
+            the comments for information about the settings available.</p></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="conf_xml_templates_howto"></a>Templates</h2></div><div><h3 class="subtitle">How to configure XML templates</h3></div></div></div><p>XML templates provide the structure for the ruleblocks they will be associated with in
+        the rule files (template rule).</p><p>Many templates are provided out of the box inside the
+          <code class="filename">template_repo.d</code>. For better performance it is recommended to put only
+        those templates which will actually be used into the directory holding the templates.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3417"></a>Syntax</h3></div></div></div><p>A template definition file must contain the following:</p><p>
+          </p><div class="orderedlist"><ol type="1"><li><p>First a root tag including the describing name attribule and the syntax
+                version:</p><p><code class="code">&lt;ip_array_root name="iptables_templates"
+                syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an iptables
+                template.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
+                version (only 1.0 is available by now).</p></li><li><p>The actual template tag including the name attribute defining the name of the
+                template:</p><p>&lt;template name="T_EXAMPLE"&gt;</p><p>The template name must begin with one of the following prefixes: T_, BT_, GT_,
+                TEMPLATE_, BASE_TEMPLATE_, GLOBAL_TEMPLATE_.</p></li></ol></div><p>
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3449"></a>Template XML tags</h3></div></div></div><p>The following list describes the tags which are valid inside the templates.</p><div class="variablelist"><dl><dt><span class="term">table</span></dt><dd><p>The name of the iptables table (defaults to `filter' if unset).</p></dd><dt><span class="term">target</span></dt><dd><p>A comma separated list of iptables targets. Usually the target will be 'jumped'
+                (--jump) to. To use a goto (--goto) instead, prefix the target name with
+                `goto:'.</p></dd><dt><span class="term">chain</span></dt><dd><p>A comma separated list of iptables chains. A maximum of 2 chain names can be
+                specified, if the <code class="varname">reverse_mode</code> is `reverse' or `mirror'.
+                Otherwise only one is valid.</p></dd><dt><span class="term">reverse_mode</span></dt><dd><p>Reverse mode can either be set to `reverse' or `mirror'. This means that a
+                second option list will be processed (most likely the return traffic). See
+                  <code class="varname">option_list_1</code> below. If `mirror' is specified the first option
+                list will be copied to the second one. Otherwise <code class="varname">option_list_1</code>
+                will be used.</p></dd><dt><span class="term">reverse_condition</span></dt><dd><p>If this condition evaluates to true, than reverse mode will be used (if
+                specified - othewise this setting does not make sense).</p><p>The condition must be defined like this: </p><pre class="synopsis">foo:bar</pre><p>where foo
+                is the condition and bar is the value it has to match. </p></dd><dt><span class="term">template_msg</span></dt><dd><p>A message that will be displayed as the template is called, if
+                  <code class="varname">VERBOSE</code> is greater or equal 3.</p></dd><dt><span class="term">mandatory_vars</span></dt><dd><p>A comma separated list of variable names that must be defined in the ruleblock
+                called with the template.</p></dd><dt><span class="term">load_template</span></dt><dd><p>Other templates to load into the current one.</p><p>
+                </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>Those loaded templates will always be read before any option_list or
+                    always_use list. Means they are on the more left side from the ruleblock
+                    perspective.</p></div><p>
+              </p></dd><dt><span class="term">option_list_0</span></dt><dd><p>These are the actual iptables arguments which will be filled with values from
+                the ruleblock called with the template.</p><p>The list of valid iptables arguments and their usage can be called with:
+                  <span class="command"><strong>ip-array show -sc ipt_args[,...]</strong></span>.</p><p>You can define default values to be used by using this syntax:
+                </p><pre class="synopsis">name=default_value</pre><p>I.e. idev=eth0</p><p>These default values will be used if the according ruleblock entry is not
+                defined (filled with the rule placeholder value, or undefined).</p></dd><dt><span class="term">option_list_1</span></dt><dd><p>This second list of iptables options is used for the reverse_mode if set to
+                `reverse'. I.e. what has been idev (input interface) will be odev (output interface)
+                in the reverse rule.</p></dd><dt><span class="term">always_use_0</span></dt><dd><p>You can define default values for <code class="varname">option_list_0</code> by using this
+                syntax: </p><pre class="synopsis">name=default_value</pre><p>I.e. idev=eth0</p></dd><dt><span class="term">always_use_1</span></dt><dd><p>You can define default values for <code class="varname">option_list_1</code> by using this
+                syntax: </p><pre class="synopsis">name=default_value</pre><p>I.e. odev=eth0</p></dd><dt><span class="term">state_match_arg</span></dt><dd><p>A maximum of two comma separated lists with state-names of the state/conntrack
+                match. I.e. NEW,ESTABLISHED ESTABLISHED.</p><p>The second one is only used if the reverse_mode is set to `reverse'.</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3585"></a>Template usage guidelines</h3></div></div></div><p>It is recommended to build <span class="italic">small chunk</span> templates
+          (called <span class="bold"><strong>base templates</strong></span>) and to use them modulary to build
+          your final templates (using the load_template tag).</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="conf_xml_ruleblocks_howto"></a>Ruleblocks</h2></div><div><h3 class="subtitle">How to configure XML ruleblocks</h3></div></div></div><p>Ruleblocks are used inside the template_rule tags in rule files. They always need to be
+        called with the template defining their structure.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3603"></a>Syntax</h3></div></div></div><p>A ruleblock definition file must contain the following:</p><p>
+          </p><div class="orderedlist"><ol type="1"><li><p>First a root tag including the describing name attribule and the syntax
+                version:</p><p><code class="code">&lt;ip_array_root name="ruleblocks" syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is a ruleblocks
+                definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
+                version (only 1.0 is available by now).</p></li><li><p>The actual ruleblock tag including the name attribute defining the name of the
+                ruleblock:</p><p>&lt;ruleblock name="RULEBLOCK_EXAMPLE"&gt;</p><p>The ruleblock name must begin with one of the following prefixes: RB_,
+                RULEBLOCK_.</p></li></ol></div><p>
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="d0e3635"></a>Ruleblocks usage guidelines</h3></div></div></div><p>It's a good idea to write down the structure of the template you want to call the
+          ruleblock with as a comment below the ruleblock opening tag. This way you will easily
+          remember what each column has to contain.</p><p>Newline separates rules inside a ruleblock. So if your template defines i.e. a
+          ruleblock structure like this:</p><p><code class="code">table chain target proto src</code></p><p>then an entry in the ruleblock may look like this:</p><p><code class="code">filter INPUT ACCEPT tcp 1.1.1.1</code></p><p>You can use your shell variables inside ruleblock rules.</p><p>XML style comments (&lt;!-- comment --&gt;) are valid inside ruleblocks.</p><p>If you want to leave a value in a column undefined use the character defined with
+          $RULE_PLACEHOLDER (default = `_') as a placeholder.</p><p>To use spaces inside a column value, use either escaped double quotes (\"value with
+          space\") or single quotes ('value with space').</p><p>If the structure of a ruleblock does not fit your needs, it is possible to use the
+            <a class="link" href="#inline_funcs" title="inline functions">inline functions</a> inside it to add a rule with a
+          different structure.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="inline_funcs"></a>inline functions</h3></div></div></div><p>Inline functions are used inside ruleblocks. Sometimes the structure of a ruleblock
+          does not fit the current need. Using inline functions is a way around this, or allow to
+          modify the behaviour of the rule processing.</p><p>The following functions are available inline:</p><p>
+          </p><div class="variablelist"><dl><dt><span class="term">add_rule</span></dt><dd><p>See description of <a class="link" href="#pub_funcs" title="Public functions">public_functions</a>.</p></dd><dt><span class="term">insert_ipt_rule</span></dt><dd><p>Like `add_rule' but it will insert the rule on top of the stack.</p></dd><dt><span class="term">create_chain</span></dt><dd><p>See description of <a class="link" href="#pub_funcs" title="Public functions">public_functions</a>.</p></dd></dl></div><p>
+        </p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="conf_xml_rule_files_howto"></a>Rule files</h2></div><div><h3 class="subtitle">How to configure XML rule files</h3></div></div></div><p>The rule files define what is run at what point. It may contain public functions, normal
+        rules, combined rules, template rules and iptables arguments that may be used globally to be
+        applied to all following rules (grouping). For each iptables table (if configured to be
+        used) there must be at least one rule file defined.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="rule_syntax"></a>Syntax</h3></div></div></div><p>A rule definition file must contain the root tag including the describing name
+          attribule and the syntax version:</p><p><code class="code">&lt;ip_array_root name="iptables_rules" syntax_version="1.1"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an iptables rule
+          definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
+          version. 1.0 and 1.1 are available by now. The ipset tags were introduced with version
+          1.1.</p><p>The XML syntax can be used in a <span class="italic">relaxed</span> way (not
+          XML compatible). Tags can be closed by a simple `/&gt;'. Attributes can have their value
+          enclosed inside single quotes, or not quoted at all.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="rule_xml_tags"></a>Rule file XML tags</h3></div></div></div><p>
+          </p><div class="itemizedlist"><ul type="disc"><li><p>&lt;rule&gt; or the short form &lt;r&gt;</p><p>A <span class="bold"><strong>single rule</strong></span> entry. All iptables arguments can
+                be used inside a rule tag. The list of valid arguments can be retrieved by running:
+                  <span class="command"><strong>ip-array show -sc ipt_args[,...]</strong></span>.</p><p>They can be used as attributes of the tag, or as content inside the tag. In the
+                first form they do not need be enclosed inside quotes (relaxed XML), unless the
+                value contains a whitespace. Values with whitespace must be enclosed within double
+                or single quotes. In both cases the left hand side (left of the `=') is the iptables
+                argument and the right hand side is its value.</p><p>Examples:</p><p><code class="code">&lt;rule&gt; table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                  &lt;/rule&gt;</code></p><p><code class="code">&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                  /&gt;</code></p><p><code class="code">&lt;r&gt; table=filter chain=INPUT target=LOG log_prefix="my log message"
+                  /&gt;</code></p></li><li><p>&lt;combined_rule&gt; or the short form &lt;cr&gt;</p><p>&acute;<span class="bold"><strong>Combined rules</strong></span> allow to create reverse traffic
+                rules like with templates and ruleblocks with the reverse_mode=reverse option, but
+                in a dynamic way.</p><p>It has these attributes available:</p><p>
+                </p><div class="itemizedlist"><ul type="circle"><li><p>reverse_mode - which can be like within templates set to either `reverse'
+                      or `mirror'.</p></li><li><p>reverse_condition - like within templates defines a condition that must
+                      evaluate to true for the reverse rules to be created. The variable name and
+                      its value must be separated by a colon `:'. i.e. foo:bar</p></li><li><p>msg - like with template_msg, it allows to define a message to be
+                      displayed, if <code class="varname">VERBOSE</code> is greater or equal 3.</p></li></ul></div><p>
+              </p><p>The iptables arguments must be used inside the &lt;optlist&gt; tag (see next item
+                in the list). The arguments in the second option list do not need the equal siqn and
+                the right hand side value. The values of the first option list will be used in order
+                from left to right and will be applied to the options (iptables arguments) of the
+                second option list. Only if a value needs to be left out the special keyword
+                  `<span class="bold"><strong>empty</strong></span>' can be used. Either as option name (i.e.
+                option list one has `odev=eth0' as iptables argument, you will use just `empty' in
+                the second option list), or as value (i.e. idev=empty).</p><p>All global iptables arguments, that are opended inside a combined rule will be
+                applied to all following rules created with the &lt;optlist&gt; tag. They will not be
+                applied to rules outside of the combined rule.</p><p>
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>Inside combined rules the iptables arguments target and chain may be set
+                    to a comma separated list (maximum 2 chains can be defined).</p></div><p>
+              </p><p>Example:</p><p>
+                </p><pre class="programlisting">&lt;table&gt; filter
+    &lt;combined_rule reverse_mode="reverse" reverse_condition="x:y"&gt;
+        &lt;chain&gt; INPUT,OUTPUT
+            &lt;target&gt; LOG,ACCEPT
+                &lt;optlist&gt; proto=tcp sport=99 &lt;/optlist&gt;
+                &lt;optlist&gt; proto dport &lt;/optlist&gt;
+            &lt;/target&gt;
+            &lt;target&gt; DROP
+                &lt;opts idev="$lan_if" proto="udp" sport="66" /&gt;
+                &lt;opts&gt; odev proto empty /&gt;
+            &lt;/target&gt;
+        &lt;/chain&gt;
+    &lt;/combined_rule&gt;
+&lt;/table&gt;</pre><p>
+              </p></li><li><p>&lt;optlist&gt; or the allowed variations: &lt;opt&gt;, &lt;opts&gt;, &lt;option&gt;,
+                &lt;options&gt;</p><p>This tag is only valid within a combined_rule tag. All iptables arguments can be
+                used inside this tag. The list of valid arguments can be retrieved by running:
+                  <span class="command"><strong>ip-array show -sc ipt_args[,...]</strong></span>.</p><p>They can be used as attributes of the tag, or as content inside the tag. In the
+                first form they do not need be enclosed inside quotes. Values with whitespace must
+                be enclosed within double or single quotes. In both cases the left hand side (left
+                of the `=') is the iptables argument and the right hand side is its value.</p></li><li><p>&lt;template_rule&gt; or the short form &lt;tr&gt;</p><p>This tag defines one or more ruleblocks to be called with their corresponding
+                templates. This is named a <span class="bold"><strong>template rule</strong></span>.</p><p>The syntax is:
+                </p><pre class="synopsis">&lt;template_rule&gt; template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule&gt;</pre><pre class="synopsis">or:</pre><pre class="synopsis">&lt;template_rule template="template-name" ruleblock="ruleblock-name" /&gt;</pre><p>For the first form multible entries may be separated by newline. Also one or
+                more command(s) can be run at invocation of the ruleblock.</p><p>Template rules will not inherit the global arguments (see below).</p></li><li><p>&lt;pub_func&gt; or the short form &lt;f&gt;</p><p>This tag defines one or more <a class="link" href="#pub_funcs" title="Public functions">public functions</a>
+                to be called.</p><p>The syntax is:
+                </p><pre class="synopsis">&lt;pub_func name="function-name" /&gt;</pre><pre class="synopsis">or</pre><pre class="synopsis">&lt;pub_func&gt; function-name [ option ... ] &lt;/pub_func&gt;</pre><p>For
+                the second form multible entries must be separated by newline. Also it allows to
+                pass parameters to the call of the function.</p><p>The value part of the name attribute must be enclosed within quotes.</p><p>Examples:</p><p>
+                </p><pre class="programlisting">&lt;pub_func&gt;
+    log -S "Adding DROP rules"
+    drop_dhcp
+    drop_netbios
+&lt;/pub_func&gt;</pre><p>
+              </p><p>
+                </p><pre class="programlisting">&lt;f name="lan_ftp" /&gt;</pre><p>
+              </p></li><li><p>&lt;ipsets&gt; or the short forms: &lt;s&gt;, &lt;set&gt;, &lt;ipset&gt;</p><p>This tag allows to define ipset sets. It is not valid inside any other but the
+                root tag. Only attributes are allowed, no content.</p><p>The syntax is:
+                </p><pre class="synopsis">&lt;ipsets name="set-name" [ type="set-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option-name" ] &gt;
+    [ &lt;elements&gt; content &lt;/elements&gt; ]
+&lt;/ipsets&gt;
+or
+&lt;ipsets import_xml="file-name" /&gt;</pre><p>For the first form the attributes <span class="italic">name</span> and
+                  <span class="italic">type</span> are mandatory when creating a set. If only
+                elements are to be added using the &lt;elements&gt; tag, only the name of the set is
+                required. All header options that require a value must be expressed using the form:
+                  <code class="code">option-name=value</code>. All other header options must be put into the
+                  <span class="italic">options</span> attribute.</p><p>For the second for a file can be imported. This file must be in the format as
+                used with ipset -output xml.</p><p>Examples:</p><p>
+                </p><pre class="programlisting">&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" /&gt;
+
+&lt;ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules.d/import_ipsets.xml" /&gt;</pre><p>
+              </p></li><li><p>&lt;elements&gt; or the short forms: &lt;e&gt;, &lt;elem&gt;, &lt;element&gt;</p><p>This tags allows to add elements to an ipset set. It is of course only valid
+                inside an &lt;ipsets&gt; tag (see above). </p><p>The syntax is:
+                </p><pre class="synopsis">&lt;elements [ import_plain="file-name" ] &gt;
+    [ content ]
+    [ ... ]
+&lt;/elements&gt;</pre><p>The optional import_plain attribute is available inside this tag. It allows to
+                import elements from a file. The file must contain one element per line. Shell style
+                comments (#) are allowed.</p><p>The syntax for content and inside the file is as with ipset without writing
+                ipset add set-name ... When using the comment option and the comment contains
+                spaces, it must be enclosed inside double quotes.</p><p>Examples:</p><p>
+                </p><pre class="programlisting">&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" &gt;
+    &lt;elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules.d/foo-elements.txt" &gt;
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements&gt;
+&lt;/set&gt;
+
+&lt;set name="foo"&gt;
+    &lt;elements&gt;
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements&gt;
+&lt;/set&gt;</pre><p>
+              </p></li><li><p>All other iptables arguments. We'll call them <span class="bold"><strong>global
+                  arguments</strong></span>.</p><p>The list of valid arguments can be retrieved by running: <span class="command"><strong>ip-array show
+                  -sc ipt_args[,...]</strong></span>.</p><p>These can be used to apply their value to all other rules following (grouping).
+                Or to build rules by their own. In the second case, the closing of a tag will cause
+                the creation of a rule. Except they are terminated by a <span class="underline">&lt;rule&gt;</span> or a <span class="underline">&lt;combined_rule&gt;</span>, in which case their closing will not cause
+                additional rules to be created, unless a new tag is opened (and then closed
+                afterwards to create a rule), which will start a new counter like before. </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>They will not be applied to template rules!</p></div><p>In example:</p><p>
+                </p><pre class="programlisting">&lt;table name="filter"&gt;
+    &lt;chain name="INPUT"&gt;
+        &lt;rule&gt; rule1 &lt;/rule&gt;
+        &lt;rule&gt; rule2 &lt;/rule&gt;
+    &lt;/chain&gt;
+&lt;/table&gt;</pre><p>
+              </p><p>Or in the <span class="italic">relaxed</span> way:</p><p>
+                </p><pre class="programlisting">&lt;table&gt; filter &lt;chain name=INPUT&gt;
+    &lt;rule&gt; rule1 /&gt;
+    &lt;rule&gt; rule2 /&gt;
+/&gt; /&gt;</pre><p>
+              </p><p>Another example using only global arguments:</p><p>
+                </p><pre class="programlisting">&lt;table&gt; filter
+    &lt;chain&gt; INPUT
+        &lt;target&gt; ACCEPT
+            &lt;state&gt; NEW,ESTABLISHED
+                 &lt;src&gt; 1.1.1.1 &lt;/src&gt;
+                 &lt;dst&gt; 2.2.2.2 &lt;/dst&gt;
+            &lt;/state&gt; &lt;/target&gt;
+        &lt;target&gt; DROP &lt;/target&gt;
+    &lt;/chain&gt;
+&lt;/table&gt;</pre><p>
+              </p></li></ul></div><p>
+        </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="pub_funcs"></a>Public functions</h3></div></div></div><p>IP-Array allows the use of public functions inside rule files. They are defined using
+          the <span class="command"><strong>pub_func</strong></span> XML tag.</p><p>The list of available public functions can be retrieved by running: <span class="command"><strong>ip-array
+            show -sc public_functions</strong></span>.</p><p>Help about one or more of them can be retrieved by running i.e.: <span class="command"><strong>ip-array
+            show -sc public_functions:function_name_1,function_name_2</strong></span>.</p><p>Here is a list of the available functions including a brief description. For more
+          details please refer to the individual help.</p><div class="variablelist"><dl><dt><span class="term">add_rule</span></dt><dd><p>Add (append) an iptables rule to the command queue (array). Can also be used as
+                'inline' command.</p></dd><dt><span class="term">log</span></dt><dd><p>IP-Array messaging (logging) to stdout/stderr and/or syslog.</p></dd><dt><span class="term">create_chain</span></dt><dd><p>Create an iptables chain (add command to the command queue).</p></dd><dt><span class="term">delete_chain</span></dt><dd><p>Delete an iptables chain (add command to the command queue).</p></dd><dt><span class="term">ipset_create</span></dt><dd><p>Create an ipset set.</p></dd><dt><span class="term">ipset_add</span></dt><dd><p>Add an entry to an ipset set.</p></dd><dt><span class="term">jump_tree_on</span></dt><dd><p>Enable classification into jump tree chains.</p></dd><dt><span class="term">jump_tree_off</span></dt><dd><p>Disable classification into jump tree chains.</p></dd><dt><span class="term">log_invalid_state</span></dt><dd><p>Log packets in invalid state.</p></dd><dt><span class="term">drop_invalid_state</span></dt><dd><p>Drop packets in invalid state.</p></dd><dt><span class="term">logdrop_illegal_tcp</span></dt><dd><p>Log and/or drop non legal tcp packets.</p></dd><dt><span class="term">drop_dhcp</span></dt><dd><p>Drop dhcp broadcasts on certain interfaces.</p></dd><dt><span class="term">drop_netbios</span></dt><dd><p>Drop netbios broadcasts on certain interfaces</p></dd><dt><span class="term">drop_upnp</span></dt><dd><p>Drop UPNP broadcasts on certain interfaces</p></dd><dt><span class="term">reject_auth</span></dt><dd><p>Reject auth (tcp port 113) traffic.</p></dd><dt><span class="term">anti_spoof</span></dt><dd><p>Create anti spoofing rules.</p></dd><dt><span class="term">intns_to_extns</span></dt><dd><p>Allow internal DNS servers to communicate with ISP name servers.</p></dd><dt><span class="term">lan_isp_smtp</span></dt><dd><p>Allow local networks to communicate with ISP SMTP servers.</p></dd><dt><span class="term">lan_ftp</span></dt><dd><p>Allow passive and/or active ftp forwarding traffic from certain LANs.</p></dd><dt><span class="term">enable_ipsec</span></dt><dd><p>Enable ipsec rules.</p></dd><dt><span class="term">restrict_output</span></dt><dd><p>Settings to restrict traffic in OUTPUT chain.</p></dd><dt><span class="term">mark_prio_syn</span></dt><dd><p>Prioritize SYN packets.</p></dd><dt><span class="term">mark_out_bulk</span></dt><dd><p>Mark OUTPUT bulk traffic.</p></dd><dt><span class="term">mark_fwd_bulk</span></dt><dd><p>Mark FORWARD bulk traffic.</p></dd><dt><span class="term">nfacct_add</span></dt><dd><p>Add a nfacct accounting object.</p></dd><dt><span class="term">set_var</span></dt><dd><p>Set a variables value.</p></dd></dl></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="ipset_usage"></a>ipset usage</h3></div></div></div><p>ipset sets are either controlled with the public functions <span class="bold"><strong>ipset_create</strong></span> and <span class="bold"><strong>ipset_add</strong></span>. Or through the
+            <a class="link" href="#rule_xml_tags" title="Rule file XML tags">ipset related tags</a> in an iptables rule file.</p></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="conf_xml_sysctl_rule_files_howto"></a>sysctl rule files</h2></div><div><h3 class="subtitle">How to configure XML sysctl rule files</h3></div></div></div><p>The sysctl rule files define what system settings are to be modified.</p><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="sysctl_rule_syntax"></a>Syntax</h3></div></div></div><p>A rule definition file must contain the root tag including the describing name
+          attribule and the syntax version:</p><p><code class="code">&lt;ip_array_root name="sysctl_rules" syntax_version="1.0"&gt;</code></p><p>The <span class="bold"><strong>name</strong></span> attribute tells us it is an sysctl rule
+          definition.</p><p>The <span class="bold"><strong>syntax_version</strong></span> attribute defines the syntax
+          version. 1.0 is available by now.</p><p>The XML syntax can be used in a <span class="italic">relaxed</span> way (not
+          XML compatible). Tags can be closed by a simple `/&gt;'. Attributes can have their value
+          enclosed inside single quotes, or not quoted at all.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="sysctl_rule_xml_tags"></a>sysctl rule file XML tags</h3></div></div></div><p>The XML tags used in sysctl rule files are an exact representation of the names used
+          with the <span class="command"><strong>sysctl</strong></span> program. Each of the names used by the
+            <span class="command"><strong>sysctl</strong></span> program, which are separated by a dots, will be the name of
+          the XML tag, or the attribute if it is the actual setting. Example:</p><p><code class="code">net.ipv4.ip_forward=1</code> from sysctl will be described in XML like
+          this:</p><p>
+          </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;ip_forward&gt; 1 &lt;/ip_forward&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or as attribute:</p><p>
+          </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4 ip_forward="1"&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or even shorter as attribute if only this single setting is used:</p><p>
+          </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4 ip_forward="1"/&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>You can mix both ways as you wish. To see all the available types of your local
+          system, run either <span class="command"><strong>sysctl -a</strong></span> or <span class="command"><strong>ip-array
+            compat-check</strong></span>.</p><p><span class="bold"><strong>Shell variables</strong></span> are valid as tag names inside sysctl
+          rules. The main purpose of this feature is to allow generic configuration of values that
+          may change system depending. i.e. the interface names in
+            <code class="code">net.ipv4.conf.$INTERFACE_NAME</code>. The <span class="bold"><strong>variable must not
+            be quoted!</strong></span> You can either write them with or without the curly braces:
+            <code class="code">&lt;$VARIABLE&gt;</code> or <code class="code">&lt;${VARIABLE}&gt;</code>.</p><p>Now if you define you interface name variables inside the i.e. alias.conf
+          configuration file, you can use them inside your sysctl rule files. And every time an
+          interface changes, all you need to do, is to modify the variable and re-parse the sysctl
+          rule files.</p><p>Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file
+          you write:</p><p>
+          </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF&gt;
+                &lt;accept_redirects&gt; 0 &lt;/accept_redirects&gt;
+            &lt;/$EXT_IF&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>or as attribute (in the short form):</p><p>
+          </p><pre class="programlisting">&lt;net&gt;
+    &lt;ipv4&gt;
+        &lt;conf&gt;
+            &lt;$EXT_IF accept_redirects="0"/&gt;
+        &lt;/conf&gt;
+    &lt;/ipv4&gt;
+&lt;/net&gt;</pre><p>
+        </p><p>XML style comments are valid inside sysctl rule files. Public functions etc. are
+          not.</p><p>In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+          listed.</p></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="traffic_shaping"></a>Chapter&nbsp;5.&nbsp;Traffic shaping</h2></div></div></div><p>IP-Array has basic traffic shaping support built in. The creation of htb, and sfq qdiscs
+      as well as tc classes and filters is, with a limited set of options, supported.</p><p>When traffic shaping is enabled by setting the <code class="varname">ENABLE_TC_SHAPING</code>
+      variable to `1', a number of predifined ruleblocks (<code class="varname">TC_MANGLE_RULEBLOCKS</code> -
+      the iptables mangle table marking and <code class="varname">TC_RULEBLOCKS</code> - the queue discs,
+      classes and filters) and rules (<code class="varname">TC_MARK_RULES</code> also containing the tc public
+      functions) get loaded.</p><p>Unlike with the iptables counterpart, there are no templates to edit and the names and
+      order of parameters of the ruleblocks are hard coded.</p></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="usage"></a>Chapter&nbsp;6.&nbsp;Usage</h2></div><div><h3 class="subtitle"><i>Running IP-Array</i></h3></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#startup_params">Startup parameters and options</a></span></dt><dd><dl><dt><span class="section"><a href="#usage_params">Parameters</a></span></dt><dt><span class="section"><a href="#usage_options">Options</a></span></dt></dl></dd><dt><span class="section"><a href="#init_script">init script</a></span></dt><dt><span class="section"><a href="#exit_codes">Exit codes</a></span></dt><dt><span class="section"><a href="#startup_usage_examples">Usage examples</a></span></dt></dl></div><p></p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="startup_params"></a>Startup parameters and options</h2></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="usage_params"></a>Parameters</h3></div></div></div><p>If the first parameter is omitted, usage instructions are printed. Only one parameter
+          is allowed - but required - for ip-array to take any action.</p><p>These parameters control the 'mode' IP-Array runs on.</p><div class="itemizedlist"><ul type="disc"><li><p>start</p><p>All network connections are forbidden (see lockdown mode below) until all
+              configuration has been read. Module probing (if configured) is done first. After all
+              commands are compiled, they are applied at once. An iptables rule listing is saved for
+              later difference checks.</p></li><li><p>stop</p><p>All tables and chains and ipset sets get flushed and destroyed, no firewalling is
+              active any more. All tc qdisc are removed, no traffic shaping is active any more.
+              Modules configured to be loaded are removed.</p></li><li><p>restart</p><p>Module probing (if configured) is done first. After all commands are compiled,
+              they are applied at once. An iptables rule listing is saved for later difference
+              checks.</p></li><li><p>test</p><p>Acts like the 'restart', but will use the testing configuration below the 'test'
+              folder. Also it will schedule a restore job (using the `at' command scheduler) for the
+              time specified with <code class="varname">RELOAD_TIME</code> in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file.</p></li><li><p>open</p><p>Module probing (if configured) is done first.</p><p>This mode leaves only the NAT rules active (reads configuration and re-applies
+              them), all other tables are emptied. Policies are set to ACCEPT. An iptables rule
+              listing is saved for later difference checks. The ipset ruleset will not be
+              touched.</p></li><li><p>tc-start</p><p>Start traffic shaping only. Mangle table rules will be (re)-applied. An iptables
+              rule listing is saved for later difference checks. ipset ruleset will not be
+              touched.</p></li><li><p>tc-stop</p><p>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
+              interfaces listed in <code class="varname">NET_INTERFACES</code> will be deleted. An iptables
+              rule listing is saved for later difference checks. ipset ruleset will not be
+              touched.</p></li><li><p>lockdown</p><p>All filter table policies will be set to DROP, all others will be set to ACCEPT.
+              All chains get flushed and custom chains are deleted. No more network connections are
+              allowed except:</p><table class="simplelist" border="0" summary="Simple list"><tr><td>A: If the bash environment variable SSH_CONNECTION is set, IP-Array allow
+                  connections from that source address to the ssh server port.</td></tr><tr><td>B: If the environment variable is not set, but the ADMIN_CONNECTION variable
+                  is set in the main config file, IP-Array will allow the configured
+                  connection.</td></tr><tr><td>C: If the ALLOW_LOOPBACK variable is set in the main config file, loopback
+                  communication will be allowed.</td></tr></table></li><li><p>interactive</p><p>In this mode several wizards are available to interactively create or edit the
+              IP-Array configuration. It is possible to create main configuration files, templates,
+              iptables/ipset and sysctl rule files, or create and edit ruleblocks. The
+                <span class="command"><strong>whiptail</strong></span> program is required for this. The global_defs
+              configuration file holds 3 variables (<code class="varname">IACTIVE_WINDOW_HEIGHT</code>,
+                <code class="varname">IACTIVE_WINDOW_WITH</code>, <code class="varname">IACTIVE_LIST_HEIGHT</code>) for
+              configuring the sizes of the wizards dialog boxes. By default they are set to `0'. If
+              this is kept and the <span class="command"><strong>tput</strong></span> program is available in PATH, it will
+              used to query and set the required values for window height, window with and list
+              height. Otherwise it is possible to adjust the window settings there, with the
+              downside of having static values.</p></li><li><p>diff-last-activated</p><p>Every time IP-Array is not in 'test' mode and activates an iptables ruleset, it
+              saves a listing of the rules to a file. Using this parameter a (simple
+                <code class="filename">diff</code> based) difference check between the currently active
+              ruleset and the listing of the file is performed. Thus allowing to detect (unwanted)
+              modifications.</p></li><li><p>dry-run</p><p>Configuration is processed and validated, but no commands will be applied. </p></li><li><p>save</p><p>The currently active iptables and ipset ruleset will be saved using
+              `iptables-save' and `ipset save'.</p></li><li><p>save-known-good</p><p>Save the currently active ruleset to file (the name of the file can be set using
+              the variable <code class="varname">KNOWN_GOOD_RULESET</code> in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file. It will be used if
+                <code class="varname">RESTORE_ON_START</code> is set to `1' (quick start activated).</p></li><li><p>restore</p><p>The previously saved ruleset (using the 'save' parameter) will be restored using
+              `iptables-restore' `ipset restore'.</p></li><li><p>save-commands</p><p>Save all commands (modprobe, sysctl, tc, iptables, ipset) to a file.</p></li><li><p>save-iptables-commands</p><p>Save the generated iptables and ipset commands to a file.</p></li><li><p>save-modprobe-commands</p><p>Save the generated modprobe commands to a file.</p></li><li><p>save-sysctl-commands</p><p>Save the generated sysctl commands to a file.</p></li><li><p>save-tc-commands</p><p>Save the generated tc commands to file.</p></li><li><p>save-shaping-commands</p><p>Save the generated tc and iptables mangle table (mark) commands to file.</p></li><li><p>prepare-restore-on-start</p><p>Create the '<span class="bold"><strong>quick start</strong></span>' scripts. After the
+              configuration is completed this parameter allows to save it into scripts holding the
+              compiled commands, in order to quickly (re)apply it to the system. If iptables-save is
+              used (<code class="varname">IPTSAVE_FAILS</code> is set to `0') the currently active ruleset
+              will be saved. The name for these 'known-good' script can be set in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file.</p></li><li><p>parse-xml</p><p>Compile bash scripts from the XML files. By default templates, ruleblocks and
+              rules are converted. The -pb, -pr and -pt parameters allow to select which of those
+              will be compiled.</p></li><li><p>compat-check</p><p>A compatibility check will be performed. IP-Array will probe the kernel version,
+              supported iptables tables, targets and matches, available sysctl settings, modules and
+              programs. The result will be printed to stdout.</p></li><li><p>show</p><p>Show configuration or colour settings. The option `-sc' selects the type of
+              information to display. By default the settings of the main configuration file are
+              shown.</p></li><li><p>version</p><p>Show version information.</p></li><li><p>help, -h, --help, -?</p><p>Show usage information.</p></li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h3 class="title"><a name="usage_options"></a>Options</h3></div></div></div><p>All options are optional. Some require an argument, others do not. All options and
+          their arguments must be separated by blank(s). If an option can be used more than once, it
+          is mentioned explicitly.</p><div class="itemizedlist"><ul type="disc"><li><p>-ct, --ipt-counters</p><p>Save or restore iptables counters when using the `save' or `restore' startup
+              parameter.</p></li><li><p>-dg, --debug</p><p>Enable debugging output.</p></li><li><p>-dr, --dry-run</p><p>Commands will not be applied.</p></li><li><p>-ex, --err-exit</p><p>Set bash to exit on simple command failure (set -e) and to inherit the ER trap to
+              functions, etc.</p></li><li><p>-na, --no-autosave</p><p>Do not use the automatic saving and restoring logic (see <a class="link" href="#autosave" title="Autosave / restore">autosave / restore</a>).</p></li><li><p>-nc, --no-compat-check</p><p>Do not perform the compatibility check. </p></li><li><p>-nd, --no-diff</p><p>Do not save the diff file for the difference check of the ruleset
+              (diff-last-activated startup parameter).</p></li><li><p>-ni, --no-iface-check</p><p>Do not check for the existence of interfaces.</p></li><li><p>-nm, --no-modprobe</p><p>Do not perform load or unload kernel modules.</p></li><li><p>-ny, --no-sysctl</p><p>Do not set the sysctl configuration.</p></li><li><p>-p, --parse-xml</p><p>Read all XML files and overwrite already compiled bash scripts.</p></li><li><p>-pb, --parse-ruleblocks [type[,...]]</p><p>Read XML ruleblock files and overwrite already compiled bash scripts.</p><p>The type argument allows to parse files selectively by type. Available types are:
+              filter, mangle, nat, raw, security, rawpost, tc, tc_mangle.</p></li><li><p>-pr, --parse-rulefiles [type[,...]]</p><p>Read XML rule files and overwrite already compiled bash scripts.</p><p>The type argument allows to parse files selectively by type. Available types are:
+              filter, mangle, nat, raw, security, rawpost, ipset, sysctl, tc_mark, vpn.</p></li><li><p>-pt, --parse-templates [type[,...]]</p><p>Read XML template files and overwrite already compiled bash scripts.</p><p>The type argument allows to parse files selectively by type. Available types are:
+              base, filter, mangle, nat, raw, security, rawpost.</p></li><li><p>-t, --test</p><p>Schedule the restore of the active ruleset..</p></li><li><p>-b, --base-dir directory</p><p>Set base directory to use (i.e. /etc/ip-array).</p></li><li><p>-c, --config-file file</p><p>Specify the name of the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main configuration
+                file</a> to use.</p></li><li><p>-C, --config-dir directory</p><p>Set directory for the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main configuration
+                file</a>.</p></li><li><p>-d, --defaults-file full_path_to_file</p><p>Specify the full path of the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file to use.</p></li><li><p>-e, --exe-dir directory</p><p>Set the directory to place the main executable of IP-Array into (i.e.
+              /usr/bin/ip-array).</p></li><li><p>-l, --lib-dir directory</p><p>Set the directory to place the function file(s) of IP-Array into (i.e.
+              /usr/lib/ip-array).</p></li><li><p>-r, --run-dir directory</p><p>Set the directory to place the PID file into (i.e. /var/run).</p></li><li><p>-s, --save-file file</p><p>Specify the name of the file used to save or restore a ruleset.</p></li><li><p>-si, --save-ips-file file</p><p>Specify the name of the file used to save or restore an ipset ruleset.</p></li><li><p>-co, --color 0 | 1</p><p>Enable or disable coloured output.</p></li><li><p>-ui, --use-ipset 0 | 1</p><p>Enable or disable usage of ipset. This setting is globally. It disables builtin
+              usage as well as the users ipset rules.</p></li><li><p>-o, --set-option assignment [...]</p><p>Override variables of the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main
+                configuration file</a>. i.e. <code class="code">-o ENABLE_NAT=0</code>.</p></li><li><p>-gf, --gen-format type</p><p>Generate command in iptables-save format, or as command list. Available types:
+              `cmd' (= default) or `ipt'.</p></li><li><p>-rs, --restore-on-start 0 | 1</p><p>Enable or disabe quickstart (only valid using the `start' parameter).</p></li><li><p>-rt, --reload-time 1-15</p><p>Time in minutes until the saved ruleset will be restored.</p></li><li><p>-sc, --show-config [type] [...]</p><p>Select type of information to show. If type is omitted, the settings of the <a class="link" href="#conf_file_main_conf" title="Main configuration file (ip-array.conf)">main configuration file</a> will be displayed.
+              This option can be used multible times.</p><table class="simplelist" border="0" summary="Simple list"><tr><td> all - everything will be displayed.</td></tr><tr><td> ansi_codes - display ANSI codes for coloured shell output.</td></tr><tr><td> colors - available colours.</td></tr><tr><td> defaults[:NAME[,...]] - display all or just the selected variable names
+                  from the defaults file.</td></tr><tr><td> main[:NAME[,...]] - display all or just the selected variable names from
+                  the main configuration file file.</td></tr><tr><td> targets - show all available iptables targets.</td></tr><tr><td> matches - show all available iptables matches.</td></tr><tr><td> rules - show the compiled iptables rules.</td></tr><tr><td> ipt_args[:-[core|matches|targets][,...]] - display iptables arguments by
+                  category.</td></tr><tr><td> ipt_args[:NAME[,...]] - display all or just the selected iptables arguments
+                  help.</td></tr><tr><td> ruleblocks[:NAME[,...]] - display all or just the selected ruleblock
+                  names.</td></tr><tr><td> templates[:NAME[,...]] - display all or just the selected templates
+                  names.</td></tr><tr><td> sysctl - display the sysctl configuration.</td></tr><tr><td> public_functions[:NAME[,...]] - display all or just the selected public
+                  functions help.</td></tr><tr><td> find_templates:template-entry-glob[,...] - find templates containing all
+                  entries of the comma separated search list.</td></tr></table><p>Available types are: </p></li><li><p>-sh, --shell /path/shell</p><p>Specify an alternative shell to run IP-Array.</p></li><li><p>-sv, --syslog-verbose 0-6</p><p>Specify the level of output verbosity to syslog. Allowed values are from `0' to
+              `6'. Overrides the value of <code class="varname">SYSLOG_VERBOSE</code> in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file.</p></li><li><p>-v, --verbose 0-9</p><p>Specify the level of output verbosity. Allowed values are from `0' to `9'.
+              Overrides the value of <code class="varname">VERBOSE</code> in the <a class="link" href="#conf_file_defaults" title="Defaults (ip-array_defaults.conf)">defaults</a> file.</p></li></ul></div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="init_script"></a>init script</h2></div></div></div><p>Usually IP-Array is called from the init script. But it can also be started directly by
+        running the executable. In that case you must specify a path to the defaults file on the
+        command line.</p><p>The header of the init script contains some variables to configure. You need to set the
+        path to the defaults file and the IP-Array executable.</p><p>There is also a second init script provided, called
+          <code class="filename">ip-array.init_pre_net_boot</code>, this should be executed before the
+        network configuration takes place. It will apply `lockdown' mode, in order to make sure
+        there's no unsecure gap while setting up the networking.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="exit_codes"></a>Exit codes</h2></div></div></div><p>
+        </p><div class="itemizedlist"><ul type="disc"><li><p>0 - Success.</p></li><li><p>1 - Unknown error.</p></li><li><p>2 - Usage information (help).</p></li><li><p>111 - Not exist error. Used if i.e. a file was not found.</p></li><li><p>112 - Not defined error. Used if i.e. a configuration variable is not set.</p></li><li><p>113 - Loading error. Used if i.e. sourcing a file failed.</p></li><li><p>114 - Failure error. General fail condition.</p></li><li><p>115 - Configuration error. Used if a configuration error was not found.</p></li></ul></div><p>
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="startup_usage_examples"></a>Usage examples</h2></div></div></div><p>
+        </p><div class="variablelist"><dl><dt><span class="term">/etc/init.d/ip-array dry-run -v 6 -sv 0 -pb</span></dt><dd><p>Run IP-Array in no-acting mode (don't apply commands). With a verbosity to
+                screen of `6' (quite detailed) and a syslog verbosity of `0'. Also parse the XML
+                ruleblock files and compile bash scripts out of them.</p></dd><dt><span class="term">/etc/init.d/ip-array parse-xml -sv 0</span></dt><dd><p>Just parse all XML files. Use the default screen verbosity and set syslog
+                verbosity to `0'.</p></dd><dt><span class="term">/etc/init.d/ip-array restart -p -na</span></dt><dd><p>Parse the XML files before reloading the configuration. Do not use the autosave
+                / restore logic.</p></dd><dt><span class="term">/etc/init.d/ip-array save -s home_net_config.ipt_save</span></dt><dd><p>Save the currently active iptables ruleset using iptables-save to the file
+                specified as 'home_net_config.ipt_save.</p></dd><dt><span class="term">/etc/init.d/ip-array test -d "/etc/default/ip-array/defaults_02.conf" -c
+              "xyz_test_02.conf" -sv 4 -v 0 -pb -pr</span></dt><dd><p>Run IP-Array in 'test' mode. Use the defaults config file specified with
+                '/etc/default/ip-array/defaults_02.conf'. Use the main configuration file specified
+                with: 'xyz_test_02.conf'. Set syslog verbosity to `4'. Set screen output verbosity
+                to `0'. Parse ruleblock and rule files.</p></dd><dt><span class="term">/etc/init.d/ip-array prepare-restore-on-start -v 1 -sv 0</span></dt><dd><p>Prepare the 'quick-start' scripts with a screen verbosity of `1' and syslog
+                verbosity of `0'.</p></dd><dt><span class="term">/etc/init.d/ip-array show -sc
+              find_templates:option_list_0*=odev,option_list_0*=src,option_list_0\\\[6\\\]=nat_opt
+              -v 0 -sv 0</span></dt><dd><p>Find templates conaining the iptables arguments in the first option list
+                (option_list_0) odev and src at any position and the the iptables arguent nat_opt at
+                position `6'. Screen verbosity set to `0' and syslog verbosity of `0'.</p></dd></dl></div><p>
+      </p></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="appendix"></a>Chapter&nbsp;7.&nbsp;Appendix</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="#troubleshooting">Troubleshooting</a></span></dt><dt><span class="section"><a href="#support_info">Support</a></span></dt><dt><span class="section"><a href="#bug_report">Bug report</a></span></dt><dt><span class="section"><a href="#co-develop">Co-Development</a></span></dt></dl></div><p></p><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="troubleshooting"></a>Troubleshooting</h2></div></div></div><p>
+        </p><div class="itemizedlist"><ul type="disc"><li><p>Compatibility test lists a target or module as not existing, although it
+              is.</p><p>Answer: Open the file <code class="filename">'ip-array_global_defs'</code> and find the
+              definition of the arrays <code class="varname">IPARRAY_TARGETS</code> or
+                <code class="varname">IPARRAY_MODULES</code>. Edit the line containing the test for the
+              desired module or module to fit your needs.</p></li></ul></div><p>
+      </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="support_info"></a>Support</h2></div></div></div><p>The preferred way to get support on IP-Array, is to open a forum post on the project
+        page. Alternatively you could send a mail to <code class="email">&lt;<a class="email" href="mailto:AllKind@fastest.cc">AllKind@fastest.cc</a>&gt;</code>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="bug_report"></a>Bug report</h2></div></div></div><p>Please report bugs either via a forum post on the project homepage, or send email to
+          <code class="email">&lt;<a class="email" href="mailto:AllKind@fastest.cc">AllKind@fastest.cc</a>&gt;</code>.</p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="co-develop"></a>Co-Development</h2></div></div></div><p>If you like IP-Array and want to help developing, send email to
+          <code class="email">&lt;<a class="email" href="mailto:AllKind@fastest.cc">AllKind@fastest.cc</a>&gt;</code>.</p></div></div></div></body></html>

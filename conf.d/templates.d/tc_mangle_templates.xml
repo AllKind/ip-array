@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+
+<!-- TRAFFIC MARKING TEMPLATES -->
+<!--
+	These are the templates used in the pre-defined TC_MANGLE_RULES file
+	tc_mark_rules.xml. Of course they all are available in template_repo.d.
+-->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<!-- MAIN TRAFFIC MARKING TEMPLATES -->
+
+	<template name="TEMPLATE_MANGLE_TOS_OUTPUT_MARK">
+		<!-- 
+		Purpose: Mark OUTPUT packets based on Type of Service
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: type of service
+		3: output device
+		4: source address
+		5: destination address
+		Mandatory options: mark, type of service
+		-->
+		<chain> ${BIC_TC_OUTPUT} </chain>
+		<template_msg>
+			${ADDMSG} OUTPUT MARK rules based on Type of Service
+		</template_msg>
+		<mandatory_vars> t_mark,m_tos </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_MARK_TOS
+			BT_ODEV_SRC_DST_ADDR
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_OUTPUT_CLASSIFY">
+		<!-- 
+		Purpose: Stateless CLASSIFY OUTPUT IP packets
+		Template options:
+		+ mangle table
+		+ CLASSIFY and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: class value = major:minor
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: class value 
+		-->
+		<chain> ${BIC_TC_OUTPUT} </chain>
+		<template_msg> ${ADDMSG} stateless IP OUTPUT CLASSIFY rules </template_msg>
+		<mandatory_vars> t_class </mandatory_vars>
+		<load_template>
+			BT_MANGLE_CLASSIFY_RETURN
+			BT_SET_CLASS
+			BT_BASIC_MATCH_SET_EGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_OUTPUT_MARK">
+		<!-- 
+		Purpose: Stateless MARK OUTPUT IP packets
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ OUTPUT chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Mandatory options: mark
+		-->
+		<chain> ${BIC_TC_OUTPUT} </chain>
+		<template_msg> ${ADDMSG} stateless IP OUTPUT MARK rules </template_msg>
+		<mandatory_vars> t_mark </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_IPT_MARK
+			BT_BASIC_MATCH_SET_EGRESS
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_TOS_MARK_FORWARD">
+		<!-- 
+		Purpose: Mark FORWARD packets based on Type of Service
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ FORWARD chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: type of service
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		Mandatory options: mark, type of service
+		-->
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
+		<template_msg>
+			${ADDMSG} FORWARD MARK rules based on Type of Service
+		</template_msg>
+		<mandatory_vars> t_mark,m_tos </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_MARK_TOS
+			BT_IDEV_ODEV_SRC_DST_ADDR
+		</load_template>
+	</template>
+
+	<template name="TEMPLATE_MANGLE_STATELESS_IP_MARK_FORWARD">
+		<!-- 
+		Purpose: Stateless FORWARD IP packet marking
+		Template options:
+		+ mangle table
+		+ MARK and RETURN target
+		+ FORWARD chain
+		Resulting ruleblock structure:
+		1: mark value
+		2: input device
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Mandatory options: mark
+		-->
+		<chain> ${BIC_TC_FORWARD_EGRESS} </chain>
+		<template_msg> ${ADDMSG} stateless IP FORWARD MARK rules </template_msg>
+		<mandatory_vars> t_mark </mandatory_vars>
+		<load_template>
+			BT_MANGLE_MARK_RETURN
+			BT_IPT_MARK
+			BT_BASIC_MATCH_SET_FORWARD
+		</load_template>
+	</template>
+
+</ip_array_root>
+

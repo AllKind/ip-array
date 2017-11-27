@@ -1,0 +1,449 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2017 Mart Frauenlob aka AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                   IP-ARRAY GLOBAL DEFINITIONS
+#
+# ------------------------------------------------------------------------- #
+
+# System
+declare -r IP_TABLES_NAMES="/proc/net/ip_tables_names"	# path to index of iptables table names
+declare -r MODS_ALIAS_FILE="modules.alias"		# module alias file
+
+# Chains (BIC = built in chain)
+declare -r BIC_TEST_CHAIN="${ME}_TEST_CHAIN"   		# testing chain
+declare -r BIC_BAD_TCP_PACKETS="BAD_TCP_PACKETS"	# name of the bad tcp packets chain
+declare -r BIC_NAMESERVER_CHAIN="NAMESERVERS"		# name of the isp/root nameserver handling chain
+declare -r BIC_LOCAL_NAMESERVERS="LOCAL_NAMESERVERS"	# name of the local isp nameserver handling chain
+declare -r BIC_SMTP_SRV_CHAIN="ISP_SMTP_SERVERS"	# name of the isp smtp server handling chain
+declare -r BIC_NTP_SVR_CHAIN="NTP_SERVERS"		# name of the ntp server handling chain
+declare -r BIC_GLOBAL_BROADCASTS_CHAIN="GLOBAL_BROADCASTS"	# name of the broadcasts handling chain
+declare -r BIC_GLOBAL_INVALID_STATE="GLOBAL_INVALID_STATE"	# name of the invalid state handling chain
+declare -r ipsec_chain="IPSEC"             	# name of the ipsec chain
+
+declare -r BIC_TC_OUTPUT="OUTPUT"		# tc output
+declare -r BIC_TC_FORWARD_EGRESS="FORWARD"		# tc forward
+declare -r BIC_TC_POSTROUTING_EGRESS="POSTROUTING"		# tc postrouting
+
+# Misc Variables
+declare -ir GLOBAL_READ_TIMEOUT=30		# number of seconds the read builtin waits for input
+declare -r IF_CON="_to_" 	# string used to separate interface dependant jump tree chains in FORWARD path
+declare -r DEFAULT_RULE_SEP="_"	# The default rule separator character
+declare -r DEFAULT_LOG_FACILITY="local0"	# default facility used with logger
+declare -r DEFAULT_RULESETFILE="${me}_commands.bash"	# default file to save iptables commands to
+declare -i IACTIVE_WINDOW_HEIGHT=0		# window height in interacitive mode
+declare -i IACTIVE_WINDOW_WITH=0		# window with in interacitive mode
+declare -i IACTIVE_LIST_HEIGHT=0		# list height in interacitive mode
+
+# Various iptables aliases
+declare -r stE="ESTABLISHED"
+declare -r stER="ESTABLISHED,RELATED"
+declare -r stI="INVALID"
+declare -r stN="NEW"
+declare -r stNE="NEW,ESTABLISHED"
+declare -r stNER="NEW,ESTABLISHED,RELATED"
+declare -r stR="RELATED"
+declare -r stU="UNTRACKED"
+
+# Messages
+declare -r PF=".. "				# prefix for stdout messages
+declare -r ADDMSG="Adding"		 # display message, when adding rules
+
+# Port definitions
+#declare -r PRIV_PORTS="0:1023"
+declare -r UNPRIV_PORTS="1024:65535"
+
+# Address definitions
+declare -r BCAST_DEST="255.255.255.255"
+
+# valid icmp type names from iptables -p icmp -h
+declare -r VALID_ICMP_TYPES="\
+any
+echo-reply pong
+destination-unreachable
+network-unreachable
+host-unreachable
+protocol-unreachable
+port-unreachable
+fragmentation-needed
+source-route-failed
+network-unknown
+host-unknown
+network-prohibited
+host-prohibited
+TOS-network-unreachable
+TOS-host-unreachable
+communication-prohibited
+host-precedence-violation
+precedence-cutoff
+source-quench redirect
+network-redirect
+host-redirect
+TOS-network-redirect
+TOS-host-redirect
+echo-request ping
+router-advertisement
+router-solicitation
+time-exceeded
+ttl-exceeded
+ttl-zero-during-transit
+ttl-zero-during-reassembly
+parameter-problem
+ip-header-bad
+required-option-missing
+timestamp-request
+timestamp-reply
+address-mask-request
+address-mask-reply"
+
+# Array to hold the iptables targets & their syntax
+# Syntax: mandatory 0/1 | target-name | table | chain | command
+declare -ar IPARRAY_TARGETS=(
+"1 LOG filter -j LOG"
+"0 NFLOG filter -j NFLOG"
+"0 ULOG filter -j ULOG"
+"0 QUEUE filter -s 172.32.254.255 -j QUEUE"
+"0 NFQUEUE filter -s 172.32.254.255 -j NFQUEUE --queue-num 65535"
+"0 REJECT filter -j REJECT"
+"0 DNAT nat -s 172.32.254.254 -j DNAT --to-destination 172.31.254.254"
+"0 SNAT nat -d 172.32.254.254 -j SNAT --to-source 172.31.254.254"
+"0 RAWDNAT raw -s 172.32.254.254 -j RAWDNAT --to-destination 172.31.254.254"
+"0 RAWSNAT rawpost -d 172.32.254.254 -j RAWSNAT --to-source 172.31.254.254"
+"0 NETMAP nat -d 172.32.254.0/24 -j NETMAP --to 172.32.253.0/24"
+"0 REDIRECT nat -s 172.32.254.255 -j REDIRECT"
+"0 MASQUERADE nat -s 172.32.254.255 -j MASQUERADE"
+"0 MARK mangle -s 172.32.254.255 -j MARK --set-mark 1234"
+"0 SECMARK mangle -s 172.32.254.255 -j SECMARK --selctx system_r:unconfined_t:s0"
+"0 CONNMARK mangle -s 172.32.254.255 -j CONNMARK --set-mark 1234"
+"0 CONNSECMARK mangle -s 172.32.254.255 -j CONNSECMARK --save"
+"0 CLASSIFY mangle -s 172.32.254.255 -j CLASSIFY --set-class 123:123"
+"0 CHECKSUM mangle -s 172.32.254.255 -j CHECKSUM --checksum-fill"
+"0 ECN mangle -s 172.32.254.255 -p tcp -j ECN --ecn-tcp-remove"
+"0 DSCP mangle -s 172.32.254.255 -j DSCP --set-dscp 0"
+"0 SET filter -j SET --add-set ${ME}_TEST_SET src"
+"0 AUDIT filter -j AUDIT --type drop"
+"0 CT raw -j CT --notrack"
+"0 IDLETIMER filter -i dummy0 -j IDLETIMER --timeout 3600 --label ${ME}_TEST_IDLETIMER"
+"0 CLUSTERIP filter -j CLUSTERIP --new --hashmode sourceip --total-nodes 2 --local-node 1 --clustermac 01:00:5E:00:00:10 -i lo -d 1.1.1.1"
+"0 LED filter -j LED --led-trigger-id ${ME}_TEST"
+"0 HMARK mangle -j HMARK --hmark-tuple src --hmark-mod 1 --hmark-rnd 123"
+"0 RATEEST mangle -j RATEEST --rateest-name ${me}_test_est --rateest-interval 250ms --rateest-ewma 0.5s"
+"0 TOS mangle -s 172.32.254.255 -j TOS --set-tos Normal-Service"
+"0 TEE mangle -j TEE --gateway 172.32.254.255"
+"0 TTL mangle -j TTL --ttl-inc 1"
+"0 TCPMSS mangle -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu"
+"0 TPROXY mangle -p tcp --dport 666 -j TPROXY --on-port 666"
+"0 TCPOPTSTRIP mangle -p tcp -j TCPOPTSTRIP --strip-options md5"
+)
+
+# Array to hold the iptables modules & their syntax
+# Syntax: mandatory 0/1 | module-name | var-name | table | chain | command
+declare -ar IPARRAY_MODULES=(
+"1 state filter -m state --state ESTABLISHED"
+"0 conntrack filter -m conntrack --ctstate ESTABLISHED"
+"0 mac filter -m mac --mac-source AA:BB:CC:DD:EE:FF"
+"0 limit filter -f -m limit --limit 5/s -j LOG"
+"0 multiport filter -p tcp -m multiport --ports 65333,65335"
+"0 iprange filter -m iprange --src-range 127.127.127.1-127.127.127.2"
+"0 ah filter -p 51 -m ah --ahspi 1"
+"0 cluster mangle -m cluster --cluster-total-nodes 2 --cluster-local-node 1 --cluster-hash-seed 0xdeadbeef"
+"0 esp filter -p 50 -m esp --espspi 1"
+"0 helper filter -m helper --helper ftp"
+"0 length filter -m length --length 32"
+"0 owner filter -m owner --uid-owner 666"
+"0 addrtype filter -m addrtype --dst-type BROADCAST"
+"0 bpf filter -m bpf --bytecode \"4,48 0 0 9,21 0 1 6,6 0 0 1,6 0 0 0\""
+"0 pkttype filter -m pkttype --pkt-type broadcast"
+"0 ipvs filter -m ipvs --ipvs"
+"0 socket filter -m socket"
+"0 connbytes filter -p tcp -m connbytes --connbytes 1:10 --connbytes-dir both --connbytes-mode packets"
+"0 connlimit filter -m connlimit --connlimit-above 1"
+"0 dscp filter -m dscp --dscp 0"
+"0 set filter -m set --match-set ${ME}_TEST_SET src"
+"0 tos filter -m tos --tos Minimize-Delay"
+"0 mark filter -m mark --mark 1234"
+"0 nfacct filter -m nfacct --nfacct-name ${me}_test_nfacct_obj"
+"0 policy filter -m policy --dir out --pol none --mode transport"
+"0 connmark filter -m connmark --mark 1234"
+"0 comment filter -m comment --comment foobar"
+"0 ttl filter -m ttl --ttl-eq 123"
+"0 cpu filter -m cpu --cpu 0"
+"0 ecn filter -m ecn --ecn-ip-ect 0"
+"0 quota filter -m quota --quota 666"
+"0 tcpmss filter -p tcp --syn -m tcpmss --mss 1500"
+"0 rpfilter mangle -m rpfilter"
+"0 osf filter -p tcp -m osf --genre Linux"
+"0 devgroup filter -m devgroup --src-group ndg0" # TODO: find an existing devgroup & support ndgconfig
+"0 sctp filter -p sctp -m sctp --dport 80"
+"0 dccp filter -p dccp -m dccp --dport 80"
+"0 statistic filter -m statistic --mode nth --every 10 --packet 0"
+"0 physdev filter -m physdev --physdev-is-in"
+"0 rateest mangle -m rateest --rateest ${me}_test_est --rateest-eq --rateest-bps 1Mbit"
+"0 realm filter -m realm --realm 0"
+"0 recent filter -m recent --rcheck"
+"0 string filter -m string --algo bm --string foo"
+"0 time filter -m time --monthdays 1"
+"0 hashlimit filter -m hashlimit --hashlimit-name ${ME}_TEST_HASHLIMIT --hashlimit-above 1024/day"
+"0 u32 filter -m u32 --u32 \"6&0xFF=1\""
+)
+
+# Array to hold the supported ipset set types
+declare -ar IPARRAY_IPSET_SETTYPE_LIST=(
+"ipmap --network 10.0.0.0/24"
+"macipmap --network 10.0.0.0/24"
+"portmap --from 1 --to 7"
+"iphash"
+"nethash"
+"ipporthash --network 10.0.0.0/24"
+"ipportiphash --network 10.0.0.0/24"
+"ipportnethash --network 10.0.0.0/24"
+"iptree"
+"iptreemap"
+"setlist"
+"bitmap:ip range 10.0.0.0/24"
+"bitmap:ip,mac range 10.0.0.0/24"
+"bitmap:port range 0-7"
+"hash:ip"
+"hash:ip,mark"
+"hash:mac"
+"hash:net"
+"hash:ip,port"
+"hash:net,port"
+"hash:ip,port,ip"
+"hash:ip,port,net"
+"hash:net,port,net"
+"hash:net,iface"
+"list:set"
+)
+
+# Array with match extensions, which are available in all tables
+declare -ar GLOBAL_MATCH_LIST=(
+CORE
+IDEV ODEV
+MAC SRC DST
+PROTO
+SPORT DPORT
+TCP_OPT
+ICMP_TYPE
+M_DSCP
+TOS
+CONNBYTES
+AHSPI ESPSPI
+ADDRTYPE PKTTYPE
+OWNER
+BPF
+OSF
+LENGTH
+DEVGROUP
+PHYSDEV
+POLICY
+NFACCT
+REALM
+RECENT
+SOCKET
+SCTP
+STRING
+STATISTIC
+DCCP
+HASHLIMIT
+U32
+M_MARK
+M_RATEEST
+M_TTL
+CPU
+IPVS
+M_ECN
+QUOTA
+M_SET
+M_TCPMSS
+LIMIT
+TIME
+COMMENT
+)
+
+# Array with targets valid in all tables
+# format: target-name target-option [...]
+declare -ar GLOBAL_TARGET_LIST=(
+"LOG LOG_LEVEL LOG_PREFIX LOG_OPTIONS"
+"ULOG ULOG_OPT LOG_PREFIX"
+"NFLOG NFLOG_OPT LOG_PREFIX"
+"MARK SET_MARK"
+"NFQUEUE NFQUEUE"
+"SET SET_SET"
+"AUDIT AUDIT"
+"IDLETIMER IDLETIMER_OPT"
+"HMARK HMARK"
+"LED LED"
+"RATEEST T_RATEEST"
+"CLUSTERIP CLUSTERIP"
+)
+
+# Array with match extensions, which are only valid in certain tables
+# format: table-name[,...] match-name[,...]
+declare -ar TABLE_DEPEND_MATCH_LIST=(
+"filter,security CONNTRACK,M_CONNMARK,CONNLIMIT,HELPER,STATE"
+"mangle CONNTRACK,M_CONNMARK,HELPER,RPFILTER,CLUSTER,STATE"
+"nat M_CONNMARK,CONNTRACK,HELPER,STATE"
+"raw RPFILTER"
+)
+
+# Array with table dependant targets and their option(s)
+# format: table-name[,...] target-name:target-option[,...] [...]
+declare -ar TABLE_DEPEND_TARGET_LIST=(
+"filter REJECT:REJECT_TYPE"
+"mangle CLASSIFY:SET_CLASS CONNMARK:SET_CONNMARK DSCP:SET_DSCP CHECKSUM:CHECKSUM ECN:REM_ECN SECMARK:SET_SECMARK CONNSECMARK:SET_CONNSECMARK TCPOPTSTRIP:TCPOPTSTRIP \
+TCPMSS:SET_TCPMSS TOS:SET_TOS TPROXY:TPROXY_OPT TTL:SET_TTL TEE:TEE_GW"
+"nat DNAT:NAT_OPTION SNAT:NAT_OPTION NETMAP:NAT_OPTION MASQUERADE:NAT_OPTION REDIRECT:NAT_OPTION"
+"raw,rawpost RAWSNAT:NAT_OPTION RAWDNAT:NAT_OPTION"
+"security SECMARK:SET_SECMARK CONNSECMARK:SET_CONNSECMARK"
+"raw CT:CT"
+)
+
+# Message colour array for title, subtitle, info, warn, error, notice, etc.
+# Format: msg-name | colour (lowercase)
+declare -ar MSG_COLOR_ARRAY=(
+"COLOR_MSG_MAIN_TITLE magenta"
+"COLOR_MSG_SUBTITLE blue"
+"COLOR_MSG_INFO_TITLE cyan"
+"COLOR_MSG_ERROR red"
+"COLOR_MSG_WARNING yellow"
+"COLOR_MSG_CONFIG_LOAD green"
+"COLOR_MSG_RULE_LOAD yellow"
+"COLOR_MSG_NOTICE white"
+)
+
+# Array of configuration entries, including their type and if they are mandatory or not
+# Format:
+# config-entry-name , type { alnum | alpha | bool | digit | graph | print } , mandatory 0/1 , type2 { arry | bool | int | var } , command
+CONFIG_ENTRY_ARRAY=(
+"NET_INTERFACES print 1 array"
+# config files
+"CONFIG_FILES print 0 var check_str_unique \${CONFIG_FILES}"
+"BASE_TEMPLATES print 0 var check_str_unique \${BASE_TEMPLATES}"
+"IPT_FILTER_TEMPLATES print 0 var check_str_unique \${IPT_FILTER_TEMPLATES}"
+"IPT_MANGLE_TEMPLATES print 0 var check_str_unique \${IPT_MANGLE_TEMPLATES}"
+"IPT_NAT_TEMPLATES print 0 var check_str_unique \${IPT_NAT_TEMPLATES}"
+"IPT_RAW_TEMPLATES print 0 var check_str_unique \${IPT_RAW_TEMPLATES}"
+"IPT_RAWPOST_TEMPLATES print 0 var check_str_unique \${IPT_RAWPOST_TEMPLATES}"
+"IPT_SECURITY_TEMPLATES print 0 var check_str_unique \${IPT_SECURITY_TEMPLATES}"
+"FILTER_RULEBLOCKS print 0 var check_str_unique \${FILTER_RULEBLOCKS}"
+"MANGLE_RULEBLOCKS print 0 var check_str_unique \${MANGLE_RULEBLOCKS}"
+"NAT_RULEBLOCKS print 0 var check_str_unique \${NAT_RULEBLOCKS}"
+"RAW_RULEBLOCKS print 0 var check_str_unique \${RAW_RULEBLOCKS}"
+"RAWPOST_RULEBLOCKS print 0 var check_str_unique \${RAWPOST_RULEBLOCKS}"
+"SECURITY_RULEBLOCKS print 0 var check_str_unique \${SECURITY_RULEBLOCKS}"
+"TC_RULEBLOCKS print 0 var check_str_unique \${TC_RULEBLOCKS}"
+"TC_MANGLE_RULEBLOCKS print 0 var check_str_unique \${TC_MANGLE_RULEBLOCKS}"
+# modules
+"MODULE_DIR print 0 var"
+"MODULES_TO_LOAD print 0 array"
+"MODS_TO_RM print 0 array"
+# ipset
+"IPSET_RULES print 0 var check_str_unique \${IPSET_RULES}"
+# filter
+"ENABLE_FILTER bool 0 bool"
+"FILTER_RULES print 0 bar check_str_unique \${FILTER_RULES}"
+# nat
+"ENABLE_NAT bool 0 bool"
+"NAT_RULES print 0 var check_str_unique \${NAT_RULES}"
+# mangle
+"ENABLE_MANGLE bool 0 bool"
+"MANGLE_RULES print 0 var check_str_unique \${MANGLE_RULES}"
+# raw
+"ENABLE_RAW bool 0 bool"
+"ENABLE_RAWPOST bool 0 bool"
+"RAW_RULES print 0 var check_str_unique \${RAW_RULES}"
+"RAWPOST_RULES print 0 var check_str_unique \${RAWPOST_RULES}"
+# security
+"ENABLE_SECURITY bool 0 bool"
+"SECURITY_RULES print 0 var check_str_unique \${SECURITY_RULES}"
+# vpn
+"ENABLE_IPSEC bool 0 bool"
+"ALLOW_ALL_BRANCH bool 0 bool"
+"LOCAL_BRANCH graph 0 var"
+"VPN_MAP print 0 array"
+"IPSEC_RULES print 0 var check_str_unique \${IPSEC_RULES}"
+# traffic shaping
+"ENABLE_TC_SHAPING bool 0 bool"
+"TC_MARK_RULES print 0 var check_str_unique \${TC_MARK_RULES}"
+"OUTPUT_BULK print 0 var check_str_unique \${OUTPUT_BULK}"
+"FORWARD_BULK print 0 var check_str_unique \${FORWARD_BULK}"
+"PRIORITIZE_SYN print 0 var check_str_unique \${PRIORITIZE_SYN}"
+# bad packets
+"LOG_INVALID bool 0 bool"
+"BLOCK_INVALID bool 0 bool"
+"LOG_ILLEGAL bool 0 bool"
+"BLOCK_ILLEGAL bool 0 bool"
+# applications
+"LAN_FTP print 0 var check_str_unique \${LAN_FTP}"
+"ISP_NS print 0 array"
+"ISP_SMTP print 0 array"
+"LAN_NS print 0 array"
+"LOCAL_NS print 0 array"
+"TIME_SERVERS print 0 array"
+# restrictions
+"RESTRICT_OUTPUT alnum 0 var"
+"REST_OUT_DNS_ALLOW bool 0 bool"
+"REST_OUT_NTP_ALLOW bool 0 bool"
+"REST_OUT_LAN_ALLOW print 0 var check_str_unique \${REST_OUT_LAN_ALLOW}"
+"REST_ALLOW_RELATED bool 0 bool"
+"DROP_DHCP print 0 var check_str_unique \${DROP_DHCP}"
+"DROP_UPNP print 0 var check_str_unique \${DROP_UPNP}"
+# misc
+"EXIT_ON_ERROR bool 1 bool"
+"RULE_PLACEHOLDER graph 0 var"
+"SCRIPT_MAP print 0 array"
+"USE_M_CONNTRACK bool 0 bool"
+# rules
+"REVERSE_INPUT_RULES_REQUIRED bool 0 bool"
+"REVERSE_FOWARD_RULES_REQUIRED bool 0 bool"
+"ADMIN_CONNECTION print 0 var"
+"ALLOW_LOOPBACK bool 0 bool"
+"KNOWN_TRAFFIC_MAP print 0 array"
+"POLICY_MAP print 1 array"
+"FINAL_RULE_MAP print 0 array"
+"NFACCT_OBJ_MAP print 0 array check_str_unique \$NFACCT_OBJ_MAP"
+# chains
+"JUMP_TREE print 0 var"
+"JUMP_TREE_CHAINS_CREATE_ALL bool 0 bool"
+"CHAIN_MAP print 0 array"
+"REMOVE_EMPTY_CHAINS bool 0 bool"
+"REMOVE_UNREF_CHAINS bool 0 bool"
+# logging
+"LOG_PREFIX print 0 var"
+"GLOBAL_LOGLIMIT graph 0 var"
+"GLOBAL_BURSTLIMIT digit 0 int"
+"GLOBAL_LOGLEVL graph 0 var"
+# sysctl
+"SYSCTL_RULES print 0 var check_str_unique \${SYSCTL_RULES}"
+"SYSCTL_CONNTRACK_MAX print 0 var"
+)
+

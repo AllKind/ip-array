@@ -1,0 +1,20 @@
+hashlimit: hashlimit match specification.
+
+    Synopsis:
+        name:NAME:mode:MODE:(upto|above):value[/PERIOD][:option:opt_arg][:...]
+        NAME := hash name
+        MODE := srcip|srcport|dstip|dstport
+        PERIOD := second|minute|hour|day
+        options:
+            srcmask
+            dstmask
+            burst
+            gcinterval
+            expire
+            max
+            size
+
+    Examples:
+        hashlimit=name:foo:mode:scrip:above:1000/sec
+        hashlimit=name:foo:mode:dstip:upto:60/minute:dstmask:24
+

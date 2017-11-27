@@ -1,0 +1,8 @@
+m_connmark: connmark match specification.
+
+    Synopsis: value[/mask]
+
+    Examples:
+        m_connmark=0xF1
+        m_connmark=0xbeef/cafe
+

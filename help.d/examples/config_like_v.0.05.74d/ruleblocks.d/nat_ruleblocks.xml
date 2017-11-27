@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+
+<!-- NAT TABLE RULEBLOCKS -->
+
+<ip_array_root name="ruleblocks" syntax_version="0.1">
+
+<ruleblock name="RB_DNAT_PREROUTING">
+	<!-- 
+	Purpose: DNAT rules in PREROUTING chain
+	Template options:
+	+ nat table
+	+ DNAT target
+	+ PREROUTING chain
+	Resulting ruleblock structure:
+	1: input device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: nat options
+	Mandatory options: input device, nat options
+	-->
+</ruleblock>
+
+<ruleblock name="RB_SNAT_POSTROUTING">
+	<!-- 
+	Purpose: SNAT rules in POSTROUTING chain
+	Template options:
+	+ nat table
+	+ SNAT target
+	+ POSTROUTING chain
+	Resulting ruleblock structure:
+	1: output device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: nat options
+	Mandatory options: output device, nat options
+	-->
+</ruleblock>
+
+<ruleblock name="RB_MASQ_POSTROUTING">
+	<!-- 
+	Purpose: MASQUERADE rules in POSTROUTING chain
+	Template options:
+	+ nat table
+	+ MASQUERADE target
+	+ POSTROUTING chain
+	Resulting ruleblock structure:
+	1: output device
+	2: source address
+	3: destination address
+	4: protocol
+	5: source port
+	6: destination port
+	7: nat options
+	Mandatory options: output device
+	-->
+</ruleblock>
+
+</ip_array_root>

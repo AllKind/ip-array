@@ -1,0 +1,686 @@
+<?xml version="1.0"?>
+
+<!-- BASE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<!-- Basic template chunks -->
+
+	<template name="BT_TARGET_AND_CHAIN">
+		<!-- Target and chain in OPTION_LIST_0 -->
+		<option_list_0> target chain </option_list_0>
+	</template>
+	
+	<template name="BT_TARGET_AND_CHAIN_REVERSE">
+		<!-- Target and chain reversed (with OPTION_LIST_1) -->
+		<load_template> BT_TARGET_AND_CHAIN </load_template>
+		<option_list_1> target chain </option_list_1>
+	</template>
+	
+	<template name="BT_TABLE_TARGET_AND_CHAIN">
+		<!-- Generic option list for: table, target, chain -->
+		<option_list_0> table target chain </option_list_0>
+	</template>
+	
+	<template name="BT_TABLE_TARGET_AND_CHAIN_REVERSE">
+		<!-- Reversed generic option list for: table, target, chain -->
+		<load_template> BT_TABLE_TARGET_AND_CHAIN </load_template>
+		<option_list_1> table target chain </option_list_1>
+	</template>
+	
+	<template name="BT_REV_CONDITION_OUTPUT_RULES_REQUIRED">
+		<!-- 
+		Template option to set rules as reversed
+		Reverse condition: output rules are not applied if OUTPUT_RULES_REQUIRED = `0'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<reverse_condition> OUTPUT_RULES_REQUIRED:0 </reverse_condition>
+	</template>
+	
+	<template name="BT_REV_CONDITION_FORWARD_RULES_REQUIRED">
+		<!-- 
+		Template option to set rules as reversed
+		Reverse condition: Reversed forward rules are not applied if REVERSE_FOWARD_RULES_REQUIRED = `0'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<reverse_condition> REVERSE_FOWARD_RULES_REQUIRED:0 </reverse_condition>
+	</template>
+	
+	<template name="BT_FORWARD_REVERSE">
+		<!-- 
+		Chain = FORWARD
+		Template option to set rules as reversed
+		-->
+		<chain> FORWARD </chain>
+		<reverse_mode> reverse </reverse_mode>
+	</template>
+	
+	<template name="BT_INPUT_OUTPUT_CHAINS">
+		<!-- Template option to set chains to INPUT and OUTPUT -->
+		<chain> INPUT OUTPUT </chain>
+	</template>
+	
+	<template name="BT_STATE_REVERSED_NE_E">
+		<!-- 
+		Reversed state match template option
+		setting state for OPTION_LIST_0 to: NEW,ESTABLISHED
+		and for OPTION_LIST_1 to: ESTABLISHED
+		-->
+		<state_match_arg> NEW,ESTABLISHED ESTABLISHED </state_match_arg>
+	</template>
+	
+	<!-- Interfaces -->
+
+	<template name="BT_IDEV_ODEV">
+		<option_list_0> idev odev </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_IDEV">
+		<option_list_0> odev idev </option_list_0>
+	</template>
+
+	<!-- Source, destination, mac address -->
+
+	<template name="BT_SRC_DST_ADDR">
+		<option_list_0> src dst </option_list_0>
+	</template>
+	
+	<template name="BT_SRC_ADDR_MAC">
+		<option_list_0> src mac </option_list_0>
+	</template>
+	
+	<!-- Interface and source, destination, mac address combinations -->
+
+	<template name="BT_SRC_DST_ADDR_AND_MAC">
+		<load_template> BT_SRC_ADDR_MAC </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_SRC_ADDR">
+		<option_list_0> idev src </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_SRC_ADDR">
+		<option_list_0> odev src </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_SRC_ADDR_MAC">
+		<load_template> BT_IDEV_SRC_ADDR </load_template>
+		<option_list_0> mac </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_SRC_DST_ADDR">
+		<load_template> BT_IDEV_SRC_ADDR </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_ODEV_SRC_DST_ADDR">
+		<load_template> BT_ODEV_SRC_ADDR </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_SRC_DST_ADDR_AND_MAC">
+		<load_template> BT_IDEV_SRC_ADDR_MAC </load_template>
+		<option_list_0> dst </option_list_0>
+	</template>
+	
+	<template name="BT_IDEV_ODEV_SRC_DST_ADDR">
+		<load_template> BT_IDEV_ODEV BT_SRC_DST_ADDR </load_template>
+	</template>
+	
+	<template name="BT_IDEV_ODEV_SRC_DST_ADDR_AND_MAC">
+		<load_template> BT_IDEV_ODEV BT_SRC_DST_ADDR_AND_MAC </load_template>
+	</template>
+	
+	<template name="BT_SRC_DST_ADDR_STATE">
+		<!-- Source and destination address and state match -->
+		<load_template> BT_SRC_DST_ADDR </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+	
+	<template name="BT_SRC_DST_ADDR_MAC_STATE">
+		<!-- Source, destination and mac address and state match -->
+		<load_template> BT_SRC_DST_ADDR_AND_MAC </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+	
+	<!-- Protocol and source, destination port -->
+
+	<template name="BT_SRC_DST_PORT">
+		<option_list_0> sport dport </option_list_0>
+	</template>
+	
+	<template name="BT_PROTO_SRC_DST_PORT">
+		<option_list_0> proto sport dport </option_list_0>
+	</template>
+	
+	<template name="BT_TCP_OPTIONS_ALL">
+		<option_list_0> tcp_opt </option_list_0>
+	</template>
+
+	<template name="BT_PROTO_SRC_DST_PORT_AND_STATE">
+		<load_template> BT_PROTO_SRC_DST_PORT </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+	
+	<template name="BT_LIMIT_BURST">
+		<!-- Limit and burst -->
+		<option_list_0> limit </option_list_0>
+	</template>
+	
+	<template name="BT_PROTO_STATE_LIMIT">
+		<!-- Protocol, source and destination port, state, limit and burst -->
+		<load_template> BT_PROTO_SRC_DST_PORT_AND_STATE BT_LIMIT_BURST </load_template>
+	</template>
+	
+	<!-- Logging options -->
+
+	<template name="BT_LOG_LEVEL_AND_PREFIX">
+		<option_list_0> log_level log_prefix </option_list_0>
+	</template>
+	
+	<template name="BT_LOG_OPTIONS">
+		<load_template> BT_LOG_LEVEL_AND_PREFIX </load_template>
+		<option_list_0> log_options </option_list_0>
+	</template>
+	
+	<!-- Logging options with limit and burst -->
+
+	<template name="BT_LIMIT_BURST_MIN_LOG">
+		<load_template> BT_LIMIT_BURST BT_LOG_LEVEL_AND_PREFIX </load_template>
+	</template>
+	
+	<template name="BT_LIMIT_BURST_FULL_LOG">
+		<load_template> BT_LIMIT_BURST BT_LOG_OPTIONS </load_template>
+	</template>
+	
+	<!-- REVERSED - with a second option list (OPTION_LIST_1) -->
+
+	<!-- Interfaces -->
+
+	<template name="BT_IDEV_REVERSED">
+		<option_list_0> idev </option_list_0>
+		<option_list_1> odev </option_list_1>
+	</template>
+	
+	<template name="BT_ODEV_REVERSED">
+		<option_list_0> odev </option_list_0>
+		<option_list_1> idev </option_list_1>
+	</template>
+
+	<template name="BT_IDEV_ODEV_REVERSED">
+		<load_template> BT_IDEV_REVERSED BT_ODEV_REVERSED </load_template>
+	</template>
+	
+	<template name="BT_ODEV_IDEV_REVERSED">
+		<load_template> BT_ODEV_REVERSED BT_IDEV_REVERSED </load_template>
+	</template>
+	
+	<!-- Source, destination, mac address combinations -->
+
+	<template name="BT_SRC_ADDR_REVERSED">
+		<option_list_0> src </option_list_0>
+		<option_list_1> dst </option_list_1>
+	</template>
+	
+	<template name="BT_DST_ADDR_REVERSED">
+		<option_list_0> dst </option_list_0>
+		<option_list_1> src </option_list_1>
+	</template>
+	
+	<template name="BT_MAC_ADDR_REVERSED">
+		<option_list_0> mac </option_list_0>
+		<option_list_1> empty </option_list_1>
+	</template>
+	
+	<template name="BT_SRC_ADDR_MAC_REVERSED">
+		<load_template> BT_SRC_ADDR_MAC </load_template>
+		<option_list_1> dst empty </option_list_1>
+	</template>
+	
+	<template name="BT_SRC_DST_ADDR_REVERSED">
+		<load_template> BT_SRC_DST_ADDR </load_template>
+		<option_list_1> dst src </option_list_1>
+	</template>
+	
+	<template name="BT_SRC_DST_ADDR_MAC_REVERSED">
+		<load_template> BT_SRC_ADDR_MAC_REVERSED </load_template>
+		<option_list_0> dst </option_list_0>
+		<option_list_1> src </option_list_1>
+	</template>
+	
+	<template name="BT_IDEV_ODEV_SRC_DST_ADDR_REVERSED">
+		<load_template> BT_IDEV_ODEV_REVERSED BT_SRC_DST_ADDR_REVERSED </load_template>
+	</template>
+	
+	<template name="BT_IDEV_ODEV_SRC_DST_ADDR_MAC_REVERSED">
+		<load_template> BT_IDEV_ODEV_REVERSED BT_SRC_DST_ADDR_MAC_REVERSED </load_template>
+	</template>
+
+	<!-- Protocol, source and destination port -->
+	<template name="BT_PROTO_SRC_DST_PORT_REVERSED">
+		<load_template> BT_PROTO_SRC_DST_PORT </load_template>
+		<option_list_1> proto dport sport </option_list_1>
+	</template>
+<!--
+	<template name="BT_STATE_REVERSED">
+		<option_list_0> state </option_list_0>
+		<option_list_1> state </option_list_1>
+	</template>
+-->
+	<!-- Limit and burst -->
+	<template name="BT_LIMIT_BURST_REVERSED">
+		<option_list_0> limit </option_list_0>
+		<option_list_1> limit </option_list_1>
+	</template>
+
+	<!-- Basic match sets -->
+
+	<!-- Ingress -->
+
+	<template name="BT_BASIC_MATCH_SET_INGRESS">
+		<!-- 
+		Purpose: Basic match set for ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		-->
+		<load_template> BT_IDEV_SRC_DST_ADDR BT_PROTO_SRC_DST_PORT </load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_INGRESS_WITH_MAC">
+		<!-- 
+		Purpose: Basic match set with mac address for ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		-->
+		<load_template> BT_IDEV_SRC_DST_ADDR_AND_MAC BT_PROTO_SRC_DST_PORT </load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_INGRESS_STATE">
+		<!-- 
+		Purpose: Basic match set for stateful ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		-->
+		<load_template> BT_BASIC_MATCH_SET_INGRESS </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_INGRESS_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Basic match set with mac address for stateful ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		-->
+		<load_template> BT_BASIC_MATCH_SET_INGRESS_WITH_MAC </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<!-- Egress -->
+
+	<template name="BT_BASIC_MATCH_SET_EGRESS">
+		<!-- 
+		Purpose: Basic match set for egress (outgoing) rules
+		+ (includes only output device)
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		-->
+		<load_template> BT_ODEV_SRC_DST_ADDR BT_PROTO_SRC_DST_PORT </load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_EGRESS_STATE">
+		<!-- 
+		Purpose: Basic match set for stateful egress (outgoing) rules
+		+ (includes only output device)
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: state
+		-->
+		<load_template> BT_BASIC_MATCH_SET_EGRESS </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<!-- Forward -->
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD">
+		<!-- 
+		Purpose: Basic match set for forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		-->
+		<load_template>
+			BT_IDEV_ODEV_SRC_DST_ADDR
+			BT_PROTO_SRC_DST_PORT
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_WITH_MAC">
+		<!-- 
+		Purpose: Basic match set with mac for forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		-->
+		<load_template>
+			BT_IDEV_ODEV_SRC_DST_ADDR_AND_MAC
+			BT_PROTO_SRC_DST_PORT
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_STATE">
+		<!-- 
+		Purpose: Basic match set for stateful forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		8: state
+		-->
+		<load_template> BT_BASIC_MATCH_SET_FORWARD </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Basic match set with mac address for stateful forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		-->
+		<load_template> BT_BASIC_MATCH_SET_FORWARD_WITH_MAC </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<!-- Reversed Forward -->
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_REVERSE">
+		<!-- 
+		Purpose: Basic match set for reversed forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<load_template>
+			BT_IDEV_ODEV_SRC_DST_ADDR_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_REVERSE_STATE">
+		<!-- 
+		Purpose: Basic match set for stateful reversed forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<load_template>
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC">
+		<!-- 
+		Purpose: Basic match set with mac for reversed forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: empty
+		5: source address
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<load_template>
+			BT_IDEV_ODEV_REVERSED
+			BT_SRC_DST_ADDR_MAC_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Basic match set with mac for stateful reversed forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: output device
+		3: source address
+		4: mac address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Reverse option list:
+		1: output device
+		2: input device
+		3: destination address
+		4: empty
+		5: source address
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<load_template>
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<!-- Reversed Local -->
+
+	<template name="BT_BASIC_MATCH_SET_LOCAL_REVERSE">
+		<!-- 
+		Purpose: Basic match set for reversed local rules (services)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: source address
+		4: protocol
+		5: destination port
+		6: source port
+		-->
+		<load_template>
+			BT_IDEV_REVERSED
+			BT_SRC_DST_ADDR_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_LOCAL_REVERSE_STATE">
+		<!-- 
+		Purpose: Basic match set for stateful reversed local rules (services)
+		Template options:
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: source address
+		4: protocol
+		5: destination port
+		6: source port
+		-->
+		<load_template>
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC">
+		<!-- 
+		Purpose: Basic match set with mac for reversed local rules (services)
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: empty
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<load_template>
+			BT_IDEV_REVERSED
+			BT_SRC_DST_ADDR_MAC_REVERSED
+			BT_PROTO_SRC_DST_PORT_REVERSED
+		</load_template>
+	</template>
+
+	<template name="BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Basic match set with mac for stateful reversed local rules (services)
+		Template options:
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		1: input device
+		2: source address
+		3: mac address
+		4: destination address
+		5: protocol
+		6: source port
+		7: destination port
+		Reverse option list:
+		1: output device
+		2: destination address
+		3: empty
+		4: source address
+		5: protocol
+		6: destination port
+		7: source port
+		-->
+		<load_template>
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC
+			BT_STATE_REVERSED_NE_E
+		</load_template>
+	</template>
+</ip_array_root>
+

@@ -1,0 +1,831 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
+<refentry xmlns="http://docbook.org/ns/docbook">
+    <info><author>
+            <personname>Mart Frauenlob aka AllKind</personname>
+            <email>AllKind@fastest.cc</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>1.2.2</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array_defaults.conf</refentrytitle>
+        <manvolnum>8</manvolnum>
+        <refmiscinfo class="manual">ip-array 1.2.2</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array_defaults.conf</refdescriptor>
+        <refname>ip-array_defaults.conf</refname>
+        <refpurpose>Configuration of ip-array default settings</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>/etc/ip-array/ip-array_defaults.conf</synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para> The purpose of this file is, to configure basic (default) settings of
+                <command>ip-array</command>. Those will be used for the <emphasis role="italic">
+                stable</emphasis>, as well as for the <emphasis role="italic">test</emphasis>
+            configuration. It uses bash shell syntax. Many of the configuration variables can also
+            be set by command line. </para>
+    </refsect1>
+    <refsect1>
+        <title>Variables</title>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term>
+                        <varname>ENABLE_COLORS</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `0' if unset.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Purpose: Enable or disable IP-Array coloured output.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>ENABLE_SYSLOG</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `0' if unset.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Purpose: Enable or disable logging of IP-Array's output to syslog
+                            using the <command>logger</command> utility.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>LOG_FACILITY</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `local0' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>auth</member><member>authpriv (for security information
+                                    of a sensitive
+                                    nature)</member><member>cron</member><member>daemon</member><member>ftp</member><member>kern</member><member>lpr</member><member>mail</member><member>news</member><member>security
+                                    (deprecated synonym for
+                                    auth)</member><member>syslog</member><member>user</member><member>uucp</member><member>local0
+                                    to local7 inclusive</member></simplelist>.</para>
+                        <para>Purpose: Configure IP-Array's syslog logging facility.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>VERBOSE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `6' if unset.</para>
+                        <para>Allowed values: `0' to `8'.</para>
+                        <para>Purpose: Control level of IP-Array's output verbosity.</para>
+                        <tip>
+                            <para>With a non zero environment variable
+                                    `<varname>DEBUG_INFO</varname>', additional processing
+                                (debugging) information is printed.</para>
+                        </tip>
+                        <orderedlist startingnumber="0">
+                            <listitem>
+                                <para> No messages are shown. Exit status indicates success or
+                                    failure.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Shows start and end message and errors.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Main title and warning messages are also shown.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Sub title messages are shown in addition.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Info title, config and rule file loading messages, are shown
+                                    additionally.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Also show notice messages.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Verbose output.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Also show IP-Array internals.</para>
+                            </listitem>
+                            <listitem>
+                                <para>Debug mode (set -x).</para>
+                                <tip>
+                                    <para>With a non zero environment variable
+                                            `<varname>DEBUG_INFO</varname>', a debugging
+                                            `<varname>PS4</varname>' is set.</para>
+                                </tip>
+                            </listitem>
+                            <listitem>
+                                <para>More verbose debug mode (set -vx).</para>
+                            </listitem>
+                        </orderedlist>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SYSLOG_VERBOSE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `1' if unset.</para>
+                        <para>Allowed values: `0' to `6'.</para>
+                        <para>Purpose: Control verbosity level of IP-Array's syslog
+                                logging.<orderedlist startingnumber="0">
+                                <listitem>
+                                    <para> Errror messages are shown.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Main title and warning messages are shown.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Subtitle messages are shown in addition.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Info title, config and rule file loading messages, are
+                                        shown additionally.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Also show notice messages.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Verbose output.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>Also show IP-Array internals.</para>
+                                </listitem>
+                            </orderedlist></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_MAIN_TITLE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `magenta' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for title messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_SUBTITLE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `blue' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for sub title messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_INFO_TITLE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `cyan' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for info title messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_ERROR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `red' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for error messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_WARNING</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `yellow' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for warning messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_NOTICE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `white' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for notice messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_CONFIG_LOAD</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `green' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for configuration file loading messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>COLOR_MSG_RULE_LOAD</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no. Defaults to `yellow' if unset.</para>
+                        <para>Allowed values: <simplelist type="inline"
+                                    ><member>black</member><member>blue</member><member>cyan</member><member>green</member><member>magenta</member><member>red</member><member>white</member><member>yellow</member></simplelist>.</para>
+                        <para>Purpose: Set color for rule file loading messages.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>AUTO_GET_PROGS</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `1'.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Purpose: Configure if IP-Array should try to automatically find the
+                            mandatory programs (must be in <varname>$PATH</varname>) . If disabled
+                            (set to `0'), the program names varaibles (below) <emphasis role="bold"
+                                >must</emphasis> be configured manually.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>AT</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>at</command> executable
+                            file (i.e: <filename>/usr/bin/at</filename>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>CAT</varname></term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>cat</command> executable
+                            file (i.e: <filename>/bin/cat</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>DATE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>date</command> executable
+                            file (i.e: <filename>/bin/date</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>DIALOG</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <command>dialog</command> or
+                                <command>whiptail</command>)</para>
+                        <para>Allowed values: A valid path to the <command>dialog</command>
+                            executable file (i.e: <filename>/usr/bin/dialog</filename>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>DIFF</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>diff</command> executable
+                            file (i.e: <filename>/usr/bin/diff</filename>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>FIND</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>find</command> executable
+                            file (i.e: <filename>/usr/bin/find</filename>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>GREP</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>grep</command> executable
+                            file (i.e: <filename>/bin/grep</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IP</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>ip</command> executable
+                            file (i.e: <filename>/sbin/ip</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPSET</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no</para>
+                        <para>Allowed values: A valid path to the <command>ipset</command>
+                            executable file (i.e: <filename>/sbin/ipset</filename>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPT</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>iptables</command>
+                            executable file (i.e: <filename>/sbin/iptables</filename>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>LOGGER</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no</para>
+                        <para>Allowed values: A valid path to the <command>logger</command>
+                            executable file (i.e: <filename>/usr/bin/logger</filename>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>LSMOD</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>lsmod</command>
+                            executable file (i.e: <filename>/sbin/lsmod</filename>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>MODPROBE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>modprobe</command>
+                            executable file (i.e: <filename>/sbin/modprobe</filename>), or the just
+                            the name of the program, if it's found in $PATH and you do not want to
+                            use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>NFACCT</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no</para>
+                        <para>Allowed values: A valid path to the <command>nfacct</command>
+                            executable file (i.e: <filename>/usr/sbin/nfacct</filename>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>RM</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>rm</command> executable
+                            file (i.e: <filename>/bin/rm</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPT_SAVE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>iptables-save</command>
+                            executable file (i.e: <filename>/sbin/iptables-save</filename>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</para>
+                        <para>This variable is only used by the IP-Array init script. It is not
+                            globally available.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPT_RESTORE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the
+                                <command>iptables-restore</command> executable file (i.e:
+                                <filename>/sbin/iptables-restore</filename>), or the just the name
+                            of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</para>
+                        <para>This variable is only used by the IP-Array init script. It is not
+                            globally available.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SORT</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>sort</command> executable
+                            file (i.e: <filename>/usr/bin/sort</filename>), or the just the name of
+                            the program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>TC</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no</para>
+                        <para>Allowed values: A valid path to the <command>tc</command> executable
+                            file (i.e: <filename>/sbin/tc</filename>), or the just the name of the
+                            program, if it's found in $PATH and you do not want to use absolute
+                            paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>UNAME</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: yes</para>
+                        <para>Allowed values: A valid path to the <command>uname</command>
+                            executable file (i.e: <filename>/bin/uname</filename>), or the just the
+                            name of the program, if it's found in $PATH and you do not want to use
+                            absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry xmlns:xi="http://www.w3.org/2001/XInclude"
+                    xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <term>
+                        <varname>WHIPTAIL</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no (only in interactive mode a dialog program is required,
+                            which can be either <command>dialog</command> or
+                                <command>whiptail</command>)</para>
+                        <para>Allowed values: A valid path to the <command>whiptail</command>
+                            executable file (i.e: <filename>/usr/bin/whiptail</filename>), or the
+                            just the name of the program, if it's found in $PATH and you do not want
+                            to use absolute paths.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>BASE_DIR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to <filename>/etc/ip-array</filename>.</para>
+                        <para>Allowed values: A valid path (i.e.:
+                            <filename>/etc/ip-array</filename>).</para>
+                        <para>IP-Array base directory.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>CONFIG</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to <filename>ip-array.conf</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>ip-array.conf</filename>).</para>
+                        <para>Name of the main configuration file.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>CONF_DIR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to <filename>conf.d</filename>.</para>
+                        <para>Allowed values: A valid directory name (i.e.:
+                                <filename>conf.d</filename>).</para>
+                        <para>Configuration directory must be below
+                            <varname>BASE_DIR</varname>.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>LIB_DIR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                            <filename>/usr/lib/ip-array</filename>.</para>
+                        <para>Allowed values: A valid path (i.e.:
+                                <filename>/usr/lib/ip-array</filename>).</para>
+                        <para>Library directory used for the IP-Array function files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>LOCK_DIR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to <filename>/var/run</filename>.</para>
+                        <para>Allowed values: A valid path (i.e.:
+                            <filename>/var/run</filename>).</para>
+                        <para>Directory to put the IP-Array PID file into.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SHARE_DIR</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                            <filename>/usr/share/ip-array</filename>.</para>
+                        <para>Allowed values: A valid path (i.e.:
+                                <filename>/usr/share/ip-array</filename>).</para>
+                        <para>Data directory.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SAVE_FILE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                            <filename>iptables_ruleset.save</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>iptables_ruleset.save</filename>).</para>
+                        <para>File to save the ruleset into. Applies to all the save*
+                            parameters.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPSET_SAVE_FILE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                            <filename>ipset_ruleset.save</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>ipset_ruleset.save</filename>).</para>
+                        <para>File to put the ipset save output into, when executing IP-Array with
+                            the 'save' startup parameter. Or to load, when restoring with the
+                            'restore' parameter.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>RULESETFILE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                                <filename>ip-array_commands.bash</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>ip-array_commands.bash</filename>).</para>
+                        <para>File where the generated commands will be saved, if executing IP-Array
+                            with one of the 'save[ -iptables | -modprobe | -sysctl | -tc | -shaping
+                            ]-commands' parameters. The target directory will be
+                                <command>$BASE_DIR/save.d</command>.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>DIFF_FILE</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                                <filename>iptables_ruleset_saved_for_diff</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>iptables_ruleset_saved_for_diff</filename>).</para>
+                        <para>File to save the iptables rule listing (iptables -S, or if not
+                            available on old systems -nL) into, after applying the rules. The target
+                            directory will be <command>$BASE_DIR/save.d</command>.</para>
+                        <para>This file will be used to check for a difference to the currently
+                            active ruleset, when using the 'diff-last-activated' startup
+                            parameter.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SERVICES</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to <filename>/etc/services</filename>.</para>
+                        <para>Allowed values: A valid path to the services file (most likely:
+                                <filename>/etc/services</filename>).</para>
+                        <para>Purpose: Configure the location of the services file (containing
+                            service definitions).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>PROTOCOLS</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                            <filename>/etc/protocols</filename>.</para>
+                        <para>Allowed values: A valid path to the services file (most likely:
+                                <filename>/etc/protocols</filename>).</para>
+                        <para>Purpose: Configure the location of the protocols file (containing
+                            protocol definitions).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>KNOWN_GOOD_RULESET</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to
+                                <filename>KNOWN_GOOD_RULESET.save</filename>.</para>
+                        <para>Allowed values: A valid filename (i.e.:
+                                <filename>KNOWN_GOOD_RULESET.save</filename>).</para>
+                        <para>File to save the currently active 'known good' ruleset. This file will
+                            be used to restore the ruleset on 'start', if
+                                <varname>RESTORE_ON_START</varname> is enabled.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>RESTORE_ON_START</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `0'.</para>
+                        <para>Allowed values: `0' to disable `1' to enable.</para>
+                        <para>Loads the ruleset saved into <varname>$KNOWN_GOOG_RULESET</varname>,
+                            if IP-Array is loaded with the `start' parameter (faster startup also
+                            called quick start).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>RELOAD_TIME</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to 7.</para>
+                        <para>Allowed values: Any value greater than 1.</para>
+                        <para>Time period until the previously saved ruleset will be restored, when
+                            using the 'test' startup parameter.<warning>
+                                <para>If <command>iptables-save</command> or
+                                        <command>iptables-restore</command> fails for some reason,
+                                    the 'test' parameter will not work, thus this setting will not
+                                    produce the desired effect.</para>
+                            </warning></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>GEN_FORMAT</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `cmd'.</para>
+                        <para>Allowed values: `cmd': generated commands will be save as list of
+                            commands. ´ipt': generated commands will be used in iptables-save format
+                            (faster loading time).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>IPTSAVE_FAILS</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `0'.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Enable this if saving or restoring with
+                                <command>iptables-save</command> or
+                                <command>iptables-restore</command> fails for some reason.</para>
+                        <para>
+                            <important>
+                                <para>Any startup mode, that utilizes
+                                        <command>iptables-save</command> or
+                                        <command>iptables-restore</command> will not work in that
+                                    case.</para>
+                            </important>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>USE_IPSET</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `0'.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Enable or disable the usage of ipset.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>MAX_SETS</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `256'.</para>
+                        <para>Allowed values: The value compiled into your kernel.</para>
+                        <para>The maximal amount of ipset sets to create.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term>
+                        <varname>SYNTAX_CHECK</varname>
+                    </term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `1'.</para>
+                        <para>Allowed values: `0' or `1'.</para>
+                        <para>Purpose: Perform a bash grammar check before sourcing or executing
+                            files. The bash grammar check is done using `<code>bash -n file</code>'.
+                            Thus the syntax check is very basic and may not catch all errors (as
+                            described in `<code>man bash</code>').</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>DIALOG_PROG</varname></term>
+                    <listitem>
+                        <para>Mandatory: no - defaults to `$DIALOG'.</para>
+                        <para>Allowed values: empty (make sure one of the variables
+                                <varname>DIALOG</varname>, or <varname>WHIPTAIL</varname> is
+                            defined, or automatic detection of programs - if enabled - can find
+                            them). `dialog' or `whiptail'. The full path to one of them.</para>
+                        <para>Purpose: The interactive mode requires a dialog program. Either
+                                <command>dialog</command> (version 1.2+) or
+                                <command>whiptail</command> are supported.</para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_ruleblocks</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_rulefiles</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_sysctl_rules</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+        </para>
+    </refsect1>
+</refentry>

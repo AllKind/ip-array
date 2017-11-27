@@ -1,0 +1,1 @@
+Allow ALL Branch to Branch traffic | Format: 0/1

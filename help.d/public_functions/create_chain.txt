@@ -1,0 +1,11 @@
+
+Name: create_chain
+	
+Description:
+	Create an iptables chain (add command to the command queue).
+
+Usage:
+	create_chain table chain-name
+
+Example:
+	create_chain filter foo

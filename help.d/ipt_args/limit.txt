@@ -1,0 +1,8 @@
+limit: limit match specification.
+
+    Synopsis: [!]value[/range][:burst:value]
+
+    Examples:
+        limit=3/second
+        limit=3/s:burst:1
+

@@ -1,0 +1,11 @@
+
+Name: reject_auth
+
+Description:
+	Reject INPUT AUTH (TCP port 113) traffic on certain interfaces or networks.
+
+Usage:
+	reject_auth { interface | network-name } [...]
+	
+Example:
+	reject_auth eth0 PUBLIC

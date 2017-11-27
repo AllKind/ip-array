@@ -1,0 +1,9 @@
+t_class: CLASSIFY target.
+    Equivalent to: `-j CLASSIFY --set-class'.
+
+    Synopsis: [0x]value[:[0x]value]
+
+    Examples:
+        t_class=0xBEEF
+        t_class=0xBEEF:0x1
+

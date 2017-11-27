@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
+<refentry xmlns="http://docbook.org/ns/docbook">
+    <info><author>
+            <personname>Mart Frauenlob aka AllKind</personname>
+            <email>AllKind@fastest.cc</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>1.2.2</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array_rulefiles</refentrytitle>
+        <manvolnum>5</manvolnum>
+        <refmiscinfo class="manual">ip-array 1.2.2</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array rulefiles</refdescriptor>
+        <refname>ip-array rulefiles</refname>
+        <refpurpose>Configure ip-array rule files</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/rules.d/<replaceable>file</replaceable></synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para>Rule files are written in a simple and <emphasis role="italic">relaxed</emphasis> XML
+            style. There are different rule tags available, as well as public functions. For each
+            iptables table (if configured to be used) there must be at least one rule file
+            defined.</para>
+    </refsect1>
+    <refsect1>
+        <title>Syntax</title>
+        <para>A rule definition file must contain the root tag including the describing name
+            attribule and the syntax version:</para>
+        <para><code>&lt;ip_array_root name="iptables_rules" syntax_version="1.1"></code></para>
+        <para>The <emphasis role="bold">name</emphasis> attribute tells us it is an iptables rule
+            definition.</para>
+        <para>The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+            version. 1.0 and 1.1 are available by now. The ipset tags were introduced with version
+            1.1.</para>
+        <para>The XML syntax can be used in a <emphasis role="italic"
+                xmlns:xi="http://www.w3.org/2001/XInclude"
+                xmlns:xlink="http://www.w3.org/1999/xlink">relaxed</emphasis> way (not XML
+            compatible). Tags can be closed by a simple `/>'. Attributes can have their value
+            enclosed inside single quotes, or not quoted at all.</para>
+    </refsect1>
+    <refsect1>
+        <title>Tags</title>
+        <itemizedlist xmlns:xi="http://www.w3.org/2001/XInclude"
+            xmlns:xlink="http://www.w3.org/1999/xlink">
+            <listitem>
+                <para>&lt;rule> or the short form &lt;r></para>
+                <para>A <emphasis role="bold">single rule</emphasis> entry. All iptables arguments
+                    can be used inside a rule tag. The list of valid arguments can be retrieved by
+                    running: <command>ip-array show -sc ipt_args[,...]</command>.</para>
+                <para>They can be used as attributes of the tag, or as content inside the tag. In
+                    the first form they do not need be enclosed inside quotes (relaxed XML), unless
+                    the value contains a whitespace. Values with whitespace must be enclosed within
+                    double or single quotes. In both cases the left hand side (left of the `=') is
+                    the iptables argument and the right hand side is its value.</para>
+                <para>Examples:</para>
+                <para><code>&lt;rule> table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                        &lt;/rule></code></para>
+                <para><code>&lt;rule table="filter" chain="INPUT" src="1.1.1.1" target="DROP"
+                        /></code></para>
+                <para><code>&lt;r> table=filter chain=INPUT target=LOG log_prefix="my log message"
+                        /></code></para>
+            </listitem>
+            <listitem>
+                <para>&lt;combined_rule> or the short form &lt;cr></para>
+                <para>´<emphasis role="bold">Combined rules</emphasis> allow to create reverse
+                    traffic rules like with templates and ruleblocks with the reverse_mode=reverse
+                    option, but in a dynamic way.</para>
+                <para>It has these attributes available:</para>
+                <para>
+                    <itemizedlist>
+                        <listitem>
+                            <para>reverse_mode - which can be like within templates set to either
+                                `reverse' or `mirror'.</para>
+                        </listitem>
+                        <listitem>
+                            <para>reverse_condition - like within templates defines a condition that
+                                must evaluate to true for the reverse rules to be created. The
+                                variable name and its value must be separated by a colon `:'. i.e.
+                                foo:bar</para>
+                        </listitem>
+                        <listitem>
+                            <para>msg - like with template_msg, it allows to define a message to be
+                                displayed, if <varname>VERBOSE</varname> is greater or equal
+                                3.</para>
+                        </listitem>
+                    </itemizedlist>
+                </para>
+                <para>The iptables arguments must be used inside the &lt;optlist> tag (see next item
+                    in the list). The arguments in the second option list do not need the equal siqn
+                    and the right hand side value. The values of the first option list will be used
+                    in order from left to right and will be applied to the options (iptables
+                    arguments) of the second option list. Only if a value needs to be left out the
+                    special keyword `<emphasis role="bold">empty</emphasis>' can be used. Either as
+                    option name (i.e. option list one has `odev=eth0' as iptables argument, you will
+                    use just `empty' in the second option list), or as value (i.e.
+                    idev=empty).</para>
+                <para>All global iptables arguments, that are opended inside a combined rule will be
+                    applied to all following rules created with the &lt;optlist> tag. They will not
+                    be applied to rules outside of the combined rule.</para>
+                <para>
+                    <note>
+                        <simpara>Inside combined rules the iptables arguments target and chain may
+                            be set to a comma separated list (maximum 2 chains can be
+                            defined).</simpara>
+                    </note>
+                </para>
+                <para>Example:</para>
+                <para>
+                    <programlisting>&lt;table> filter
+    &lt;combined_rule reverse_mode="reverse" reverse_condition="x:y">
+        &lt;chain> INPUT,OUTPUT
+            &lt;target> LOG,ACCEPT
+                &lt;optlist> proto=tcp sport=99 &lt;/optlist>
+                &lt;optlist> proto dport &lt;/optlist>
+            &lt;/target>
+            &lt;target> DROP
+                &lt;opts idev="$lan_if" proto="udp" sport="66" />
+                &lt;opts> odev proto empty />
+            &lt;/target>
+        &lt;/chain>
+    &lt;/combined_rule>
+&lt;/table></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>&lt;optlist> or the allowed variations: &lt;opt>, &lt;opts>, &lt;option>,
+                    &lt;options></para>
+                <para>This tag is only valid within a combined_rule tag. All iptables arguments can
+                    be used inside this tag. The list of valid arguments can be retrieved by
+                    running: <command>ip-array show -sc ipt_args[,...]</command>.</para>
+                <para>They can be used as attributes of the tag, or as content inside the tag. In
+                    the first form they do not need be enclosed inside quotes. Values with
+                    whitespace must be enclosed within double or single quotes. In both cases the
+                    left hand side (left of the `=') is the iptables argument and the right hand
+                    side is its value.</para>
+            </listitem>
+            <listitem>
+                <para>&lt;template_rule> or the short form &lt;tr></para>
+                <para>This tag defines one or more ruleblocks to be called with their corresponding
+                    templates. This is named a <emphasis role="bold">template
+                    rule</emphasis>.</para>
+                <para>The syntax is:
+                    <synopsis>&lt;template_rule> template-name ruleblock-name [ template-invocation-command ... ] &lt;/template_rule></synopsis><synopsis>or:</synopsis><synopsis>&lt;template_rule template="template-name" ruleblock="ruleblock-name" /></synopsis></para>
+                <para>For the first form multible entries may be separated by newline. Also one or
+                    more command(s) can be run at invocation of the ruleblock.</para>
+                <para>Template rules will not inherit the global arguments (see below).</para>
+            </listitem>
+            <listitem>
+                <para>&lt;pub_func> or the short form &lt;f></para>
+                <para>This tag defines one or more public functions to be called.</para>
+                <para>The syntax is:
+                    <synopsis>&lt;pub_func name="function-name" /></synopsis><synopsis>or</synopsis><synopsis>&lt;pub_func> function-name [ option ... ] &lt;/pub_func></synopsis>For
+                    the second form multible entries must be separated by newline. Also it allows to
+                    pass parameters to the call of the function.</para>
+                <para>The value part of the name attribute must be enclosed within quotes.</para>
+                <para>Examples:</para>
+                <para>
+                    <programlisting>&lt;pub_func>
+    log -S "Adding DROP rules"
+    drop_dhcp
+    drop_netbios
+&lt;/pub_func></programlisting>
+                </para>
+                <para>
+                    <programlisting>&lt;f name="lan_ftp" /></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>&lt;ipsets> or the short forms: &lt;s>, &lt;set>, &lt;ipset></para>
+                <para>This tag allows to define ipset sets. It is not valid inside any other but the
+                    root tag. Only attributes are allowed, no content.</para>
+                <para>The syntax is:
+                    <synopsis>&lt;ipsets name="set-name" [ type="set-type" ] [ (hashsize|family|maxelem|netmask|range|timeout|size)="value" ] [ (opt|opts|options)="option-name" ] >
+    [ &lt;elements> content &lt;/elements> ]
+&lt;/ipsets>
+or
+&lt;ipsets import_xml="file-name" /></synopsis></para>
+                <para>For the first form the attributes <emphasis role="italic">name</emphasis> and
+                        <emphasis role="italic">type</emphasis> are mandatory when creating a set.
+                    If only elements are to be added using the &lt;elements> tag, only the name of
+                    the set is required. All header options that require a value must be expressed
+                    using the form: <code>option-name=value</code>. All other header options must be
+                    put into the <emphasis role="italic">options</emphasis> attribute.</para>
+                <para>For the second for a file can be imported. This file must be in the format as
+                    used with ipset -output xml.</para>
+                <para>Examples:</para>
+                <para>
+                    <programlisting>&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" />
+
+&lt;ipsets import_xml="${BASE_DIR}/stable/${CONF_DIR}/rules.d/import_ipsets.xml" /></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>&lt;elements> or the short forms: &lt;e>, &lt;elem>, &lt;element></para>
+                <para>This tags allows to add elements to an ipset set. It is of course only valid
+                    inside an &lt;ipsets> tag (see above). </para>
+                <para>The syntax is:
+                    <synopsis>&lt;elements [ import_plain="file-name" ] >
+    [ content ]
+    [ ... ]
+&lt;/elements></synopsis></para>
+                <para>The optional import_plain attribute is available inside this tag. It allows to
+                    import elements from a file. The file must contain one element per line. Shell
+                    style comments (#) are allowed.</para>
+                <para>The syntax for content and inside the file is as with ipset without writing
+                    ipset add set-name ... When using the comment option and the comment contains
+                    spaces, it must be enclosed inside double quotes.</para>
+                <para>Examples:</para>
+                <para>
+                    <programlisting>&lt;set name="foo" type="hash:ip" family="inet" timeout="10000" options="counters comment" >
+    &lt;elements import_plain="${BASE_DIR}/stable/${CONF_DIR}/rules.d/foo-elements.txt" >
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements>
+&lt;/set>
+
+&lt;set name="foo">
+    &lt;elements>
+        10.0.0.1 packets 3 comment "My sophisticated comment"
+        10.0.0.2
+    &lt;/elements>
+&lt;/set></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>All other iptables arguments. We'll call them <emphasis role="bold">global
+                        arguments</emphasis>.</para>
+                <para>The list of valid arguments can be retrieved by running: <command>ip-array
+                        show -sc ipt_args[,...]</command>.</para>
+                <para>These can be used to apply their value to all other rules following
+                    (grouping). Or to build rules by their own. In the second case, the closing of a
+                    tag will cause the creation of a rule. Except they are terminated by a <emphasis
+                        role="underline">&lt;rule></emphasis> or a <emphasis role="underline"
+                        >&lt;combined_rule></emphasis>, in which case their closing will not cause
+                    additional rules to be created, unless a new tag is opened (and then closed
+                    afterwards to create a rule), which will start a new counter like before. </para>
+                <important>
+                    <para>They will not be applied to template rules!</para>
+                </important>
+                <para>In example:</para>
+                <para>
+                    <programlisting>&lt;table name="filter">
+    &lt;chain name="INPUT">
+        &lt;rule> rule1 &lt;/rule>
+        &lt;rule> rule2 &lt;/rule>
+    &lt;/chain>
+&lt;/table></programlisting>
+                </para>
+                <para>Or in the <emphasis role="italic">relaxed</emphasis> way:</para>
+                <para>
+                    <programlisting>&lt;table> filter &lt;chain name=INPUT>
+    &lt;rule> rule1 />
+    &lt;rule> rule2 />
+/> /></programlisting>
+                </para>
+                <para>Another example using only global arguments:</para>
+                <para>
+                    <programlisting>&lt;table> filter
+    &lt;chain> INPUT
+        &lt;target> ACCEPT
+            &lt;state> NEW,ESTABLISHED
+                 &lt;src> 1.1.1.1 &lt;/src>
+                 &lt;dst> 2.2.2.2 &lt;/dst>
+            &lt;/state> &lt;/target>
+        &lt;target> DROP &lt;/target>
+    &lt;/chain>
+&lt;/table></programlisting>
+                </para>
+            </listitem>
+        </itemizedlist>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_ruleblocks</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>,, <citerefentry>
+                <refentrytitle>ip-array_sysctl_rules</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+            <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+        </para>
+    </refsect1>
+</refentry>

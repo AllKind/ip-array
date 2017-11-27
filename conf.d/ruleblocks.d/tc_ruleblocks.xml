@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<!-- TRAFFIC CONTROL RULEBLOCKS -->
+
+<!-- SKELETON
+
+<ip_array_root name="ruleblocks" syntax_version="1.0">
+	<ruleblock name="RB_">
+	</ruleblock>
+</ip_array_root>
+
+-->
+
+<ip_array_root name="ruleblocks" syntax_version="1.0">
+
+<ruleblock name="HTB_QDISC">
+<!-- dev user handle default-class r2q -->
+</ruleblock>
+
+<ruleblock name="TC_CLASS">
+<!-- dev parent classid rate ceil [burst] [cburst] [quantum] [mtu] [prio] -->
+</ruleblock>
+
+<ruleblock name="SFQ_QDISC">
+<!-- dev parent handle perturb -->
+</ruleblock>
+
+<ruleblock name="TC_FILTER">
+<!-- dev parent proto prio handle dom classid -->
+</ruleblock>
+
+</ip_array_root>
+
+

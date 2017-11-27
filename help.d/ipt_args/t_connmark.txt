@@ -1,0 +1,12 @@
+t_connmark: CONNMARK target specification.
+
+    Synopsis:
+        (save|restore)
+        (set|xset):value[/mask]
+        (and|or|xor):value
+
+    Examples:
+        t_connmark=restore
+        t_connmark=set:1
+        t_connmark=and:8
+

@@ -1,0 +1,24 @@
+
+Name: log
+
+Description:
+	IP-Array messaging to stdout/stderr and/or syslog.
+
+Usage:
+	log option message [...]
+
+	options:
+		-e	Unformatted message shown if VERBOSE is greater or equal `6'.
+		-l	Log to syslog. Regardless of the VERBOSE setting.
+		-m	Log to stdout and syslog. Regardless of the VERBOSE setting.
+		-E	ERROR message.
+		-W	WARNING message.
+		-N	NOTICE message.
+		-T	Main title message.
+		-S	Sub title message.
+		-I	Info title message
+		-C	Configuration file loading message.
+		-R	Rule file loading message.
+
+Example:
+	log -I "Info Title message"

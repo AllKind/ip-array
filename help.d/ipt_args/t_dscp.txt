@@ -1,0 +1,11 @@
+t_dscp: DSCP target specification.
+    Equivalent to `-j DSCP --set-dscp[-class]'.
+
+    Synopsis:
+        DiffServ_class
+        value
+
+    Examples:
+        t_dscp=BE
+        t_dscp=62
+

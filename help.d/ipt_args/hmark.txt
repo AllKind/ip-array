@@ -1,0 +1,20 @@
+hmark: HMARK target specification.
+
+    Synopsis: option:opt_arg[:...]
+
+        options:
+        tuple         src|dst|sport|dport|spi|ct (comma separated)
+        mod           value
+        offset        value
+        src-prefix    cidr
+        dst-prefix    cidr
+        sport-mask    value
+        dport-mask    value
+        spi-mask      value
+        proto-mask    value
+        rnd           value
+
+    Examples:
+        hmark=tuple:src,dst:mod:10:rnd:0xfeedcafe
+        hmark=mod:10:offset:10000:src-prefix:24:dst-prefix:30:proto-mask:0xA:rnd:0xFEEDCAFE
+

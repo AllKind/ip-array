@@ -1,0 +1,3 @@
+List of all network interfaces (not lo)
+newline separates entries
+Format: iface-name | iface-alias | ext/local/ipsec | network-name

@@ -1,0 +1,120 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>ip-array</title><meta name="generator" content="DocBook XSL-NS Stylesheets V1.74.3-pre"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="refentry" lang="en"><a name="d0e2"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>ip-array &#8212; Firewall and Traffic control Configuration utility<p><b> Scope = security, networking, system administration -- <span class="application">linux - </span>
+            <span class="application">netfilter/iptables - </span>
+            <span class="application">tc</span>
+        </b></p></p></div><div class="refsynopsisdiv"><h2>Synopsis</h2><div class="cmdsynopsis"><p><code class="command">ip-array</code>   parameter  [
+                <em class="replaceable"><code>option</code></em>
+                 [
+                    <em class="replaceable"><code>option_argument</code></em>
+                ]
+            ...]</p></div></div><div class="refsect1" lang="en"><a name="d0e67"></a><h2>Description</h2><p> ip-array is a command generator for netfilter (currently only iptables), tc, sysctl
+            and kernel module configuration. </p><p> It is written in bash. Bash version 3.1 or higher is required. </p><p> Basic configuration is done via shell style configuration files. Rules are defined
+            using a simple XML syntax. The XML configuration files get converted to bash scripts,
+            which are read at runtime. A bash completion compspec ships with the package.</p></div><div class="refsect1" lang="en"><a name="d0e76"></a><h2>Parameters</h2><p> If the first parameter is omitted, usage instructions are printed. Only one parameter
+            is allowed - but required - for ip-array to take any action. </p><p>These parameters control the 'mode' IP-Array runs on.</p><div class="itemizedlist"><ul type="disc"><li><p>start</p><p>All network connections are forbidden (see lockdown mode below) until all
+                    configuration has been read. Module probing (if configured) is done first. After
+                    all commands are compiled, they are applied at once. An iptables rule listing is
+                    saved for later difference checks.</p></li><li><p>stop</p><p>All tables and chains and ipset sets get flushed and destroyed. All tc qdisc
+                    are removed, no traffic shaping is active any more. Modules configured to be
+                    loaded are removed.</p></li><li><p>restart</p><p>Module probing (if configured) is done first. After all commands are compiled,
+                    they are applied at once. An iptables rule listing is saved for later difference
+                    checks.</p></li><li><p>test</p><p>Acts like the 'restart', but will use the testing configuration below the
+                    'test' folder. Also it will schedule a restore job (using the `at' command
+                    scheduler) for the time specified with <code class="varname">RELOAD_TIME</code> in the
+                    defaults file.</p></li><li><p>open</p><p>Module probing (if configured) is done first.</p><p>This mode leaves only the NAT rules active (reads configuration and re-applies
+                    them), all other tables are emptied. Policies are set to ACCEPT. An iptables
+                    rule listing is saved for later difference checks. The ipset ruleset will not be
+                    touched.</p></li><li><p>tc-start</p><p>Start traffic shaping only. Mangle table rules will be (re)-applied. An
+                    iptables rule listing is saved for later difference checks. ipset ruleset will
+                    not be touched.</p></li><li><p>tc-stop</p><p>Stop traffic shaping only. Mangle table rules will be (re)-applied. Qdisks of
+                    interfaces listed in <code class="varname">NET_INTERFACES</code> will be deleted. An
+                    iptables rule listing is saved for later difference checks. ipset ruleset will
+                    not be touched.</p></li><li><p>lockdown</p><p>All filter table policies will be set to DROP, all others will be set to
+                    ACCEPT. All chains get flushed and custom chains are deleted. No more network
+                    connections are allowed except:</p><table class="simplelist" border="0" summary="Simple list"><tr><td>A: If the bash environment variable SSH_CONNECTION is set, IP-Array
+                            allow connections from that source address to the ssh server
+                            port.</td></tr><tr><td>B: If the environment variable is not set, but the ADMIN_CONNECTION
+                            variable is set in the main config file, IP-Array will allow the
+                            configured connection.</td></tr><tr><td>C: If the ALLOW_LOOPBACK variable is set in the main config file,
+                            loopback communication will be allowed.</td></tr></table></li><li><p>interactive</p><p>In this mode several wizards are available to interactively create or edit the
+                    IP-Array configuration. It is possible to create main configuration files,
+                    templates, iptables/ipset and sysctl rule files, or create and edit ruleblocks.
+                    The <span class="command"><strong>whiptail</strong></span> program is required for this. The global_defs
+                    configuration file holds 3 variables (<code class="varname">IACTIVE_WINDOW_HEIGHT</code>,
+                        <code class="varname">IACTIVE_WINDOW_WITH</code>,
+                        <code class="varname">IACTIVE_LIST_HEIGHT</code>) for configuring the sizes of the
+                    wizards dialog boxes. By default they are set to `0'. If this is kept and the
+                        <span class="command"><strong>tput</strong></span> program is available in PATH, it will used to query
+                    and set the required values for window height, window with and list height.
+                    Otherwise it is possible to adjust the window settings there, with the downside
+                    of having static values.</p></li><li><p>diff-last-activated</p><p>Every time IP-Array is not in 'test' mode and activates an iptables ruleset,
+                    it saves a listing of the rules to a file. Using this parameter a (simple
+                        <code class="filename">diff</code> based) difference check between the currently
+                    active ruleset and the listing of the file is performed. Thus allowing to detect
+                    (unwanted) modifications.</p></li><li><p>dry-run</p><p>Configuration is processed and validated, but no commands will be applied.
+                </p></li><li><p>save</p><p>The currently active iptables and ipset ruleset will be saved using
+                    `iptables-save' and `ipset save'.</p></li><li><p>save-known-good</p><p>Save the currently active ruleset to file (the name of the file can be set
+                    using the variable <code class="varname">KNOWN_GOOD_RULESET</code> in the defaults file.
+                    It will be used if <code class="varname">RESTORE_ON_START</code> is set to `1' (quick
+                    start activated).</p></li><li><p>restore</p><p>The previously saved ruleset (using the 'save' parameter) will be restored
+                    using `iptables-restore' `ipset restore'.</p></li><li><p>save-commands</p><p>Save all commands (modprobe, proc, tc, iptables, ipset) to a file.</p></li><li><p>save-iptables-commands</p><p>Save the generated iptables and ipset commands to a file.</p></li><li><p>save-modprobe-commands</p><p>Save the generated modprobe commands to a file.</p></li><li><p>save-sysctl-commands</p><p>Save the generated sysctl commands to a file.</p></li><li><p>save-tc-commands</p><p>Save the generated tc commands to file.</p></li><li><p>save-shaping-commands</p><p>Save the generated tc and iptables mangle table (mark) commands to
+                    file.</p></li><li><p>prepare-restore-on-start</p><p>Create the '<span class="bold"><strong>quick start</strong></span>' scripts. After the
+                    configuration is completed this parameter allows to save it into scripts holding
+                    the compiled commands, in order to quickly (re)apply it to the system. If
+                    iptables-save is used (<code class="varname">IPTSAVE_FAILS</code> is set to `0') the
+                    currently active ruleset will be saved. The name for these 'known-good' script
+                    can be set in the defaults file.</p></li><li><p>parse-xml</p><p>Compile bash scripts from the XML files. By default templates, ruleblocks and
+                    rules are converted. The -pb, -pr and -pt parameters allow to select which of
+                    those will be compiled.</p></li><li><p>compat-check</p><p>A compatibility check will be performed. IP-Array will probe the kernel
+                    version, supported iptables tables, targets and matches, available sysctl
+                    settings, modules and programs. The result will be printed to stdout.</p></li><li><p>show</p><p>Show configuration or colour settings. The option `-sc' selects the type of
+                    information to display. By default the settings of the main configuration file
+                    are shown.</p></li><li><p>version</p><p>Show version information.</p></li><li><p>help, -h, --help, -?</p><p>Show usage information.</p><p>If `--public-functions' is used as second argument, a list of available public
+                    functions is printed. If a name of public function is given as third argument, a
+                    brief description of the function is shown.</p></li></ul></div></div><div class="refsect1" lang="en"><a name="d0e261"></a><h2>Options</h2><p>All options are optional. Some require an argument, others do not. All options and
+            their arguments must be separated by blank(s). If an option can be used more than once,
+            it is mentioned explicitly. </p><p>
+            </p><div class="itemizedlist"><ul type="disc"><li><p>-ct, --ipt-counters</p><p>Save or restore iptables counters when using the `save' or `restore'
+                        startup parameter.</p></li><li><p>-dg, --debug</p><p>Enable debugging output.</p></li><li><p>-dr, --dry-run</p><p>Commands will not be applied.</p></li><li><p>-ex, --err-exit</p><p>Set bash to exit on simple command failure (set -e) and to inherit the ER
+                        trap to functions, etc.</p></li><li><p>-na, --no-autosave</p><p>Do not use the automatic saving and restoring logic.</p></li><li><p>-nc, --no-compat-check</p><p>Do not perform the compatibility check. </p></li><li><p>-nd, --no-diff</p><p>Do not save the diff file for the difference check of the ruleset
+                        (diff-last-activated startup parameter).</p></li><li><p>-ni, --no-iface-check</p><p>Do not check for the existence of interfaces.</p></li><li><p>-nm, --no-modprobe</p><p>Do not perform load or unload kernel modules.</p></li><li><p>-ny, --no-sysctl</p><p>Do not set the sysctl configuration.</p></li><li><p>-p, --parse-xml</p><p>Read all XML files and overwrite already compiled bash scripts.</p></li><li><p>-pb, --parse-ruleblocks [type[,...]]</p><p>Read XML ruleblock files and overwrite already compiled bash
+                        scripts.</p><p>The type argument allows to parse files selectively by type. Available
+                        types are: filter, mangle, nat, raw, security, rawpost, tc,
+                        tc_mangle.</p></li><li><p>-pr, --parse-rulefiles [type[,...]]</p><p>Read XML rule files and overwrite already compiled bash scripts.</p><p>The type argument allows to parse files selectively by type. Available
+                        types are: filter, mangle, nat, raw, security, rawpost, ipset, sysctl,
+                        tc_mark, vpn.</p></li><li><p>-pt, --parse-templates [type[,...]]</p><p>Read XML template files and overwrite already compiled bash
+                        scripts.</p><p>The type argument allows to parse files selectively by type. Available
+                        types are: base, filter, mangle, nat, raw, security, rawpost.</p></li><li><p>-t, --test</p><p>Schedule the restore of the active ruleset..</p></li><li><p>-b, --base-dir directory</p><p>Set base directory to use (i.e. /etc/ip-array).</p></li><li><p>-c, --config-file file</p><p>Specify the name of the main configuration file to use.</p></li><li><p>-C, --config-dir directory</p><p>Set directory for the main configuration file.</p></li><li><p>-d, --defaults-file full_path_to_file</p><p>Specify the full path of the defaults file to use.</p></li><li><p>-e, --exe-dir directory</p><p>Set the directory to place the main executable of IP-Array into (i.e.
+                        /usr/sbin/ip-array).</p></li><li><p>-l, --lib-dir directory</p><p>Set the directory to place the function file(s) of IP-Array into (i.e.
+                        /usr/lib/ip-array).</p></li><li><p>-r, --run-dir directory</p><p>Set the directory to place the PID file into (i.e. /var/run).</p></li><li><p>-s, --save-file file</p><p>Specify the name of the file used to save or restore a ruleset.</p></li><li><p>-si, --save-ips-file file</p><p>Specify the name of the file used to save or restore an ipset
+                        ruleset.</p></li><li><p>-co, --color 0 | 1</p><p>Enable or disable coloured output.</p></li><li><p>-ui, --use-ipset 0 | 1</p><p>Enable or disable usage of ipset. This setting is globally. It disables
+                        builtin usage as well as the users ipset rules.</p></li><li><p>-o, --set-option assignment [...]</p><p>Override variables of the main configuration file. i.e. <code class="code">-o
+                            ENABLE_NAT=0</code>.</p></li><li><p>-gf, --gen-format type</p><p>Generate command in iptables-save format, or as command list. Available
+                        types: `cmd' (= default) or `ipt'.</p></li><li><p>-rs, --restore-on-start 0 | 1</p><p>Enable or disabe quickstart (only valid using the `start'
+                        parameter).</p></li><li><p>-rt, --reload-time 1-15</p><p>Time in minutes until the saved ruleset will be restored.</p></li><li><p>-sc, --show-config [type]</p><p>Select type of information to show. If type is omitted, the settings of
+                        the main configuration file will be displayed.</p><p>Available types are: </p><table class="simplelist" border="0" summary="Simple list"><tr><td> all - everything will be displayed.</td></tr><tr><td> ansi_codes - display ANSI codes for coloured shell
+                                output.</td></tr><tr><td> colors - available colours.</td></tr><tr><td> defaults[:NAME[,...]] - display all or just the selected
+                                variable names from the defaults file.</td></tr><tr><td> main[:NAME[,...]] - display all or just the selected variable
+                                names from the main configuration file file.</td></tr><tr><td> targets - show all available iptables targets.</td></tr><tr><td> matches - show all available iptables matches.</td></tr><tr><td> rules - show the compiled iptables rules.</td></tr><tr><td> ipt_args[:-[core|matches|targets][,...]] - display iptables
+                                arguments by category.</td></tr><tr><td> ipt_args[:NAME[,...]] - display all or just the selected
+                                iptables arguments help.</td></tr><tr><td> ruleblocks[:NAME[,...]] - display all or just the selected
+                                ruleblock names.</td></tr><tr><td> templates[:NAME[,...]] - display all or just the selected
+                                templates names.</td></tr><tr><td> sysctl - display the sysctl configuration.</td></tr><tr><td> public_functions[:NAME[,...]] - display all or just the
+                                selected public functions help.</td></tr><tr><td> find_templates:template-entry-glob[,...] - find templates
+                                containing all entries of the comma separated search list.</td></tr></table></li><li><p>-sh, --shell /path/shell</p><p>Specify an alternative shell to run IP-Array.</p></li><li><p>-sv, --syslog-verbose 0-6</p><p>Specify the level of output verbosity to syslog. Allowed values are from
+                        `0' to `6'. Overrides the value of <code class="varname">SYSLOG_VERBOSE</code> in the
+                        defaults file.</p></li><li><p>-v, --verbose 0-9</p><p>Specify the level of output verbosity. Allowed values are from `0' to `9'.
+                        Overrides the value of <code class="varname">VERBOSE</code> in the defaults
+                        file.</p></li></ul></div><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e488"></a><h2>Environment</h2><p> If the environment variable <code class="varname">DEBUG_INFO</code> is set, additional
+            debugging information is displayed. If in addition the output verbosity is set to
+                <code class="option">8</code> or higher, a debugging <code class="varname">PS4</code> is set. </p></div><div class="refsect1" lang="en"><a name="d0e502"></a><h2>Exit status</h2><p>
+            </p><div class="variablelist"><dl><dt><span class="term">0</span></dt><dd><p> Success </p></dd><dt><span class="term">1</span></dt><dd><p> Undetermined error. </p></dd><dt><span class="term">3</span></dt><dd><p> Usage error. </p></dd><dt><span class="term">111</span></dt><dd><p> Requested item (file, folder) does not exist error. </p></dd><dt><span class="term">112</span></dt><dd><p> Item (configuration variable) not defined error. </p></dd><dt><span class="term">113</span></dt><dd><p> Failed loading item (script, program) error. </p></dd><dt><span class="term">114</span></dt><dd><p> General fail condition error. </p></dd><dt><span class="term">115</span></dt><dd><p> Configuration error. </p></dd></dl></div><p>
+        </p></div><div class="refsect1" lang="en"><a name="d0e557"></a><h2>Files</h2><p>
+            <code class="filename">/usr/sbin/ip-array</code>
+        </p></div><div class="refsect1" lang="en"><a name="d0e565"></a><h2>See also</h2><p>
+            <span class="citerefentry"><span class="refentrytitle">ip-array_defaults.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array.conf</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_ruleblocks</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_rulefiles</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_sysctl_rules</span>(5)</span>, <span class="citerefentry"><span class="refentrytitle">ip-array_templates</span>(5)</span>
+        </p><p>
+            <span class="citerefentry"><span class="refentrytitle">iptables</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-save</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">iptables-restore</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-htb</span>(8)</span>, <span class="citerefentry"><span class="refentrytitle">tc-sfq</span>(8)</span>
+        </p></div></div></body></html>

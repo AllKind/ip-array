@@ -1,0 +1,2 @@
+Internet Service Provider SMTP servers
+Format: subnet-name | ip-address[,...] | [ external-net-name ]

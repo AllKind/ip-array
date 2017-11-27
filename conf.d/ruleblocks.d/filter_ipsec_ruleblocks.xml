@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<!-- FILTER TABLE IPSEC RULEBLOCKS -->
+
+<!-- SKELETON
+
+<ip_array_root name="ruleblocks" syntax_version="1.0">
+	<ruleblock name="RB_">
+	</ruleblock>
+</ip_array_root>
+
+-->
+

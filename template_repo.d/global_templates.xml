@@ -1,0 +1,638 @@
+<?xml version="1.0"?>
+
+<!-- GLOBAL TEMPLATES -->
+
+<!--
+	These are the templates usable in any table.
+	Most of them to get loaded from another template.
+-->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="GT_GLOBAL_GENERIC_STATELESS">
+		<!-- 
+		Purpose: Generic globally usable - stateless
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATELESS_TCP_OPTIONS_ALL">
+		<!-- 
+		Purpose: Generic globally usable - stateless with all tcp options
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: tcp options (flags,syn,option)
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD
+			BT_TCP_OPTIONS_ALL
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATELESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic globally usable - stateless + mac address in match set
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: mac address
+		8: destination address
+		9: protocol
+		10: source port
+		11: destination port
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATEFUL">
+		<!-- 
+		Purpose: Generic globally usable - stateful
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: state
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATEFUL_WITH_MAC">
+		<!-- 
+		Purpose: Generic globally usable - stateful + mac address in match set
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: mac address
+		8: destination address
+		9: protocol
+		10: source port
+		11: destination port
+		12: state
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATEFUL_MIN_LOG">
+		<!-- 
+		Purpose: Generic globally usable - stateful + minimal logging options
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: state
+		12: limit limit
+		13: log level
+		14: log prefix
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_MIN_LOG
+		</load_template>
+	</template>
+
+	<template name="GT_GLOBAL_GENERIC_STATEFUL_FULL_LOG">
+		<!-- 
+		Purpose: Generic globally usable - stateful + full logging options
+		Resulting ruleblock structure:
+		1: table
+		2: target
+		3: chain
+		4: input device
+		5: output device
+		6: source address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: state
+		12: limit limit
+		13: log level
+		14: log prefix
+		15: log options
+		Mandatory options: table, target, chain
+		-->
+		<mandatory_vars> table,target,chain </mandatory_vars>
+		<load_template>
+			BT_TABLE_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+			BT_LIMIT_BURST_FULL_LOG
+		</load_template>
+	</template>
+
+	<!-- Ingress Templates -->
+
+	<template name="GT_BASE_OPTION_SET_INGRESS">
+		<!-- 
+		Purpose: Generic option set for ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_INGRESS
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_INGRESS_TCP_OPTIONS_ALL">
+		<!-- 
+		Purpose: Generic option set for ingress (incoming) rules - with all tcp options
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: tcp options (flags,syn,option)
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_INGRESS
+			BT_TCP_OPTIONS_ALL
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_INGRESS_STATE">
+		<!-- 
+		Purpose: Generic option set for stateful ingress (incoming) rules
+		+ (includes only input device)
+		+ state match
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_INGRESS_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_INGRESS_WITH_MAC">
+		<!-- 
+		Purpose: Generic option set with mac address for ingress (incoming) rules
+		+ (includes only input device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_INGRESS_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_WITH_MAC_STATE_INGRESS">
+		<!-- 
+		Purpose: Generic option set with mac address for stateful ingress (incoming) rules
+		+ (includes only input device)
+		+ state match
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: source mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: state
+		-->
+		<load_template> GT_BASE_OPTION_SET_INGRESS_WITH_MAC </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<!-- Egress Templates -->
+
+	<template name="GT_BASE_OPTION_SET_EGRESS">
+		<!-- 
+		Purpose: Generic option set for egress (outgoing) rules
+		+ (includes only output device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_ODEV_SRC_DST_ADDR
+			BT_PROTO_SRC_DST_PORT
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_EGRESS_STATE">
+		<!-- 
+		Purpose: Generic option set for stateful egress (outgoing) rules
+		+ (includes only output device)
+		+ state match
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: output device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		9: state
+		-->
+		<load_template> GT_BASE_OPTION_SET_EGRESS </load_template>
+		<option_list_0> state </option_list_0>
+	</template>
+
+	<!-- Forwarding Templates -->
+
+	<template name="GT_BASE_OPTION_SET_FORWARD">
+		<!-- 
+		Purpose: Generic option set for forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_FORWARD_STATE">
+		<!-- 
+		Purpose: Generic option set for stateful forwarding rules
+		+ (includes input and output device)
+		+ state match
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		10: state
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_WITH_MAC_FORWARD">
+		<!-- 
+		Purpose: Generic option set with mac address for forwarding rules
+		+ (includes input and output device)
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_WITH_MAC_STATE_FORWARD">
+		<!-- 
+		Purpose: Generic option set with mac address for stateful forwarding rules
+		+ (includes input and output device)
+		+ state match
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		11: state
+		-->
+		<load_template>
+			BT_TARGET_AND_CHAIN
+			BT_BASIC_MATCH_SET_FORWARD_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<!-- Forward reversed -->
+
+	<template name="GT_BASE_OPTION_SET_FORWARD_REVERSE">
+		<!-- 
+		Purpose: Generic option set for reversed forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ reversed option list
+		+ reverse condition
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: input device
+		5: destination address
+		6: source address
+		7: protocol
+		8: destination port
+		9: source port
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_FORWARD_REVERSE_STATE">
+		<!-- 
+		Purpose: Generic option set for reversed stateful service forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ reversed option list
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		See description of template 'GT_BASE_OPTION_SET_FORWARD_REVERSE'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC">
+		<!-- 
+		Purpose: Generic option set with mac address for reversed forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ reversed option list
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: output device
+		5: source address
+		6: source mac address
+		7: destination address
+		8: protocol
+		9: source port
+		10: destination port
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: input device
+		5: destination address
+		6: empty
+		7: source address
+		8: protocol
+		9: destination port
+		10: source port
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Generic option set with mac address for stateful reversed forwarding rules
+		+ (includes input and output device)
+		Template options:
+		+ reversed option list
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		See description of template 'GT_BASE_OPTION_SET_FORWARD_REVERSE_WITH_MAC'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_FORWARD_REVERSE_WITH_MAC_STATE
+		</load_template>
+	</template>
+
+	<!-- Local Service Templates -->
+
+	<template name="GT_BASE_OPTION_SET_LOCAL_REVERSE">
+		<!-- 
+		Purpose: Generic option set for reversed local rules (services)
+		Template options:
+		+ reversed option list
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: destination address
+		6: protocol
+		7: source port
+		8: destination port
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: source address
+		6: protocol
+		7: destination port
+		8: source port
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC">
+		<!-- 
+		Purpose: Generic option set with mac address for reversed local rules (services)
+		Template options:
+		+ reversed option list
+		Resulting ruleblock structure:
+		1: target
+		2: chain
+		3: input device
+		4: source address
+		5: mac address
+		6: destination address
+		7: protocol
+		8: source port
+		9: destination port
+		Reverse option list:
+		1: target
+		2: chain
+		3: output device
+		4: destination address
+		5: empty
+		6: source address
+		7: protocol
+		8: destination port
+		9: source port
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_LOCAL_REVERSE_STATE">
+		<!-- 
+		Purpose: Generic option set for stateful reversed local rules (services)
+		Template options:
+		+ reversed option list
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		See description of template 'GT_BASE_OPTION_SET_LOCAL_REVERSE'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_STATE
+		</load_template>
+	</template>
+
+	<template name="GT_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC_STATE">
+		<!-- 
+		Purpose: Generic option set with mac address for stateful reversed local rules (services)
+		Template options:
+		+ reversed option list
+		+ state reversed - NEW,ESTABLISHED / ESTABLISHED
+		Resulting ruleblock structure:
+		See description of template 'GT_BASE_OPTION_SET_LOCAL_REVERSE_WITH_MAC'
+		-->
+		<reverse_mode> reverse </reverse_mode>
+		<load_template>
+			BT_TARGET_AND_CHAIN_REVERSE
+			BT_BASIC_MATCH_SET_LOCAL_REVERSE_WITH_MAC_STATE
+		</load_template>
+	</template>
+</ip_array_root>
+

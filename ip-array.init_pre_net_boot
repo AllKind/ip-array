@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2017 Mart Frauenlob aka AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                     IP-ARRAY PRE NETWORK INIT SCRIPT
+#
+# ------------------------------------------------------------------------- #
+
+### BEGIN INIT INFO
+# Provides:          ip-array_pre_net_boot
+# Required-Start:    mountkernfs $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     S
+# Default-Stop:      0 1 6
+# Short-Description: Firewall - Pre NET
+# Description:       Loads netfilter based firewall - Pre network configuration
+### END INIT INFO
+
+
+EXE_NAME="/etc/init.d/ip-array"
+PARAMS=(
+	--syslog-verbose 0
+	--verbose 2
+   	--no-autosave
+   	--no-compat-check
+   	--no-diff
+   	--no-iface-check
+   	--no-modprobe
+    --no-sysctl
+   	--no-scripts
+)
+
+case "$1" in
+	start)
+		if [[ -x $EXE_NAME ]]; then
+	   		"$EXE_NAME" lockdown "${PARAMS[@]}"
+		else
+			printf "ERROR: \`%s' does not exist, or is not executable!\n" "$EXE_NAME" >&2
+			exit 1
+		fi
+	;;
+esac

@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<!-- SECURITY TABLE TEMPLATES -->
+
+<!-- SKELETON
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+<template name="T_DUMMY">
+</template>
+
+</ip_array_root>
+
+-->
+

@@ -1,0 +1,1 @@
+Disable / Enable traffic shaping | Format: 0/1

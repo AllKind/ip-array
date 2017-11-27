@@ -1,0 +1,20 @@
+policy: policy match specification.
+
+    Synopsis: option[:opt_arg][:...]
+        options:
+        dir      in|out
+        pol      ipsec|none
+        reqid    [!]value
+        spi      [!]value
+        mode     [!](tunnel|transport)
+        proto    [!](ah|esp|ipcomp)
+        tunnel-src   [!]address[/mask]
+        tunnel-dst   [!]address[/mask]
+        strict
+        next
+
+    Examples:
+        policy=dir:in:pol:none:mode:transport
+        policy=dir:out:pol:ipsec:mode:tunnel:proto:!ipcomp
+        policy=dir:in:pol:ipsec:strict:mode:tunnel:next:proto:ah:spi:!3
+

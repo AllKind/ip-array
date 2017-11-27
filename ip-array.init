@@ -1,0 +1,366 @@
+#!/usr/bin/env bash
+
+# ------------------------------------------------------------------------- #
+
+  #*#   ######             #
+   #    #     #           # #    #####   #####     ##     #   #
+   #    #     #          #   #   #    #  #    #   #  #     # #
+   #    ######   #####  #     #  #    #  #    #  #    #     #
+   #    #               #######  #####   #####   ######     #
+   #    #               #     #  #   #   #   #   #    #     #
+  ###   #               #     #  #    #  #    #  #    #     #
+
+# ------------------------------------------------------------------------- #
+#
+#    Copyright (C) 2005-2017 Mart Frauenlob aka AllKind
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# ------------------------------------------------------------------------- #
+#
+#                        IP-ARRAY INIT SCRIPT
+#
+# ------------------------------------------------------------------------- #
+
+### BEGIN INIT INFO
+# Provides:          ip-array
+# Required-Start:    mountkernfs $remote_fs
+# Required-Stop:     $remote_fs
+# Default-Start:     S
+# Default-Stop:      0 1 6
+# Short-Description: Firewall
+# Description:       Loads netfilter based firewall
+### END INIT INFO
+
+
+# -------------------------------------------------------------------------
+# CONFIGURATION AREA
+# Adjust configuration here
+# -------------------------------------------------------------------------
+
+# Configuration file holding the default and mandatory variables
+DEFAULTS_FILE=
+BIN_DIR=
+EXE_NAME=
+DEFAULT_OPTIONS=
+DEFAULT_START_OPTIONS="--verbose 2"
+DEFAULT_STOP_OPTIONS="--verbose 1"
+MY_SHELL=
+
+# -------------------------------------------------------------------------
+# End of configuration area
+# -------------------------------------------------------------------------
+
+# bash version check
+if [ -z "$BASH" ]; then
+	printf "\`BASH' variable is not available. Not running bash?\n"
+	exit 112
+fi
+if [ -z "${BASH_VERSINFO[0]}" ]; then
+	printf "\`BASH_VERSINFO' variable is not available. Not running bash?\n"
+	exit 112
+fi
+if [ ${BASH_VERSINFO[0]} -lt 3 ]; then
+	printf "IP-Array requires bash version 3.1 or higher.\n"
+	exit 113
+fi
+if ((BASH_VERSINFO[0] == 3 && BASH_VERSINFO[1] == 0)); then
+	printf "IP-Array requires bash version 3.1 or higher.\n"
+	exit 113
+fi
+
+# starting traps
+trap "builtin enable exit; exit 0" HUP INT QUIT STOP TERM
+trap "echo ERROR trap activated - exiting; builtin enable exit; exit 114" ERR
+
+# -------------------------------------------------------------------------
+# shell options
+# -------------------------------------------------------------------------
+shopt -s extglob
+
+# -------------------------------------------------------------------------
+# Variables
+# -------------------------------------------------------------------------
+declare -x LC_ALL='C'
+
+# parameters
+declare -r MAIN_ARG="$1"
+declare -a ARR_PARAMS
+
+# error exit codes
+declare -ir ER_USE=3 ER_NOEX=111 ER_NODEF=112 ER_LOAD=113 ER_FAIL=114 ER_CONF=115
+
+: ${PATH:=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin}
+
+# -------------------------------------------------------------------------
+# FUNCTIONS
+# -------------------------------------------------------------------------
+
+pr_err() { # print messages to stderr
+printf "%s\n" "$*" >&2
+} # -------------------------------------------------------------------------
+
+bad_use_quit() { # exit on bad command line usage
+exit $ER_USE
+} # -------------------------------------------------------------------------
+
+bail_out() { # exit IP-Array on fatal error. $1 = exit code.
+exit ${1:-$ER_LOAD}
+} # -------------------------------------------------------------------------
+
+short_usage() { # help hint
+pr_err "Try \`${0##*/} -h' for usage instructions"
+bad_use_quit
+} # -------------------------------------------------------------------------
+
+usage() # give help about command line usage
+{
+printf "USAGE: ${0##*/} Parameter [Option [Option-Argument]] [...]\n
+Parameters:
+start                      Start mode. Lockdown mode until all rules are collected.
+stop                       Stop mode. Delete all iptables rules and tc qdiscs.
+restart                    Restart mode. Reload configuration, and re-apply.
+test                       Test mode. Like restart, but with test configuration.
+open                       Stop firewalling and traffic shaping, while preserving NAT.
+tc-start                   Start traffic shaping.
+tc-stop                    Stop traffic shaping.
+lockdown                   Forbid any network connection, except localhost and
+                           administrator connection (if configured).
+dry-run                    No acting mode. Commands are not applied.
+diff-last-activated        Compare active iptables ruleset with a saved rule listing.
+save                       Save active iptables rules to file using iptables-save.
+restore                    Restore a previously saved iptables rules using iptables-restore.
+prepare-restore-on-start   Prepare quick start script.
+save-commands              Save all commands to file.
+save-iptables-commands     Save iptables commands to file.
+save-modprobe-commands     Save modprobe commands to file.
+save-sysctl-commands       Save sysctl commands to file.
+save-tc-commands           Save tc commands to file.
+save-shaping-commands      Save tc and iptables mangle table (mark) commands to file.
+parse-xml                  Parse (by default all) XML files.
+                           Use \`-pb', \`-pr' or \`-pt' to parse only a specific category.
+compat-check               Check compatibility (kernel, supported targets, matches, tables).
+interactive                Interactive mode.
+show                       Show configuration or color settings. Option \`-sc' selects type.
+version                    Show version information.
+help, -h, --help, -?       Show this usage instructions.\n
+Options:
+-ct, --ipt-counters        Save/restore counters, when using \`save', or \`restore'.
+-dg, --debug               Enable additional debugging output.
+-dr, --dry-run             Commands are not applied.
+-ex, --err-exit            Set bash to exit on simple command failure (set -e) and
+                           to inherit the ERR trap to functions, etc.
+-na, --no-autosave         Do not autosave and restore, using iptables-save/restore.
+-nc, --no-compat-check     Do not perform checks for iptables targets, extensions and tables.
+-nd, --no-diff             Do not save a diff file for \`diff-last-activated'.
+-ni, --no-iface-check      Do not perform checks for existence of interfaces.
+-nm, --no-modprobe         Do not load/unload modules.
+-ns, --no-scripts [all|prolog|epilog]    Do not run prolog, and/or epilog scripts.
+-ny, --no-sysctl           Do not set sysctl configuration.
+-p, --parse-xml            Re-parse all XML config files (fine grade with -pb, -pr, -pt).
+-pb, --parse-ruleblocks [type[,...]]    Re-parse XML ruleblock configuration files.
+                           Types: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle
+-pr, --parse-rulefiles [type[,...]]     Re-parse XML rule files. Types: filter, mangle, nat,
+                           raw, security, rawpost, ipset, sysctl, tc_mark, vpn
+-pt, --parse-templates [type[,...]]     Re-parse XML template configuration files.
+                           Types: base, filter, mangle, nat, raw, security, rawpost
+-t, --test                 Schedule restore of active ruleset.
+-b, --base-dir directory   Base directory to use.
+-c, --config-file file     Main configuration file to use.
+-C, --config-dir directory Main configuration directory to use (below BASEDIR).
+-d, --defaults-file file   Defaults configuration file to use (/PATH/filename).
+-e, --exe-dir directory    Executable directory to use.
+-l, --lib-dir directory    Library directory to use.
+-r, --run-dir directory    Locking directory to store the pid file (/var/run).
+-s, --save-file file       File to use, when saving or restoring a ruleset.
+-si, --save-ips-file file  File to use, when saving or restoring an ipset ruleset.
+-co, --color 0|1           Enable or disable coloured output.
+-ui, --use-ipset 0|1       Enable or disable usage of ipset.
+-o, --set-option assignment [...]
+                           Override variables of the main config file i.e. ENABLE_NAT=0.
+-gf, --gen-format type     Generate commands in iptables-save format, or as command list.
+                           Available types: \`cmd' (=default), \`ipt'.
+-rs, --restore-on-start 0|1 Enable or disable quickstart (valid only with \`start').
+-rt, --reload-time 1-n     Time in minutes until the ruleset will be restored.
+-sc, --show-config [type] [...]   Select type of information to show.
+     Types: all, ansi_codes, colors, defaults[:NAME[,...]], main[:NAME[,...]] (=default),
+     targets, matches, rules, ipt_args[:-[core|matches|targets][,...]] ipt_args[:NAME[,...]],
+     sysctl, ruleblocks[:NAME[,...]], templates[:NAME[,...]], public_functions[:NAME[,...]],
+     find_templates:template-entry-glob[,...]
+-sh, --shell /path/shell   Set the \`SHELL' variable, to run with an alternative shell.
+-sv, --syslog-verbose 0-6  Set syslog verbosity level.
+-v, --verbose 0-9          Set verbosity level.
+--                         Stop further options processing.
+\nParameters, options and their arguments must be separated by whitespace.\n
+"
+exit 0
+} # -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# MAIN
+# -------------------------------------------------------------------------
+
+# check for valid main arg
+case "$MAIN_ARG" in
+	""|'-?'|-h|help|--help)
+		usage
+	;;
+	compat-check|diff-last-activated|dry-run|lockdown|open|parse-xml|prepare-restore-on-start|\
+	restart|restore|save|save-commands|save-modprobe-commands|save-sysctl-commands|\
+	save-iptables-commands|save-tc-commands|save-shaping-commands|\
+	interactive|show|start|stop|test|tc-start|tc-stop|version)
+	;;
+	*) pr_err "Unknown parameter: \`$MAIN_ARG'"
+		short_usage
+esac
+shift
+
+# get additional option arguments provided
+while (($#)); do
+	option="$1" opt_arg="$2"
+	shift
+	case "$option" in
+		#options without an argument
+		-ct|--ipt-counters|\
+		-dr|--dry-run|\
+		-ex|--err-exit|\
+		-na|--no-autosave|\
+		-nd|--no-diff|\
+		-nc|--no-compat-check|\
+		-ni|--no-iface-check|\
+		-nm|--no-modprobe|\
+		-ny|--no-sysctl|\
+		-p|--parse-xml)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			continue
+		;;
+		-dg|--debug)
+			export DEBUG_INFO=YES
+			export PS4='(${BASH_SOURCE##*/}:${LINENO}): ${FUNCNAME[0]} [${SHLVL},${BASH_SUBSHELL}, $?]'$'\n'
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			continue
+		;;
+		-t|--test) # schedule restore of active fw ruleset
+			case "$MAIN_ARG" in
+				start|stop|restart|tc-start|tc-stop|lockdown)
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+					continue
+				;;
+				*) pr_err "Option \`$option' is not valid with \`$MAIN_ARG'."
+					bad_use_quit
+			esac
+		;;
+		# could be 1 arg
+		-sc|--show-config)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			case "$opt_arg" in
+				all|main|defaults|targets|matches|rules|ruleblocks|templates|sysctl|public_functions|ipt_args|ansi_codes|colors)
+			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				ipt_args:-+([[:word:]])*(,+([[:word:]])))
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				@(defaults|ipt_args|main|ruleblocks|templates):+([[:word:]])*(,+([[:word:]]))|find_templates:*)
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				public_functions:*)
+					ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				*) continue
+			esac
+		;;
+		-ns|--no-scripts)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			case "$opt_arg" in
+				all|prolog|epilog)
+			   		ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+				;;
+				*) continue
+			esac
+		;;
+		-pb|--parse-ruleblocks|-pr|--parse-rulefiles|-pt|--parse-templates)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			if [[ $opt_arg && $opt_arg != -* ]]; then
+				ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+			else
+				continue
+			fi
+		;;
+		# options which require an argument
+		-d|--defaults-file) DEFAULTS_FILE="$opt_arg" ;;
+		-e|--exe-dir) BIN_DIR="$opt_arg" ;;
+		-c|--config-file|\
+		-C|--config-dir|\
+		-b|--base-dir|\
+		-l|--lib-dir|\
+		-r|--run-dir|\
+		-o|--set-option|\
+		-s|--save-file|\
+		-si|--save-ips-file|\
+		-sm|--save-mod-file|\
+		-sp|--save-proc-file|\
+		-co|--color|\
+		-ui|--use-ipset|\
+		-gf|--gen-format|\
+		-rs|--restore-on-start|\
+		-rt|--reload-time|\
+		-sv|--syslog-verbose|\
+		-v|--verbose)
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$option"
+			ARR_PARAMS[${#ARR_PARAMS[@]}]="$opt_arg"
+		;;
+		-sh|--shell) MY_SHELL="$opt_arg" ;;
+		--) break ;;
+		*) pr_err "Unknown option: \`$option'"
+			short_usage
+	esac
+	[[ $opt_arg ]] || {
+		pr_err "Option \`$option' requires an argument."
+		short_usage
+	}
+	shift
+done
+
+# show debug info
+[[ $DEBUG_INFO ]] && {
+	set
+	shopt
+	trap -p
+}
+
+# set default values
+: ${BIN_DIR:=/usr/sbin}
+: ${DEFAULTS_FILE:=/etc/ip-array/ip-array_defaults.conf}
+: ${EXE_NAME:=ip-array}
+: ${MY_SHELL:=$BASH}
+
+case "$MAIN_ARG" in
+	start) DEFAULT_OPTIONS+="$DEFAULT_START_OPTIONS " ;;
+	stop) DEFAULT_OPTIONS+="$DEFAULT_STOP_OPTIONS " ;;
+esac
+
+# run main executable
+[[ -x $MY_SHELL ]] || {
+	pr_err "Shell binary \`$MY_SHELL' does not exist, or is not executable."
+	bail_out $ER_NOEX
+}
+[[ -r ${BIN_DIR}/${EXE_NAME} ]] || {
+	pr_err "\`${BIN_DIR}/${EXE_NAME}' does not exist, or is not readable."
+	bail_out $ER_NOEX
+}
+
+export SHELL="$MY_SHELL"
+"$MY_SHELL" -- "${BIN_DIR}/${EXE_NAME}" $MAIN_ARG -d "$DEFAULTS_FILE" -e "$BIN_DIR" $DEFAULT_OPTIONS "${ARR_PARAMS[@]}" || bail_out $?
+

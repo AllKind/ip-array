@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<!-- RAWPOST TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="TEMPLATE_RAWSNAT_POSTROUTING">
+		<!-- 
+		Purpose: RAWSNAT rules in POSTROUTING chain
+		Template options:
+		+ rawpost table
+		+ RAWSNAT target
+		+ POSTROUTING chain
+		Resulting ruleblock structure:
+		1: output device
+		2: source address
+		3: destination address
+		4: protocol
+		5: source port
+		6: destination port
+		7: nat ip address
+		Mandatory options: rawnat ip address
+		-->
+		<template_msg> ${ADDMSG} RAWSNAT rules in POSTROUTING chain </template_msg>
+		<mandatory_vars> nat_opt </mandatory_vars>
+		<load_template>
+			BT_RAWSNAT_POSTROUTING
+			BT_BASIC_MATCH_SET_EGRESS
+		</load_template>
+		<option_list_0> nat_opt </option_list_0>
+	</template>
+
+</ip_array_root>
+

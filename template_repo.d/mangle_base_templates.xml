@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+
+<!-- BASE MANGLE TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="BT_MANGLE_MARK_RETURN">
+		<table> mangle </table>
+		<target>
+			MARK
+			RETURN
+		</target>
+	</template>
+
+	<template name="BT_MANGLE_CONNMARK_RETURN">
+		<table> mangle </table>
+		<target>
+			CONNMARK
+			RETURN
+		</target>
+	</template>
+
+	<template name="BT_MANGLE_CLASSIFY_RETURN">
+		<table> mangle </table>
+		<target>
+			CLASSIFY
+			RETURN
+		</target>
+	</template>
+
+	<template name="BT_MARK_TOS">
+		<option_list_0> t_mark m_tos </option_list_0>
+	</template>
+
+	<template name="BT_IPT_MARK">
+		<option_list_0> t_mark </option_list_0>
+	</template>
+
+	<template name="BT_SET_CONNMARK">
+		<option_list_0> t_connmark </option_list_0>
+	</template>
+
+	<template name="BT_SET_CLASS">
+		<option_list_0> t_class </option_list_0>
+	</template>
+
+	<template name="BT_SET_TTL">
+		<option_list_0> t_ttl </option_list_0>
+	</template>
+
+	<template name="BT_SET_TOS">
+		<option_list_0> t_tos </option_list_0>
+	</template>
+
+</ip_array_root>
+

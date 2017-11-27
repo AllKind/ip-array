@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# remove unreferenced chains
+case "${MAIN_ARG}" in
+	(open|start|restart|tc-start|test)
+		log -I "Removing chains with 0 references"
+		for ipt_tbl in security rawpost raw mangle nat filter; do
+			while read c chain rest; do
+				if [[ ${c} = Chain ]]; then
+					if [[ ${rest} = "(0 references)" ]]; then
+						log -e "removing chain ${chain} in ${ipt_tbl} table"
+						"${IPT}" -t ${ipt_tbl} -F "${chain}"
+						"${IPT}" -t ${ipt_tbl} -X "${chain}"
+					fi
+				fi
+			done < <("${IPT}" -t ${ipt_tbl} -nL 2>/dev/null)
+		done
+	;;
+esac
+

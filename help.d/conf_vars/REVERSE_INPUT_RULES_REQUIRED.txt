@@ -1,0 +1,3 @@
+When templates with reverse traffic definitions are in use
+should the reverse (return) rules be generated.
+Format: 0/1

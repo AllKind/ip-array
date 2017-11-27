@@ -1,0 +1,12 @@
+
+Name: mark_prio_syn
+
+Description:
+	Mark (set iptables marks) forwarding SYN packets to be priorized.
+	Requires the `ENABLE_TC_SHAPING' and `PRIORITIZE_SYN' variables to be configured.
+
+Usage:
+	mark_prio_syn
+	
+Example:
+	mark_prio_syn

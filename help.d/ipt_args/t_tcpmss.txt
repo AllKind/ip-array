@@ -1,0 +1,10 @@
+t_tcpmss: TCPMSS target specification.
+
+    Synopsis: pmtu|value
+        pmtu  := --clamp-mss-to-pmtu
+        value := --set-mss value
+
+    Examples:
+        t_tcpmss=pmtu
+        t_tcpmss=1460
+

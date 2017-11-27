@@ -1,0 +1,13 @@
+cluster: cluster match specification.
+
+    Synopsis: option:opt_arg[:...]
+        options:
+        total-nodes    value
+        local-node     [!]value
+        local-nodemask [!]value
+        hash-seed      hex-value
+
+    Examples:
+        cluster=total-nodes:2:local-node:1:hash-seed:0xdeadbeef
+        cluster=total-nodes:2:local-node:!1:hash-seed:0xdeadbeef
+

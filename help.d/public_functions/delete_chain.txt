@@ -1,0 +1,11 @@
+
+Name: delete_chain
+
+Description:
+	Delete (flush first) an iptables chain (add command to the command queue).
+
+Usage:
+	delete_chain table chain-name
+
+Example:
+	delete_chain filter foo

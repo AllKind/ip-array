@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<!-- BASE NAT TABLE TEMPLATES -->
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="BT_NAT_DNAT_PREROUTING">
+		<table> nat </table>
+		<target> DNAT </target>
+		<chain> PREROUTING </chain>
+	</template>
+
+</ip_array_root>
+

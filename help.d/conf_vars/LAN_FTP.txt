@@ -1,0 +1,3 @@
+ Format: lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]
+ftp mode defaults to `all'.
+(i.e. "eth1:eth0:active DMZ:PUBLIC eth3::passive")

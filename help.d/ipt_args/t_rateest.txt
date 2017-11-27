@@ -1,0 +1,12 @@
+t_rateest: RATEEST target specification.
+
+    Synopsis: option:opt_arg:...
+        options:
+        name      name
+        ewma[log] value
+        interval  amount{s|ms|us}
+
+    Example:
+        t_rateest=name:foo:interval:250ms:ewmalog:0.5s
+
+

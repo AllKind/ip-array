@@ -1,0 +1,948 @@
+'\" t
+.\"     Title: ip-array
+.\"    Author: Mart Frauenlob aka AllKind <AllKind@fastest.cc>
+.\" Generator: DocBook XSL-NS Stylesheets v1.75.2 <http://docbook.sf.net/>
+.\"      Date: 03/24/2016
+.\"    Manual: ip-array 1.2.2
+.\"    Source: ip-array 1.2.2
+.\"  Language: English
+.\"
+.TH "IP\-ARRAY" "8" "03/24/2016" "ip-array 1.2.2" "ip\-array 1\&.2\&.2"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ip-array \- Firewall and Traffic control Configuration utility
+.SH "SYNOPSIS"
+.HP \w'\fBip\-array\fR\ 'u
+\fBip\-array\fR parameter [\fIoption\fR\ [\ \fIoption_argument\fR\ ]...]
+.SH "DESCRIPTION"
+.PP
+ip\-array is a command generator for netfilter (currently only iptables), tc, sysctl and kernel module configuration\&.
+.PP
+It is written in bash\&. Bash version 3\&.1 or higher is required\&.
+.PP
+Basic configuration is done via shell style configuration files\&. Rules are defined using a simple XML syntax\&. The XML configuration files get converted to bash scripts, which are read at runtime\&. A bash completion compspec ships with the package\&.
+.SH "PARAMETERS"
+.PP
+If the first parameter is omitted, usage instructions are printed\&. Only one parameter is allowed \- but required \- for ip\-array to take any action\&.
+.PP
+These parameters control the \*(Aqmode\*(Aq IP\-Array runs on\&.
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+start
+.sp
+All network connections are forbidden (see lockdown mode below) until all configuration has been read\&. Module probing (if configured) is done first\&. After all commands are compiled, they are applied at once\&. An iptables rule listing is saved for later difference checks\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+stop
+.sp
+All tables and chains and ipset sets get flushed and destroyed\&. All tc qdisc are removed, no traffic shaping is active any more\&. Modules configured to be loaded are removed\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+restart
+.sp
+Module probing (if configured) is done first\&. After all commands are compiled, they are applied at once\&. An iptables rule listing is saved for later difference checks\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+test
+.sp
+Acts like the \*(Aqrestart\*(Aq, but will use the testing configuration below the \*(Aqtest\*(Aq folder\&. Also it will schedule a restore job (using the `at\*(Aq command scheduler) for the time specified with
+\fIRELOAD_TIME\fR
+in the defaults file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+open
+.sp
+Module probing (if configured) is done first\&.
+.sp
+This mode leaves only the NAT rules active (reads configuration and re\-applies them), all other tables are emptied\&. Policies are set to ACCEPT\&. An iptables rule listing is saved for later difference checks\&. The ipset ruleset will not be touched\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+tc\-start
+.sp
+Start traffic shaping only\&. Mangle table rules will be (re)\-applied\&. An iptables rule listing is saved for later difference checks\&. ipset ruleset will not be touched\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+tc\-stop
+.sp
+Stop traffic shaping only\&. Mangle table rules will be (re)\-applied\&. Qdisks of interfaces listed in
+\fINET_INTERFACES\fR
+will be deleted\&. An iptables rule listing is saved for later difference checks\&. ipset ruleset will not be touched\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+lockdown
+.sp
+All filter table policies will be set to DROP, all others will be set to ACCEPT\&. All chains get flushed and custom chains are deleted\&. No more network connections are allowed except:.RS 4 A: If the bash environment variable SSH_CONNECTION is set, IP\-Array allow connections from that source address to the ssh server port\&. .RE .RS 4 B: If the environment variable is not set, but the ADMIN_CONNECTION variable is set in the main config file, IP\-Array will allow the configured connection\&. .RE .RS 4 C: If the ALLOW_LOOPBACK variable is set in the main config file, loopback communication will be allowed\&. .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+interactive
+.sp
+In this mode several wizards are available to interactively create or edit the IP\-Array configuration\&. It is possible to create main configuration files, templates, iptables/ipset and sysctl rule files, or create and edit ruleblocks\&. The
+\fBwhiptail\fR
+program is required for this\&. The global_defs configuration file holds 3 variables (\fIIACTIVE_WINDOW_HEIGHT\fR,
+\fIIACTIVE_WINDOW_WITH\fR,
+\fIIACTIVE_LIST_HEIGHT\fR) for configuring the sizes of the wizards dialog boxes\&. By default they are set to `0\*(Aq\&. If this is kept and the
+\fBtput\fR
+program is available in PATH, it will used to query and set the required values for window height, window with and list height\&. Otherwise it is possible to adjust the window settings there, with the downside of having static values\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+diff\-last\-activated
+.sp
+Every time IP\-Array is not in \*(Aqtest\*(Aq mode and activates an iptables ruleset, it saves a listing of the rules to a file\&. Using this parameter a (simple
+diff
+based) difference check between the currently active ruleset and the listing of the file is performed\&. Thus allowing to detect (unwanted) modifications\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+dry\-run
+.sp
+Configuration is processed and validated, but no commands will be applied\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save
+.sp
+The currently active iptables and ipset ruleset will be saved using `iptables\-save\*(Aq and `ipset save\*(Aq\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-known\-good
+.sp
+Save the currently active ruleset to file (the name of the file can be set using the variable
+\fIKNOWN_GOOD_RULESET\fR
+in the defaults file\&. It will be used if
+\fIRESTORE_ON_START\fR
+is set to `1\*(Aq (quick start activated)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+restore
+.sp
+The previously saved ruleset (using the \*(Aqsave\*(Aq parameter) will be restored using `iptables\-restore\*(Aq `ipset restore\*(Aq\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-commands
+.sp
+Save all commands (modprobe, proc, tc, iptables, ipset) to a file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-iptables\-commands
+.sp
+Save the generated iptables and ipset commands to a file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-modprobe\-commands
+.sp
+Save the generated modprobe commands to a file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-sysctl\-commands
+.sp
+Save the generated sysctl commands to a file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-tc\-commands
+.sp
+Save the generated tc commands to file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+save\-shaping\-commands
+.sp
+Save the generated tc and iptables mangle table (mark) commands to file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+prepare\-restore\-on\-start
+.sp
+Create the \*(Aq\fBquick start\fR\*(Aq scripts\&. After the configuration is completed this parameter allows to save it into scripts holding the compiled commands, in order to quickly (re)apply it to the system\&. If iptables\-save is used (\fIIPTSAVE_FAILS\fR
+is set to `0\*(Aq) the currently active ruleset will be saved\&. The name for these \*(Aqknown\-good\*(Aq script can be set in the defaults file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+parse\-xml
+.sp
+Compile bash scripts from the XML files\&. By default templates, ruleblocks and rules are converted\&. The \-pb, \-pr and \-pt parameters allow to select which of those will be compiled\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+compat\-check
+.sp
+A compatibility check will be performed\&. IP\-Array will probe the kernel version, supported iptables tables, targets and matches, available sysctl settings, modules and programs\&. The result will be printed to stdout\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+show
+.sp
+Show configuration or colour settings\&. The option `\-sc\*(Aq selects the type of information to display\&. By default the settings of the main configuration file are shown\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+version
+.sp
+Show version information\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+help, \-h, \-\-help, \-?
+.sp
+Show usage information\&.
+.sp
+If `\-\-public\-functions\*(Aq is used as second argument, a list of available public functions is printed\&. If a name of public function is given as third argument, a brief description of the function is shown\&.
+.RE
+.SH "OPTIONS"
+.PP
+All options are optional\&. Some require an argument, others do not\&. All options and their arguments must be separated by blank(s)\&. If an option can be used more than once, it is mentioned explicitly\&.
+.PP
+
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-ct, \-\-ipt\-counters
+.sp
+Save or restore iptables counters when using the `save\*(Aq or `restore\*(Aq startup parameter\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-dg, \-\-debug
+.sp
+Enable debugging output\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-dr, \-\-dry\-run
+.sp
+Commands will not be applied\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-ex, \-\-err\-exit
+.sp
+Set bash to exit on simple command failure (set \-e) and to inherit the ER trap to functions, etc\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-na, \-\-no\-autosave
+.sp
+Do not use the automatic saving and restoring logic\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nc, \-\-no\-compat\-check
+.sp
+Do not perform the compatibility check\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nd, \-\-no\-diff
+.sp
+Do not save the diff file for the difference check of the ruleset (diff\-last\-activated startup parameter)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-ni, \-\-no\-iface\-check
+.sp
+Do not check for the existence of interfaces\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nm, \-\-no\-modprobe
+.sp
+Do not perform load or unload kernel modules\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-ny, \-\-no\-sysctl
+.sp
+Do not set the sysctl configuration\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-p, \-\-parse\-xml
+.sp
+Read all XML files and overwrite already compiled bash scripts\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-pb, \-\-parse\-ruleblocks [type[,\&.\&.\&.]]
+.sp
+Read XML ruleblock files and overwrite already compiled bash scripts\&.
+.sp
+The type argument allows to parse files selectively by type\&. Available types are: filter, mangle, nat, raw, security, rawpost, tc, tc_mangle\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-pr, \-\-parse\-rulefiles [type[,\&.\&.\&.]]
+.sp
+Read XML rule files and overwrite already compiled bash scripts\&.
+.sp
+The type argument allows to parse files selectively by type\&. Available types are: filter, mangle, nat, raw, security, rawpost, ipset, sysctl, tc_mark, vpn\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-pt, \-\-parse\-templates [type[,\&.\&.\&.]]
+.sp
+Read XML template files and overwrite already compiled bash scripts\&.
+.sp
+The type argument allows to parse files selectively by type\&. Available types are: base, filter, mangle, nat, raw, security, rawpost\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-t, \-\-test
+.sp
+Schedule the restore of the active ruleset\&.\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-b, \-\-base\-dir directory
+.sp
+Set base directory to use (i\&.e\&. /etc/ip\-array)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-c, \-\-config\-file file
+.sp
+Specify the name of the main configuration file to use\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-C, \-\-config\-dir directory
+.sp
+Set directory for the main configuration file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-d, \-\-defaults\-file full_path_to_file
+.sp
+Specify the full path of the defaults file to use\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-e, \-\-exe\-dir directory
+.sp
+Set the directory to place the main executable of IP\-Array into (i\&.e\&. /usr/sbin/ip\-array)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-l, \-\-lib\-dir directory
+.sp
+Set the directory to place the function file(s) of IP\-Array into (i\&.e\&. /usr/lib/ip\-array)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-r, \-\-run\-dir directory
+.sp
+Set the directory to place the PID file into (i\&.e\&. /var/run)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-s, \-\-save\-file file
+.sp
+Specify the name of the file used to save or restore a ruleset\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-si, \-\-save\-ips\-file file
+.sp
+Specify the name of the file used to save or restore an ipset ruleset\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-co, \-\-color 0 | 1
+.sp
+Enable or disable coloured output\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-ui, \-\-use\-ipset 0 | 1
+.sp
+Enable or disable usage of ipset\&. This setting is globally\&. It disables builtin usage as well as the users ipset rules\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-o, \-\-set\-option assignment [\&.\&.\&.]
+.sp
+Override variables of the main configuration file\&. i\&.e\&.
+\-o ENABLE_NAT=0\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-gf, \-\-gen\-format type
+.sp
+Generate command in iptables\-save format, or as command list\&. Available types: `cmd\*(Aq (= default) or `ipt\*(Aq\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-rs, \-\-restore\-on\-start 0 | 1
+.sp
+Enable or disabe quickstart (only valid using the `start\*(Aq parameter)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-rt, \-\-reload\-time 1\-15
+.sp
+Time in minutes until the saved ruleset will be restored\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-sc, \-\-show\-config [type]
+.sp
+Select type of information to show\&. If type is omitted, the settings of the main configuration file will be displayed\&.
+.sp
+Available types are:
+.RS 4 all \- everything will be displayed\&. .RE .RS 4 ansi_codes \- display ANSI codes for coloured shell output\&. .RE .RS 4 colors \- available colours\&. .RE .RS 4 defaults[:NAME[,\&.\&.\&.]] \- display all or just the selected variable names from the defaults file\&. .RE .RS 4 main[:NAME[,\&.\&.\&.]] \- display all or just the selected variable names from the main configuration file file\&. .RE .RS 4 targets \- show all available iptables targets\&. .RE .RS 4 matches \- show all available iptables matches\&. .RE .RS 4 rules \- show the compiled iptables rules\&. .RE .RS 4 ipt_args[:\-[core|matches|targets][,\&.\&.\&.]] \- display iptables arguments by category\&. .RE .RS 4 ipt_args[:NAME[,\&.\&.\&.]] \- display all or just the selected iptables arguments help\&. .RE .RS 4 ruleblocks[:NAME[,\&.\&.\&.]] \- display all or just the selected ruleblock names\&. .RE .RS 4 templates[:NAME[,\&.\&.\&.]] \- display all or just the selected templates names\&. .RE .RS 4 sysctl \- display the sysctl configuration\&. .RE .RS 4 public_functions[:NAME[,\&.\&.\&.]] \- display all or just the selected public functions help\&. .RE .RS 4 find_templates:template\-entry\-glob[,\&.\&.\&.] \- find templates containing all entries of the comma separated search list\&. .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-sh, \-\-shell /path/shell
+.sp
+Specify an alternative shell to run IP\-Array\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-sv, \-\-syslog\-verbose 0\-6
+.sp
+Specify the level of output verbosity to syslog\&. Allowed values are from `0\*(Aq to `6\*(Aq\&. Overrides the value of
+\fISYSLOG_VERBOSE\fR
+in the defaults file\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-v, \-\-verbose 0\-9
+.sp
+Specify the level of output verbosity\&. Allowed values are from `0\*(Aq to `9\*(Aq\&. Overrides the value of
+\fIVERBOSE\fR
+in the defaults file\&.
+.RE
+.sp
+.SH "ENVIRONMENT"
+.PP
+If the environment variable
+\fIDEBUG_INFO\fR
+is set, additional debugging information is displayed\&. If in addition the output verbosity is set to
+\fB8\fR
+or higher, a debugging
+\fIPS4\fR
+is set\&.
+.SH "EXIT STATUS"
+.PP
+.PP
+0
+.RS 4
+Success
+.RE
+.PP
+1
+.RS 4
+Undetermined error\&.
+.RE
+.PP
+3
+.RS 4
+Usage error\&.
+.RE
+.PP
+111
+.RS 4
+Requested item (file, folder) does not exist error\&.
+.RE
+.PP
+112
+.RS 4
+Item (configuration variable) not defined error\&.
+.RE
+.PP
+113
+.RS 4
+Failed loading item (script, program) error\&.
+.RE
+.PP
+114
+.RS 4
+General fail condition error\&.
+.RE
+.PP
+115
+.RS 4
+Configuration error\&.
+.RE
+.SH "FILES"
+.PP
+
+/usr/sbin/ip\-array
+.SH "SEE ALSO"
+.PP
+
+\fBip-array_defaults.conf\fR(8),
+\fBip-array.conf\fR(8),
+\fBip-array_ruleblocks\fR(5),
+\fBip-array_rulefiles\fR(5),
+\fBip-array_sysctl_rules\fR(5),
+\fBip-array_templates\fR(5)
+.PP
+
+\fBiptables\fR(8),
+\fBiptables-save\fR(8),
+\fBiptables-restore\fR(8),
+\fBtc\fR(8),
+\fBtc-htb\fR(8),
+\fBtc-sfq\fR(8)
+.SH "AUTHOR"
+.PP
+\fBMart Frauenlob aka AllKind\fR <\&AllKind@fastest\&.cc\&>
+.RS 4
+Some guy infront of a screen\&.
+.RE
+.RS 4
+Thanks go to the open source community\&.
+.RE

@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
+<refentry xmlns="http://docbook.org/ns/docbook">
+    <info><author>
+            <personname>Mart Frauenlob aka AllKind</personname>
+            <email>AllKind@fastest.cc</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>1.2.2</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array.conf</refentrytitle>
+        <manvolnum>8</manvolnum>
+        <refmiscinfo class="manual">ip-array 1.2.2</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array.conf</refdescriptor>
+        <refname>ip-array.conf</refname>
+        <refpurpose>Configure the main configuration file of ip-array (default:
+            ip-array.conf)</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/ip-array.conf</synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para> This file is the main configuration file of ip-array. It holds all the variables
+            needed to find the other configuration files and many settings about the host and what
+            to configure.</para>
+    </refsect1>
+    <refsect1>
+        <title>Variables</title>
+        <para>
+            <variablelist>
+                <varlistentry>
+                    <term><varname>CONFIG_FILES</varname></term>
+                    <listitem>
+                        <para>Names of the configuration files which will be loaded in order of
+                            appearence. i.e. CONFIG_FILES="aliases.conf global.conf".</para>
+                        <para>
+                            <tip>
+                                <para>This is the only variable that needs to be inside the main
+                                    configuration file. All others can be placed into different
+                                    files of your choice and should be listed in the above variable,
+                                    in order to be sourced from there.</para>
+                            </tip>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>BASE_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the basic XML template files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_FILTER</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables filter table configuration.
+                            Valid values are `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_FILTER_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables filter table XML templates files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>FILTER_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables filter table ruleblocks files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>FILTER_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables filter table rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_MANGLE</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables mangle table configuration.
+                            Valid values are `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_MANGLE_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables mangle table XML templates files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>MANGLE_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables mangle table ruleblocks files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>MANGLE_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables mangle table rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_NAT</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables nat table configuration.
+                            Valid values are `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_NAT_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables nat table XML templates files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>NAT_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables nat table ruleblocks files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>NAT_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables nat table rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_RAW</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables raw table configuration.
+                            Valid values are `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_RAW_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables raw table XML templates files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RAW_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables raw table ruleblocks files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RAW_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables raw table rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_RAWPOST</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables rawpost table configuration.
+                            Only works if xtables-addons are installed. Valid values are `0' or
+                            `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_RAWPOST_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables rawpost table XML templates files. Only works if
+                            xtables-addons are installed.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RAWPOST_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables rawpost table ruleblocks files. Only works if
+                            xtables-addons are installed.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RAWPOST_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables rawpost table rule files. Only works if
+                            xtables-addons are installed.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_SECURITY</varname></term>
+                    <listitem>
+                        <para>Enable or disable loading of the iptables security table
+                            configuration. Valid values are `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPT_SECURITY_TEMPLATES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables security table XML templates files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SECURITY_RULEBLOCKS</varname></term>
+                    <listitem>
+                        <para>Names of the iptables security table ruleblocks files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SECURITY_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the iptables security table rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPSET_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the ipset rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>MODULE_DIR</varname></term>
+                    <listitem>
+                        <para>Patch to the kernels module directory. Defaults to
+                            /lib/modules/$(uname -r).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>MODULES_TO_LOAD</varname></term>
+                    <listitem>
+                        <para>Select the kernel modules to load. Entries are separated by
+                            newline.</para>
+                        <para>Format: <synopsis>module-name [parameters [...]]</synopsis></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>MODS_TO_RM</varname></term>
+                    <listitem>
+                        <para>Select the kernel modules to remove.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOOPBACK_IF</varname></term>
+                    <listitem>
+                        <para>Allowed values: A valid interface name. Defaults to `lo' if
+                            unset.</para>
+                        <para>Purpose: Name of the loopback interface.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>NET_INTERFACES</varname></term>
+                    <listitem>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">This variable must be
+                            configured with at least one interface. Any network interface but `lo'
+                            (localhost) may be put here.</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">If you use a VPN software
+                            that creates an interface (named i.e. ipsec) you need to put it in as a
+                            separate entry. Otherwise use the available types:</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">ext | local | ipsec</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">ext = an external interface,
+                            local = a local interface, ipsec = an ipsec interface</para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">Example:</para>
+                        <para>
+                            <table frame="all">
+                                <title>Configure networking interfaces</title>
+                                <tgroup cols="4" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <colspec colname="c3" colnum="3"/>
+                                    <colspec colname="c4" colnum="4"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Inteface name</entry>
+                                            <entry>Interface alias</entry>
+                                            <entry>Type[:ipsec]</entry>
+                                            <entry>Network name</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>eth0</entry>
+                                            <entry>eth0</entry>
+                                            <entry>ext:ipsec</entry>
+                                            <entry>INET_CON_X</entry>
+                                        </row>
+                                        <row>
+                                            <entry>eth1</entry>
+                                            <entry>eth1</entry>
+                                            <entry>ext</entry>
+                                            <entry>INET_CON_Y</entry>
+                                        </row>
+                                        <row>
+                                            <entry>eth2</entry>
+                                            <entry>eth2</entry>
+                                            <entry>local</entry>
+                                            <entry>PRODUCTION</entry>
+                                        </row>
+                                        <row>
+                                            <entry>eth2</entry>
+                                            <entry>eth2:0</entry>
+                                            <entry>local</entry>
+                                            <entry>DEVELOPMENT</entry>
+                                        </row>
+                                        <row>
+                                            <entry>eth3</entry>
+                                            <entry>eth3</entry>
+                                            <entry>local</entry>
+                                            <entry>DMZ</entry>
+                                        </row>
+                                        <row>
+                                            <entry>ipsec0</entry>
+                                            <entry>ipsec0</entry>
+                                            <entry>ipsec</entry>
+                                            <entry>VPN_REMOTE_OFFICE</entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SCRIPT_MAP</varname></term>
+                    <listitem>
+                        <para>The purpose of this variable is to configure which scripts will run at
+                            what startup mode.</para>
+                        <para>The format is (newline separates entries):</para>
+                        <para>
+                            <synopsis>startup-parameter-name[,...] { prolog | epilog } script-name { prolog | epilog } script-name</synopsis>
+                        </para>
+                        <para>Example:</para>
+                        <para><code>start,restart prolog my_start_prolog-script epilog
+                                my_start_epilog-script</code></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>POLICY_MAP</varname></term>
+                    <listitem>
+                        <para>The purpose of this variable is to configure the policy for buitin
+                            iptables chains.</para>
+                        <para>The format is (newline separates entries):</para>
+                        <para>
+                            <synopsis>table chain policy</synopsis>
+                        </para>
+                        <para>Example:</para>
+                        <para><code>filter INPUT DROP</code></para>
+                        <para><code>filter OUTPUT ACCEPT</code></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ALLOW_LOOPBACK</varname></term>
+                    <listitem>
+                        <para>Allow communication to and from the loopback interface. Valid values:
+                            `0' or `1'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ADMIN_CONNECTION</varname></term>
+                    <listitem>
+                        <para>Define an administrative connection, which will be allowed under
+                            certain conditions. The conditions are:</para>
+                        <para>
+                            <itemizedlist>
+                                <listitem>
+                                    <para>If the enviroment variable $SSH_CONNECTION is not
+                                        available, otherwise those values will always be
+                                        used.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>When IP-Array enters lockdown mode in start mode.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>In restore mode, if ipset is used.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>In lockdown mode.</para>
+                                </listitem>
+                                <listitem>
+                                    <para>On a fail condition (an error occured while applying a
+                                        ruleset).</para>
+                                </listitem>
+                            </itemizedlist>
+                        </para>
+                        <para>The format is:
+                            <synopsis>admin_source-IP local_destination-IP local_destination-port</synopsis></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>CHAIN_MAP</varname></term>
+                    <listitem>
+                        <para>The purpose of this variable is to create custom iptables
+                            chains.</para>
+                        <para>The format is (newline separates entries):</para>
+                        <para>
+                            <synopsis>table chain-name [...]</synopsis>
+                        </para>
+                        <para>Example:</para>
+                        <para><code>filter chain1 chain2</code></para>
+                        <para><code>mangle mchain1 mchain2</code></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>JUMP_TREE</varname></term>
+                    <listitem>
+                        <para>The purpose of this variable is to create an automated jump tree of
+                            iptables chains.</para>
+                        <para>The format is:</para>
+                        <para>
+                            <synopsis>{ none | interface | netname | netname+interface } { table-name [...] | all }</synopsis>
+                        </para>
+                        <para>`none' disables jump tree creation (undefined variable does the
+                            same).</para>
+                        <para>`interface' means to create a jump tree categorised by
+                            interfaces.</para>
+                        <para>`netname' means to create a jump tree categorised by networks.</para>
+                        <para>`netname+interface' means to create a jump tree categorised by
+                            interfaces and their networks.</para>
+                        <para>`table' defines in which table the jump tree will be created. A value
+                            of `all' will cause creation in all tables.</para>
+                        <para>Examples:</para>
+                        <para><code>JUMP_TREE="interface filter mangle"</code></para>
+                        <para><code>JUMP_TREE="netname all"</code></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>JUMP_TREE_CHAINS_CREATE_ALL</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Enable or disable automatic creation of all jump tree chains.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REMOVE_EMPTY_CHAINS</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Remove empty chains after applying the ruleset.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REMOVE_UNREF_CHAINS</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Remove unreferenced chains after applying the ruleset.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>KNOWN_TRAFFIC_MAP</varname></term>
+                    <listitem>
+                        <para>This allows to define which and where the rules are created, which
+                            deal with the return traffic identified by the connection tracker. The
+                            format is (newline separates entries):
+                            <synopsis>chain [ state ] [ top | bottom ]</synopsis></para>
+                        <para>state can be either E, R or ER (ESTABLESHED, RELATED or ESTABLISHED
+                            and RELATED). top or bottom define wheter the rule should be placed on
+                            top or bottom of the rule stack.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REVERSE_INPUT_RULES_REQUIRED</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>In a ruleblock which uses a template definition that uses the reverse
+                            (return) mode to generate bidirectional rules, define if those are
+                            needed (i.e. <varname>KNOWN_TRAFFIC_MAP</varname> is not used). This
+                            applies to traffic entering the INPUT chain.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REVERSE_FORWARD_RULES_REQUIRED</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>In a ruleblock which uses a template definition that uses the reverse
+                            (return) mode to generate bidirectional rules, define if those are
+                            needed (i.e. <varname>KNOWN_TRAFFIC_MAP</varname> is not used). This
+                            applies to traffic entering the FORWARD chain.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>FINAL_RULE_MAP</varname></term>
+                    <listitem>
+                        <para>Define a terminating rule for custom or builtin chains. Format:
+                            <synopsis xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">chain action [ limit ] [ burst ] [ log-level ] [ log-options ]</synopsis></para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">chain = the name of the
+                            chain. action = Can be one of: log, drop, reject, logdrop, logreject.
+                            See the help of the iptables arguments for the other entries
+                                (<command>ip-array show -sc
+                                ipt_args:limit,log-level,log-options</command>). The default value
+                            for limit is defined with GLOBAL_LOGLIMIT and the burst value uses the
+                            default of GLOBAL_BURSTLIMIT.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOG_INVALID</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Log packets in invalid state. The logging options are defined with the
+                            global log options.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>BLOCK_INVALID</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Drop packets in invalid state.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOG_ILLEGAL</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Log illegal TCP packets. The logging options are defined with the
+                            global log options.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>BLOCK_ILLEGAL</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Drop illegal TCP packets.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LAN_FTP</varname></term>
+                    <listitem>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">Select LAN interface from
+                            where FTP traffic is permitted. Format (whitespace separates entries):
+                            <synopsis>lan-interface|netname[:external-interface|netname][:active|passive|all|none] [...]</synopsis></para>
+                        <para xmlns:xi="http://www.w3.org/2001/XInclude"
+                            xmlns:xlink="http://www.w3.org/1999/xlink">i.e.
+                                <code>eth1:eth0:active</code> or <code>eth2</code> or
+                                <code>LAN::passive</code></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LAN_NS</varname></term>
+                    <listitem>
+                        <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more
+                            local networks to ISP nameservers. Needs the <varname>LAN_NS</varname>
+                            and <varname>ISP_NS</varname> variables to be defined. Purpose: Define
+                            name servers (DNS) that are part of a local area network.</para>
+                        <para>
+                            <table frame="all">
+                                <title>Local (LAN) name servers</title>
+                                <tgroup cols="3" align="left" char="" conformance="">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <colspec colname="c3" colnum="3"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Network name</entry>
+                                            <entry>Name server IP address</entry>
+                                            <entry>[Name server MAC address]</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>DMZ</entry>
+                                            <entry>10.11.11.11</entry>
+                                            <entry>AA:BB:CC:DD:EE:FF</entry>
+                                        </row>
+                                        <row>
+                                            <entry>DMZ</entry>
+                                            <entry>10.11.11.12</entry>
+                                            <entry/>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ISP_NS</varname></term>
+                    <listitem>
+                        <para>Allow DNS (udp and tcp) traffic from nameservers inside one or more
+                            local networks to ISP nameservers. Needs the <varname>LAN_NS</varname>
+                            and <varname>ISP_NS</varname> variables to be defined. Purpose: Define
+                            the Internet service provider name servers (DNS), for each local area
+                            network.</para>
+                        <para>
+                            <table frame="all">
+                                <title>ISP name servers</title>
+                                <tgroup cols="3" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <colspec colname="newCol3" colnum="3"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Network name</entry>
+                                            <entry>ISP name server IP address[,...]</entry>
+                                            <entry>[External network interface]</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>PRODUCTION</entry>
+                                            <entry>123.12.12.22,123.12.12.23</entry>
+                                            <entry>eth1</entry>
+                                        </row>
+                                        <row>
+                                            <entry>DEVELOPMENT</entry>
+                                            <entry>124.13.13.23,124.13.13.24</entry>
+                                            <entry/>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ISP_SMTP</varname></term>
+                    <listitem>
+                        <para>Allow SMTP traffic from inside one or more local networks to SMTP
+                            mailservers. Needs the <command
+                                xmlns:xi="http://www.w3.org/2001/XInclude"
+                                xmlns:xlink="http://www.w3.org/1999/xlink">lan_isp_smtp</command>
+                            public function to be called in the rule file.</para>
+                        <para>
+                            <table frame="all">
+                                <title>ISP SMTP servers</title>
+                                <tgroup cols="3" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <colspec colname="c3" colnum="3"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Network name</entry>
+                                            <entry>ISP mail server IP address[,...]</entry>
+                                            <entry>[External network name]</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>PRODUCTION</entry>
+                                            <entry>123.12.12.90,123.12.12.91</entry>
+                                            <entry>INET_CON_ISP_X</entry>
+                                        </row>
+                                        <row>
+                                            <entry>DEVELOPMENT</entry>
+                                            <entry>125.25.25.5,125.25.25.6</entry>
+                                            <entry>INET_CON_ISP_Y</entry>
+                                        </row>
+                                        <row>
+                                            <entry>DMZ</entry>
+                                            <entry>126.26.26.6,128.28.28.8</entry>
+                                            <entry/>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RESTRICT_OUTPUT</varname></term>
+                    <listitem>
+                        <para>Valid values: `0', `1, ´IFBOUND' or `IPBOUND'.</para>
+                        <para>If the policy for the OUTPUT chain is set to DROP, additional allow
+                            rules may be applied. A value of `1' will allow other configurations
+                            like allow rules for local name or time servers. A value of ´IFBOUND'
+                            will create OUTPUT allow rules per interface i.e. <code>-A OUTPUT -o
+                                eth0 -j ACCEPT</code>. While setting it to `IPBOUND' will cause
+                            creation of one allow rule per IP address configure on each
+                            interface.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REST_OUT_DNS_ALLOW</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of
+                            the OUTPUT chain is DROP, then rules will be created to allow localhost
+                            to nameservers traffic .</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOCAL_NS</varname></term>
+                    <listitem>
+                        <para>Purpose: Define name servers (DNS) of the local system (most likely
+                            those configured in <filename>/etc/resolv.conf</filename>.</para>
+                        <para>If set to `auto', then IP-Array will try to read the nameservers from
+                                <filename>/etc/resolv.conf</filename>. Otherwise the following
+                            formatting is used:</para>
+                        <para>
+                            <table frame="all">
+                                <title>Local name servers (resolv.conf)</title>
+                                <tgroup cols="2" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Name server IP address</entry>
+                                            <entry>[External network name]</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>123.12.12.22,123.12.12.23</entry>
+                                            <entry>INET_CON_ISP_X</entry>
+                                        </row>
+                                        <row>
+                                            <entry>124.13.13.23,124.13.13.24</entry>
+                                            <entry/>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REST_OUT_NTP_ALLOW</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of
+                            the OUTPUT chain is DROP, then rules will be created to allow localhost
+                            to time servers traffic .</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>TIME_SERVERS</varname></term>
+                    <listitem>
+                        <para>Purpose: Define time service request (NTP) of the local system.</para>
+                        <para>If set to `auto', then IP-Array will try to read the ntp servers from
+                                <filename>/etc/ntp.conf</filename>. Note that host names are not
+                            supported! Otherwise the following formatting is used:</para>
+                        <para>
+                            <table frame="all">
+                                <title>Local NTP servers</title>
+                                <tgroup cols="2" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <thead>
+                                        <row>
+                                            <entry>NTP server IP address[,...]</entry>
+                                            <entry>[External network name]</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>11.12.13.14,12.13.14.15</entry>
+                                            <entry>INET_CON_ISP_X</entry>
+                                        </row>
+                                        <row>
+                                            <entry>99.99.99.9,99.99.99.10</entry>
+                                            <entry/>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REST_OUT_LAN_ALLOW</varname></term>
+                    <listitem>
+                        <para>Valid values "lan-interface [...]"</para>
+                        <para>If <varname>RESTRICT_OUTPUT</varname> is set to `1' and the policy of
+                            the OUTPUT chain is DROP, then rules will be created to allow traffic to
+                            the subnets configured .</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>REST_ALLOW_RELATED</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>If <varname>RESTRICT_OUTPUT</varname> is set to `IFBOUND' or ´IPBOUND'
+                            and the policy of the OUTPUT chain is DROP, setting this variable to `0'
+                            will allow only traffic in ESTABLISHED state, while setting it to `1'
+                            will allow traffic in ESTABLISHED and RELATED state.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>DROP_DHCP</varname></term>
+                    <listitem>
+                        <para>Drop DHCP broadcasts to certain interfaces. Allowed values are
+                            interface-names.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>DROP_UPNP</varname></term>
+                    <listitem>
+                        <para>Drop UPNP broadcasts to certain interfaces. Allowed values are
+                            interface-names.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOG_PREFIX</varname></term>
+                    <listitem>
+                        <para>A prefix for iptables log entries.<tip>
+                                <para>Use a short value, log entries have a limited lenght.</para>
+                            </tip></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>GLOBAL_LOGLIMIT</varname></term>
+                    <listitem>
+                        <para>An iptables logging limit parameter that will be used globally,
+                            wherever it's not specified / requested differently. Defaults to 1/s (1
+                            per second).</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>GLOBAL_BURSTLIMIT</varname></term>
+                    <listitem>
+                        <para>An iptables logging limit-burst parameter that will be used globally,
+                            wherever it's not specified / requested differently. Defaults to
+                            `3'.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>GLOBAL_LOGLEVL</varname></term>
+                    <listitem>
+                        <para>Valid values are: alert, crit, debug, emerg, err, info, notice and
+                            warning. Defaults to `info'.</para>
+                        <para>An iptables logging loglevel parameter that will be used globally,
+                            wherever it's not specified / requested differently.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_IPSEC</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Enable or disable the IPSEC rules.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ALLOW_ALL_BRANCH</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Allow all traffic between all VPN branches.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>LOCAL_BRANCH</varname></term>
+                    <listitem>
+                        <para>Allowed values: Characters of class [:word:] (alphanumeric and the `_'
+                            (underline) character). </para>
+                        <para>Purpose: Set name of the local VPN branch.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>IPSEC_RULES</varname></term>
+                    <listitem>
+                        <para>The IPSEC rule files.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>VPN_MAP</varname></term>
+                    <listitem>
+                        <para>This variable holds the vpn branch data.</para>
+                        <para>The VPN_MAP variable is structured as follows (example data
+                            provided):</para>
+                        <para>
+                            <table frame="all">
+                                <title>VPN_MAP structure</title>
+                                <tgroup cols="4" align="left">
+                                    <colspec colname="c1" colnum="1"/>
+                                    <colspec colname="c2" colnum="2"/>
+                                    <colspec colname="c3" colnum="3"/>
+                                    <colspec colname="c4" colnum="4"/>
+                                    <thead>
+                                        <row>
+                                            <entry>Branch name</entry>
+                                            <entry>External IP address</entry>
+                                            <entry>LAN address/mask</entry>
+                                            <entry>LAN interface IP address</entry>
+                                        </row>
+                                    </thead>
+                                    <tbody>
+                                        <row>
+                                            <entry>local_branch</entry>
+                                            <entry>188.88.88.8</entry>
+                                            <entry>192.168.1.0/24</entry>
+                                            <entry>192.168.1.1</entry>
+                                        </row>
+                                        <row>
+                                            <entry>remote_branch_01</entry>
+                                            <entry>177.77.77.7</entry>
+                                            <entry>10.1.1.0/24</entry>
+                                            <entry>10.1.1.1</entry>
+                                        </row>
+                                        <row>
+                                            <entry>remote_branch_02</entry>
+                                            <entry>166.66.66.6</entry>
+                                            <entry>172.16.1.0/24</entry>
+                                            <entry>172.16.1.1</entry>
+                                        </row>
+                                    </tbody>
+                                </tgroup>
+                            </table>
+                        </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>ENABLE_TC_SHAPING</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Enable or disable traffic shaping rules.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>TC_MARK_RULES</varname></term>
+                    <listitem>
+                        <para>Files holding the iptables MARK and CLASSIFY rules for the traffic
+                            shaping. </para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>OUTPUT_BULK</varname></term>
+                    <listitem>
+                        <para>Formatting: <synopsis>output-interface:mark [...]</synopsis></para>
+                        <para>Put the matching packets into the output bulk queue disc.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>FORWARD_BULK</varname></term>
+                    <listitem>
+                        <para>Formatting:
+                            <synopsis>input-interface,output-interface:mark [...]</synopsis></para>
+                        <para>Put the matching packets into the forward bulk queue disc.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>PRIORITIZE_SYN</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Prioritize TCP SYN packets in traffic shaping.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>EXIT_ON_ERROR</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>If enabled, IP-Array will exit on all error conditions (configuration,
+                            comand apply errors, etc.). Otherwise it will continue and will only
+                            exit on hard errors.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>RULE_PLACEHOLDER</varname></term>
+                    <listitem>
+                        <para>Valid values: `_' (underscore), `-' (dash), `.' (dot), `,' (comma).
+                            Defaults to `_' (underscore).</para>
+                        <para>If a rule entry in a ruleblock will not be set, use this character as
+                            placeholder.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>USE_M_CONNTRACK</varname></term>
+                    <listitem>
+                        <para>Valid values: `0' or `1'.</para>
+                        <para>Always use the iptables match extension conntrack in favour of the
+                            state match.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>NFACCT_OBJ_MAP</varname></term>
+                    <listitem>
+                        <para>Netfilter accounting objects (nfacct)</para>
+                        <para>Format: <synopsis>nfacct-name [...]</synopsis></para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SYSCTL_RULES</varname></term>
+                    <listitem>
+                        <para>Names of the files holding the sysctl rules.</para>
+                    </listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><varname>SYSCTL_CONNTRACK_MAX</varname></term>
+                    <listitem>
+                        <para>Maximum number of connection to track (conntrack). This can also be
+                            set in your sysctl rules, but this variable is here to allow automatic
+                            calculation.</para>
+                        <para>Formatting:</para>
+                        <para>value (integer) | (x|X)factor (factor = integer)</para>
+                        <para>Using (x|X)factor, the conntrack max value will be automatically
+                            calculated and then multiplied with factor (i.e. x2 - double the auto
+                            value).</para>
+                    </listitem>
+                </varlistentry>
+            </variablelist>
+        </para>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_ruleblocks</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_rulefiles</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_sysctl_rules</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>
+        </para>
+    </refsect1>
+</refentry>

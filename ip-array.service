@@ -1,0 +1,22 @@
+[Unit]
+Description=IP-Array Firewall
+DefaultDependencies=no
+
+After=network.target
+Wants=network.target
+
+Wants=systemd-modules-load.service local-fs.target
+After=systemd-modules-load.service local-fs.target
+
+Conflicts=shutdown.target
+Before=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/etc/init.d/ip-array start
+ExecStop=/etc/init.d/ip-array stop
+ExecReload=/etc/init.d/ip-array restart
+
+[Install]
+WantedBy=multi-user.target

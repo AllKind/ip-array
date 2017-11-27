@@ -1,0 +1,11 @@
+t_ttl: TTL target specification.
+
+    Synopsis: [+|-]value
+        + := greater then (--ttl-inc)
+        - := lower then (--ttl-dec)
+
+    Examples:
+        t_ttl=63
+        t_ttl=+1
+        t_ttl=-1
+

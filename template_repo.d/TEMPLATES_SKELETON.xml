@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<!-- TEMPLATES SKELETON
+
+<ip_array_root name="iptables_templates" syntax_version="1.0">
+
+	<template name="">
+		<table>
+		</table>
+		<target>
+		</target>
+		<chain>
+		</chain>
+		<reverse_mode>
+		</reverse_mode>
+		<reverse_condition>
+		</reverse_condition>
+		<template_msg>
+		</template_msg>
+		<mandatory_vars>
+		</mandatory_vars>
+		<load_template>
+		</load_template>
+		<always_use_0>
+		</always_use_0>
+		<always_use_1>
+		</always_use_1>
+		<option_list_0>
+		</option_list_0>
+		<option_list_1>
+		</option_list_1>
+		<state_match_arg>
+		</state_match_arg>
+	</template>
+
+</ip_array_root>
+
+-->
+

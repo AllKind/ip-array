@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?oxygen RNGSchema="http://www.oasis-open.org/docbook/xml/5.0/rng/docbook.rng" type="xml"?>
+<refentry xmlns="http://docbook.org/ns/docbook">
+    <info><author>
+            <personname>Mart Frauenlob aka AllKind</personname>
+            <email>AllKind@fastest.cc</email>
+            <personblurb>
+                <para>Some guy infront of a screen.</para>
+            </personblurb>
+            <uri type="homepage">
+                <link xmlns:ns1="http://www.w3.org/1999/xlink"
+                    ns1:href="http://sf.net/projects/ip-array"> http://sf.net/projects/ip-array
+                </link>
+            </uri>
+            <contrib>Thanks go to the open source community.</contrib>
+        </author>
+        <productname>ip-array</productname>
+        <productnumber>1.2.2</productnumber>
+    </info>
+    <refmeta>
+        <refentrytitle>ip-array_sysctl_rules</refentrytitle>
+        <manvolnum>5</manvolnum>
+        <refmiscinfo class="manual">ip-array 1.2.2</refmiscinfo>
+    </refmeta>
+    <refnamediv>
+        <refdescriptor>ip-array sysctl rules</refdescriptor>
+        <refname>ip-array sysctl rules</refname>
+        <refpurpose>Configure ip-array sysctl rule files</refpurpose>
+    </refnamediv>
+    <refsynopsisdiv>
+        <synopsis>/etc/ip-array/{stable|test}/conf.d/sysctl.d/<replaceable>file</replaceable></synopsis>
+    </refsynopsisdiv>
+    <refsect1>
+        <title>Description</title>
+        <para>Inside the sysctl rule files the system settings are stored. They are written in
+            simple XML. By parsing them IP-Array composes command line arguments for the
+                <command>sysctl</command> program.</para>
+    </refsect1>
+    <refsect1>
+        <title>Syntax</title>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >A rule definition file must contain the root tag including the describing name
+            attribule and the syntax version:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+                ><code>&lt;ip_array_root name="sysctl_rules" syntax_version="1.0"></code></para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >The <emphasis role="bold">name</emphasis> attribute tells us it is an sysctl rule
+            definition.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >The <emphasis role="bold">syntax_version</emphasis> attribute defines the syntax
+            version. 1.0 is available by now.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >The XML syntax can be used in a <emphasis role="italic">relaxed</emphasis> way (not XML
+            compatible). Tags can be closed by a simple `/>'. Attributes can have their value
+            enclosed inside single quotes, or not quoted at all.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</para>
+    </refsect1>
+    <refsect1>
+        <title>XML tags</title>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >The XML tags used in sysctl rule files are an exact representation of the names used
+            with the <command>sysctl</command> program. Each of the names used by the
+                <command>sysctl</command> program, which are separated by a dots, will be the name
+            of the XML tag, or the attribute if it is the actual setting. Example:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+                ><code>net.ipv4.ip_forward=1</code> from sysctl will be described in XML like
+            this:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;ip_forward> 1 &lt;/ip_forward>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >or as attribute:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4 ip_forward="1">
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >or even shorter as attribute if only this single setting is used:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4 ip_forward="1"/>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >You can mix both ways as you wish. To see all the available types of your local system,
+            run either <command>sysctl -a</command> or <command>ip-array
+            compat-check</command>.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+                ><emphasis role="bold">Shell variables</emphasis> are valid as tag names inside
+            sysctl rules. The main purpose of this feature is to allow generic configuration of
+            values that may change system depending. i.e. the interface names in
+                <code>net.ipv4.conf.$INTERFACE_NAME</code>. The <emphasis role="bold">variable must
+                not be quoted!</emphasis> You can either write them with or without the curly
+            braces: <code>&lt;$VARIABLE></code> or <code>&lt;${VARIABLE}></code>.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >Now if you define you interface name variables inside the i.e. alias.conf configuration
+            file, you can use them inside your sysctl rule files. And every time an interface
+            changes, all you need to do, is to modify the variable and re-parse the sysctl rule
+            files.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >Example: inside alias.conf you define: EXT_IF=eth0 and inside your sysctl rule file you
+            write:</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF>
+                &lt;accept_redirects> 0 &lt;/accept_redirects>
+            &lt;/$EXT_IF>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >or as attribute (in the short form):</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <programlisting>&lt;net>
+    &lt;ipv4>
+        &lt;conf>
+            &lt;$EXT_IF accept_redirects="0"/>
+        &lt;/conf>
+    &lt;/ipv4>
+&lt;/net></programlisting>
+        </para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >XML style comments are valid inside sysctl rule files. Public functions etc. are
+            not.</para>
+        <para xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink"
+            >In interactive mode, only the net.* (also suppressing ipv6.*) settings will be
+            listed.</para>
+    </refsect1>
+    <refsect1>
+        <title>See also</title>
+        <para>
+            <citerefentry>
+                <refentrytitle>ip-array</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_defaults.conf</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_rulefiles</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>ip-array_templates</refentrytitle>
+                <manvolnum>5</manvolnum>
+            </citerefentry>, <citerefentry>
+                <refentrytitle>sysctl</refentrytitle>
+                <manvolnum>8</manvolnum>
+            </citerefentry></para>
+    </refsect1>
+</refentry>

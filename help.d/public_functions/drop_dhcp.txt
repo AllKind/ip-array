@@ -1,0 +1,12 @@
+
+Name: drop_dhcp
+
+Description:
+	Drop DHCP broadcast on certain interfaces.
+	Configuration variable `DROP_DHCP' must be configured.
+
+Usage:
+	drop_dhcp
+
+Example:
+	drop_dhcp

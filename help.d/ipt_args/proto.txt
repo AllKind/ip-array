@@ -1,0 +1,10 @@
+proto: Name(s) of the protocol(s).
+    Equivalent to -p|--protocol.
+    Multiple protocols can be entered by separating the names with a comma (,).
+    In that case negation is not valid.
+
+    Examples:
+        proto=tcp
+        proto=!udp
+        proto=tcp,udp
+
