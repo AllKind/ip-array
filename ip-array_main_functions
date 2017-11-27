@@ -1348,7 +1348,7 @@ load_file() { # source other files with custom message
 local -i ret_code=0
 local s_category=$1 s_file="$2"
 case "$s_category" in
-	script)	log -e "${PF}loading script: $s_file" ;;
+	script)	log -R "${PF}loading script: $s_file" ;;
 	rule)	log -R "Loading rule file: $s_file" ;;
 	config)	log -C "Loading config file: $s_file" ;;
 	*)	log -o "$s_category" $FUNCNAME
