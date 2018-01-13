@@ -390,6 +390,8 @@ elif [[ $str_rule = "Iptables tag" ]]; then
 				arr_content[content_idx++]="$str_tmp"
 				dia_yn "Do you want to add another iptables argument?"
 			else
+				str_indent="${str_indent:0:$((${#str_indent} - 4))}"
+				unset arr_tags[--tag_idx]
 				false
 			fi
 		else
