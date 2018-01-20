@@ -3309,6 +3309,7 @@ if ((${#IPT_CMD_ARRAY[@]})); then # iptables commands
 					run_nfacct "$@" &>/dev/null || cmd_err_count ipt "$NFACCT $*"
 				done
 			fi
+			[[ -e $RULESETFILE ]] && run_rm "$RULESETFILE"
 			RULESETFILE="${SAVE_DIR}/_auto-generated_iptables-save_$(run_date +%F_%T)_rnd$RANDOM"
 			if iptsave_rulesets "$RULESETFILE" rules; then
 				ipt_restore "${RULESETFILE##*/}" || {
