@@ -80,6 +80,7 @@ Options:
 -g, --group group_name        Set group ownership. Default: root
 -n, --no-act                  Perform a dry-run
 -o, --owner owner_name        Set ownership. Default: root
+-u, --upgrade                 Upgrade (do not copy config files)
 -v, --verbose                 Verbose output
 --prefix /path                Prefix directory. Default: /usr/local
 --datarootdir /path           Default: PREFIX/share
@@ -147,6 +148,7 @@ while (($#)); do
 			continue
        	;;
 		-o|--owner) OWNER="$opt_arg" ;;
+		-u|--upgrade) UPGRADE=yes ;;
 		-v|--verbose) VERBOSE="-v"
 			continue
 		;;
@@ -168,6 +170,7 @@ while (($#)); do
 done
 
 # set defaults
+: ${UPGRADE:=no}
 : ${INITDIR:=/etc/init.d}
 : ${PREFIX:=/usr/local}
 : ${DATAROOTDIR:=${PREFIX}/share}
@@ -231,12 +234,16 @@ create_dirs "${BASHCOMPDIR}"
 [[ $SYSTEMDDIR = upstart ]] || create_dirs "${SYSTEMDDIR}/system"
 
 # copy files
-install_dir -m 0640 conf.d/*.conf "${SYSCONFDIR}/${ME}/stable/conf.d"
-install_dir -m 0640 conf.d/ruleblocks.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/ruleblocks.d"
-install_dir -m 0640 conf.d/rules.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/rules.d"
-install_dir -m 0640 conf.d/sysctl.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/sysctl.d"
-install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/templates.d"
-
+if [[ $UPGRADE = no ]]; then
+	install_dir -m 0640 conf.d/*.conf "${SYSCONFDIR}/${ME}/stable/conf.d"
+	install_dir -m 0640 conf.d/ruleblocks.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/ruleblocks.d"
+	install_dir -m 0640 conf.d/rules.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/rules.d"
+	install_dir -m 0640 conf.d/sysctl.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/sysctl.d"
+	install_dir -m 0640 conf.d/templates.d/* "${SYSCONFDIR}/${ME}/stable/conf.d/templates.d"
+	install_dir -m 0640 scripts.d/prolog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/prolog"
+	install_dir -m 0640 scripts.d/epilog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/epilog"
+	install_file -m 0640 defaults.conf "${DEFAULTSDIR}/${ME}_defaults.conf"
+fi
 install_dir -m 0644 template_repo.d/* "${DATAROOTDIR}/${ME}/template_repo.d"
 install_dir -m 0644 help.d/public_functions/*.txt "${DATAROOTDIR}/${ME}/help.d/public_functions"
 install_dir -m 0644 help.d/ipt_args/*.txt "${DATAROOTDIR}/${ME}/help.d/ipt_args"
@@ -247,11 +254,8 @@ install_dir -m 0644 help.d/docbook/* "${DOCDIR}/${ME}/docbook"
 install_dir -m 0644 help.d/html/* "${DOCDIR}/${ME}/html"
 install_dir -m 0644 help.d/man/*.5 "${MANDIR}/man5"
 install_dir -m 0644 help.d/man/*.8 "${MANDIR}/man8"
-install_dir -m 0640 scripts.d/prolog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/prolog"
-install_dir -m 0640 scripts.d/epilog/* "${SYSCONFDIR}/${ME}/stable/scripts.d/epilog"
 install_dir -m 0644 "${ME}"_*_functions "${LIBDIR}/$ME"
 
-install_file -m 0640 defaults.conf "${DEFAULTSDIR}/${ME}_defaults.conf"
 install_file -m 0640 ip-array_global_defs "${LIBDIR}/${ME}/ip-array_global_defs"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
