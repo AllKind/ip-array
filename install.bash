@@ -148,7 +148,9 @@ while (($#)); do
 			continue
        	;;
 		-o|--owner) OWNER="$opt_arg" ;;
-		-u|--upgrade) UPGRADE=yes ;;
+		-u|--upgrade) UPGRADE=yes
+			continue
+		;;
 		-v|--verbose) VERBOSE="-v"
 			continue
 		;;
