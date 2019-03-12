@@ -91,8 +91,9 @@ Options:
 --libdir /path                Default: PREFIX/lib
 --mandir /path                Default: DATAROOTDIR/man
 --sysconfdir /path            Default: PREFIX/etc
---systemddir /path            Default: /etc/systemd (set it to \`upstart',
-                                       if upstart is used)
+--systemddir /path            Default: Retrieved with pkg-config, or if
+                              unavailabe: /lib/systemd/system (set it to
+                              \`upstart', if upstart is used)
 --bashcompdir /path           Retrieved with pkg-config, or as fallback:
                               /etc/bash_completion.d, or ~/.bash_completion
 \n"
@@ -179,7 +180,6 @@ done
 : ${BINDIR:=${PREFIX}/sbin}
 : ${LIBDIR:=${PREFIX}/lib}
 : ${SYSCONFDIR:=${PREFIX}/etc}
-: ${SYSTEMDDIR:=/etc/systemd}
 : ${DEFAULTSDIR:=$SYSCONFDIR/$ME}
 : ${DOCDIR:=${DATAROOTDIR}/doc}
 : ${MANDIR:=${DATAROOTDIR}/man}
@@ -202,6 +202,12 @@ if [[ -z $BASHCOMPDIR ]]; then
 	fi
 
 fi
+if [[ -z $SYSTEMDDIR ]]; then
+	if command -v pkg-config &>/dev/null; then
+		SYSTEMDDIR=$(command pkg-config systemd --variable=systemdsystemunitdir)
+	fi
+fi
+: ${SYSTEMDDIR:=/lib/systemd/system}
 
 # warning message on dry-run
 if [[ $NOACT ]]; then
@@ -232,8 +238,7 @@ create_dirs "${SYSCONFDIR}/${ME}/stable/conf.d/"{rules.d,ruleblocks.d,sysctl.d,t
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d"
 create_dirs "${SYSCONFDIR}/${ME}/stable/scripts.d/"{epilog,prolog}
 create_dirs "${BASHCOMPDIR}"
-[[ $SYSTEMDDIR = upstart ]] || create_dirs "${SYSTEMDDIR}/network"
-[[ $SYSTEMDDIR = upstart ]] || create_dirs "${SYSTEMDDIR}/system"
+[[ $SYSTEMDDIR = upstart ]] || create_dirs "${SYSTEMDDIR}"
 
 # copy files
 if [[ $UPGRADE = no ]]; then
@@ -262,8 +267,8 @@ install_file -m 0640 ip-array_global_defs "${LIBDIR}/${ME}/ip-array_global_defs"
 install_file -m 0755 "${ME}".bin "${BINDIR}/$ME"
 install_file -m 0755 "${ME}".init "${INITDIR}/$ME"
 install_file -m 0755 "${ME}".init_pre_net_boot "${INITDIR}/${ME}_pre_net_boot"
-[[ $SYSTEMDDIR = upstart ]] || install_file -m 0644 "${ME}".service "${SYSTEMDDIR}/system/${ME}.service"
-[[ $SYSTEMDDIR = upstart ]] || install_file -m 0644 "${ME}"_pre_net_boot.service "${SYSTEMDDIR}/network/${ME}_pre_net_boot.service"
+[[ $SYSTEMDDIR = upstart ]] || install_file -m 0644 "${ME}".service "${SYSTEMDDIR}/${ME}.service"
+[[ $SYSTEMDDIR = upstart ]] || install_file -m 0644 "${ME}"_pre_net_boot.service "${SYSTEMDDIR}/${ME}_pre_net_boot.service"
 
 if [[ $BASHCOMPDIR = ~ ]]; then
 	printf "bashcompdir is \`~', adding completion to \`%s'.\n\tRemember to manually remove it on uninstall, or re-install.\n" "~/.bash_completion"

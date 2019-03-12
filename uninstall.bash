@@ -170,10 +170,8 @@ do
 done
 
 if [[ $SYSTEMDDIR != upstart ]]; then
-	rem_file "${SYSTEMDDIR}/system/${ME}.service"
-	rem_file "${SYSTEMDDIR}/network/${ME}_pre_net_boot.service"
-	rem_empty_dir "$SYSTEMDDIR"/network
-	rem_empty_dir "$SYSTEMDDIR"/system
+	rem_file "${SYSTEMDDIR}/${ME}.service"
+	rem_file "${SYSTEMDDIR}/${ME}_pre_net_boot.service"
 	rem_empty_dir "$SYSTEMDDIR"
 	printf "Reloading systemd.\n"
 	if ! [[ $NOACT ]]; then
