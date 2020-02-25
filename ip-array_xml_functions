@@ -1254,7 +1254,7 @@ while read -r; do let line_count+=1
 			fi
 			[[ $DEBUG_INFO ]] && printf "%s\n%s\n%s\n" "Tag name: '${tag_name}'" "Attributes: '${attributes}'" "Remaining line: '${line}'"
 			let tag_idx+=1
-		elif [[ ${line} = *\</@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))\>* ]]; then
+		elif [[ ${line} = *([[:blank:]])\</@(+([[:word:]])|\$?(\{)+([[:word:]])?(\}))\>* ]]; then
 			[[ $DEBUG_INFO ]] && pr_str "Closing tag found on line #${line_count}: '${line}'"
 			tag_name="${line#*'<'/}"; tag_name="${tag_name%%'>'*}"
 			((${#ARR_TMP_TAGS[@]})) || { log -E "Attempting to close tag \`${tag_name}', but there is no tag opened."; return 1; }
@@ -1322,7 +1322,7 @@ while read -r; do let line_count+=1
 							}
 							line="${line%%<\!--*}"
 						fi
-						tmp_content="${line%%<+([[:word:]])*([[:blank:]])>*}"
+						tmp_content="${line%%<?(/)+([[:word:]])*([[:blank:]])>*}" # remove all tags after content
 						line="${line#*"${tmp_content}"}"
 						if [[ $tmp_content && $tmp_content != +([[:blank:]]) ]]; then
 							strip_blanks_var 'tmp_content'
