@@ -3645,7 +3645,11 @@ fi
 } # -------------------------------------------------------------------------
 
 minimal_run() { # minimal prerun required
-handle_network_data || return
+if [[ $MODE = LOCKDOWN ]]; then
+	log -e "Lockdown mode, not enumerating interface data"
+else
+	handle_network_data || return
+fi
 module_handling || return
 compatibility_check || return
 } # -------------------------------------------------------------------------
